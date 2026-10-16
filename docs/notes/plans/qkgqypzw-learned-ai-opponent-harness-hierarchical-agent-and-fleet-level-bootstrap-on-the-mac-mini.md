@@ -1378,6 +1378,30 @@ that stages by Rendezvous so the slow ships arrive together (step 2),
 destroyers raid, screen and picket at speed 6, cruisers hold the line. The
 switch stays off until it is retried with roles.
 
+**Reinforcement by Join, first trial (2026-10-16): rejected as it stands.**
+`FleetChoice` gains a `join` host (the decoder emits a Join turn action, so
+the plumbing t190 needs exists but has no test of its own yet), and
+`Doctrine::reinforce` sends warships at home to Join the nearest strike
+force under way instead of gathering a second force. Paired, tuned
+executor, 256-512 60-year games (`--with reinforce`):
+
+| Join rule | Difference in win share |
+| --- | ---: |
+| any strike force | -0.186 ± 0.020 |
+| within 10 sectors | -0.188 ± 0.028 |
+| within 5 sectors | -0.121 ± 0.028 |
+| joiner at least as big as the host | -0.088 ± 0.029 |
+| only a force short of its target's need (kept) | -0.061 ± 0.020 |
+
+Every rule loses, and the more it restricts joining the less it loses.
+Likely cause: one growing stack conquers one world at a time, where
+gathering at home launches several forces at several worlds, so conquest
+runs in parallel and the cycle from home to target and back is shorter.
+Replenishing a force that is short of its target is the least harmful
+case, and still loses. Before retrying, measure the parallel-conquest
+hypothesis directly: worlds taken per year while the home force is split
+and while it is stacked.
+
 ### t190
 
 Give the network the whole order set.

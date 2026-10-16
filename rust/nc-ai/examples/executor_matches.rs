@@ -61,6 +61,7 @@ fn main() {
             "supply" => weights.doctrine.supply = true,
             "defend" => weights.doctrine.defend = true,
             "mixed_hulls" => weights.doctrine.mixed_hulls = true,
+            "reinforce" => weights.doctrine.reinforce = true,
             "allocate" => weights.doctrine.allocate = true,
             "blockader" => weights.doctrine.blockader = true,
             other => panic!("unknown doctrine switch {other}"),

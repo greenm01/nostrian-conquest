@@ -179,6 +179,10 @@ pub struct FleetChoice {
     pub load: bool,
     /// Keep whole (0), or detach the [`DETACHES`] row before it.
     pub detach: usize,
+    /// Join another fleet of the seat (t189): its 1-based record, or 0.
+    /// With a join, the mission is 0 and the other choices only matter for
+    /// the fleet's rules of engagement and load.
+    pub join: usize,
 }
 
 /// One seat's whole turn as choice indexes.
@@ -493,7 +497,18 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
                 loads.push((planet, choice.record, qty));
             }
         }
-        if choice.mission > 0 {
+        if choice.join > 0 {
+            if working
+                .set_join_fleet_order(usize::from(empire), choice.record, choice.join)
+                .is_ok()
+            {
+                actions.push(FleetTurnAction::Join {
+                    host_fleet_record_index_1_based: choice.join,
+                });
+            } else {
+                dropped_fleet_orders.push(choice.record);
+            }
+        } else if choice.mission > 0 {
             let order = fleet_order(game_data, choice);
             let FleetTurnAction::Order {
                 speed,

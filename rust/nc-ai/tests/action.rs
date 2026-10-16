@@ -86,6 +86,7 @@ fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
                     } else {
                         0
                     },
+                    join: 0,
                 }
             })
             .collect(),

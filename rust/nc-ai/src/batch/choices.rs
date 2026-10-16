@@ -122,6 +122,7 @@ pub(crate) fn fleet_choices(
                 roe: choice("roe", actions.roe[fleet], &mask.roe)?,
                 load,
                 detach: choice("detach", actions.detach[fleet], &mask.detach)?,
+                join: 0,
             })
         })
         .collect()

@@ -126,6 +126,10 @@ pub struct Doctrine {
     /// by cost (t189), so a personality's hull weights set its fleet mix.
     /// Off, the affordable hull with the largest weight, every time.
     pub mixed_hulls: bool,
+    /// New and rear warships Join a strike force already under way, to
+    /// replenish it as it moves (t189), instead of gathering at home for a
+    /// second force. Off, they Rendezvous at home.
+    pub reinforce: bool,
 }
 
 impl Doctrine {
@@ -140,6 +144,7 @@ impl Doctrine {
         supply: true,
         defend: true,
         mixed_hulls: false,
+        reinforce: false,
     };
 }
 
@@ -212,6 +217,7 @@ impl Weights {
             supply: false,
             defend: false,
             mixed_hulls: false,
+            reinforce: false,
         },
     };
 
@@ -1022,6 +1028,7 @@ fn plan_fleets(
                 roe: if mask.roe[roe] { roe } else { 0 },
                 load: false,
                 detach: 0,
+                join: 0,
             };
             let order = |order: Order, target: usize| {
                 let mission = mission_choice(order);
@@ -1173,6 +1180,25 @@ fn plan_fleets(
                     return choice;
                 }
             }
+            if weights.doctrine.reinforce && has_combat_ships(fleet) {
+                if fleet.order == Order::JoinAnotherFleet
+                    && own_fleet_with_number(game_data, empire, fleet.mission_target).is_some()
+                {
+                    return keep;
+                }
+                if at_home
+                    && !hold
+                    && fleet.order != Order::GuardBlockadeWorld
+                    && let Some(host) = strike_host(game_data, memory, weights, empire, fleet)
+                    && !goals.is_some_and(|goals| goals.strike > 0)
+                {
+                    return FleetChoice {
+                        join: host,
+                        load: mask.load && fleet.ships.empty_transports > 0,
+                        ..keep
+                    };
+                }
+            }
             if !at_home {
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
@@ -1243,6 +1269,50 @@ fn plan_fleets(
         })
         .collect();
     (fleets, labels)
+}
+
+/// The record of `empire`'s fleet numbered `number`.
+fn own_fleet_with_number(game_data: &CoreGameData, empire: u8, number: u16) -> Option<usize> {
+    game_data
+        .fleets
+        .iter()
+        .position(|fleet| fleet.owner.0 == empire && fleet.fleet_number.0 == number)
+        .map(|idx| idx + 1)
+}
+
+/// The nearest of the empire's strike forces under way that is short of
+/// what its target needs (`attack_ratio` times the target's defence), which
+/// `fleet` can join: warships on Bombard, Invade or Blitz.
+fn strike_host(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    weights: &Weights,
+    empire: u8,
+    fleet: &Fleet,
+) -> Option<usize> {
+    game_data
+        .fleets
+        .iter()
+        .enumerate()
+        .filter(|(_, host)| {
+            host.owner.0 == empire
+                && world_at(game_data, host.target.to_array())
+                    .and_then(|idx| memory.planet_intel.get(&(idx + 1)))
+                    .is_none_or(|intel| {
+                        (strength(host) as f32) < weights.attack_ratio * defense(intel)
+                    })
+                && host.fleet_number != fleet.fleet_number
+                && has_combat_ships(host)
+                && matches!(
+                    host.order,
+                    Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld
+                )
+        })
+        .min_by(|(_, a), (_, b)| {
+            let from = fleet.sector.to_array();
+            distance(a.sector.to_array(), from).total_cmp(&distance(b.sector.to_array(), from))
+        })
+        .map(|(idx, _)| idx + 1)
 }
 
 /// Loaded armies enough to invade a world with its known (or assumed)

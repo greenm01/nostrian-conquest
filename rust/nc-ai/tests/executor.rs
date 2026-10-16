@@ -96,6 +96,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
         supply: false,
         defend: false,
         mixed_hulls: false,
+        reinforce: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
