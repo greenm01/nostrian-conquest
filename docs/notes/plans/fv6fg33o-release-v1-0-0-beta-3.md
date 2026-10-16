@@ -173,7 +173,11 @@ assets passed GPG and checksum verification.
 
 ## Planetary combat refresh, 2026-10-16
 
-The four archives were rebuilt again from `08f44280` (t202: two-step
+The four archives were rebuilt again from `08f44280`, and once more from
+`6c381989`, which fixes a crash in t202's joint-bombardment scan (an empire
+with more starbases than fleet records). The `6c381989` hashes are linux
+`bbfc8b09075e2567...`, windows-x64 `7ee40f4a9c03eaef...`, windows-x86
+`32b379ef6f7a7271...`, windows7-x86 `b2beb3aaa80da149...`. The `08f44280` build (t202: two-step
 batteries, full-strength battery fire, classic capture damage) with the
 rebuilt player manual and quick start; each passed a fresh game and two
 maintenance passes, and the Windows archives passed Defender scans. The

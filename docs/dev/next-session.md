@@ -176,7 +176,7 @@ On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
 inside the `#nostrian:matrix.org` space, and its display name became
 `ncbot`.
 
-Signed release `08f44280` replaced it the same day, adding t202's
+Signed release `6c381989` (a fix for a joint-bombardment crash) followed `08f44280`, which had replaced it the same day, adding t202's
 planetary combat (two-step batteries, full-strength battery fire, classic
 capture damage); Beta 1 stayed recruiting at year 3000, a manual backup was
 taken first, and `1c1de2a7` is kept for rollback (`4456d589` removed). Before
