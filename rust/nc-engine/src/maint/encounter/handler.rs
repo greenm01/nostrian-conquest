@@ -143,15 +143,17 @@ impl Year<'_> {
             (0..self.units.len())
                 .filter(|&other| {
                     let u = &self.units[other];
-                    let fleet = &game_data.fleets[u.index];
+                    // A base unit's index is a starbase record, not a fleet.
                     other != unit
                         && u.active
                         && u.kind == UnitKind::Fleet
                         && u.owner == owner
-                        && fleet.order == Order::BombardWorld
-                        && fleet.target == target
-                        && fleet.sector == target
                         && !self.bombarded.contains(&u.index)
+                        && game_data.fleets.get(u.index).is_some_and(|fleet| {
+                            fleet.order == Order::BombardWorld
+                                && fleet.target == target
+                                && fleet.sector == target
+                        })
                 })
                 .collect()
         } else {

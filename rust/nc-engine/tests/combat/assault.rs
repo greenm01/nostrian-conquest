@@ -803,3 +803,26 @@ fn an_empires_bombarding_fleets_strike_together_after_one_gate_battle() {
         assert!(year.bases.iter().all(|base| base.base_id.0 == 0));
     }
 }
+
+#[test]
+fn a_bombardment_with_more_starbases_than_fleets_finds_its_companions() {
+    // The joint-bombardment scan walks every unit; a starbase unit's index
+    // is a base record, which can lie past the last fleet record (t202).
+    let mut game_data = assault_on_system(Order::BombardWorld, four_battleships(), 0, 2);
+    let home = game_data
+        .planets
+        .iter()
+        .find(|planet| planet.owner.0 == 1)
+        .expect("empire 1 has a world")
+        .sector
+        .to_array();
+    while game_data.bases.len() <= game_data.fleets.len() {
+        place_starbase(&mut game_data, 1, home);
+        let id = game_data.bases.len() as u16;
+        let base = game_data.bases.last_mut().expect("just placed");
+        base.base_id.0 = id;
+        base.record.0 = id;
+    }
+    let events = run_neutral(&mut game_data, 0);
+    assert_eq!(events.bombard_events.len(), 1);
+}
