@@ -27,6 +27,7 @@ doctrine {
     allocate #false
     supply #true
     defend #true
+    mixed-hulls #false
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

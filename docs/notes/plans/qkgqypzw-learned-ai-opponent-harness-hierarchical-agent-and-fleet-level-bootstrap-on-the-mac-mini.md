@@ -1357,6 +1357,27 @@ keep the cruiser fleet.
 set, staging in deep space and building every hull, and the changed
 executor beats or matches its predecessor.
 
+**Mixed hulls, first trial (2026-10-16): rejected as it stands.**
+`Doctrine::mixed_hulls` builds each hull toward its weight's share of the
+fleet by cost. Paired against the tuned executor, 512 60-year games each
+(`executor_matches --with mixed_hulls --paired --first-map 200000`):
+
+| Personality | With | Without | Difference |
+| --- | ---: | ---: | ---: |
+| land-grab | 0.159 | 0.234 | -0.075 ± 0.023 |
+| rusher | 0.170 | 0.294 | -0.124 ± 0.025 |
+| turtle | 0.178 | 0.221 | -0.043 ± 0.023 |
+
+Per point, the hulls fire alike (AS 2 a point) and battleships are a
+little tougher (DS 2.2 a point, cruisers 2.0, destroyers 1.6), so value
+alone doesn't explain the loss. A fleet moves at its slowest ship's
+speed: one battleship (speed 4) slows a cruiser force (speed 5) by a fifth,
+and destroyers are the weakest in a slugging match. Mixing the hulls in
+one force is the mistake; they need roles. Battleships form a heavy group
+that stages by Rendezvous so the slow ships arrive together (step 2),
+destroyers raid, screen and picket at speed 6, cruisers hold the line. The
+switch stays off until it is retried with roles.
+
 ### t190
 
 Give the network the whole order set.

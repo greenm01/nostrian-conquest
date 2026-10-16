@@ -122,6 +122,10 @@ pub struct Doctrine {
     /// most half its budget. Interior worlds build warships instead. Off,
     /// every colony aims for the same batteries, armies first.
     pub defend: bool,
+    /// Build every hull toward its weight's share of the empire's warships
+    /// by cost (t189), so a personality's hull weights set its fleet mix.
+    /// Off, the affordable hull with the largest weight, every time.
+    pub mixed_hulls: bool,
 }
 
 impl Doctrine {
@@ -135,6 +139,7 @@ impl Doctrine {
         allocate: false,
         supply: true,
         defend: true,
+        mixed_hulls: false,
     };
 }
 
@@ -206,6 +211,7 @@ impl Weights {
             allocate: false,
             supply: false,
             defend: false,
+            mixed_hulls: false,
         },
     };
 
@@ -387,7 +393,7 @@ pub fn execute_goals(
         .supply
         .then(|| home.map(|record| game_data.planets[record - 1].sector))
         .flatten();
-    let stock = Stock::count(game_data, memory.empire, home_sector);
+    let mut stock = Stock::count(game_data, memory.empire, home_sector);
     let build_weights = posture_weights(weights, goals.posture);
     let planets = masks
         .planets
@@ -399,7 +405,7 @@ pub fn execute_goals(
                 mask.record,
                 &mask.build,
                 is_home,
-                &stock,
+                &mut stock,
                 memory,
                 &build_weights,
                 goals.allocation,
@@ -445,7 +451,17 @@ struct Stock {
     etacs: u32,
     scouts: u32,
     transports: u32,
+    /// Warship build points, in [`HULLS`] order: in fleets, stardocks,
+    /// queued, and bought this turn.
+    hulls: [u32; 3],
 }
+
+/// The warship hulls, largest first.
+const HULLS: [ProductionItemKind; 3] = [
+    ProductionItemKind::Battleship,
+    ProductionItemKind::Cruiser,
+    ProductionItemKind::Destroyer,
+];
 
 impl Stock {
     /// With `home`, fleet transports count only at home or with troops
@@ -455,6 +471,7 @@ impl Stock {
             etacs: 0,
             scouts: 0,
             transports: 0,
+            hulls: [0; 3],
         };
         for fleet in game_data
             .fleets
@@ -463,6 +480,12 @@ impl Stock {
         {
             stock.etacs += u32::from(fleet.ships.etacs);
             stock.scouts += u32::from(fleet.ships.scouts);
+            let ships = &fleet.ships;
+            stock.add_hulls([
+                u32::from(ships.battleships),
+                u32::from(ships.cruisers),
+                u32::from(ships.destroyers),
+            ]);
             if home.is_none_or(|home| fleet.sector == home || fleet.ships.loaded_transports > 0) {
                 stock.transports += u32::from(fleet.ships.empty_transports)
                     + u32::from(fleet.ships.loaded_transports);
@@ -477,8 +500,26 @@ impl Stock {
             stock.scouts += planet.stardock.scouts + queued(planet, ProductionItemKind::Scout);
             stock.transports +=
                 planet.stardock.transports + queued(planet, ProductionItemKind::Transport);
+            let dock = &planet.stardock;
+            stock.add_hulls([dock.battleships, dock.cruisers, dock.destroyers]);
+            stock.add_hulls(HULLS.map(|kind| queued(planet, kind)));
         }
         stock
+    }
+
+    /// Add warships, counted in [`HULLS`] order.
+    fn add_hulls(&mut self, counts: [u32; 3]) {
+        for ((points, count), kind) in self.hulls.iter_mut().zip(counts).zip(HULLS) {
+            *points += count * kind.build_cost().unwrap_or(1);
+        }
+    }
+
+    fn bought(&mut self, kind: ProductionItemKind, units: u32) {
+        if let Some(idx) = HULLS.iter().position(|&hull| hull == kind) {
+            let mut counts = [0; 3];
+            counts[idx] = units;
+            self.add_hulls(counts);
+        }
     }
 }
 
@@ -521,7 +562,7 @@ fn choose_builds(
     record: usize,
     allowed: &[bool],
     is_home: bool,
-    stock: &Stock,
+    stock: &mut Stock,
     memory: &SeatMemory,
     weights: &Weights,
     allocation: usize,
@@ -539,6 +580,7 @@ fn choose_builds(
             game_data,
             record,
             allowed,
+            stock,
             memory,
             weights,
             allocation,
@@ -634,17 +676,19 @@ fn choose_builds(
                 order(ProductionItemKind::Destroyer, etacs_bought, &mut points);
             }
             Need::Warship => {
-                if let Some(kind) = preferred_hull(allowed, weights, points) {
+                if let Some(kind) = preferred_hull(allowed, weights, points, stock) {
                     guard_bought = order(kind, 1, &mut points);
+                    stock.bought(kind, guard_bought);
                 }
             }
         }
     }
     // A guard commissions alone, so the rest of the budget waits a year.
     if guard_bought == 0
-        && let Some(kind) = preferred_hull(allowed, weights, points)
+        && let Some(kind) = preferred_hull(allowed, weights, points, stock)
     {
-        order(kind, u32::MAX, &mut points);
+        let bought = order(kind, u32::MAX, &mut points);
+        stock.bought(kind, bought);
     }
     (builds, amounts)
 }
@@ -656,6 +700,7 @@ fn defended_builds(
     game_data: &CoreGameData,
     record: usize,
     allowed: &[bool],
+    stock: &mut Stock,
     memory: &SeatMemory,
     weights: &Weights,
     allocation: usize,
@@ -684,9 +729,10 @@ fn defended_builds(
     if allocation >= 1
         && threatened(game_data, memory, planet.sector.to_array())
         && !guarded(game_data, memory.empire, planet.sector.to_array())
-        && let Some(kind) = preferred_hull(allowed, weights, points)
+        && let Some(kind) = preferred_hull(allowed, weights, points, stock)
         && order(kind, 1, &mut points) > 0
     {
+        stock.bought(kind, 1);
         // A guard commissions alone, so the rest waits a year.
         return (builds, amounts);
     }
@@ -699,8 +745,9 @@ fn defended_builds(
         order(ProductionItemKind::Army, armies, &mut points);
     }
     order(ProductionItemKind::GroundBattery, batteries, &mut points);
-    if let Some(kind) = preferred_hull(allowed, weights, points) {
-        order(kind, u32::MAX, &mut points);
+    if let Some(kind) = preferred_hull(allowed, weights, points, stock) {
+        let bought = order(kind, u32::MAX, &mut points);
+        stock.bought(kind, bought);
     }
     (builds, amounts)
 }
@@ -727,21 +774,37 @@ fn exposure(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> f
         })
 }
 
-/// The hull with the largest weight that `points` can buy.
-fn preferred_hull(allowed: &[bool], weights: &Weights, points: u32) -> Option<ProductionItemKind> {
-    [
-        (ProductionItemKind::Battleship, weights.battleship),
-        (ProductionItemKind::Cruiser, weights.cruiser),
-        (ProductionItemKind::Destroyer, weights.destroyer),
-    ]
-    .into_iter()
-    .filter(|(kind, weight)| {
-        *weight > 0.0
-            && allowed[build_choice(*kind)]
-            && points >= kind.build_cost().unwrap_or(1).max(1)
-    })
-    .max_by(|a, b| a.1.total_cmp(&b.1))
-    .map(|(kind, _)| kind)
+/// The hull to build with `points`: the affordable one with the largest
+/// weight, or under `Doctrine::mixed_hulls` the affordable one furthest
+/// below its weight's share of the empire's warships by cost.
+fn preferred_hull(
+    allowed: &[bool],
+    weights: &Weights,
+    points: u32,
+    stock: &Stock,
+) -> Option<ProductionItemKind> {
+    let hull_weights = [weights.battleship, weights.cruiser, weights.destroyer];
+    let total_weight: f32 = hull_weights.iter().filter(|&&w| w > 0.0).sum();
+    let total_points: u32 = stock.hulls.iter().sum();
+    HULLS
+        .into_iter()
+        .zip(hull_weights)
+        .zip(stock.hulls)
+        .filter(|((kind, weight), _)| {
+            *weight > 0.0
+                && allowed[build_choice(*kind)]
+                && points >= kind.build_cost().unwrap_or(1).max(1)
+        })
+        .map(|((kind, weight), have)| {
+            let score = if weights.doctrine.mixed_hulls && total_points > 0 {
+                weight / total_weight - have as f32 / total_points as f32
+            } else {
+                weight
+            };
+            (kind, score)
+        })
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(kind, _)| kind)
 }
 
 /// One of `empire`'s warship fleets guards `sector`, or is on its way.

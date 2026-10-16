@@ -5,7 +5,7 @@
 //! cargo run --release -p nc-ai --example executor_matches -- \
 //!     [--weights baseline|tuned|classic|PERSONALITY] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic|PERSONALITY] \
-//!     [--with strike_weakest|strike_by_value|suppress_first|blockader] \
+//!     [--with strike_weakest|strike_by_value|suppress_first|blockader|mixed_hulls] \
 //!     [--games 64] [--years 60] [--first-map 0] [--paired]
 //! ```
 //!
@@ -60,6 +60,7 @@ fn main() {
             "flat_garrisons" => weights.doctrine.scaled_garrisons = false,
             "supply" => weights.doctrine.supply = true,
             "defend" => weights.doctrine.defend = true,
+            "mixed_hulls" => weights.doctrine.mixed_hulls = true,
             "allocate" => weights.doctrine.allocate = true,
             "blockader" => weights.doctrine.blockader = true,
             other => panic!("unknown doctrine switch {other}"),
