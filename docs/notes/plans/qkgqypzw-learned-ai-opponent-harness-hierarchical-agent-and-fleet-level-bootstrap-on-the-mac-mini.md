@@ -1311,6 +1311,50 @@ the AI's losses mined. A retrained agent passes the t165 readiness gate
 again, and wins more often against the human-style model than the agent it
 replaces.
 
+### t187
+
+Stretch goal: AI empires send in-character dispatches.
+
+A language model turns an AI empire's turn into a short message in its
+personality's voice, such as "Empire 2 masses near our border; we fortify
+Rigel". It states only what the turn and the empire's reports support. It
+makes no decisions, so the agent's strength is unchanged.
+
+- **Hosting.** Turns are yearly, so a small quantized model (3-8B, via
+  llama.cpp) on the host's CPU is fast enough, or a hosted API. No GPU is
+  needed. If the model is unavailable, the turn still goes in without the
+  dispatch.
+- **Fairness.** Its input is the empire's own view (the same rule as the
+  [LLM player guide](../../dev/llm-player-guide.md)), so a dispatch cannot
+  leak what the empire hasn't seen.
+
+**Exit:** in playtests, AI empires send dispatches that match their actual
+moves, and the owner finds them worth keeping.
+
+### t188
+
+Stretch goal: AI empires that can be negotiated with.
+
+Today an AI seat neither reads nor sends diplomatic messages. Meta's Cicero
+reached human-level play at Diplomacy by splitting the work: a strategy
+model chose moves and intents, and a language model talked to players,
+conditioned on those intents. Here:
+
+- a language model reads players' messages into structured signals (peace
+  proposed, threat against a world, alliance against an empire);
+- the agent takes those signals as inputs, and is retrained against bots
+  that send them and keep or break their word;
+- the language model writes replies consistent with what the agent will
+  actually do.
+
+The language model never chooses moves: the trained agent plays far better
+than one, and overriding it would invalidate its training. The retraining
+is the large part of this task.
+
+**Exit:** in playtests, a player can propose peace or an alliance to an AI
+empire, get a reply that matches its later conduct, and the agent's
+strength against the bots doesn't drop.
+
 ## Risks
 
 - **A leaky view.** If an observation shows anything the empire hasn't
