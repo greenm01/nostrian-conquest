@@ -68,9 +68,37 @@ mail and preferences), applied onto the latest snapshot inside the same
 session action that touches another player's data before choosing; any
 that does keeps the refusal. Maintenance's stale-year refusal is unchanged.
 
+Records are stored by array position, and new fleets take the lowest free
+global fleet ID, so copying one player's rows over the latest snapshot
+would make two concurrent commissions collide. The design (owner,
+2026-10-17: best practice, phase 1 then phase 2 straight after):
+
+1. **Phase 1, transactional changes.** WAL journal and a busy timeout on
+   every connection. `CampaignStore::change` opens one `BEGIN IMMEDIATE`
+   transaction, loads the latest state inside it, applies the player's
+   change through the existing `nc-data` mutators, writes and commits;
+   the session then takes the committed state. Every session save in
+   `nc-game`, every local-store save in `nc-helm` (which saves today with
+   no snapshot check, last writer wins) and `submit-turn` (the same) go
+   through it. Mutators that rely on the UI for ownership (build queue,
+   scorch, fleet orders, homeworld rename) check it themselves. First-time
+   join chooses its seat inside the transaction.
+2. **Phase 2, live tables and row-level writes.** The current year lives in
+   tables keyed by IDs the database allocates; history is the snapshot
+   maintenance writes when it closes a year. A change writes only the
+   rows it altered, found by comparing the records before and after the
+   mutator inside the transaction. The engine's record links (base
+   records, fleet chain IDs) become stable IDs, with classic positions
+   derived for export; maintenance stays one transaction with its
+   expected-year guard.
+
 **Exit:** two sessions on one campaign interleave orders, and every order
 of both is saved with no refusal (store and `nc-game` regression tests); a
-session that loaded before maintenance is still refused.
+session that loaded before maintenance is still refused. A stress test of
+several processes giving random orders to one campaign loses no order and
+leaves fleet and base chains valid, and maintenance then runs. Phase 2: an
+action writes only the rows it changes, and the classic oracle tests stay
+green.
 
 ### t121
 
