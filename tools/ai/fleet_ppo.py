@@ -29,6 +29,13 @@ learner's running win share against it (0.25 even, 0.5 or more beaten).
 ``--free-heads join,unload`` (t191) lets fleet heads that imitation never
 saw used leave their start: they are left out of the KL penalty, and their
 entropy earns ``--free-entropy`` on top of ``--entropy-coef``.
+
+Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
+the random states, the next training map and the league's shares.
+``--resume``, with the run's other options unchanged, continues a run that
+stopped from the iteration after the last one saved. Games sampled on the
+GPU draw from its own generator, which is not saved, so a resumed run is
+not bitwise the run that would have gone on.
 """
 
 import argparse
@@ -92,11 +99,11 @@ class League:
         for entry in self.entries:
             entry["share"] = self.PRIOR
 
-    def add_self(self, label, model):
-        """Add a snapshot of the learner, dropping the oldest beyond
-        ``keep_self``."""
+    def add_self(self, label, model, path):
+        """Add the learner's snapshot saved at ``path``, dropping the oldest
+        beyond ``keep_self``."""
         self.entries.append({"label": label, "seat": self.frozen_seat, "model": model,
-                             "self": True, "share": self.PRIOR})
+                             "self": True, "share": self.PRIOR, "path": str(path)})
         own = [e for e in self.entries if e["self"]]
         for entry in own[:max(0, len(own) - self.keep_self)]:
             self.entries.remove(entry)
@@ -126,6 +133,20 @@ class League:
 
     def summary(self):
         return {e["label"]: round(float(e["share"]), 3) for e in self.entries}
+
+    def state(self):
+        return [{"label": e["label"], "share": float(e["share"]), "path": e.get("path")}
+                for e in self.entries]
+
+    def restore(self, saved, load):
+        """Return to a saved :meth:`state`: the learner's snapshots then in
+        the league, loaded by ``load``, and every running share."""
+        for entry in saved:
+            if entry["path"]:
+                self.add_self(entry["label"], load(entry["path"]), entry["path"])
+        shares = {e["label"]: e["share"] for e in saved}
+        for entry in self.entries:
+            entry["share"] = shares[entry["label"]]
 
 
 def choose_lineups(rng, games, learner, target=None, league=None):
@@ -406,6 +427,8 @@ def main():
                         help="frozen fleet-agent checkpoints in the league")
     parser.add_argument("--league-self", type=int, default=3,
                         help="the learner's latest snapshots kept in the league")
+    parser.add_argument("--resume", action="store_true",
+                        help="continue the run saved in --out")
     parser.add_argument("--limit-credit", type=float, default=1.0,
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
@@ -436,9 +459,19 @@ def main():
     env = nc_ai_env.Env(PLAYERS, args.years, args.threads, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
     learner = learner_name(families, args.style)
-    next_map = 3_000_000
+    next_map, first = 3_000_000, 1
+    if args.resume:
+        saved = torch.load(out / "resume.pt", map_location=dev, weights_only=False)
+        model.load_state_dict(saved["model"])
+        optimizer.load_state_dict(saved["optimizer"])
+        rng.bit_generator.state = saved["rng"]
+        torch.set_rng_state(saved["torch_rng"].cpu())
+        next_map, first = saved["next_map"], saved["iteration"] + 1
+        if league:
+            league.restore(saved["league"], lambda path: load_fleet_agent(path, dev))
+        print(f"resuming at iteration {first}", flush=True)
 
-    for it in range(1, args.iterations + 1):
+    for it in range(first, args.iterations + 1):
         started = time.perf_counter()
         kl_coef = max(args.kl_floor, args.kl * max(0.0, 1 - (it - 1) / args.kl_iterations))
         drawn = choose_lineups(rng, args.games, learner,
@@ -476,7 +509,7 @@ def main():
             snapshot = out / f"snapshot-{it:04d}.pt"
             save(model, snapshot, iteration=it, kind="fleet", families=families)
             if league:
-                league.add_self(f"self-{it}", load_fleet_agent(snapshot, dev))
+                league.add_self(f"self-{it}", load_fleet_agent(snapshot, dev), snapshot)
             model.eval()
             # Each evaluation plays a fresh block of maps, well away from
             # 100000 and up, where final confirmations are played (t193).
@@ -491,6 +524,11 @@ def main():
         log.flush()
         print(" ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}"
                        for k, v in row.items()), flush=True)
+        resume = dict(iteration=it, model=model.state_dict(), optimizer=optimizer.state_dict(),
+                      rng=rng.bit_generator.state, torch_rng=torch.get_rng_state(),
+                      next_map=next_map, league=league.state() if league else None)
+        torch.save(resume, out / "resume.tmp")
+        (out / "resume.tmp").replace(out / "resume.pt")
 
 
 if __name__ == "__main__":
