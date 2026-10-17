@@ -1855,6 +1855,12 @@ crunch when Codex has no quiet hold.
 **Exit:** the retrained agent beats the deployed one on 1,024 maps, and
 its behaviour report shows the wider order set and the mixed fleet.
 
+**Preparation (2026-10-17).** `fleet_ppo.py --free-heads join,unload
+--free-entropy W` leaves the t190 heads out of the KL penalty and gives
+their entropy an extra weight, so PPO can explore orders that imitation
+labels only as "none". The retrain waits for t184's league run, which
+decides whether it trains on the league or the fixed mix.
+
 ### t192
 
 Name the weakness the exploiter found.

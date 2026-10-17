@@ -25,6 +25,10 @@ snapshots, each added as it is saved. An opponent is drawn in proportion to
 how far the learner is from beating it (prioritized fictitious self-play,
 as AlphaStar did): weight ``1 - min(1, 2s) + 0.1``, where ``s`` is the
 learner's running win share against it (0.25 even, 0.5 or more beaten).
+
+``--free-heads join,unload`` (t191) lets fleet heads that imitation never
+saw used leave their start: they are left out of the KL penalty, and their
+entropy earns ``--free-entropy`` on top of ``--entropy-coef``.
 """
 
 import argparse
@@ -294,14 +298,16 @@ def categorical_kl(p, q):
     return (p.probs * diff).sum(-1)
 
 
-def kl_to(new, old, handed):
+def kl_to(new, old, handed, free=()):
     """KL(new || old) per seat: the goal heads, plus the fleet heads of the
-    handed-over rows."""
+    handed-over rows, except the ``free`` ones."""
     total = 0
     for name in HEADS:
         kl = categorical_kl(new[0][name], old[0][name])
         total = total + (kl.sum(-1) if kl.ndim > 1 else kl)
     for name in FLEET_HEADS:
+        if name in free:
+            continue
         total = total + (categorical_kl(new[1][name], old[1][name]) * handed).sum(-1)
     return total
 
@@ -340,10 +346,12 @@ def update(model, ref, optimizer, steps, advs, kl_coef, args, dev):
             policy_loss = -torch.min(ratio * a, ratio.clamp(1 - args.clip, 1 + args.clip) * a).mean()
             value_loss = (value - ret[idx].to(dev)).pow(2).mean()
             kl_ref = kl_to((goal_dists, fleet_dists), (ref_goal_dists, ref_fleet_dists),
-                           mb_handed).mean()
+                           mb_handed, args.free_heads).mean()
             ent = (entropy * mb_handed).sum(-1).mean() + policy.joint_entropy(goal_dists).mean()
+            free_ent = sum(((fleet_dists[name].entropy() * mb_handed).sum(-1).mean()
+                            for name in args.free_heads), torch.zeros((), device=dev))
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
-                    - args.entropy_coef * ent)
+                    - args.entropy_coef * ent - args.free_entropy * free_ent)
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
@@ -384,6 +392,10 @@ def main():
     parser.add_argument("--exploit", help="train a main exploiter against this frozen "
                                           "fleet agent: every game is the learner against "
                                           "three copies of it")
+    parser.add_argument("--free-heads", type=lambda text: [h for h in text.split(",") if h],
+                        default=[], help="fleet heads left out of the KL penalty (t191)")
+    parser.add_argument("--free-entropy", type=float, default=0.0,
+                        help="extra entropy weight for the free heads")
     parser.add_argument("--league", action="store_true",
                         help="draw each game's opponent from a league (t184)")
     parser.add_argument("--league-styles",
@@ -398,6 +410,8 @@ def main():
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
     args = parser.parse_args()
+    if unknown := set(args.free_heads) - set(FLEET_HEADS):
+        parser.error(f"unknown fleet heads {sorted(unknown)}")
     if args.threads:
         torch.set_num_threads(args.threads)
 
