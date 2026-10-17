@@ -1621,6 +1621,15 @@ tried, -0.033 +/- 0.023 at 2x and -0.007 +/- 0.022 even when limited to
 worlds with no known batteries (100 years, 512 paired maps), and is
 rejected for now. A retune under t202 is running.
 
+The owner's plan, bombard until the batteries are gone and then blitz,
+beats bombard-then-invade in the engine (`assault_odds`, 400 trials): the
+same capture rate and ship losses, a few more armies lost, and two to four
+times the industry kept (for example 10 BB + 40 armies against 8 batteries:
+76% and 90% of production kept, against 77% and 45%). A large fleet still
+burns some industry in the breakthrough rounds of the year the batteries
+fall. It is the executor's next trial: once the batteries are known gone,
+blitz instead of invading.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
