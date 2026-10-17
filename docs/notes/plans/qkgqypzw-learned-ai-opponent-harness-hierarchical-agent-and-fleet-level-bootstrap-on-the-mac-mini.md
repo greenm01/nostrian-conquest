@@ -1641,6 +1641,21 @@ then blitz on top of them is neutral (+0.018 +/- 0.011 at 60, -0.010 +/-
 0.014 at 100) and stays off. Next: retune the other styles, then retrain
 the agent (t191).
 
+**Retrain under t202 promoted (owner, 2026-10-17).** PPO from
+`fleet-final` on the fixed mix, 100-year games with `--limit-credit 0.5`,
+200 iterations (`fleet-t202/ppo`). Snapshot 200 against `fleet-final`
+(behaviour report, 1,024 maps from 100000, paired): win share 0.355 to
+0.547 at 60 years (+0.192 +/- 0.019) and 0.498 to 0.739 at 100 (+0.241 +/-
+0.019). Exploit check (bean-void, 80 iterations of `--exploit` against
+snapshot 200, scored greedy on 1,024 maps from 100000): the exploiter wins
+0.192, 0.182 and 0.200 at iterations 40, 60 and 80, against 0.235 +/- 0.013
+for snapshot 200 in its own seat, so it found no hole. Snapshot 200 is now
+`fleet-final` (ONNX export: 0 mismatches on 64 recorded seats); the
+previous agent is kept as `fleet-final-pre-t202`. The t184 league run
+starts from that previous agent, through its own copy at
+`fleet-league/ai/fleet-final.pt`, which a `--resume` must name in place of
+`fleet-final.pt`.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
