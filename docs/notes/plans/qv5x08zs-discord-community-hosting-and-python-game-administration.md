@@ -61,8 +61,8 @@ redos, although each changes only their own empire. Classic EC ran one
 player at a time; a hosted game must not (owner, 2026-10-17). A playtester
 reported the refusal on Discord and fell back to one player at a time.
 
-Approach to confirm in design: a session save writes only what its player
-may change (their empire, worlds, fleets, stardocks, diplomacy, outgoing
+Approach (owner, 2026-10-17): save only the player's own records. A session
+save writes only what its player may change (their empire, worlds, fleets, stardocks, diplomacy, outgoing
 mail and preferences), applied onto the latest snapshot inside the same
 `BEGIN IMMEDIATE` transaction, instead of the whole state. List every
 session action that touches another player's data before choosing; any
