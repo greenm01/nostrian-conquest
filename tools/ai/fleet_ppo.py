@@ -498,8 +498,15 @@ def main():
         (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
                                       advantages(steps, args.gamma, args.lam), kl_coef, args, dev)
         wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
+        handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
+        # How often the learner's handed-over fleets sampled a join or an
+        # unload (t191).
+        rate = lambda name: sum(float(((s["fleets"][name][:len(s["handed"]),
+                                                          :s["handed"].shape[1]] > 0)
+                                       * s["handed"]).sum()) for s in steps) / handed_rows_n
         row = dict(iteration=it, samples=n, win=float(wins), kl_coef=kl_coef, policy_loss=pl,
-                   value_loss=vl, kl_ref=kl, entropy=ent, play_s=played, env_s=env_s,
+                   value_loss=vl, kl_ref=kl, entropy=ent, join=rate("join"),
+                   unload=rate("unload"), play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)
         if league:
             league.update(drawn[2], game_reward)
