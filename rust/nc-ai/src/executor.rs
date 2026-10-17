@@ -151,9 +151,11 @@ pub struct Doctrine {
     /// costs a slow force a long round trip each time.
     pub forward_muster: bool,
     /// After the land grab, keep [`PICKET_POSTS`] watchers on the
-    /// approaches: while fewer stand watch, the colony nearest the open
-    /// approach builds one destroyer, alone, to stand picket (t203). Off,
-    /// only the starting destroyers and scouts the weights buy stand watch.
+    /// approaches: while fewer stand watch, the first colony whose budget
+    /// left after its garrison buys one or two destroyers builds them in
+    /// place of its warships, so they commission alone as a picket, one a
+    /// year (t203). Off, only the starting destroyers and scouts the weights
+    /// buy stand watch.
     pub pickets: bool,
     /// Threats from what the seat has seen (t203): an empire that fought
     /// the seat or attacked its worlds in [`HOSTILE_YEARS`] is hostile
@@ -163,9 +165,9 @@ pub struct Doctrine {
     /// [`TRACK_REACH`], as well as every world within [`THREAT_RANGE`].
     /// Off, only declared enemies' forces within [`THREAT_RANGE`] threaten.
     pub track: bool,
-    /// Warships waiting at the muster world sail to guard a threatened
-    /// world within [`TRACK_REACH`], if they outgun the threat, and keep
-    /// station while it lasts (t203). Off, only a colony's new guard takes
+    /// Warships at the muster world with no strike to make sail to guard a
+    /// threatened world within [`TRACK_REACH`], if they outgun the threat,
+    /// and keep station while it lasts (t203). Off, only a colony's new guard takes
     /// its post.
     pub intercept: bool,
 }
@@ -378,8 +380,9 @@ const GUARD_STRENGTH: f32 = 9.0;
 const HOSTILE_YEARS: u16 = 5;
 /// The farthest a tracked force may be from the world it heads for.
 const TRACK_REACH: f32 = 12.0;
-/// Watchers kept on the approaches under `Doctrine::pickets`.
-const PICKET_POSTS: usize = 3;
+/// Watchers kept on the approaches under `Doctrine::pickets`: more lost
+/// paired tests (t203).
+const PICKET_POSTS: usize = 1;
 
 /// The executor's turn for `memory`'s empire, within `masks`. `start_year`
 /// is the game's first year.
@@ -493,30 +496,23 @@ pub fn execute_goals(
         .flatten();
     let mut stock = Stock::count(game_data, memory.empire, home_sector);
     let build_weights = posture_weights(weights, goals.posture);
-    let picket = weights
-        .doctrine
-        .pickets
-        .then(|| picket_world(game_data, memory, masks, home))
-        .flatten();
+    let mut picket = weights.doctrine.pickets && pickets_wanted(game_data, memory);
     let planets = masks
         .planets
         .iter()
         .map(|mask| {
             let is_home = Some(mask.record) == home;
-            let (build, amount) = if Some(mask.record) == picket {
-                picket_build()
-            } else {
-                choose_builds(
-                    game_data,
-                    mask.record,
-                    &mask.build,
-                    is_home,
-                    &mut stock,
-                    memory,
-                    &build_weights,
-                    goals.allocation,
-                )
-            };
+            let (build, amount) = choose_builds(
+                game_data,
+                mask.record,
+                &mask.build,
+                is_home,
+                &mut stock,
+                memory,
+                &build_weights,
+                goals.allocation,
+                &mut picket,
+            );
             PlanetChoice {
                 record: mask.record,
                 build,
@@ -533,18 +529,12 @@ pub fn execute_goals(
     }
 }
 
-/// The colony to build a picket this year (`Doctrine::pickets`): after the
-/// land grab, while fewer than [`PICKET_POSTS`] watchers stand or wait in a
-/// stardock and an approach is open, the colony nearest that approach whose
-/// smallest destroyer build is a picket's one or two.
-fn picket_world(
-    game_data: &CoreGameData,
-    memory: &SeatMemory,
-    masks: &SeatMasks,
-    home: Option<usize>,
-) -> Option<usize> {
+/// A picket is wanted this year (`Doctrine::pickets`): after the land
+/// grab, while fewer than [`PICKET_POSTS`] watchers stand or wait in a
+/// stardock and an approach is open.
+fn pickets_wanted(game_data: &CoreGameData, memory: &SeatMemory) -> bool {
     if land_grab(memory) {
-        return None;
+        return false;
     }
     let empire = memory.empire;
     let own_fleets = || {
@@ -566,48 +556,21 @@ fn picket_world(
         .filter(|fleet| fleet_family(fleet) == Family::Scout)
         .count()
         + docked;
-    if watchers >= PICKET_POSTS {
-        return None;
-    }
     let watched: Vec<[u8; 2]> = own_fleets()
         .filter(|fleet| matches!(fleet.order, Order::ScoutSector | Order::PatrolSector))
         .map(|fleet| fleet.target.to_array())
         .collect();
-    let (post, _) = approach(game_data, memory, &watched)?;
-    let destroyer = build_choice(ProductionItemKind::Destroyer);
-    let cost = ProductionItemKind::Destroyer.build_cost().unwrap_or(1);
-    masks
-        .planets
-        .iter()
-        .filter(|mask| {
-            mask.build[destroyer]
-                && Some(mask.record) != home
-                && (1..=2).contains(&picket_count(game_data, mask.record, cost))
-        })
-        .min_by(|a, b| {
-            let gap =
-                |record: usize| distance(game_data.planets[record - 1].sector.to_array(), post);
-            gap(a.record).total_cmp(&gap(b.record))
-        })
-        .map(|mask| mask.record)
+    watchers < PICKET_POSTS && approach(game_data, memory, &watched).is_some()
 }
 
-/// The destroyers the smallest build amount buys at world `record`.
-fn picket_count(game_data: &CoreGameData, record: usize, cost: u32) -> u32 {
-    let points = game_data.planet_build_points_left(record).unwrap_or(0);
-    if points < cost {
-        0
-    } else {
-        build_units(points, cost, 0)
-    }
-}
-
-/// The smallest destroyer build and nothing else, so it commissions alone
-/// as a picket.
-fn picket_build() -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
-    let mut builds = [0; BUILD_SLOTS];
-    builds[0] = build_choice(ProductionItemKind::Destroyer);
-    (builds, [0; BUILD_SLOTS])
+/// A colony's leftover budget buys a picket in place of the preferred
+/// hull, if it buys one or two destroyers, so they commission alone.
+fn picket_fits(points: u32) -> bool {
+    let cost = ProductionItemKind::Destroyer
+        .build_cost()
+        .unwrap_or(1)
+        .max(1);
+    points >= cost && build_units(points, cost, 0) <= 2
 }
 
 fn home_world(game_data: &CoreGameData, empire: u8) -> Option<usize> {
@@ -750,6 +713,7 @@ fn choose_builds(
     memory: &SeatMemory,
     weights: &Weights,
     allocation: usize,
+    picket: &mut bool,
 ) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
     if !weights.doctrine.land_grab {
         return classic_builds(game_data, record, allowed, is_home, stock, memory, weights);
@@ -780,6 +744,7 @@ fn choose_builds(
             allocation,
             short(planet.armies.into(), armies),
             short(planet.ground_batteries.into(), weights.batteries * exposure),
+            picket,
         );
     }
     let garrison = [
@@ -882,8 +847,16 @@ fn choose_builds(
             }
         }
     }
-    // A guard commissions alone, so the rest of the budget waits a year.
+    // A guard commissions alone, so the rest of the budget waits a year;
+    // so does a picket.
     if guard_bought == 0
+        && !is_home
+        && *picket
+        && picket_fits(points)
+        && order(ProductionItemKind::Destroyer, 1, &mut points) > 0
+    {
+        *picket = false;
+    } else if guard_bought == 0
         && let Some(kind) = preferred_hull(allowed, weights, points, stock)
     {
         let bought = order(kind, u32::MAX, &mut points);
@@ -905,6 +878,7 @@ fn defended_builds(
     allocation: usize,
     armies: u32,
     batteries: u32,
+    picket: &mut bool,
 ) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
     let planet = &game_data.planets[record - 1];
     let mut points = game_data.planet_build_points_left(record).unwrap_or(0);
@@ -949,7 +923,9 @@ fn defended_builds(
         order(ProductionItemKind::Army, armies, &mut points);
     }
     order(ProductionItemKind::GroundBattery, batteries, &mut points);
-    if let Some(kind) = preferred_hull(allowed, weights, points, stock) {
+    if *picket && picket_fits(points) && order(ProductionItemKind::Destroyer, 1, &mut points) > 0 {
+        *picket = false;
+    } else if let Some(kind) = preferred_hull(allowed, weights, points, stock) {
         let bought = order(kind, u32::MAX, &mut points);
         stock.bought(kind, bought);
     }
@@ -1475,26 +1451,6 @@ fn plan_fleets(
             {
                 return keep;
             }
-            // A waiting force sails to meet a threat it can beat there first.
-            if weights.doctrine.intercept
-                && at_home
-                && !home_threatened
-                && has_combat_ships(fleet)
-                && matches!(fleet.order, Order::HoldPosition | Order::RendezvousSector)
-                && let Some((idx, sector)) = interception(
-                    game_data,
-                    memory,
-                    &weights.doctrine,
-                    fleet,
-                    home_idx,
-                    &posted,
-                )
-                && let Some(choice) = order(Order::GuardStarbase, idx)
-                    .or_else(|| order(Order::GuardBlockadeWorld, idx))
-            {
-                posted.push(sector);
-                return choice;
-            }
             let mut post = |idx: usize, sector: [u8; 2]| {
                 if posted.contains(&sector) || guarded(game_data, empire, sector) {
                     return None;
@@ -1608,6 +1564,18 @@ fn plan_fleets(
                     ..choice
                 };
             }
+            // A force with nothing to strike sails to meet a threat it can
+            // beat.
+            if weights.doctrine.intercept
+                && !home_threatened
+                && has_combat_ships(fleet)
+                && matches!(fleet.order, Order::HoldPosition | Order::RendezvousSector)
+                && let Some((idx, sector)) =
+                    interception(game_data, memory, &weights.doctrine, fleet, home_idx)
+                && let Some(choice) = post(idx, sector)
+            {
+                return choice;
+            }
             // Once the strike force is out, new warships guard home.
             if allocation >= 1
                 && sailed
@@ -1651,7 +1619,6 @@ fn interception(
     doctrine: &Doctrine,
     fleet: &Fleet,
     home_idx: usize,
-    posted: &[[u8; 2]],
 ) -> Option<(usize, [u8; 2])> {
     let from = fleet.sector.to_array();
     game_data
@@ -1661,7 +1628,7 @@ fn interception(
         .filter(|(idx, planet)| planet.owner.0 == memory.empire && *idx != home_idx)
         .filter_map(|(idx, planet)| {
             let sector = planet.sector.to_array();
-            if posted.contains(&sector) || guarded(game_data, memory.empire, sector) {
+            if guarded(game_data, memory.empire, sector) {
                 return None;
             }
             let danger = threat(game_data, memory, doctrine, sector)?;

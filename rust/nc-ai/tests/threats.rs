@@ -57,10 +57,11 @@ fn play(map_seed: u64, years: u16, weights: Weights, mut check: impl FnMut(&Seat
     }
 }
 
-/// With `pickets`, colonies build lone destroyers after the land grab, and
-/// the executor still reads only its own seat.
+/// With `pickets`, colonies spend what is left after their garrison on
+/// destroyers for picket duty after the land grab, and the executor still
+/// reads only its own seat.
 #[test]
-fn pickets_are_built_alone_at_colonies() {
+fn colonies_build_pickets_from_what_is_left() {
     let weights = with(Doctrine {
         pickets: true,
         track: true,
@@ -89,10 +90,12 @@ fn pickets_are_built_alone_at_colonies() {
                 ),
                 action
             );
+            // Colonies build destroyers only as pickets, from what is left.
+            let home = usize::from(game_data.players[usize::from(empire) - 1].homeworld);
             pickets += action
                 .planets
                 .iter()
-                .filter(|planet| planet.build == [destroyer, 0] && planet.amount == [0, 0])
+                .filter(|planet| planet.record != home && planet.build.contains(&destroyer))
                 .count();
         });
     }
