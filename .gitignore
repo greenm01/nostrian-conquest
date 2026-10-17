@@ -6,6 +6,12 @@
 *.bin
 MEMDUMP.BIN
 
+# Trained AI agents stay out of the public repo; only the Rust tests'
+# untrained fixtures are kept.
+*.pt
+*.onnx
+!rust/nc-ai-onnx/tests/fixtures/*.onnx
+
 # Local temp binaries and reverse-engineering scratch output.
 $tmpfil$.exe
 bombard/
