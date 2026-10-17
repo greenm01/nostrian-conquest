@@ -1919,6 +1919,24 @@ routing, which uses stored intel, and the simulator, which uses
 **Exit:** a test crashes between the two saves and the seat's memory
 survives or the fallback is logged; the two paths agree after an attack.
 
+**Progress (2026-10-17).** The fallback is logged: `CampaignAi::stale_seats`
+names each seat whose saved memory is from another year than the campaign,
+and `nc-sysop maint` warns "AI seat N's saved memory is from year Y, not
+Z". `tests/ai_seats.rs` leaves memory a year behind, as a stop between the
+two saves would, and sees the warning, then a quiet run after it. Saving
+both in one transaction would mean threading the memory through the
+snapshot save, or keying the table by year, a schema change on the live
+Beta 1 store; the warning was the smaller change.
+
+Intel after attacks: the two paths disagree after a bombardment. An
+invasion or blitz grants the attacker planet intel (`AssaultSuccess` or
+`AssaultFailure`), which the store keeps and hazard routing reads. A
+bombardment grants none, so the attacker's stored intel and its hazard
+routing keep the batteries from before it, while `SeatMemory` takes the
+batteries and armies left from the bombardment report (t178). An AI seat
+whose memory falls back loses that. Making bombardments grant intel would
+change every player's intel display, so it waits for the owner.
+
 ### t187
 
 Stretch goal: AI empires send in-character dispatches.

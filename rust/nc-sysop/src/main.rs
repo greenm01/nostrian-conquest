@@ -440,6 +440,12 @@ fn run_maintenance_for_dir(
     let mut maintenance = CampaignMaintenance::load(&store)?;
     let start_year = maintenance.start_year();
     let mut ai = CampaignAi::load(&store, &maintenance, model_from_env().as_deref())?;
+    for (player, saved) in ai.iter().flat_map(CampaignAi::stale_seats) {
+        eprintln!(
+            "warning: AI seat {player}'s saved memory is from year {saved}, not {start_year}; \
+             it starts again from its stored intel"
+        );
+    }
 
     for turn in 1..=turns {
         if let Some(ai) = &ai {

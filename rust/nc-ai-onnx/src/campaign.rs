@@ -56,6 +56,7 @@ pub const AGENT_FAMILIES: Families = Families {
 pub struct CampaignAi {
     networks: BTreeMap<String, NetworkSeat>,
     seats: Vec<(AiSeat, SeatMemory)>,
+    stale: Vec<(usize, u16)>,
 }
 
 impl CampaignAi {
@@ -96,6 +97,7 @@ impl CampaignAi {
             networks.insert(seat.personality.clone(), network);
         }
         let year = maintenance.game_data.conquest.game_year;
+        let mut stale = Vec::new();
         let seats = settings
             .ai_seats
             .into_iter()
@@ -103,21 +105,38 @@ impl CampaignAi {
                 let player = seat.player_record_index_1_based;
                 let memory = match store.load_ai_seat_memory(player)? {
                     Some((saved, text)) if saved == year => serde_json::from_str(&text)?,
-                    _ => SeatMemory {
-                        empire: player as u8,
-                        planet_intel: store
-                            .latest_planet_intel_for_viewer(player as u8)?
-                            .into_iter()
-                            .map(|intel| (intel.planet_record_index_1_based, intel))
-                            .collect(),
-                        contacts: Vec::new(),
-                        attackers: Default::default(),
-                    },
+                    saved => {
+                        if let Some((saved, _)) = saved {
+                            stale.push((player, saved));
+                        }
+                        SeatMemory {
+                            empire: player as u8,
+                            planet_intel: store
+                                .latest_planet_intel_for_viewer(player as u8)?
+                                .into_iter()
+                                .map(|intel| (intel.planet_record_index_1_based, intel))
+                                .collect(),
+                            contacts: Vec::new(),
+                            attackers: Default::default(),
+                        }
+                    }
                 };
                 Ok((seat, memory))
             })
             .collect::<Result<_, Box<dyn Error>>>()?;
-        Ok(Some(Self { networks, seats }))
+        Ok(Some(Self {
+            networks,
+            seats,
+            stale,
+        }))
+    }
+
+    /// The seats whose saved memory was learned up to another year than the
+    /// campaign's, as when a run stopped between saving the campaign and
+    /// saving the memory (t194), with that year. They start again from their
+    /// stored planet intel, without remembered contacts.
+    pub fn stale_seats(&self) -> &[(usize, u16)] {
+        &self.stale
     }
 
     /// Before a year runs: every AI seat that may play commissions its

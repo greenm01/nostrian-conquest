@@ -84,6 +84,23 @@ fn ai_seats_play_in_maintenance_with_a_model_and_refuse_without_one() {
     );
     assert!(!player.autopilot, "the AI, not autopilot, plays the seat");
 
+    // A run that stopped after saving the campaign but before the memory
+    // leaves memory from an earlier year (t194): the next run says so.
+    store.save_ai_seat_memory(3, 3001, &memory).unwrap();
+    let resumed = run(&["maint", target, "1"], Some(&model));
+    assert!(resumed.status.success());
+    assert!(
+        String::from_utf8_lossy(&resumed.stderr)
+            .contains("AI seat 3's saved memory is from year 3001, not 3003"),
+        "{}",
+        String::from_utf8_lossy(&resumed.stderr)
+    );
+    let quiet = run(&["maint", target, "1"], Some(&model));
+    assert!(
+        !String::from_utf8_lossy(&quiet.stderr).contains("saved memory"),
+        "memory saved by the last run matches"
+    );
+
     let ai_seat = |player: &str, difficulty: &str, personality: &str| {
         run(
             &[
