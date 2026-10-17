@@ -1,7 +1,7 @@
 //! Engine-side assault odds (t202): the whole chain against a defended world,
 //! orbit to ground, through real maintenance. Three plans: Invade at once,
 //! Blitz at once, and Bombard until the batteries are gone and then Invade
-//! with the same fleet.
+//! with the same fleet, or then Blitz.
 //!
 //! Run in release:
 //! `cargo run --release -p nc-fuzz --example assault_odds -- --trials 400 --json /tmp/assault.json`
@@ -38,6 +38,7 @@ enum Plan {
     Invade,
     Blitz,
     BombardThenInvade,
+    BombardThenBlitz,
 }
 
 impl Plan {
@@ -46,6 +47,7 @@ impl Plan {
             Plan::Invade => "invade",
             Plan::Blitz => "blitz",
             Plan::BombardThenInvade => "bombard-then-invade",
+            Plan::BombardThenBlitz => "bombard-then-blitz",
         }
     }
 }
@@ -63,7 +65,12 @@ fn cases() -> Vec<Case> {
     let mut cases = Vec::new();
     for (batteries, defenders) in [(0, 10), (2, 10), (4, 10), (4, 20), (8, 20)] {
         for battleships in [2, 5, 10] {
-            for plan in [Plan::Invade, Plan::Blitz, Plan::BombardThenInvade] {
+            for plan in [
+                Plan::Invade,
+                Plan::Blitz,
+                Plan::BombardThenInvade,
+                Plan::BombardThenBlitz,
+            ] {
                 cases.push(Case {
                     batteries,
                     defenders,
@@ -114,7 +121,7 @@ fn first_order(plan: Plan) -> Order {
     match plan {
         Plan::Invade => Order::InvadeWorld,
         Plan::Blitz => Order::BlitzWorld,
-        Plan::BombardThenInvade => Order::BombardWorld,
+        Plan::BombardThenInvade | Plan::BombardThenBlitz => Order::BombardWorld,
     }
 }
 
@@ -188,11 +195,18 @@ fn trial(case: Case, seed: u64) -> Tally {
         ..Tally::default()
     };
     for year in 1..=MAX_YEARS {
-        if case.plan == Plan::BombardThenInvade && data.planets[target].ground_batteries == 0 {
+        let landing = match case.plan {
+            Plan::BombardThenInvade => Some(Order::InvadeWorld),
+            Plan::BombardThenBlitz => Some(Order::BlitzWorld),
+            _ => None,
+        };
+        if let Some(landing) = landing
+            && data.planets[target].ground_batteries == 0
+        {
             let sector = data.planets[target].sector;
             for fleet in data.fleets.iter_mut().filter(|f| f.owner.0 == 1) {
-                if fleet.ships.loaded_transports > 0 && fleet.order != Order::InvadeWorld {
-                    fleet.order = Order::InvadeWorld;
+                if fleet.ships.loaded_transports > 0 && fleet.order != landing {
+                    fleet.order = landing;
                     fleet.target = sector;
                 }
             }
@@ -212,7 +226,8 @@ fn trial(case: Case, seed: u64) -> Tally {
             break;
         }
         let (bb, _, armies) = attacker(&data);
-        if armies == 0 || (bb == 0 && case.plan == Plan::BombardThenInvade) {
+        let bombarding = matches!(case.plan, Plan::BombardThenInvade | Plan::BombardThenBlitz);
+        if armies == 0 || (bb == 0 && bombarding) {
             break;
         }
         // A Blitz makes one assault and holds; an Invade the batteries block
