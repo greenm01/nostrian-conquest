@@ -3,20 +3,20 @@
 // (t175's allocation rule).
 personality "turtle"
 weights {
-    tax 61.37
+    tax 63.33496
     home-armies 20.0
-    colony-armies 10.0
-    batteries 9.18
-    etacs 6.89
-    scouts 0.66
-    starbases 3.0
-    transports 14.75
-    battleship 0.56
-    cruiser 0.99
-    destroyer 0.07
-    attack-ratio 3.41
-    roe 8.4
-    war-year 29.92
+    colony-armies 9.561666
+    batteries 9.835596
+    etacs 5.6055384
+    scouts 0.0
+    starbases 2.7356834
+    transports 16.0
+    battleship 0.7157012
+    cruiser 0.9378893
+    destroyer 0.0
+    attack-ratio 3.8172789
+    roe 6.0378585
+    war-year 27.38407
 }
 doctrine {
     land-grab #true

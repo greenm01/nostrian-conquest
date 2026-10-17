@@ -3,20 +3,20 @@
 // fleet gathers before it strikes. Everything else is the default style.
 personality "armada"
 weights {
-    tax 65.0
-    home-armies 20.0
-    colony-armies 10.0
-    batteries 9.67
-    etacs 3.93
-    scouts 0.14
-    starbases 1.67
-    transports 16.0
-    battleship 0.95
-    cruiser 0.40
-    destroyer 0.0
-    attack-ratio 2.43
-    roe 6.26
-    war-year 20.7
+    tax 64.7396
+    home-armies 19.398222
+    colony-armies 8.905036
+    batteries 10.0
+    etacs 7.313471
+    scouts 0.21400934
+    starbases 0.16797093
+    transports 15.98223
+    battleship 0.87965643
+    cruiser 0.1293266
+    destroyer 0.07113293
+    attack-ratio 3.303628
+    roe 4.3846607
+    war-year 25.792002
 }
 doctrine {
     land-grab #true

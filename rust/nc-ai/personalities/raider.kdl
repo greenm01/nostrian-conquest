@@ -2,20 +2,20 @@
 // Colonies and the home world build destroyers; the fleet moves at speed 6.
 personality "raider"
 weights {
-    tax 65.0
-    home-armies 20.0
-    colony-armies 10.0
-    batteries 9.67
-    etacs 3.93
-    scouts 0.14
-    starbases 1.67
-    transports 16.0
-    battleship 0.0
-    cruiser 0.40
-    destroyer 0.95
-    attack-ratio 1.6
-    roe 6.26
-    war-year 14.0
+    tax 63.545086
+    home-armies 16.938251
+    colony-armies 9.6966095
+    batteries 10.0
+    etacs 8.0
+    scouts 1.3695203
+    starbases 1.0171384
+    transports 15.615639
+    battleship 0.056925546
+    cruiser 0.21824437
+    destroyer 0.9800827
+    attack-ratio 1.7594712
+    roe 4.715693
+    war-year 6.0
 }
 doctrine {
     land-grab #true
