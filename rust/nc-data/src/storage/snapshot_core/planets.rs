@@ -97,10 +97,7 @@ pub(super) fn write(
     Ok(())
 }
 
-pub(super) fn load(
-    conn: &mut Connection,
-    snapshot_id: i64,
-) -> Result<Vec<Planet>, CampaignStoreError> {
+pub(super) fn load(conn: &Connection, snapshot_id: i64) -> Result<Vec<Planet>, CampaignStoreError> {
     let mut stmt = conn
         .prepare("SELECT * FROM snapshot_planets WHERE snapshot_id = ?1 ORDER BY record_index")?;
     let mut records = stmt

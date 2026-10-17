@@ -56,7 +56,7 @@ pub(super) fn write_snapshot_core_rows(
 }
 
 pub(super) fn load_snapshot_game_data(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
 ) -> Result<CoreGameData, CampaignStoreError> {
     let mut fleets = fleets::load(conn, snapshot_id)?;

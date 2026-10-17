@@ -117,7 +117,7 @@ pub(super) fn write_player_lifecycle_rows(
     Ok(())
 }
 
-fn load_player_lifecycle_rows(
+pub(super) fn load_player_lifecycle_rows(
     conn: &Connection,
     snapshot_id: i64,
     player_count: u8,

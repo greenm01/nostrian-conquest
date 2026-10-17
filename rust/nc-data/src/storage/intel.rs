@@ -29,7 +29,7 @@ impl CampaignStore {
 }
 
 pub(super) fn load_planet_intel_by_viewer(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
     player_count: u8,
 ) -> Result<Vec<BTreeMap<usize, PlanetIntelSnapshot>>, CampaignStoreError> {
@@ -93,7 +93,7 @@ fn planet_intel_snapshot_from_row(
 }
 
 pub(super) fn load_planet_intel_rows_for_viewer(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
     viewer_empire_id: u8,
 ) -> Result<Vec<PlanetIntelSnapshot>, CampaignStoreError> {

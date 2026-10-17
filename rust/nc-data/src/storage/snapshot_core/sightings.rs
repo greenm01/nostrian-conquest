@@ -40,7 +40,7 @@ pub(super) fn write(
 }
 
 pub(super) fn load(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
 ) -> Result<SightingMemory, CampaignStoreError> {
     let mut stmt = conn.prepare(

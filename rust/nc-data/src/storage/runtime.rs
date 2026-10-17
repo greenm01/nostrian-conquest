@@ -246,7 +246,7 @@ impl CampaignStore {
         winner_state_override: Option<WinnerState>,
     ) -> Result<i64, CampaignStoreError> {
         let year = game_data.conquest.game_year;
-        let mut conn = self.connection()?;
+        let mut conn = self.write_connection()?;
         let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         refuse_if_superseded(&tx, loaded_year)?;
         if self.maintenance_receipt.is_none() && super::hosting::writes_blocked(&tx)? {
@@ -299,7 +299,7 @@ impl CampaignStore {
 /// Refuse a save when a snapshot newer than `loaded_year` exists: maintenance
 /// has written a later year since the caller loaded its state, and the store
 /// reads the highest year, so the write would never be seen.
-fn refuse_if_superseded(
+pub(super) fn refuse_if_superseded(
     tx: &rusqlite::Transaction<'_>,
     loaded_year: u16,
 ) -> Result<(), CampaignStoreError> {

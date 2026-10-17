@@ -3,7 +3,7 @@ use rusqlite::{OptionalExtension, params};
 use super::{CampaignStoreError, Connection, WinnerState};
 
 pub(super) fn latest_snapshot_id_and_year(
-    conn: &mut Connection,
+    conn: &Connection,
 ) -> Result<Option<(i64, u16)>, CampaignStoreError> {
     conn.query_row(
         "SELECT id, game_year FROM snapshots ORDER BY game_year DESC LIMIT 1",
@@ -14,7 +14,7 @@ pub(super) fn latest_snapshot_id_and_year(
     .map_err(CampaignStoreError::Sql)
 }
 
-pub(super) fn load_campaign_seed(conn: &mut Connection) -> Result<Option<u64>, CampaignStoreError> {
+pub(super) fn load_campaign_seed(conn: &Connection) -> Result<Option<u64>, CampaignStoreError> {
     conn.query_row(
         "SELECT int_value FROM campaign_metadata WHERE key = 'campaign_seed'",
         [],
@@ -26,7 +26,7 @@ pub(super) fn load_campaign_seed(conn: &mut Connection) -> Result<Option<u64>, C
 }
 
 pub(super) fn load_runtime_schema_version(
-    conn: &mut Connection,
+    conn: &Connection,
 ) -> Result<Option<i64>, CampaignStoreError> {
     conn.query_row(
         "SELECT int_value FROM campaign_metadata WHERE key = 'runtime_schema_version'",
@@ -50,7 +50,7 @@ pub(super) fn load_campaign_seed_tx(
     .map_err(CampaignStoreError::Sql)
 }
 
-pub(super) fn load_winner_state(conn: &mut Connection) -> Result<WinnerState, CampaignStoreError> {
+pub(super) fn load_winner_state(conn: &Connection) -> Result<WinnerState, CampaignStoreError> {
     let winner_empire = conn
         .query_row(
             "SELECT int_value FROM campaign_metadata WHERE key = 'winner_empire_raw'",
@@ -103,7 +103,7 @@ pub(super) fn load_winner_state_tx(
 }
 
 pub(super) fn persist_campaign_seed(
-    conn: &mut Connection,
+    conn: &Connection,
     seed: u64,
 ) -> Result<(), CampaignStoreError> {
     conn.execute(
@@ -116,7 +116,7 @@ pub(super) fn persist_campaign_seed(
 }
 
 pub(super) fn persist_runtime_schema_version(
-    conn: &mut Connection,
+    conn: &Connection,
     version: i64,
 ) -> Result<(), CampaignStoreError> {
     conn.execute(

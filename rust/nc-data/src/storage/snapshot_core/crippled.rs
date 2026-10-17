@@ -94,7 +94,7 @@ pub(super) fn write_bases(
 }
 
 pub(super) fn load_fleets(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
     fleets: &mut [Fleet],
 ) -> Result<(), CampaignStoreError> {
@@ -123,7 +123,7 @@ pub(super) fn load_fleets(
 }
 
 pub(super) fn load_bases(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
     bases: &mut [Starbase],
 ) -> Result<(), CampaignStoreError> {

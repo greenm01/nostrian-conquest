@@ -72,10 +72,7 @@ pub(super) fn write(
     Ok(())
 }
 
-pub(super) fn load(
-    conn: &mut Connection,
-    snapshot_id: i64,
-) -> Result<Conquest, CampaignStoreError> {
+pub(super) fn load(conn: &Connection, snapshot_id: i64) -> Result<Conquest, CampaignStoreError> {
     let mut conquest = conn.query_row(
         "SELECT game_year, player_count FROM snapshot_conquest WHERE snapshot_id = ?1",
         params![snapshot_id],

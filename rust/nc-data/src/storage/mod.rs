@@ -5,6 +5,7 @@ use rusqlite::{Connection, OptionalExtension};
 use crate::{CoreGameData, QueuedPlayerMail, ReportBlockRow};
 
 mod ai_seats;
+mod change;
 mod hex;
 mod hosting;
 mod intel;
@@ -21,6 +22,7 @@ mod settings;
 mod snapshot_core;
 
 pub use ai_seats::{AiDifficulty, AiSeat, DEFAULT_AI_PERSONALITY};
+pub use change::{CommittedChange, RuntimeChange};
 pub use player_activity::PlayerActivityState;
 pub use player_lifecycle::{PlayerLifecycleState, TerminalOutcome, WinnerState};
 pub use player_war_stats::PlayerWarStatsState;
@@ -510,6 +512,17 @@ impl CampaignStore {
 
     fn connection(&self) -> Result<Connection, CampaignStoreError> {
         Connection::open(&self.path).map_err(CampaignStoreError::Sql)
+    }
+
+    /// A connection for saving state. It puts the file in WAL mode (t204), so
+    /// sessions reading the campaign never block a player's change, nor it
+    /// them. The mode is stored in the file; reads leave it as it is.
+    fn write_connection(&self) -> Result<Connection, CampaignStoreError> {
+        let conn = self.connection()?;
+        conn.query_row("PRAGMA journal_mode = WAL", [], |row| {
+            row.get::<_, String>(0)
+        })?;
+        Ok(conn)
     }
 }
 

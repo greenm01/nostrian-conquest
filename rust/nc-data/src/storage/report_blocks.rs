@@ -61,14 +61,14 @@ pub(super) fn write_report_block_rows(
 }
 
 pub(super) fn load_report_block_rows(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
 ) -> Result<Vec<ReportBlockRow>, CampaignStoreError> {
     load_report_block_rows_filtered(conn, snapshot_id, false)
 }
 
 pub(super) fn load_report_block_rows_filtered(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
     include_deleted: bool,
 ) -> Result<Vec<ReportBlockRow>, CampaignStoreError> {

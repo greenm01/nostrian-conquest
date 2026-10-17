@@ -67,7 +67,7 @@ pub(super) fn write(
     Ok(())
 }
 
-pub(super) fn load(conn: &mut Connection, snapshot_id: i64) -> Result<Setup, CampaignStoreError> {
+pub(super) fn load(conn: &Connection, snapshot_id: i64) -> Result<Setup, CampaignStoreError> {
     let (version_tag, mut setup) = conn.query_row(
         "SELECT * FROM snapshot_setup WHERE snapshot_id = ?1",
         params![snapshot_id],

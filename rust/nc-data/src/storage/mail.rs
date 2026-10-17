@@ -46,7 +46,7 @@ pub(super) fn write_queued_mail_rows(
 }
 
 pub(super) fn load_queued_mail_rows(
-    conn: &mut Connection,
+    conn: &Connection,
     snapshot_id: i64,
 ) -> Result<Vec<QueuedPlayerMail>, CampaignStoreError> {
     let mut stmt = conn.prepare(
