@@ -2,13 +2,15 @@
 //! Python (t165). The fixture (`tools/ai/export_onnx.py --fixture`) holds a
 //! small seeded network and a game it played greedy in seat 1 against three
 //! executors, recorded as turn KDL. Replaying that game, the Rust seat must
-//! submit seat 1's recorded turn every year.
+//! submit seat 1's recorded turn every year. `tiny.onnx` was exported before
+//! the join and unload heads (t190), so it also shows an older graph still
+//! plays; `tiny-joins.onnx` has them, drawn at random, so its fleets join.
 
 use std::path::Path;
 
 use nc_ai::{Families, match_game};
 use nc_ai_onnx::NetworkSeat;
-use nc_data::{PlanetTurnAction, TurnSubmission};
+use nc_data::{FleetTurnAction, PlanetTurnAction, TurnSubmission};
 
 fn fixture(name: &str) -> std::path::PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -29,8 +31,22 @@ fn commissioning(turn: &TurnSubmission) -> bool {
 
 #[test]
 fn the_rust_seat_makes_the_recorded_turns() {
-    let record: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(fixture("tiny-game.json")).unwrap()).unwrap();
+    replay("tiny");
+}
+
+#[test]
+fn a_seat_with_join_heads_makes_the_recorded_turns() {
+    let joins = replay("tiny-joins");
+    assert!(joins > 0, "the fixture's fleets should join");
+}
+
+/// Replay fixture `name`'s game, checking seat 1's turns; the joins seat 1
+/// ordered.
+fn replay(name: &str) -> usize {
+    let record: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(fixture(&format!("{name}-game.json"))).unwrap(),
+    )
+    .unwrap();
     let field = |name: &str| record[name].as_u64().unwrap();
     let turns: Vec<TurnSubmission> = record["turns"]
         .as_array()
@@ -39,7 +55,7 @@ fn the_rust_seat_makes_the_recorded_turns() {
         .map(|turn| TurnSubmission::parse_kdl_str(turn.as_str().unwrap()).unwrap())
         .collect();
     let seat = NetworkSeat::load(
-        &fixture("tiny.onnx"),
+        &fixture(&format!("{name}.onnx")),
         Families {
             strike: true,
             ..Families::NONE
@@ -55,6 +71,7 @@ fn the_rust_seat_makes_the_recorded_turns() {
         years,
     );
     let mut checked = 0;
+    let mut joins = 0;
     let mut next = 0;
     for _ in 0..years {
         let year = game.play.built.game_data.conquest.game_year;
@@ -65,6 +82,12 @@ fn the_rust_seat_makes_the_recorded_turns() {
                     .expect("the network runs");
                 assert_eq!(&ours, turn, "year {year}: seat 1's turn differs");
                 checked += 1;
+                joins += turn
+                    .fleets
+                    .iter()
+                    .flat_map(|fleet| &fleet.actions)
+                    .filter(|action| matches!(action, FleetTurnAction::Join { .. }))
+                    .count();
             }
             game.submit_turn(turn).expect("a recorded turn applies");
             next += 1;
@@ -76,4 +99,5 @@ fn the_rust_seat_makes_the_recorded_turns() {
     }
     assert_eq!(next, turns.len(), "every recorded turn is replayed");
     assert!(checked >= 20, "seat 1 played most years: {checked}");
+    joins
 }

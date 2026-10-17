@@ -43,6 +43,8 @@ impl Actions {
             roe: &self.fleets.roe.data,
             load: &self.fleets.load.data,
             detach: &self.fleets.detach.data,
+            join: &self.fleets.join.data,
+            unload: &self.fleets.unload.data,
         }
     }
 }

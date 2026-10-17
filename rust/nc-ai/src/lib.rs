@@ -38,7 +38,8 @@ pub use batch::{
     GoalArrays, Seat, StepResult, Table, Tensor,
 };
 pub use executor::{
-    Doctrine, Families, Family, Weights, execute_goals, fleet_family, plan_goals, plan_turn,
+    Doctrine, Families, Family, Weights, execute_goals, fleet_family, network_joins, plan_goals,
+    plan_turn,
 };
 pub use game::SeatedGame;
 pub use goals::{ALLOCATIONS, GoalMasks, Goals, POSTURES, goal_masks, posture_weights};

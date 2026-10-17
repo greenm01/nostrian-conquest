@@ -22,6 +22,8 @@ pub struct Arrays {
     pub roe: Vec<i64>,
     pub load: Vec<i64>,
     pub detach: Vec<i64>,
+    pub join: Vec<i64>,
+    pub unload: Vec<i64>,
 }
 
 impl Arrays {
@@ -39,7 +41,9 @@ impl Arrays {
             speed: fleets.clone(),
             roe: fleets.clone(),
             load: fleets.clone(),
-            detach: fleets,
+            detach: fleets.clone(),
+            join: fleets.clone(),
+            unload: fleets,
         }
     }
 
@@ -56,6 +60,8 @@ impl Arrays {
             roe: &self.roe,
             load: &self.load,
             detach: &self.detach,
+            join: &self.join,
+            unload: &self.unload,
         }
     }
 
@@ -82,6 +88,12 @@ impl Arrays {
             self.roe[idx] = fleet.roe as i64;
             self.load[idx] = i64::from(fleet.load);
             self.detach[idx] = fleet.detach as i64;
+            self.join[idx] = action
+                .fleets
+                .iter()
+                .position(|host| host.record == fleet.join)
+                .map_or(0, |row| row as i64 + 1);
+            self.unload[idx] = i64::from(fleet.unload);
         }
     }
 }

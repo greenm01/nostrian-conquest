@@ -1323,6 +1323,7 @@ fn plan_fleets(
                 detach: 0,
                 join: 0,
                 station: None,
+                unload: false,
             };
             let order = |order: Order, target: usize| {
                 let mission = mission_choice(order);
@@ -1735,6 +1736,21 @@ impl Families {
             Family::Colonize => self.colonize,
             Family::Scout => self.scout,
             Family::Strike => self.strike,
+        }
+    }
+}
+
+/// Let a hybrid seat's fleets join only fleets its network orders too, so a
+/// strike force never absorbs the executor's scouts or pickets (t190).
+pub fn network_joins(game_data: &CoreGameData, masks: &mut SeatMasks, families: Families) {
+    let ordered: Vec<bool> = masks
+        .fleets
+        .iter()
+        .map(|mask| families.contains(fleet_family(&game_data.fleets[mask.record - 1])))
+        .collect();
+    for mask in &mut masks.fleets {
+        for (host, &allowed) in ordered.iter().enumerate() {
+            mask.join[host + 1] &= allowed;
         }
     }
 }

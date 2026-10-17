@@ -123,8 +123,8 @@ impl Env {
     /// The executor's fleet choices for every goal-taking seat if it
     /// carried out `goals` this year: `mission`, `target`, `waypoint`,
     /// `speed`, `roe`,
-    /// `load`, `detach` and each row's `family` (0 colonize, 1 scout, 2 strike, -1
-    /// padding), all `[games, seats, F]` int64.
+    /// `load`, `detach`, `join`, `unload` and each row's `family` (0 colonize, 1
+    /// scout, 2 strike, -1 padding), all `[games, seats, F]` int64.
     fn fleet_labels<'py>(
         &self,
         py: Python<'py>,
@@ -162,6 +162,8 @@ impl Env {
         out.set_item("roe", array(py, labels.roe)?)?;
         out.set_item("load", array(py, labels.load)?)?;
         out.set_item("detach", array(py, labels.detach)?)?;
+        out.set_item("join", array(py, labels.join)?)?;
+        out.set_item("unload", array(py, labels.unload)?)?;
         out.set_item("family", array(py, labels.family)?)?;
         Ok(out)
     }
@@ -211,7 +213,8 @@ impl Env {
     }
 
     /// Every seat's legal choices as bool arrays: `diplomacy`, `build`,
-    /// `mission`, `target`, `roe`, `load` and `detach`.
+    /// `mission`, `target`, `roe`, `load`, `detach`, `join` (`[games, seats, F,
+    /// 1 + F]`) and `unload`.
     fn masks<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let batch = self.batch()?;
         let masks = py.detach(|| batch.masks());
@@ -224,6 +227,8 @@ impl Env {
             ("roe", masks.roe),
             ("load", masks.load),
             ("detach", masks.detach),
+            ("join", masks.join),
+            ("unload", masks.unload),
         ] {
             out.set_item(name, array(py, tensor)?)?;
         }
@@ -233,7 +238,8 @@ impl Env {
     /// Play a year. `actions` is a dict of int64 arrays for learned seats
     /// (`tax`, `diplomacy`, `build`, `amount`, `mission`, `target`,
     /// `waypoint`, `speed`,
-    /// `roe`, `load`, `detach`); `goals` one for strategist seats (`tax`, `diplomacy`,
+    /// `roe`, `load`, `detach`, and optionally `join` and `unload`, which default
+    /// to none); `goals` one for strategist seats (`tax`, `diplomacy`,
     /// `posture`, `allocation`, `strike`, `colonize`). Returns `reward`, `done`,
     /// `production` and `worlds`. A choice outside the masks, or missing
     /// choices, raise ValueError and change nothing.
@@ -280,20 +286,44 @@ impl Env {
             })
             .transpose()?;
         let action_slices = action_arrays.as_deref().map(slices).transpose()?;
+        // Join and unload default to none, for callers that predate them.
+        let extras = match (actions, &action_slices) {
+            (Some(dict), Some(required)) => {
+                let rows = required[4].len();
+                let mut out = [vec![0; rows], vec![0; rows]];
+                for (slot, name) in out.iter_mut().zip(["join", "unload"]) {
+                    if let Some(item) = dict.get_item(name)? {
+                        let array: PyReadonlyArrayDyn<'py, i64> = item
+                            .extract()
+                            .map_err(|err| PyValueError::new_err(format!("{name}: {err}")))?;
+                        *slot = array
+                            .as_slice()
+                            .map_err(|_| PyValueError::new_err("choice arrays must be contiguous"))?
+                            .to_vec();
+                    }
+                }
+                Some(out)
+            }
+            _ => None,
+        };
         let goal_slices = goal_arrays.as_deref().map(slices).transpose()?;
-        let actions = action_slices.map(|s| BatchActions {
-            tax: s[0],
-            diplomacy: s[1],
-            build: s[2],
-            amount: s[3],
-            mission: s[4],
-            target: s[5],
-            waypoint: s[6],
-            speed: s[7],
-            roe: s[8],
-            load: s[9],
-            detach: s[10],
-        });
+        let actions = action_slices
+            .zip(extras.as_ref())
+            .map(|(s, extras)| BatchActions {
+                tax: s[0],
+                diplomacy: s[1],
+                build: s[2],
+                amount: s[3],
+                mission: s[4],
+                target: s[5],
+                waypoint: s[6],
+                speed: s[7],
+                roe: s[8],
+                load: s[9],
+                detach: s[10],
+                join: &extras[0],
+                unload: &extras[1],
+            });
         let goals = goal_slices.map(|s| BatchGoals {
             tax: s[0],
             diplomacy: s[1],

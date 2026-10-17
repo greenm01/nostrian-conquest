@@ -86,8 +86,16 @@ fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
                     } else {
                         0
                     },
-                    join: 0,
+                    join: if rng.below(8) == 0 {
+                        match rng.allowed(&mask.join) {
+                            0 => 0,
+                            host => masks.fleets[host - 1].record,
+                        }
+                    } else {
+                        0
+                    },
                     station: None,
+                    unload: mask.unload && rng.below(2) == 0,
                 }
             })
             .collect(),
@@ -103,6 +111,9 @@ struct Tally {
     guard_starbase: usize,
     detaches: usize,
     deep_space: usize,
+    joins: usize,
+    joins_with_detach: usize,
+    unloads: usize,
 }
 
 /// Play `years` of random masked turns; every submission must be accepted
@@ -157,6 +168,13 @@ fn play_random(game: &mut SeatedGame, years: u16, rng: &mut Rng, tally: &mut Tal
                 })
                 .count();
             tally.detaches += action.fleets.iter().filter(|c| c.detach > 0).count();
+            tally.joins += action.fleets.iter().filter(|c| c.join > 0).count();
+            tally.joins_with_detach += action
+                .fleets
+                .iter()
+                .filter(|c| c.join > 0 && c.detach > 0)
+                .count();
+            tally.unloads += action.fleets.iter().filter(|c| c.unload).count();
             tally.builds += action
                 .planets
                 .iter()
@@ -188,9 +206,18 @@ fn play_games(games: u64, years: u16) -> Tally {
     tally
 }
 
+/// Random play includes the join and unload orders (t190), joins with
+/// detaches among them, and the game accepts every one.
 #[test]
 fn random_masked_turns_are_always_accepted() {
-    play_games(40, 30);
+    let tally = play_games(40, 30);
+    assert!(
+        tally.joins > 0 && tally.joins_with_detach > 0 && tally.unloads > 0,
+        "{} joins, {} with a detach, {} unloads",
+        tally.joins,
+        tally.joins_with_detach,
+        tally.unloads
+    );
 }
 
 /// The t152 exit: 1,000 seeded games with no rejected order. Run with
@@ -201,12 +228,16 @@ fn a_thousand_random_masked_games_are_always_accepted() {
     let tally = play_games(1000, 30);
     println!(
         "{} game-years, {} fleet orders ({} Guard a Starbase, {} to deep space), \
-         {} detaches, {} builds, {} second colonizers dropped",
+         {} detaches, {} joins ({} with a detach), {} unloads, {} builds, \
+         {} second colonizers dropped",
         tally.years,
         tally.fleet_orders,
         tally.guard_starbase,
         tally.deep_space,
         tally.detaches,
+        tally.joins,
+        tally.joins_with_detach,
+        tally.unloads,
         tally.builds,
         tally.dropped
     );
@@ -279,6 +310,7 @@ fn a_join_and_a_station_decode_into_legal_orders() {
             detach: 0,
             join: if mask.record == joiner { host } else { 0 },
             station: (mask.record == host).then_some(station),
+            unload: false,
         })
         .collect();
     let action = SeatAction {

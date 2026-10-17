@@ -9,6 +9,10 @@
 //! what a [`SeatMemory`] and the empire's own records hold, through the
 //! same observation and masks the agent trained on.
 //!
+//! A model exported since t190 also chooses a fleet to join and whether to
+//! unload armies, from four inputs after the others; an older model has
+//! neither, and its fleets never join or unload.
+//!
 //! Each head chooses the argmax of its masked logits plus noise. Zero noise
 //! plays greedy, the agent's strongest play. Gumbel noise times a
 //! temperature samples at that temperature, a weaker and less predictable
@@ -21,7 +25,7 @@ use std::path::Path;
 use nc_ai::{
     DETACH_CHOICES, DIPLOMACY_CHOICES, Families, FleetChoice, GoalMasks, Goals, MISSION_CHOICES,
     Observation, Personality, ROE_CHOICES, SPEED_CHOICES, SeatMasks, SeatMemory, WAYPOINT_CHOICES,
-    decode_action, execute_goals, fleet_family, goal_masks, observe, seat_masks,
+    decode_action, execute_goals, fleet_family, goal_masks, network_joins, observe, seat_masks,
 };
 use nc_data::{CoreGameData, TurnSubmission};
 use tract_onnx::prelude::*;
@@ -38,6 +42,9 @@ pub use nc_ai::PERSONALITIES;
 const TAX_CHOICES: usize = nc_ai::TAX_CHOICES;
 const POSTURES: usize = nc_ai::POSTURES;
 const ALLOCATIONS: usize = nc_ai::ALLOCATIONS;
+/// Inputs of a graph exported before t190, which has no join or unload
+/// heads.
+const OLD_INPUTS: usize = 30;
 
 type Plan = SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>;
 
@@ -83,7 +90,8 @@ impl NetworkSeat {
         seed: u64,
     ) -> TractResult<TurnSubmission> {
         let empire = memory.empire;
-        let masks = seat_masks(game_data, empire);
+        let mut masks = seat_masks(game_data, empire);
+        network_joins(game_data, &mut masks, self.families);
         let goal_mask = goal_masks(game_data, memory, &masks);
         let observation = observe(game_data, memory);
         let mut chosen = self.choose(&observation, &masks, &goal_mask, temperature, seed)?;
@@ -156,7 +164,7 @@ impl NetworkSeat {
                 })
             })
             .collect();
-        let inputs: TVec<TValue> = tvec![
+        let mut inputs: TVec<TValue> = tvec![
             tensor(&[1, nc_ai::GLOBAL_WIDTH], observation.global.clone()).into(),
             planets.into(),
             planets_valid.into(),
@@ -203,6 +211,20 @@ impl NetworkSeat {
             noise.tensor(&[1, fleets, 2]).into(),
             noise.tensor(&[1, fleets, DETACH_CHOICES]).into(),
         ];
+        if self.plan.model().inputs.len() > OLD_INPUTS {
+            inputs.push(per_fleet(1 + fleets, &|idx| masks.fleets[idx].join.clone()).into());
+            inputs.push(
+                tensor(
+                    &[1, fleets],
+                    (0..fleets)
+                        .map(|idx| masks.fleets.get(idx).is_some_and(|mask| mask.unload))
+                        .collect::<Vec<_>>(),
+                )
+                .into(),
+            );
+            inputs.push(noise.tensor(&[1, fleets, 1 + fleets]).into());
+            inputs.push(noise.tensor(&[1, fleets, 2]).into());
+        }
         let outputs = self.plan.run(inputs)?;
         let ints = |idx: usize| -> TractResult<Vec<usize>> {
             Ok(outputs[idx]
@@ -224,6 +246,11 @@ impl NetworkSeat {
         let [mission, target, waypoint, speed, roe, load, detach] = &heads[..] else {
             unreachable!("the graph has seven fleet heads")
         };
+        let (join, unload) = if outputs.len() > 13 {
+            (ints(13)?, ints(14)?)
+        } else {
+            (vec![0; fleets], vec![0; fleets])
+        };
         let fleets = masks
             .fleets
             .iter()
@@ -237,8 +264,12 @@ impl NetworkSeat {
                 roe: roe[row],
                 load: load[row] != 0,
                 detach: detach[row],
-                join: 0,
+                join: match join[row] {
+                    0 => 0,
+                    host => masks.fleets[host - 1].record,
+                },
                 station: None,
+                unload: unload[row] != 0,
             })
             .collect();
         Ok(NetworkChoices { goals, fleets })

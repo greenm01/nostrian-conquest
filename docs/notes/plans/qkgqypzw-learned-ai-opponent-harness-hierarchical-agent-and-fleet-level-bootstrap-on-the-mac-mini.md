@@ -1762,6 +1762,36 @@ Every switch loses, interception most. The weights were fitted without
 them, as with `mixed_hulls` and `reinforce`, so the turtle is retuned
 with pickets + track and with all three before a verdict.
 
+**Revised (2026-10-17).** At the owner's suggestion a colony now buys its
+picket from what is left after its garrison, in place of its warships, and
+only when that buys one or two destroyers. Interception now uses only
+fleets with nothing to strike that year. Paired, on the turtle's current
+weights:
+
+| Switches | vs default, 60 / 100 yr | vs rusher, 60 / 100 yr |
+| --- | --- | --- |
+| pickets from leftover budget, 3 posts | +0.003 / -0.039 | -0.032 / -0.010 |
+| pickets from leftover budget, 2 posts | -0.010 / -0.023 | -0.027 / -0.026 |
+| pickets from leftover budget, 1 post | -0.004 / -0.015 | +0.007 / +0.009 |
+| intercept, idle fleets only | -0.020 / -0.020 | -0.003 / -0.019 |
+| track | -0.021 / -0.025 | -0.028 / -0.019 |
+| all three | -0.021 / -0.036 | -0.046 / -0.007 |
+
+One post is kept (`c792dbb3`). Retuned with the switches on (30
+generations, 64 games, 100 years), against the current turtle at 0.185 /
+0.188 against the default and 0.316 / 0.313 against the rusher, on 1,024
+maps from 1500000:
+
+| Retuned turtle | vs default, 60 / 100 yr | vs rusher, 60 / 100 yr |
+| --- | --- | --- |
+| all three | 0.147 / 0.148 | 0.282 / 0.257 |
+| pickets + intercept | 0.186 / 0.155 | 0.291 / 0.307 |
+
+A retune does not rescue them. Pickets at one post are even; tracking and
+interception lose as scripted rules. Interception remains a candidate for
+the network to learn now that it can order the fleets that would do it
+(t190).
+
 ### t190
 
 Give the network the whole order set.
@@ -1774,6 +1804,44 @@ model, the ONNX export and the Rust decoder.
 
 **Exit:** a test shows each new order chosen, masked and submitted
 legally, and the exported model plays with them.
+
+**Progress (2026-10-17).** The network can now order Join and Unload.
+
+- Masks (`action.rs`): each fleet row has a join row (none, then one flag
+  per row of the seat's fleets) and an unload flag (at one of the seat's
+  worlds, armies aboard, room for them). A hybrid seat's fleets may join
+  only fleets its network orders (`network_joins`), so a strike force never
+  absorbs the executor's scouts or pickets.
+- Decoding: Join replaces the mission. Join with Detach leaves the detached
+  ships where they are and sends the rest to the host, which covers most of
+  Transfer, so Transfer is not offered. An unload is skipped when the
+  fleet's new or kept order is Invade or Blitz (random play found the
+  conflict), and a fleet that loads and unloads only unloads.
+- Batch arrays, `nc_ai_env` (join and unload optional in `step`, default
+  none) and imitation labels carry both.
+- Model (`fleet_policy.py`): a join head pointing at the other fleet
+  tokens, with a learned "none" logit, and an unload head. They start on
+  "none" (bias 8, zero weights; the join key starts as the identity so the
+  query can learn), so older checkpoints load and play as before and the
+  PPO reference starts identical (KL 0). Sampled play joins in about 0.4%
+  of fleet-years at first; greedy play never does.
+- Export: the join and unload masks and noise follow every other input, so
+  a pre-t190 graph keeps its input positions; the Rust seat feeds them only
+  to a graph that has them (`OLD_INPUTS`) and reads join and unload only
+  when they are output.
+
+Validation: 1,000 random masked games (30,000 game-years) with 172,094
+joins (4,903 with a detach) and 10,502 unloads, none rejected; the Rust
+seat replays both fixtures turn for turn, `tiny.onnx` (exported before
+t190) and `tiny-joins.onnx` (random join heads; 308 Joins in its game);
+snapshot 200 exports with 0 mismatches on 64 recorded seats.
+
+What it does not do yet: the agent will not learn these orders by itself.
+The executor never unloads and joins only under `reinforce` (off), so
+imitation labels them "none", and PPO's pull toward its reference and its
+small entropy leave the new heads near their start. t191 needs either a
+teacher rule that uses them or PPO that exempts these heads from the KL
+penalty and raises their entropy.
 
 ### t191
 

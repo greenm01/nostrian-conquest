@@ -109,6 +109,14 @@ pub(crate) fn fleet_choices(
             if load && !mask.load {
                 return Err(format!("fleet row {row}: load is not allowed"));
             }
+            let unload = actions.unload[fleet] != 0;
+            if unload && !mask.unload {
+                return Err(format!("fleet row {row}: unload is not allowed"));
+            }
+            let join = match choice("join", actions.join[fleet], &mask.join)? {
+                0 => 0,
+                host => masks.fleets[host - 1].record,
+            };
             Ok(FleetChoice {
                 record: mask.record,
                 mission,
@@ -122,8 +130,9 @@ pub(crate) fn fleet_choices(
                 roe: choice("roe", actions.roe[fleet], &mask.roe)?,
                 load,
                 detach: choice("detach", actions.detach[fleet], &mask.detach)?,
-                join: 0,
+                join,
                 station: None,
+                unload,
             })
         })
         .collect()

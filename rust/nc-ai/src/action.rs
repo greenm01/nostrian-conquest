@@ -11,14 +11,19 @@
 //! - for each fleet it owns, whether to load armies from the world it is at,
 //!   a mission (or keep its orders), a target world, a waypoint, a speed,
 //!   rules of engagement, and whether to detach part of it (see
-//!   [`DETACHES`]).
+//!   [`DETACHES`]); or, in place of the mission, another of its fleets to
+//!   join; and whether to unload its armies at the world it is at.
 //!   Loading and an invasion cannot share a year: orders are checked against
-//!   the turn-start fleet, so a fleet invades the year after it loads.
+//!   the turn-start fleet, so a fleet invades the year after it loads. A
+//!   fleet that both loads and unloads only unloads, and one whose new or
+//!   kept order is Invade or Blitz keeps its armies aboard.
 //!
 //! Detached ships form a new fleet on Hold at the donor's sector, with the
 //! donor's rules of engagement, after every other order of the year, so the
 //! donor's mission applies to the ships it keeps. The new fleet takes orders
-//! the next year.
+//! the next year. A fleet that joins another and detaches keeps the detached
+//! ships where it is, as the new fleet, and sends the rest to the host: the
+//! detach picks what stays.
 //!
 //! Masks read only what the empire may know. Fleet missions and targets go
 //! through `validate_fleet_order_payload`, which checks the fleet's own ships
@@ -28,7 +33,8 @@
 //! Rendezvous) may stop short of it in deep space, by [`WAYPOINT_CHOICES`].
 //! Those missions accept any sector, so the waypoint needs no mask. Guard a
 //! Starbase targets the world where one of the seat's own starbases sits,
-//! and names that base. Join needs a fleet target and is not offered yet.
+//! and names that base. Join targets one of the seat's other fleets, by its
+//! row among the seat's fleets (t190).
 //!
 //! A learned seat commissions every finished ship before it chooses, through
 //! [`commission_submission`], so its masks see the fleets that creates.
@@ -139,6 +145,12 @@ pub struct FleetMask {
     pub load: bool,
     /// By detach choice: the part exists and leaves the donor a ship.
     pub detach: [bool; DETACH_CHOICES],
+    /// Whom to join: 0 for none, then one flag per row of
+    /// [`SeatMasks::fleets`]; a fleet may join any other of the seat's.
+    pub join: Vec<bool>,
+    /// The fleet is at one of the empire's worlds, with armies aboard and
+    /// room for them there.
+    pub unload: bool,
 }
 
 /// Everything one seat may choose this year. Tax, speed, waypoint and
@@ -180,9 +192,11 @@ pub struct FleetChoice {
     /// Keep whole (0), or detach the [`DETACHES`] row before it.
     pub detach: usize,
     /// Join another fleet of the seat (t189): its 1-based record, or 0.
-    /// With a join, the mission is 0 and the other choices only matter for
-    /// the fleet's rules of engagement and load.
+    /// With a join, the mission is ignored and the other choices only matter
+    /// for the fleet's rules of engagement, load, unload and detach.
     pub join: usize,
+    /// Unload every army aboard that the world it is at has room for.
+    pub unload: bool,
     /// For a sector mission, the sector to go to, in place of the waypoint
     /// toward the target world (t189's early-warning stations). The network
     /// never sets it.
@@ -253,8 +267,17 @@ pub fn seat_masks(game_data: &CoreGameData, empire: u8) -> SeatMasks {
         .collect(),
         fleets: {
             let mut shared = BTreeMap::new();
-            owned_records(game_data.fleets.iter().map(|fleet| fleet.owner.0), empire)
-                .map(|record| fleet_mask(game_data, record, &mut shared))
+            let records: Vec<usize> =
+                owned_records(game_data.fleets.iter().map(|fleet| fleet.owner.0), empire).collect();
+            records
+                .iter()
+                .map(|&record| {
+                    let mut mask = fleet_mask(game_data, record, &mut shared);
+                    mask.join = std::iter::once(true)
+                        .chain(records.iter().map(|&host| host != record))
+                        .collect();
+                    mask
+                })
                 .collect()
         },
     }
@@ -365,7 +388,29 @@ fn fleet_mask(
         detach: std::array::from_fn(|choice| {
             choice == 0 || detach_selection(fleet, choice).is_some()
         }),
+        join: Vec::new(),
+        unload: armies_to_unload(game_data, fleet, 0).is_some(),
     }
+}
+
+/// The world a fleet is at and how many of its armies that world has room
+/// for, if any, after `unloaded` armies have already landed there this turn.
+fn armies_to_unload(
+    game_data: &CoreGameData,
+    fleet: &Fleet,
+    unloaded: u16,
+) -> Option<(usize, u16)> {
+    let (idx, planet) = game_data
+        .planets
+        .iter()
+        .enumerate()
+        .find(|(_, planet)| planet.sector == fleet.sector)?;
+    // The submission path holds at most 255 armies on a world.
+    let room = u16::from(u8::MAX)
+        .saturating_sub(planet.armies.min(u16::from(u8::MAX)))
+        .saturating_sub(unloaded);
+    let qty = room.min(fleet.ships.loaded_transports);
+    (planet.owner.0 == fleet.owner.0 && qty > 0).then_some((idx + 1, qty))
 }
 
 /// The ships detach choice `choice` (nonzero) takes from `fleet`, if there
@@ -483,9 +528,32 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
     // Armies already loaded from each world (0-based) this turn.
     let mut loaded_from: BTreeMap<usize, u16> = BTreeMap::new();
     let mut loads = Vec::new();
+    let mut unloads = Vec::new();
+    let mut unloaded_to: BTreeMap<usize, u16> = BTreeMap::new();
     for choice in &action.fleets {
         let mut actions = Vec::new();
-        if choice.load {
+        let fleet = &game_data.fleets[choice.record - 1];
+        let order = if choice.mission > 0 {
+            MISSIONS[choice.mission - 1]
+        } else {
+            fleet.order
+        };
+        let lands = choice.join == 0 && matches!(order, Order::InvadeWorld | Order::BlitzWorld);
+        if choice.unload && !lands {
+            let world = game_data
+                .planets
+                .iter()
+                .position(|planet| planet.sector == fleet.sector);
+            let unloaded = world.map_or(0, |idx| unloaded_to.get(&idx).copied().unwrap_or(0));
+            if let Some((planet, qty)) = armies_to_unload(game_data, fleet, unloaded) {
+                *unloaded_to.entry(planet - 1).or_insert(0) += qty;
+                actions.push(FleetTurnAction::UnloadArmies {
+                    planet_record_index_1_based: planet,
+                    qty,
+                });
+                unloads.push((planet, choice.record, qty));
+            }
+        } else if choice.load {
             let fleet = &game_data.fleets[choice.record - 1];
             let world = game_data
                 .planets
@@ -545,11 +613,16 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
         });
     }
     // Orders are checked against the turn-start fleet; detaches see the
-    // loads.
+    // loads and unloads.
     for (planet, record, qty) in loads {
         working
             .load_planet_armies_onto_fleet(usize::from(empire), planet, record, qty)
             .expect("a masked load applies");
+    }
+    for (planet, record, qty) in unloads {
+        working
+            .unload_fleet_armies_to_planet(usize::from(empire), planet, record, qty)
+            .expect("a masked unload applies");
     }
     let donors: Vec<(u16, &FleetChoice)> = action
         .fleets

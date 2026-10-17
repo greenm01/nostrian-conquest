@@ -92,6 +92,7 @@ evaluation maps.
 ```sh
 uv run export_onnx.py fleet-final.pt --out fleet-final.onnx
 uv run export_onnx.py --fixture ../../rust/nc-ai-onnx/tests/fixtures
+uv run export_onnx.py --fixture ../../rust/nc-ai-onnx/tests/fixtures --joins
 ```
 
 The first command exports a fleet-level agent for `nc_ai_onnx::NetworkSeat`.
@@ -102,7 +103,10 @@ sampled.
 
 The second command rewrites the Rust test fixture: a small seeded network
 and a game it played. Rerun it after changing the observation, the masks
-or the heads.
+or the heads. `tiny.onnx` predates the join and unload heads (t190) and is
+kept to show an older export still plays; the third command writes
+`tiny-joins.onnx`, whose join and unload heads are random so its game
+joins fleets.
 
 ## Splitting executor tests across machines (t189)
 

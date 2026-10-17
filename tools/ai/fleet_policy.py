@@ -8,6 +8,11 @@ missions, a speed, rules of engagement, whether to
 load armies, and what part of the fleet to detach. In a hybrid seat only the fleets of handed-over families
 (colonize 0, scout 1, strike 2) take these choices; the executor orders the
 rest.
+
+Since t190 each fleet may also join another of the seat's fleets (pointing
+at the other fleet tokens, or none) and unload its armies. These heads start
+at "none" with zero weights, so a checkpoint saved before them loads and
+plays as it did, and two loads of it start identical.
 """
 
 import math
@@ -19,7 +24,10 @@ from torch import nn
 import nc_ai_env
 from policy import HEADS, Strategist, distributions, symlog, START_YEAR, TABLES
 
-FLEET_HEADS = ("mission", "target", "waypoint", "speed", "roe", "load", "detach")
+FLEET_HEADS = ("mission", "target", "waypoint", "speed", "roe", "load", "detach", "join", "unload")
+# Heads added after checkpoints were first saved, and the logit by which each
+# starts on its first choice (none).
+NEW_HEADS = {"fleet_join": 8.0, "fleet_unload": 8.0}
 SEAT_BUCKET = 128
 ROW_BUCKET = 16
 
@@ -28,7 +36,8 @@ def fleet_batch(obs, masks, goal_masks, select, dev):
     """Seat tensors as ``policy.seat_batch``, plus each fleet row's masks:
     ``fleet_mission`` ``[N, F, MISSIONS]``, ``fleet_target`` ``[N, F,
     MISSIONS, W]``, ``fleet_roe``, ``fleet_load`` ``[N, F, 2]`` and
-    ``fleet_detach``."""
+    ``fleet_detach``, ``fleet_join`` ``[N, F, 1 + F]`` and ``fleet_unload``
+    ``[N, F, 2]``."""
     take = lambda a: torch.from_numpy(np.ascontiguousarray(a[select])).to(dev)
     glob = take(obs["global"]).clone()
     glob[:, 0] -= START_YEAR
@@ -45,6 +54,9 @@ def fleet_batch(obs, masks, goal_masks, select, dev):
     load = take(masks["load"])
     batch["fleet_load"] = torch.stack([torch.ones_like(load), load], -1)
     batch["fleet_detach"] = take(masks["detach"])
+    batch["fleet_join"] = take(masks["join"])
+    unload = take(masks["unload"])
+    batch["fleet_unload"] = torch.stack([torch.ones_like(unload), unload], -1)
     return batch
 
 
@@ -66,6 +78,8 @@ def bucket(batch):
         table = name.removesuffix("_valid")
         if name.startswith("fleet_") or table == "fleets":
             pad[-3] = fleets - value.shape[1]
+        if name == "fleet_join":
+            pad[1] = 1 + fleets - value.shape[-1]  # the host axis
         elif table in {t for t, _ in TABLES} and table != "planets":
             pad[-3] = _round_up(value.shape[1], ROW_BUCKET) - value.shape[1]
         padded = torch.nn.functional.pad(value, pad)
@@ -89,6 +103,23 @@ class FleetAgent(Strategist):
         self.fleet_roe = nn.Linear(width, nc_ai_env.ROE_CHOICES)
         self.fleet_load = nn.Linear(width, 2)
         self.fleet_detach = nn.Linear(width, nc_ai_env.DETACH_CHOICES)
+        self.fleet_join = nn.Linear(width, 1)
+        self.fleet_join_query = nn.Linear(width, width, bias=False)
+        self.fleet_join_key = nn.Linear(width, width, bias=False)
+        self.fleet_unload = nn.Linear(width, 2)
+        self.reset_new_heads()
+
+    def reset_new_heads(self):
+        """Start the join and unload heads on "none", the same every time:
+        zero weights, the key as the identity so the query learns."""
+        with torch.no_grad():
+            for name, bias in NEW_HEADS.items():
+                head = getattr(self, name)
+                head.weight.zero_()
+                head.bias.zero_()
+                head.bias[0] = bias
+            self.fleet_join_query.weight.zero_()
+            self.fleet_join_key.weight.copy_(torch.eye(self.fleet_join_key.in_features))
 
     def fleet_logits(self, batch, fleets, worlds, goals, mission):
         """Masked fleet-head logits for the real seats; ``mission`` is the
@@ -119,7 +150,15 @@ class FleetAgent(Strategist):
             "roe": masked(self.fleet_roe(fleets), batch["fleet_roe"][:n]),
             "load": masked(self.fleet_load(fleets), batch["fleet_load"][:n]),
             "detach": masked(self.fleet_detach(fleets), batch["fleet_detach"][:n]),
+            "join": masked(self.join_logits(fleets), batch["fleet_join"][:n]),
+            "unload": masked(self.fleet_unload(fleets), batch["fleet_unload"][:n]),
         }
+
+    def join_logits(self, fleets):
+        """``[N, F, 1 + F]``: none, then each fleet row as the host."""
+        hosts = (self.fleet_join_query(fleets) @ self.fleet_join_key(fleets).transpose(1, 2)
+                 / math.sqrt(fleets.shape[-1]))
+        return torch.cat([self.fleet_join(fleets), hosts], -1)
 
     def fleet_dists(self, batch, fleets, worlds, goals, mission):
         """Fleet-head distributions for the real seats, as
@@ -169,9 +208,13 @@ def from_strategist(path, dev):
 
 
 def load_fleet_agent(path, dev):
+    """A saved fleet agent; one saved before the join and unload heads gets
+    them at their start (see :meth:`FleetAgent.reset_new_heads`)."""
     checkpoint = torch.load(path, map_location=dev, weights_only=False)
     model = FleetAgent(**checkpoint["config"]).to(dev)
-    model.load_state_dict(checkpoint["state"])
+    missing, unexpected = model.load_state_dict(checkpoint["state"], strict=False)
+    if unexpected or any(not key.startswith(("fleet_join", "fleet_unload")) for key in missing):
+        raise SystemExit(f"fleet agent weights do not fit: {missing} {unexpected}")
     return model.eval()
 
 

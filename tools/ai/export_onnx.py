@@ -12,6 +12,10 @@ samples draws from the softmax at temperature ``T`` (the Gumbel-max trick),
 so the caller sets the difficulty. The fleet target is chosen after the
 mission, conditioned on it, as in training.
 
+The join and unload heads (t190) take their masks and noise after all the
+others, so a graph exported before them keeps its inputs' positions, and a
+host can tell the two apart by their input count.
+
 Every table needs at least one row: pad with invalid rows whose masks allow
 only the first choice, as ``fleet_policy.bucket`` does. The export is
 checked against the PyTorch model on recorded seats, with and without
@@ -20,7 +24,10 @@ noise.
 ``--fixture`` writes the Rust tests' fixture instead: a small seeded
 network, untrained, exported as ``tiny.onnx``, and a game it played greedy
 in seat 1 against three executors, recorded as turn KDL in
-``tiny-game.json``. The Rust seat must make the same turns.
+``tiny-game.json``. The Rust seat must make the same turns. ``--fixture
+--joins`` writes ``tiny-joins.onnx`` and ``tiny-joins-game.json``, whose
+network has its join and unload heads drawn at random rather than at
+"none", so the game exercises them.
 """
 
 import argparse
@@ -37,6 +44,8 @@ from fleet_ppo import play_year
 from policy import HEADS, START_YEAR, TABLES, masked, symlog
 
 GOAL_HEADS = HEADS
+OLD_HEADS, NEW_HEADS = FLEET_HEADS[:7], FLEET_HEADS[7:]
+EXTRA_INPUTS = ["fleet_join", "fleet_unload"]
 INPUTS = (
     ["global"]
     + [n for table, _ in TABLES for n in (table, f"{table}_valid")]
@@ -51,8 +60,12 @@ class Deployed(nn.Module):
         self.model = model
 
     def forward(self, *args):
-        raw = dict(zip(INPUTS, args[: len(INPUTS)]))
-        noise = dict(zip(GOAL_HEADS + FLEET_HEADS, args[len(INPUTS):]))
+        first, noises = len(INPUTS), len(GOAL_HEADS) + len(OLD_HEADS)
+        raw = dict(zip(INPUTS, args[:first]))
+        noise = dict(zip(GOAL_HEADS + OLD_HEADS, args[first:first + noises]))
+        rest = args[first + noises:]
+        raw.update(zip(EXTRA_INPUTS, rest[:len(EXTRA_INPUTS)]))
+        noise.update(zip(NEW_HEADS, rest[len(EXTRA_INPUTS):]))
         batch = {"n": 1}
         glob = raw["global"].clone()
         glob[:, 0] -= START_YEAR
@@ -60,11 +73,12 @@ class Deployed(nn.Module):
         for table, _ in TABLES:
             batch[table] = symlog(raw[table])
             batch[f"{table}_valid"] = raw[f"{table}_valid"]
-        for name in INPUTS:
+        for name in INPUTS + EXTRA_INPUTS:
             if name.startswith("mask_") or name.startswith("fleet_"):
                 batch[name] = raw[name]
-        load = raw["fleet_load"]
-        batch["fleet_load"] = torch.stack([torch.ones_like(load), load], -1)
+        for name in ("fleet_load", "fleet_unload"):
+            flag = raw[name]
+            batch[name] = torch.stack([torch.ones_like(flag), flag], -1)
 
         g, worlds, fleets = self.model.encode(batch)
         goal_logits, _ = self.model.goal_heads(g, worlds, 1)
@@ -138,12 +152,21 @@ def seat_inputs(obs, masks, goal_masks, game, batch):
     out["fleet_roe"] = take(masks["roe"])[:, :f].clone()
     out["fleet_load"] = take(masks["load"])[:, :f].clone()
     out["fleet_detach"] = take(masks["detach"])[:, :f].clone()
-    for name in ("fleet_mission", "fleet_roe", "fleet_detach"):
+    out["fleet_join"] = take(masks["join"])[:, :f, :1 + f].clone()
+    out["fleet_unload"] = take(masks["unload"])[:, :f].clone()
+    for name in ("fleet_mission", "fleet_roe", "fleet_detach", "fleet_join"):
         empty = ~out[name].any(-1)
         out[name][..., 0] |= empty
     empty = ~out["fleet_target"].any(-1)
     out["fleet_target"][..., 0] |= empty
-    return [out[name] for name in INPUTS]
+    return [out[name] for name in INPUTS + EXTRA_INPUTS]
+
+
+def arguments(inputs, noise):
+    """The graph's arguments, in its input order, from one seat's inputs
+    (``INPUTS + EXTRA_INPUTS``) and its noise (goal, then fleet heads)."""
+    first, noises = len(INPUTS), len(GOAL_HEADS) + len(OLD_HEADS)
+    return inputs[:first] + noise[:noises] + inputs[first:] + noise[noises:]
 
 
 def noise_like(inputs, deployed, scale, rng):
@@ -174,6 +197,8 @@ def head_shapes(inputs, deployed):
         (1, fleets, nc_ai_env.ROE_CHOICES),
         (1, fleets, 2),
         (1, fleets, nc_ai_env.DETACH_CHOICES),
+        (1, fleets, 1 + fleets),
+        (1, fleets, 2),
     ]
 
 
@@ -183,7 +208,7 @@ def export(deployed, seats, out):
     rng = np.random.default_rng(1)
     example = seats[len(seats) // 2]
     example_noise = noise_like(example, deployed, 0.0, rng)
-    names = INPUTS + [f"noise_{h}" for h in GOAL_HEADS + FLEET_HEADS]
+    names = arguments(INPUTS + EXTRA_INPUTS, [f"noise_{h}" for h in GOAL_HEADS + FLEET_HEADS])
     worlds, fleets = torch.export.Dim("worlds", min=2), torch.export.Dim("fleets", min=1)
     contacts, starbases = torch.export.Dim("contacts", min=1), torch.export.Dim("starbases", min=1)
     dims = {"planets": {1: worlds}, "planets_valid": {1: worlds},
@@ -194,12 +219,14 @@ def export(deployed, seats, out):
             "fleet_mission": {1: fleets}, "fleet_target": {1: fleets, 3: worlds},
             "fleet_roe": {1: fleets}, "fleet_load": {1: fleets},
             "fleet_detach": {1: fleets},
+            "fleet_join": {1: fleets, 2: fleets + 1}, "fleet_unload": {1: fleets},
             "noise_strike": {1: worlds + 1}, "noise_colonize": {1: worlds + 1}}
     for head in FLEET_HEADS:
         dims[f"noise_{head}"] = {1: fleets}
     dims["noise_target"] = {1: fleets, 2: worlds}
+    dims["noise_join"] = {1: fleets, 2: fleets + 1}
     outputs = list(GOAL_HEADS) + list(FLEET_HEADS)
-    program = torch.onnx.export(deployed, tuple(example + example_noise),
+    program = torch.onnx.export(deployed, tuple(arguments(example, example_noise)),
                                 input_names=names, output_names=outputs,
                                 dynamic_shapes=(tuple(dims.get(name) for name in names),),
                                 opset_version=18, dynamo=True, external_data=False)
@@ -212,8 +239,9 @@ def export(deployed, seats, out):
         for scale in (0.0, 1.0):
             noise = noise_like(inputs, deployed, scale, rng)
             with torch.no_grad():
-                want = [t.numpy() for t in deployed(*inputs, *noise)]
-            got = session.run(None, {n: t.numpy() for n, t in zip(names, inputs + noise)})
+                args = arguments(inputs, noise)
+                want = [t.numpy() for t in deployed(*args)]
+            got = session.run(None, {n: t.numpy() for n, t in zip(names, args)})
             mismatches += sum(not np.array_equal(a, b) for a, b in zip(want, got))
     print(f"exported {out}; {len(seats)} recorded seats, greedy and sampled: "
           f"{mismatches} mismatched outputs")
@@ -221,12 +249,20 @@ def export(deployed, seats, out):
         raise SystemExit(1)
 
 
-def fixture(directory):
+def fixture(directory, joins=False):
     """The Rust tests' fixture; see the module docs."""
     directory = Path(directory)
     torch.manual_seed(7)
     model = FleetAgent(players=4, width=32, layers=1, heads=2).eval()
-    export(Deployed(model).eval(), recorded_seats(16, 60), directory / "tiny.onnx")
+    name = "tiny"
+    if joins:
+        name = "tiny-joins"
+        with torch.no_grad():
+            for head in (model.fleet_join, model.fleet_join_query, model.fleet_unload):
+                nn.init.normal_(head.weight, std=1.0)
+            model.fleet_join.bias.zero_()
+            model.fleet_unload.bias.zero_()
+    export(Deployed(model).eval(), recorded_seats(16, 60), directory / f"{name}.onnx")
     map_seed, years = 61, 30
     env = nc_ai_env.Env(4, years)
     env.reset([map_seed], seats=[["hybrid:strike", "executor", "executor", "executor"]])
@@ -238,7 +274,7 @@ def fixture(directory):
         done = step["done"].copy()
     record = {"map_seed": map_seed, "campaign_seed": map_seed, "years": years,
               "result": env.result(0), "turns": env.turns(0)}
-    (directory / "tiny-game.json").write_text(json.dumps(record, indent=1) + "\n")
+    (directory / f"{name}-game.json").write_text(json.dumps(record, indent=1) + "\n")
     print(f"recorded a {record['result']['years']}-year game in {directory}")
 
 
@@ -247,10 +283,12 @@ def main():
     parser.add_argument("checkpoint", nargs="?")
     parser.add_argument("--out")
     parser.add_argument("--fixture", help="write the Rust test fixture to this directory")
+    parser.add_argument("--joins", action="store_true",
+                        help="with --fixture, a network whose join and unload heads are random")
     parser.add_argument("--check-seats", type=int, default=64)
     args = parser.parse_args()
     if args.fixture:
-        fixture(args.fixture)
+        fixture(args.fixture, args.joins)
         return
     if not (args.checkpoint and args.out):
         parser.error("give a checkpoint and --out, or --fixture")

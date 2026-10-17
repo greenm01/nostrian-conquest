@@ -41,7 +41,7 @@ use crate::action::{
 use crate::arena::{
     MatchResult, SeatPolicy, SplitMix, aggressor_choices, executor_turn, match_result, seated_game,
 };
-use crate::executor::{Families, Weights, execute_goals, fleet_family, plan_goals};
+use crate::executor::{Families, Weights, execute_goals, fleet_family, network_joins, plan_goals};
 use crate::game::SeatedGame;
 use crate::goals::{GoalMasks, Goals, goal_masks};
 use crate::observe::{
@@ -79,6 +79,10 @@ pub struct BatchMasks {
     pub load: Tensor<bool>,
     /// `[games, seats, F, DETACH_CHOICES]`.
     pub detach: Tensor<bool>,
+    /// `[games, seats, F, 1 + F]`: no join, then one flag per fleet row.
+    pub join: Tensor<bool>,
+    /// `[games, seats, F]`.
+    pub unload: Tensor<bool>,
 }
 
 /// Every seat's choices, shaped as [`BatchMasks`] describes. Entries for
@@ -102,6 +106,10 @@ pub struct BatchActions<'a> {
     /// Nonzero to load armies.
     pub load: &'a [i64],
     pub detach: &'a [i64],
+    /// 0 for no join, or 1 plus the host's fleet row.
+    pub join: &'a [i64],
+    /// Nonzero to unload armies.
+    pub unload: &'a [i64],
 }
 
 /// Every strategist seat's goals, as [`Goals`] fields. `[games, seats]`
@@ -187,6 +195,8 @@ pub struct FleetArrays {
     pub roe: Tensor<i64>,
     pub load: Tensor<i64>,
     pub detach: Tensor<i64>,
+    pub join: Tensor<i64>,
+    pub unload: Tensor<i64>,
     pub family: Tensor<i64>,
 }
 
@@ -377,6 +387,8 @@ impl BatchEnv {
             roe: zeros(0),
             load: zeros(0),
             detach: zeros(0),
+            join: zeros(0),
+            unload: zeros(0),
             family: zeros(-1),
         };
         for (game, slot) in self.slots.iter().enumerate() {
@@ -406,6 +418,12 @@ impl BatchEnv {
                     out.roe.data[idx] = choice.roe as i64;
                     out.load.data[idx] = i64::from(choice.load);
                     out.detach.data[idx] = choice.detach as i64;
+                    out.join.data[idx] = slot.masks[seat]
+                        .fleets
+                        .iter()
+                        .position(|mask| mask.record == choice.join)
+                        .map_or(0, |row| row as i64 + 1);
+                    out.unload.data[idx] = i64::from(choice.unload);
                     out.family.data[idx] =
                         fleet_family(&game_data.fleets[choice.record - 1]) as i64;
                 }
@@ -579,6 +597,8 @@ impl BatchEnv {
             roe: falses(&[games, seats, fleets, ROE_CHOICES]),
             load: falses(&[games, seats, fleets]),
             detach: falses(&[games, seats, fleets, DETACH_CHOICES]),
+            join: falses(&[games, seats, fleets, 1 + fleets]),
+            unload: falses(&[games, seats, fleets]),
         };
         for (game, slot) in self.slots.iter().enumerate() {
             let real_worlds = slot.game.play.built.game_data.planets.len();
@@ -608,6 +628,8 @@ impl BatchEnv {
                             put(&mut out.roe, fleet, &mask.roe);
                             out.load.data[fleet] = mask.load;
                             put(&mut out.detach, fleet, &mask.detach);
+                            put(&mut out.join, fleet, &mask.join);
+                            out.unload.data[fleet] = mask.unload;
                         }
                         None => {
                             out.mission.data[fleet * MISSION_CHOICES] = true;
@@ -618,6 +640,7 @@ impl BatchEnv {
                             );
                             out.roe.data[fleet * ROE_CHOICES] = true;
                             out.detach.data[fleet * DETACH_CHOICES] = true;
+                            out.join.data[fleet * (1 + fleets)] = true;
                         }
                     }
                 }
@@ -659,6 +682,8 @@ impl BatchEnv {
                 ("roe", actions.roe.len(), games * seats * fleets),
                 ("load", actions.load.len(), games * seats * fleets),
                 ("detach", actions.detach.len(), games * seats * fleets),
+                ("join", actions.join.len(), games * seats * fleets),
+                ("unload", actions.unload.len(), games * seats * fleets),
             ]);
         }
         if let Some(goals) = goals {
@@ -818,7 +843,10 @@ impl Slot {
             }
             let game_data = &self.game.play.built.game_data;
             let started = Instant::now();
-            let seat_mask = seat_masks(game_data, empire);
+            let mut seat_mask = seat_masks(game_data, empire);
+            if let Seat::Hybrid(_, families) = kind {
+                network_joins(game_data, &mut seat_mask, *families);
+            }
             self.mask_time += started.elapsed();
             self.mask_count += 1;
             goal_mask_rows.push(
