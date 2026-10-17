@@ -1608,6 +1608,19 @@ point, so the missing variety is an AI problem: one preferred hull and
 weights tuned under the old rules. Next: hull roles and a retune under the
 new rules (t189), then the order set (t190), then one retrain (t191).
 
+**Under the t202 planetary rules (2026-10-16).** Two-step batteries, their
+full-strength return fire, and classic capture damage cut the agent's lead:
+`fleet-final` against the default bots wins 0.354 at 60 years and 0.521 at
+100 (0.686 and 0.875 before), +0.039 +/- 0.026 and +0.089 +/- 0.028 over the
+previous agent; it loses about 20 worlds a game in 100 years and never
+blitzes. The styles against three default seats at 100 years: land-grab
+0.262, raider 0.184, rusher 0.162, armada 0.125, turtle 0.119. A `blitz`
+switch (blitz when the loaded armies cover twice the known armies plus 2.5 a
+known battery; branch `t189-blitz`, not merged) lost at every threshold
+tried, -0.033 +/- 0.023 at 2x and -0.007 +/- 0.022 even when limited to
+worlds with no known batteries (100 years, 512 paired maps), and is
+rejected for now. A retune under t202 is running.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
