@@ -628,7 +628,13 @@ impl BatchEnv {
                             put(&mut out.roe, fleet, &mask.roe);
                             out.load.data[fleet] = mask.load;
                             put(&mut out.detach, fleet, &mask.detach);
-                            put(&mut out.join, fleet, &mask.join);
+                            // A finished game keeps masks from before its
+                            // last battles, which may name lost fleets.
+                            put(
+                                &mut out.join,
+                                fleet,
+                                &mask.join[..mask.join.len().min(1 + fleets)],
+                            );
                             out.unload.data[fleet] = mask.unload;
                         }
                         None => {

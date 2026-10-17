@@ -118,6 +118,32 @@ fn random_play_within_the_masks_ends_every_game_with_shared_rewards() {
     assert!(time.as_nanos() > 0);
 }
 
+/// A game that ends keeps its last masks, built before the final year's
+/// battles; they must still fit the padding after its fleets are lost.
+#[test]
+fn masks_after_the_year_limit_fit_the_fleets_left() {
+    let maps = [41];
+    let mut overflowed = 0;
+    for years in 1..=20 {
+        let mut env = BatchEnv::new(PLAYERS, &maps, &[5], &learned(1), years, 0);
+        let mut rng = Rng(u64::from(years));
+        let mut before = 0;
+        for _ in 0..years {
+            let masks = env.masks();
+            before = masks.join.shape[3];
+            let arrays = random_arrays(&env, &masks, &mut rng);
+            env.step(Some(&arrays.view()), None)
+                .expect("masked choices are allowed");
+        }
+        let masks = env.masks();
+        assert_eq!(masks.join.shape[2..], [env.fleets(), 1 + env.fleets()]);
+        if before > masks.join.shape[3] {
+            overflowed += 1;
+        }
+    }
+    assert!(overflowed > 0, "some last year should lose fleets");
+}
+
 #[test]
 fn a_choice_outside_the_masks_is_refused_and_changes_nothing() {
     let mut env = BatchEnv::new(PLAYERS, &[31, 32], &[31, 32], &learned(2), 10, 0);
