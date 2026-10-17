@@ -1630,6 +1630,17 @@ burns some industry in the breakthrough rounds of the year the batteries
 fall. It is the executor's next trial: once the batteries are known gone,
 blitz instead of invading.
 
+**Retune adopted (owner, 2026-10-16).** `tune_executor --personality
+land-grab --against-default` (30 generations, 24 candidates, 64 fresh maps
+a generation, 100 years, bean-void) moved the attack ratio from 2.43 to
+3.80, ETACs from 3.9 to 5.7, scouts from 0.14 to 1.4 and starbases from
+1.7 to 2.0. On 1,024 untouched maps against three seats of the old weights
+it wins 0.317 at 60 years and 0.308 at 100 (production share 0.283 and
+0.296). These are now `Weights::TUNED` and the land-grab style. Bombard
+then blitz on top of them is neutral (+0.018 +/- 0.011 at 60, -0.010 +/-
+0.014 at 100) and stays off. Next: retune the other styles, then retrain
+the agent (t191).
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
