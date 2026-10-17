@@ -46,6 +46,32 @@ Provide Discord game discovery, join/play links, real status and successful-turn
 announcements across games. Recruiting seats are self-service; replacements
 require an operator. Use game/account authorization for every private download.
 
+### t204
+
+Let players of one campaign play at the same time without refusing each
+other's saves.
+
+Every session change saves the whole runtime state as a new snapshot,
+expecting the snapshot it loaded (`expecting_snapshot`,
+`CampaignStoreError::ConcurrentSnapshot`). When another player saved in
+between, the save is refused and the session reloads; the player redoes the
+action ("Game updated; your last change was not saved. Please try again.").
+Nothing saved is lost, but two active players keep costing each other
+redos, although each changes only their own empire. Classic EC ran one
+player at a time; a hosted game must not (owner, 2026-10-17). A playtester
+reported the refusal on Discord and fell back to one player at a time.
+
+Approach to confirm in design: a session save writes only what its player
+may change (their empire, worlds, fleets, stardocks, diplomacy, outgoing
+mail and preferences), applied onto the latest snapshot inside the same
+`BEGIN IMMEDIATE` transaction, instead of the whole state. List every
+session action that touches another player's data before choosing; any
+that does keeps the refusal. Maintenance's stale-year refusal is unchanged.
+
+**Exit:** two sessions on one campaign interleave orders, and every order
+of both is saved with no refusal (store and `nc-game` regression tests); a
+session that loaded before maintenance is still refused.
+
 ### t121
 
 Package services, back up and restore campaigns, and exercise a private two-game
