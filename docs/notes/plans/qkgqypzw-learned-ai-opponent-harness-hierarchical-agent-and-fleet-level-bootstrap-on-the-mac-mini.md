@@ -1107,6 +1107,31 @@ those the learner loses to. The pool includes t183's exploiter and past
 snapshots. A run trained this way beats one trained on the fixed mix,
 both in league ratings and against the exploiter.
 
+**League run (2026-10-17): it loses to the fixed mix.** `fleet_ppo.py
+--league` ran the t202 retrain's recipe (from `fleet-final-pre-t202`,
+100-year games, `--limit-credit 0.5`, `--kl-floor 0.02`, 200 iterations,
+`fleet-league/ppo`). The league held the seven scripted styles, the
+previous two agents, the fixed-mix snapshot 200 and the learner's last
+three snapshots. The first attempt crashed at iteration 75 on a join-mask
+bug (fixed in `ec6ceabe`); the run that followed saved `resume.pt` each
+iteration. Against three executors on 1,024 maps from 100000, paired with
+the fixed-mix snapshot 200 (now `fleet-final`):
+
+| League snapshot | 60 years | 100 years |
+|---|---|---|
+| 200 | 0.460 (-0.086 +/- 0.019) | 0.683 (-0.056 +/- 0.018) |
+| 160 | 0.478 (-0.069 +/- 0.019) | 0.644 (-0.095 +/- 0.018) |
+
+Both still beat the previous agent (0.355 and 0.498). Their behaviour
+differs little from snapshot 200's (more bombarding fleet-years, a few more
+worlds lost). In training, the learner's running win share against
+snapshot 200 ended at 0.113, against 0.25 for an even game. The league
+spreads its games over thirteen opponents, so the learner meets the
+default executor less often, and the test above is against that executor.
+Robustness, the league's purpose, was not measured, because the exploiter
+already found no hole in snapshot 200. The fixed mix stays the training
+setup; t191 trains on it.
+
 ### t185
 
 Start some training games from saved mid-game positions.
@@ -1879,7 +1904,10 @@ its behaviour report shows the wider order set and the mixed fleet.
 --free-entropy W` leaves the t190 heads out of the KL penalty and gives
 their entropy an extra weight, so PPO can explore orders that imitation
 labels only as "none". The retrain waits for t184's league run, which
-decides whether it trains on the league or the fixed mix.
+decides whether it trains on the league or the fixed mix. The league run
+lost (t184), so it trains on the fixed mix. Played greedy, no agent so far
+orders a Join or an Unload (behaviour report, 0/0/0 joins, transfers and
+unloads a game): the new heads start on "none".
 
 ### t192
 
