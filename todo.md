@@ -7,6 +7,8 @@
 (B) 2026-10-13 Post game announcements and answer commands in the Matrix community room. +parallel +hosting @development id:t141 order:380 depends:t140,t120 [details](docs/notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md#t141)
 (B) 2026-10-16 Correct the evaluation flaws the Muse review found. +parallel +ai @development id:t193 order:474 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t193)
 (B) 2026-10-16 Name the weakness the exploiter found. +parallel +ai @development id:t192 order:475 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t192)
+
+(B) 2026-10-17 Warn early: pickets, tracked threats and interception in the executor. +parallel +ai @development id:t203 order:476 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t203)
 (B) 2026-10-16 Use the full order set and a mixed fleet in the executor. +parallel +ai @development id:t189 order:477 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t189)
 (B) 2026-10-16 Give the network the whole order set. +parallel +ai @development id:t190 order:478 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t190)
 (B) 2026-10-16 Retrain the agent on the new executor. +parallel +ai @development id:t191 order:479 depends:t189,t190 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t191)

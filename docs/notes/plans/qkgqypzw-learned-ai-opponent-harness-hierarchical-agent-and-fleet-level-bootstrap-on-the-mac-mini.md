@@ -1699,6 +1699,69 @@ case, and still loses. Before retrying, measure the parallel-conquest
 hypothesis directly: worlds taken per year while the home force is split
 and while it is stacked.
 
+### t203
+
+Early warning: pickets on the approaches, threats tracked from what the
+seat has seen, and warships that sail to meet them. The owner asked
+(2026-10-17) whether the turtle should picket the sectors around its
+worlds with destroyers, infer where an enemy fleet is headed, strengthen
+defences in advance, and send fleets to intercept.
+
+What the executor had: `watch` posts spare scouts and pickets halfway
+between the most exposed world and the nearest rival world; a declared
+enemy's force seen within 4 sectors in the last 2 years threatens a world,
+which then builds its guard (under `allocate`). Gaps: the retuned turtle
+buys no scouts or destroyers, so it is blind once its starting destroyers
+are gone; only empires the seat itself declared enemies count, so the
+turtle (war in year 27) ignores an attacker until then; and no waiting
+warship ever sails to a threatened world.
+
+Three trial switches, all off by default (`6182b67c`):
+
+- `pickets`: after the land grab, while fewer than three watchers stand
+  (scout or picket fleets, and destroyers waiting in stardocks with no
+  larger hull), the colony nearest the open approach whose smallest
+  destroyer build is one or two builds it alone, so it commissions as a
+  picket.
+- `track`: an empire that fought the seat's forces or bombarded or
+  assaulted its worlds in the last five years is hostile, declared or not
+  (`SeatMemory::attackers`, from the seat's own reports), and a hostile
+  force also threatens the seat's world nearest the line from its
+  empire's nearest known world through the sighting, within 12 sectors.
+- `intercept`: warships waiting at the muster world, when it is not
+  itself threatened, guard the nearest threatened world within 12 sectors
+  whose strongest threat they outgun, and keep station while it lasts.
+
+The agent hands the warship fleets to its network (`--families strike`),
+so `intercept` changes only the scripted bots; pickets and `track`'s guard
+builds reach the agent too.
+
+On the 4-player maps the nearest rival world is 4-6 sectors from a
+colony, so the 4-sector threat radius already covers most approaches and
+a heading adds warning only for farther worlds.
+
+Exit: paired tests (`executor_matches --paired --with`) on 1,024 maps at
+60 and 100 years, turtle against the default and against the rusher, then
+the other styles; keep a switch only if it does not lose, and remove the
+ones rejected.
+
+**First test (2026-10-17), on the turtle's weights tuned without the
+switches.** Paired difference in the turtle's win share, 1,024 maps from
+1500000 (standard error about 0.015):
+
+| Switches | vs default, 60 / 100 yr | vs rusher, 60 / 100 yr |
+| --- | --- | --- |
+| pickets | -0.036 / -0.031 | -0.033 / -0.023 |
+| track | -0.021 / -0.025 | -0.028 / -0.019 |
+| intercept | -0.011 / -0.071 | -0.052 / -0.082 |
+| track + intercept | -0.019 / -0.049 | -0.091 / -0.104 |
+| pickets + track | -0.033 / -0.046 | -0.055 / -0.049 |
+| all three | -0.036 / -0.100 | -0.088 / -0.104 |
+
+Every switch loses, interception most. The weights were fitted without
+them, as with `mixed_hulls` and `reinforce`, so the turtle is retuned
+with pickets + track and with all three before a verdict.
+
 ### t190
 
 Give the network the whole order set.
