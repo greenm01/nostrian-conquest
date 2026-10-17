@@ -1792,6 +1792,11 @@ interception lose as scripted rules. Interception remains a candidate for
 the network to learn now that it can order the fleets that would do it
 (t190).
 
+**Decision (2026-10-17, owner approved).** `track` and `intercept` are
+removed, with `SeatMemory::attackers`, which only `track` read; the threat
+rule is t181's again. `pickets` stays as a switch, off: even at one post,
+and early warning the network may yet use.
+
 ### t190
 
 Give the network the whole order set.

@@ -117,7 +117,6 @@ impl CampaignAi {
                                 .map(|intel| (intel.planet_record_index_1_based, intel))
                                 .collect(),
                             contacts: Vec::new(),
-                            attackers: Default::default(),
                         }
                     }
                 };

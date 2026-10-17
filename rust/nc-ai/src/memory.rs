@@ -48,10 +48,6 @@ pub struct SeatMemory {
     pub empire: u8,
     pub planet_intel: BTreeMap<usize, PlanetIntelSnapshot>,
     pub contacts: Vec<Contact>,
-    /// Empires that fought the empire's forces or attacked its worlds, with
-    /// the last year they did (t203).
-    #[serde(default)]
-    pub attackers: BTreeMap<u8, u16>,
 }
 
 impl SeatMemory {
@@ -62,7 +58,6 @@ impl SeatMemory {
             empire,
             planet_intel: merge_player_intel_from_runtime(game_data, empire, year, None, None),
             contacts: Vec::new(),
-            attackers: BTreeMap::new(),
         }
     }
 
@@ -83,35 +78,7 @@ impl SeatMemory {
             .retain(|contact| year.saturating_sub(contact.year) < CONTACT_MEMORY_YEARS);
         self.contacts
             .extend(contacts_reported_to(events, self.empire, year));
-        for empire in attackers_reported_to(events, self.empire) {
-            self.attackers.insert(empire, year);
-        }
     }
-}
-
-/// The empires that fought `viewer`'s forces or attacked its worlds, as
-/// its battle, bombardment and assault reports name them.
-fn attackers_reported_to(events: &MaintenanceEvents, viewer: u8) -> Vec<u8> {
-    let battles = events
-        .fleet_battle_events
-        .iter()
-        .filter(|event| event.reporting_empire == viewer)
-        .flat_map(|event| event.enemy_empires.iter().copied());
-    let bombardments = events
-        .bombard_events
-        .iter()
-        .filter(|event| event.defender_empire == viewer)
-        .map(|event| event.attacker_empire);
-    let assaults = events
-        .assault_report_events
-        .iter()
-        .filter(|event| event.defender_empire == viewer)
-        .map(|event| event.attacker_empire);
-    battles
-        .chain(bombardments)
-        .chain(assaults)
-        .filter(|&empire| empire != 0 && empire != viewer)
-        .collect()
 }
 
 impl SeatMemory {
