@@ -41,7 +41,7 @@ pub const WEIGHT_NAMES: [&str; Weights::COUNT] = [
     "war-year",
 ];
 
-const DOCTRINE_NAMES: [&str; 14] = [
+const DOCTRINE_NAMES: [&str; 17] = [
     "land-grab",
     "strike-weakest",
     "suppress-first",
@@ -56,6 +56,9 @@ const DOCTRINE_NAMES: [&str; 14] = [
     "keep-scouts",
     "watch",
     "forward-muster",
+    "pickets",
+    "track",
+    "intercept",
 ];
 
 /// The built-in personalities, the default first.
@@ -126,6 +129,9 @@ pub fn personality_kdl(name: &str, weights: &Weights) -> String {
         d.keep_scouts,
         d.watch,
         d.forward_muster,
+        d.pickets,
+        d.track,
+        d.intercept,
     ];
     let mut text = format!("personality \"{name}\"\nweights {{\n");
     for (weight, value) in WEIGHT_NAMES.iter().zip(weights.to_array()) {
@@ -195,6 +201,9 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
         keep_scouts,
         watch,
         forward_muster,
+        pickets,
+        track,
+        intercept,
     ] = settings(node("doctrine")?, &DOCTRINE_NAMES, |args| match args {
         [value] => value.as_bool(),
         _ => None,
@@ -265,6 +274,9 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 keep_scouts,
                 watch,
                 forward_muster,
+                pickets,
+                track,
+                intercept,
             },
             ..Weights::from_array(weights)
         },

@@ -39,7 +39,7 @@ use crate::action::{
     SeatAction, SeatMasks, TAX_STEP, build_units, detach_choice,
 };
 use crate::goals::{Goals, claimed_worlds, colonizable, posture_weights, world_at};
-use crate::memory::SeatMemory;
+use crate::memory::{Contact, SeatMemory};
 
 /// Strategy weights. Counts are targets, not limits per year.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -150,6 +150,24 @@ pub struct Doctrine {
     /// accepted). Off, every fleet returns home between strikes, which
     /// costs a slow force a long round trip each time.
     pub forward_muster: bool,
+    /// After the land grab, keep [`PICKET_POSTS`] watchers on the
+    /// approaches: while fewer stand watch, the colony nearest the open
+    /// approach builds one destroyer, alone, to stand picket (t203). Off,
+    /// only the starting destroyers and scouts the weights buy stand watch.
+    pub pickets: bool,
+    /// Threats from what the seat has seen (t203): an empire that fought
+    /// the seat or attacked its worlds in [`HOSTILE_YEARS`] is hostile
+    /// whether or not the seat declared it an enemy, and a hostile force
+    /// threatens the seat's world it is heading for (on the line from its
+    /// empire's nearest known world through the sighting) within
+    /// [`TRACK_REACH`], as well as every world within [`THREAT_RANGE`].
+    /// Off, only declared enemies' forces within [`THREAT_RANGE`] threaten.
+    pub track: bool,
+    /// Warships waiting at the muster world sail to guard a threatened
+    /// world within [`TRACK_REACH`], if they outgun the threat, and keep
+    /// station while it lasts (t203). Off, only a colony's new guard takes
+    /// its post.
+    pub intercept: bool,
 }
 
 impl Doctrine {
@@ -171,6 +189,9 @@ impl Doctrine {
             "keep_scouts" => &mut self.keep_scouts,
             "watch" => &mut self.watch,
             "forward_muster" => &mut self.forward_muster,
+            "pickets" => &mut self.pickets,
+            "track" => &mut self.track,
+            "intercept" => &mut self.intercept,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -193,6 +214,9 @@ impl Doctrine {
         keep_scouts: true,
         watch: true,
         forward_muster: true,
+        pickets: false,
+        track: false,
+        intercept: false,
     };
 }
 
@@ -270,6 +294,9 @@ impl Weights {
             keep_scouts: false,
             watch: false,
             forward_muster: false,
+            pickets: false,
+            track: false,
+            intercept: false,
         },
     };
 
@@ -347,6 +374,12 @@ const THREAT_YEARS: u16 = 2;
 const EXPOSURE_RANGE: f32 = 8.0;
 /// The most a colony's guard may hold: one battleship's worth.
 const GUARD_STRENGTH: f32 = 9.0;
+/// Years an attack marks its attacker hostile (`Doctrine::track`).
+const HOSTILE_YEARS: u16 = 5;
+/// The farthest a tracked force may be from the world it heads for.
+const TRACK_REACH: f32 = 12.0;
+/// Watchers kept on the approaches under `Doctrine::pickets`.
+const PICKET_POSTS: usize = 3;
 
 /// The executor's turn for `memory`'s empire, within `masks`. `start_year`
 /// is the game's first year.
@@ -416,7 +449,13 @@ fn allocation_rule(
     labels: &Labels,
 ) -> usize {
     let threatened_world = game_data.planets.iter().any(|planet| {
-        planet.owner.0 == memory.empire && threatened(game_data, memory, planet.sector.to_array())
+        planet.owner.0 == memory.empire
+            && threatened(
+                game_data,
+                memory,
+                &weights.doctrine,
+                planet.sector.to_array(),
+            )
     });
     if !threatened_world {
         return 0;
@@ -425,6 +464,7 @@ fn allocation_rule(
         threatened(
             game_data,
             memory,
+            &weights.doctrine,
             game_data.planets[record - 1].sector.to_array(),
         )
     });
@@ -453,21 +493,30 @@ pub fn execute_goals(
         .flatten();
     let mut stock = Stock::count(game_data, memory.empire, home_sector);
     let build_weights = posture_weights(weights, goals.posture);
+    let picket = weights
+        .doctrine
+        .pickets
+        .then(|| picket_world(game_data, memory, masks, home))
+        .flatten();
     let planets = masks
         .planets
         .iter()
         .map(|mask| {
             let is_home = Some(mask.record) == home;
-            let (build, amount) = choose_builds(
-                game_data,
-                mask.record,
-                &mask.build,
-                is_home,
-                &mut stock,
-                memory,
-                &build_weights,
-                goals.allocation,
-            );
+            let (build, amount) = if Some(mask.record) == picket {
+                picket_build()
+            } else {
+                choose_builds(
+                    game_data,
+                    mask.record,
+                    &mask.build,
+                    is_home,
+                    &mut stock,
+                    memory,
+                    &build_weights,
+                    goals.allocation,
+                )
+            };
             PlanetChoice {
                 record: mask.record,
                 build,
@@ -482,6 +531,83 @@ pub fn execute_goals(
         planets,
         fleets,
     }
+}
+
+/// The colony to build a picket this year (`Doctrine::pickets`): after the
+/// land grab, while fewer than [`PICKET_POSTS`] watchers stand or wait in a
+/// stardock and an approach is open, the colony nearest that approach whose
+/// smallest destroyer build is a picket's one or two.
+fn picket_world(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    masks: &SeatMasks,
+    home: Option<usize>,
+) -> Option<usize> {
+    if land_grab(memory) {
+        return None;
+    }
+    let empire = memory.empire;
+    let own_fleets = || {
+        game_data
+            .fleets
+            .iter()
+            .filter(|fleet| fleet.owner.0 == empire)
+    };
+    let docked = game_data
+        .planets
+        .iter()
+        .filter(|planet| {
+            let dock = &planet.stardock;
+            planet.owner.0 == empire && dock.battleships == 0 && dock.cruisers == 0
+        })
+        .map(|planet| planet.stardock.destroyers as usize)
+        .sum::<usize>();
+    let watchers = own_fleets()
+        .filter(|fleet| fleet_family(fleet) == Family::Scout)
+        .count()
+        + docked;
+    if watchers >= PICKET_POSTS {
+        return None;
+    }
+    let watched: Vec<[u8; 2]> = own_fleets()
+        .filter(|fleet| matches!(fleet.order, Order::ScoutSector | Order::PatrolSector))
+        .map(|fleet| fleet.target.to_array())
+        .collect();
+    let (post, _) = approach(game_data, memory, &watched)?;
+    let destroyer = build_choice(ProductionItemKind::Destroyer);
+    let cost = ProductionItemKind::Destroyer.build_cost().unwrap_or(1);
+    masks
+        .planets
+        .iter()
+        .filter(|mask| {
+            mask.build[destroyer]
+                && Some(mask.record) != home
+                && (1..=2).contains(&picket_count(game_data, mask.record, cost))
+        })
+        .min_by(|a, b| {
+            let gap =
+                |record: usize| distance(game_data.planets[record - 1].sector.to_array(), post);
+            gap(a.record).total_cmp(&gap(b.record))
+        })
+        .map(|mask| mask.record)
+}
+
+/// The destroyers the smallest build amount buys at world `record`.
+fn picket_count(game_data: &CoreGameData, record: usize, cost: u32) -> u32 {
+    let points = game_data.planet_build_points_left(record).unwrap_or(0);
+    if points < cost {
+        0
+    } else {
+        build_units(points, cost, 0)
+    }
+}
+
+/// The smallest destroyer build and nothing else, so it commissions alone
+/// as a picket.
+fn picket_build() -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
+    let mut builds = [0; BUILD_SLOTS];
+    builds[0] = build_choice(ProductionItemKind::Destroyer);
+    (builds, [0; BUILD_SLOTS])
 }
 
 fn home_world(game_data: &CoreGameData, empire: u8) -> Option<usize> {
@@ -636,7 +762,12 @@ fn choose_builds(
         weights.scouts
     };
     if weights.doctrine.defend && !is_home {
-        let exposure = exposure(game_data, memory, planet.sector.to_array());
+        let exposure = exposure(
+            game_data,
+            memory,
+            &weights.doctrine,
+            planet.sector.to_array(),
+        );
         let production = f32::from(nc_data::present_production_points(planet));
         let armies = (weights.colony_armies * production / 25.0).max(1.0) * (1.0 + exposure);
         return defended_builds(
@@ -699,7 +830,12 @@ fn choose_builds(
     } else {
         // A threatened colony builds its guard, alone.
         if allocation >= 1
-            && threatened(game_data, memory, planet.sector.to_array())
+            && threatened(
+                game_data,
+                memory,
+                &weights.doctrine,
+                planet.sector.to_array(),
+            )
             && !guarded(game_data, memory.empire, planet.sector.to_array())
         {
             needs.push(Need::Warship);
@@ -790,7 +926,12 @@ fn defended_builds(
         bought
     };
     if allocation >= 1
-        && threatened(game_data, memory, planet.sector.to_array())
+        && threatened(
+            game_data,
+            memory,
+            &weights.doctrine,
+            planet.sector.to_array(),
+        )
         && !guarded(game_data, memory.empire, planet.sector.to_array())
         && let Some(kind) = preferred_hull(allowed, weights, points, stock)
         && order(kind, 1, &mut points) > 0
@@ -816,8 +957,13 @@ fn defended_builds(
 }
 
 /// How exposed a world is, 0 to 1 (`Doctrine::defend`).
-fn exposure(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> f32 {
-    if threatened(game_data, memory, sector) {
+fn exposure(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    doctrine: &Doctrine,
+    sector: [u8; 2],
+) -> f32 {
+    if threatened(game_data, memory, doctrine, sector) {
         return 1.0;
     }
     memory
@@ -1149,7 +1295,8 @@ fn plan_fleets(
             && world_at(game_data, fleet.target.to_array()).is_some_and(enemy_world)
     };
     let mut blockaded = game_data.fleets.iter().any(blockading);
-    let home_threatened = home_sector.is_some_and(|sector| threatened(game_data, memory, sector));
+    let home_threatened =
+        home_sector.is_some_and(|sector| threatened(game_data, memory, &weights.doctrine, sector));
     let allocation = goals.map_or(0, |goals| goals.allocation);
     // The warship strength gathered at home, waiting to sail.
     let home_force: f32 = game_data
@@ -1312,13 +1459,41 @@ fn plan_fleets(
             }
             let sector = fleet.sector.to_array();
             let own_world = |idx: usize| game_data.planets[idx].owner.0 == empire;
-            // Guards keep station while the allocation holds a share back.
-            if allocation >= 1
+            // Guards keep station while the allocation holds a share back,
+            // and interceptors while the threat lasts.
+            if (allocation >= 1
+                || (weights.doctrine.intercept
+                    && threatened(
+                        game_data,
+                        memory,
+                        &weights.doctrine,
+                        fleet.target.to_array(),
+                    )))
                 && has_combat_ships(fleet)
                 && guarding(fleet)
                 && world_at(game_data, fleet.target.to_array()).is_some_and(own_world)
             {
                 return keep;
+            }
+            // A waiting force sails to meet a threat it can beat there first.
+            if weights.doctrine.intercept
+                && at_home
+                && !home_threatened
+                && has_combat_ships(fleet)
+                && matches!(fleet.order, Order::HoldPosition | Order::RendezvousSector)
+                && let Some((idx, sector)) = interception(
+                    game_data,
+                    memory,
+                    &weights.doctrine,
+                    fleet,
+                    home_idx,
+                    &posted,
+                )
+                && let Some(choice) = order(Order::GuardStarbase, idx)
+                    .or_else(|| order(Order::GuardBlockadeWorld, idx))
+            {
+                posted.push(sector);
+                return choice;
             }
             let mut post = |idx: usize, sector: [u8; 2]| {
                 if posted.contains(&sector) || guarded(game_data, empire, sector) {
@@ -1337,7 +1512,7 @@ fn plan_fleets(
                 && strength(fleet) <= GUARD_STRENGTH
                 && let Some(idx) = world_at(game_data, sector)
                 && own_world(idx)
-                && threatened(game_data, memory, sector)
+                && threatened(game_data, memory, &weights.doctrine, sector)
                 && let Some(choice) = post(idx, sector)
             {
                 return choice;
@@ -1465,6 +1640,36 @@ fn plan_fleets(
         })
         .collect();
     (fleets, labels)
+}
+
+/// The seat's threatened world, other than the muster world, within
+/// [`TRACK_REACH`] of `fleet`, where it outguns the threat, nearest first
+/// (`Doctrine::intercept`).
+fn interception(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    doctrine: &Doctrine,
+    fleet: &Fleet,
+    home_idx: usize,
+    posted: &[[u8; 2]],
+) -> Option<(usize, [u8; 2])> {
+    let from = fleet.sector.to_array();
+    game_data
+        .planets
+        .iter()
+        .enumerate()
+        .filter(|(idx, planet)| planet.owner.0 == memory.empire && *idx != home_idx)
+        .filter_map(|(idx, planet)| {
+            let sector = planet.sector.to_array();
+            if posted.contains(&sector) || guarded(game_data, memory.empire, sector) {
+                return None;
+            }
+            let danger = threat(game_data, memory, doctrine, sector)?;
+            let gap = distance(from, sector);
+            (strength(fleet) >= danger && gap <= TRACK_REACH).then_some((gap, idx, sector))
+        })
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .map(|(_, idx, sector)| (idx, sector))
 }
 
 /// The record of `empire`'s fleet numbered `number`.
@@ -1708,16 +1913,101 @@ fn at_war_with(game_data: &CoreGameData, empire: u8, other: u8) -> bool {
         == Some(&nc_data::DiplomaticRelation::Enemy)
 }
 
-/// A declared enemy's force was reported near `sector` in recent years.
-fn threatened(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> bool {
+/// A hostile force was reported near `sector`, or heading for it, in
+/// recent years. See [`Doctrine::track`].
+fn threatened(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    doctrine: &Doctrine,
+    sector: [u8; 2],
+) -> bool {
+    threat(game_data, memory, doctrine, sector).is_some()
+}
+
+/// The strength of the strongest force threatening `sector`.
+fn threat(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    doctrine: &Doctrine,
+    sector: [u8; 2],
+) -> Option<f32> {
     let year = game_data.conquest.game_year;
-    memory.contacts.iter().any(|contact| {
-        contact.empire != 0
-            && contact.empire != memory.empire
-            && at_war_with(game_data, memory.empire, contact.empire)
-            && year.saturating_sub(contact.year) < THREAT_YEARS
-            && distance(contact.coords, sector) <= THREAT_RANGE
-    })
+    memory
+        .contacts
+        .iter()
+        .filter(|contact| {
+            contact.empire != 0
+                && contact.empire != memory.empire
+                && hostile(game_data, memory, doctrine, contact.empire)
+                && year.saturating_sub(contact.year) < THREAT_YEARS
+                && (distance(contact.coords, sector) <= THREAT_RANGE
+                    || (doctrine.track && heading_for(game_data, memory, contact) == Some(sector)))
+        })
+        .map(contact_strength)
+        .max_by(f32::total_cmp)
+}
+
+/// The seat declared `empire` an enemy, or under [`Doctrine::track`]
+/// `empire` fought it or attacked its worlds lately.
+fn hostile(game_data: &CoreGameData, memory: &SeatMemory, doctrine: &Doctrine, empire: u8) -> bool {
+    at_war_with(game_data, memory.empire, empire)
+        || (doctrine.track
+            && memory.attackers.get(&empire).is_some_and(|&seen| {
+                game_data.conquest.game_year.saturating_sub(seen) < HOSTILE_YEARS
+            }))
+}
+
+/// The seat's world `contact` is heading for: the one within
+/// [`TRACK_REACH`] nearest the line from its empire's nearest known world
+/// through the sighting, ahead of it and within 45 degrees of the line.
+fn heading_for(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    contact: &Contact,
+) -> Option<[u8; 2]> {
+    let seen = contact.coords;
+    let origin = memory
+        .planet_intel
+        .iter()
+        .filter(|(_, intel)| intel.known_owner_empire_id == Some(contact.empire))
+        .map(|(&record, _)| game_data.planets[record - 1].sector.to_array())
+        .min_by(|a, b| distance(*a, seen).total_cmp(&distance(*b, seen)))?;
+    let course = [
+        f32::from(seen[0]) - f32::from(origin[0]),
+        f32::from(seen[1]) - f32::from(origin[1]),
+    ];
+    let length = course[0].hypot(course[1]);
+    if length < 0.5 {
+        return None;
+    }
+    game_data
+        .planets
+        .iter()
+        .filter(|planet| planet.owner.0 == memory.empire)
+        .filter_map(|planet| {
+            let world = planet.sector.to_array();
+            let to = [
+                f32::from(world[0]) - f32::from(seen[0]),
+                f32::from(world[1]) - f32::from(seen[1]),
+            ];
+            let ahead = (to[0] * course[0] + to[1] * course[1]) / length;
+            let off = (to[0] * course[1] - to[1] * course[0]).abs() / length;
+            (ahead > 0.0 && off <= ahead && distance(world, seen) <= TRACK_REACH)
+                .then_some((off, world))
+        })
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .map(|(_, world)| world)
+}
+
+/// A contact's warship strength on [`strength`]'s scale; size classes
+/// count every small vessel as a destroyer.
+fn contact_strength(contact: &Contact) -> f32 {
+    match contact.ships {
+        Some(ships) => {
+            ships.destroyers as f32 + 3.0 * ships.cruisers as f32 + 9.0 * ships.battleships as f32
+        }
+        None => contact.small as f32 + 3.0 * contact.medium as f32 + 9.0 * contact.large as f32,
+    }
 }
 
 /// Strike world `target`: Invade with enough armies aboard, otherwise

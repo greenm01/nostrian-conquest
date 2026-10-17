@@ -33,6 +33,9 @@ doctrine {
     keep-scouts #true
     watch #true
     forward-muster #true
+    pickets #false
+    track #false
+    intercept #false
 }
 // Tuning keeps the style: full garrisons and batteries, starbases, late war
 // and long odds.
