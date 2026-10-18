@@ -222,7 +222,12 @@ code (t205 release checks). The manifest is signed with the release subkey
 | `windows-x86.zip` | `76472804ab65f64fa197d27e4669f820202848bc6a8ff04219e10d51819c9522` |
 | `windows7-x86.zip` | `27306f92c2e1fb5f17206f6bbd65f3f73ff4c622b8904e0ccb975a5ebc5edb1d` |
 
-Staged under `releases/refresh-d16e43de/`; not yet uploaded.
+With the owner's approval, the four archives and the signed manifest replaced
+the beta.3 assets on `release-artifacts`, and its note now describes this
+refresh. The website's player and sysop manual PDFs were replaced with the
+committed ones. A fresh download of all six assets passed GPG and checksum
+verification, and the three manual PDFs on the site are served as
+`application/pdf` and match the committed files.
 
 ## Connections
 
