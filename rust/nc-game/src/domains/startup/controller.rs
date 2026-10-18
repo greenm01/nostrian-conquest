@@ -1026,6 +1026,8 @@ impl App {
                 self.startup_state.first_time_status = None;
                 self.startup_state.first_time_input.clear();
                 self.startup_state.first_time_rename_preloaded_empire = false;
+                // The summary names the empire; keep the stored name.
+                self.startup_state.first_time_empire_name = self.player.empire_name.clone();
                 self.current_screen = ScreenId::FirstTimeJoinSummary;
             }
             ScreenId::FirstTimeJoinEmpireName if self.first_time_join_uses_reserved_prompt() => {

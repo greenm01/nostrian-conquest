@@ -108,6 +108,46 @@ fn joined_player_with_unnamed_homeworld_is_routed_to_homeworld_naming() {
     );
 }
 
+/// Declining the first-login rename keeps the stored name on the join
+/// summary (a sysop saw `Commander, you are ""`).
+#[test]
+fn declining_the_first_login_rename_shows_the_stored_name() {
+    let fixture_dir = temp_joined_needs_homeworld_copy();
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.clone(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    for _ in 0..16 {
+        if app.current_screen() == ScreenId::FirstTimePreloadedRenamePrompt {
+            break;
+        }
+        app.advance_startup();
+    }
+    assert_eq!(
+        app.current_screen(),
+        ScreenId::FirstTimePreloadedRenamePrompt
+    );
+
+    apply_action(
+        &mut app,
+        Action::Startup(StartupAction::RejectFirstTimePrompt),
+    );
+    assert_eq!(app.current_screen(), ScreenId::FirstTimeJoinSummary);
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("the join summary should render");
+    assert!(
+        line_containing(&terminal, "Commander, you are").contains("\"Empire 1\""),
+        "{:?}",
+        line_containing(&terminal, "Commander, you are")
+    );
+}
+
 #[test]
 fn player_two_joined_with_unnamed_homeworld_is_not_retreated_as_first_time() {
     let fixture_dir = temp_joined_needs_homeworld_copy_for_player(2);
