@@ -173,7 +173,7 @@ impl Client {
 pub async fn run(config: Config) -> Result<(), Error> {
     let origin = checked_url(&config.origin)?;
     let database = config.games_root.join(".web-sessions.db");
-    matrix_login::ensure(&rusqlite::Connection::open(&database)?)?;
+    matrix_login::ensure(&nc_data::sqlite::open_for_writes(&database)?)?;
     let mut client = Client::new(&config.homeserver, &config.access_token)?;
     let bot = client.whoami().await?;
     let community = client.join(&config.room).await?;
@@ -297,7 +297,7 @@ async fn with_db<T: Send + 'static>(
     f: impl FnOnce(&rusqlite::Connection) -> Result<T, Error> + Send + 'static,
 ) -> Result<T, Error> {
     let database = database.to_owned();
-    tokio::task::spawn_blocking(move || f(&rusqlite::Connection::open(database)?)).await?
+    tokio::task::spawn_blocking(move || f(&nc_data::sqlite::open_for_writes(&database)?)).await?
 }
 
 pub fn message(origin: &str, issued: &Issued) -> (String, String) {

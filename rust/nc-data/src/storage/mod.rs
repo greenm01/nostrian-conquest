@@ -38,8 +38,6 @@ pub const DEFAULT_CAMPAIGN_DB_NAME: &str = "ncgame.db";
 pub const STALE_SESSION_MESSAGE: &str =
     "Maintenance has run; your last change was not saved. Log in again.";
 const RUNTIME_SCHEMA_VERSION: i64 = 17;
-/// How long a save waits for another session's save to finish (t204).
-const WRITE_BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 const LEGACY_RECORD_TABLES: [&str; 7] = [
     "player_record_fields",
     "planet_record_fields",
@@ -330,8 +328,12 @@ impl CampaignStore {
         Ok(())
     }
 
+    /// Create or upgrade the schema in one write transaction (t205), so
+    /// sessions opening the same file at once cannot race on an upgrade.
     fn initialize(&self) -> Result<(), CampaignStoreError> {
-        let conn = self.connection()?;
+        let mut conn = self.connection()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let conn = &*tx;
         conn.execute_batch(
             "PRAGMA foreign_keys = ON;
              CREATE TABLE IF NOT EXISTS snapshots (
@@ -485,24 +487,23 @@ impl CampaignStore {
                  PRIMARY KEY(snapshot_id, player_record_index)
              );",
         )?;
-        snapshot_core::create_tables(&conn)?;
-        ensure_column(&conn, "planet_intel", "known_docked_summary", "TEXT")?;
-        ensure_column(&conn, "planet_intel", "known_orbit_summary", "TEXT")?;
-        ensure_column(&conn, "planet_intel", "known_starbase_count", "INTEGER")?;
+        snapshot_core::create_tables(conn)?;
+        ensure_column(conn, "planet_intel", "known_docked_summary", "TEXT")?;
+        ensure_column(conn, "planet_intel", "known_orbit_summary", "TEXT")?;
+        ensure_column(conn, "planet_intel", "known_starbase_count", "INTEGER")?;
         ensure_column(
-            &conn,
+            conn,
             "snapshot_planets",
             "crippled_batteries",
             "INTEGER NOT NULL DEFAULT 0",
         )?;
         ensure_column(
-            &conn,
+            conn,
             "ai_seats",
             "personality",
             "TEXT NOT NULL DEFAULT 'land-grab'",
         )?;
-        let mut conn = conn;
-        let schema_version = metadata::load_runtime_schema_version(&mut conn)?;
+        let schema_version = metadata::load_runtime_schema_version(conn)?;
         match schema_version {
             Some(found) if found == RUNTIME_SCHEMA_VERSION => {}
             Some(found) => {
@@ -512,34 +513,27 @@ impl CampaignStore {
                 });
             }
             None => {
-                if legacy_record_schema_present(&conn)? {
+                if legacy_record_schema_present(conn)? {
                     return Err(CampaignStoreError::SchemaVersionMismatch {
                         expected: RUNTIME_SCHEMA_VERSION,
                         found: None,
                     });
                 }
-                metadata::persist_runtime_schema_version(&mut conn, RUNTIME_SCHEMA_VERSION)?;
+                metadata::persist_runtime_schema_version(conn, RUNTIME_SCHEMA_VERSION)?;
             }
         }
+        tx.commit()?;
         Ok(())
     }
 
     fn connection(&self) -> Result<Connection, CampaignStoreError> {
-        Connection::open(&self.path).map_err(CampaignStoreError::Sql)
+        crate::sqlite::open(&self.path).map_err(CampaignStoreError::Sql)
     }
 
-    /// A connection for saving state. It puts the file in WAL mode (t204), so
-    /// sessions reading the campaign never block a player's change, nor it
-    /// them. The mode is stored in the file; reads leave it as it is.
-    /// Writers queue for the lock; SQLite's wait is not fair, so a busy
-    /// campaign can keep one waiting well past rusqlite's default 5 s.
+    /// A connection for saving state: the file in WAL mode (t204), see
+    /// [`crate::sqlite::open_for_writes`].
     fn write_connection(&self) -> Result<Connection, CampaignStoreError> {
-        let conn = self.connection()?;
-        conn.busy_timeout(WRITE_BUSY_TIMEOUT)?;
-        conn.query_row("PRAGMA journal_mode = WAL", [], |row| {
-            row.get::<_, String>(0)
-        })?;
-        Ok(conn)
+        crate::sqlite::open_for_writes(&self.path).map_err(CampaignStoreError::Sql)
     }
 }
 
@@ -549,18 +543,7 @@ fn ensure_column(
     column: &str,
     sql_type: &str,
 ) -> Result<(), CampaignStoreError> {
-    let pragma = format!("PRAGMA table_info({table})");
-    let mut stmt = conn.prepare(&pragma)?;
-    let columns = stmt.query_map([], |row| row.get::<_, String>(1))?;
-    let has_column = columns
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .any(|name| name == column);
-    if !has_column {
-        let sql = format!("ALTER TABLE {table} ADD COLUMN {column} {sql_type}");
-        conn.execute(&sql, [])?;
-    }
-    Ok(())
+    Ok(crate::sqlite::ensure_column(conn, table, column, sql_type)?)
 }
 
 fn legacy_record_schema_present(conn: &Connection) -> Result<bool, CampaignStoreError> {

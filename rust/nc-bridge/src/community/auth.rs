@@ -24,12 +24,13 @@ pub(super) fn token() -> String {
         .collect()
 }
 pub(super) fn connection(state: &Community) -> Result<Connection, String> {
-    Connection::open(state.config.games_root.join(".web-sessions.db")).map_err(|e| e.to_string())
+    nc_data::sqlite::open_for_writes(&state.config.games_root.join(".web-sessions.db"))
+        .map_err(|e| e.to_string())
 }
 pub(super) fn initialize(config: &Config) -> Result<(), String> {
     std::fs::create_dir_all(&config.games_root).map_err(|e| e.to_string())?;
-    let conn =
-        Connection::open(config.games_root.join(".web-sessions.db")).map_err(|e| e.to_string())?;
+    let conn = nc_data::sqlite::open_for_writes(&config.games_root.join(".web-sessions.db"))
+        .map_err(|e| e.to_string())?;
     let legacy: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('web_sessions') WHERE name='discord_id')", [], |r| r.get(0)).map_err(|e| e.to_string())?;
     if legacy {
         return Err(

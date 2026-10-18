@@ -31,8 +31,10 @@ pub struct RosterStore {
 
 impl RosterStore {
     pub fn open(path: &Path) -> SqliteResult<Self> {
-        let conn = Connection::open(path)?;
-        conn.execute_batch(INIT_SQL)?;
+        let mut conn = crate::sqlite::open_for_writes(path)?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        tx.execute_batch(INIT_SQL)?;
+        tx.commit()?;
         Ok(RosterStore { conn })
     }
 

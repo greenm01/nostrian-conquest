@@ -3,10 +3,19 @@ use std::path::Path;
 
 use super::schema::INIT_SQL;
 
-const MIGRATIONS: &[&str] = &[
-    "ALTER TABLE game_metadata ADD COLUMN game_tier TEXT NOT NULL DEFAULT 'league'",
-    "ALTER TABLE game_metadata ADD COLUMN catalog_state TEXT NOT NULL DEFAULT 'listed'",
-    "ALTER TABLE seats ADD COLUMN claimed_year INTEGER",
+/// Columns added after a table was first created: table, column, definition.
+const ADDED_COLUMNS: &[(&str, &str, &str)] = &[
+    (
+        "game_metadata",
+        "game_tier",
+        "TEXT NOT NULL DEFAULT 'league'",
+    ),
+    (
+        "game_metadata",
+        "catalog_state",
+        "TEXT NOT NULL DEFAULT 'listed'",
+    ),
+    ("seats", "claimed_year", "INTEGER"),
 ];
 
 pub struct HostedStore {
@@ -15,9 +24,8 @@ pub struct HostedStore {
 
 impl HostedStore {
     pub fn open(path: &Path) -> SqliteResult<Self> {
-        let conn = Connection::open(path)?;
-        conn.execute_batch(INIT_SQL)?;
-        run_migrations(&conn);
+        let mut conn = crate::sqlite::open_for_writes(path)?;
+        initialize(&mut conn)?;
         Ok(HostedStore { conn })
     }
 
@@ -30,9 +38,8 @@ impl HostedStore {
                 )))
             })?;
         }
-        let conn = Connection::open(path)?;
-        conn.execute_batch(INIT_SQL)?;
-        run_migrations(&conn);
+        let mut conn = crate::sqlite::open_for_writes(path)?;
+        initialize(&mut conn)?;
         Ok(HostedStore { conn })
     }
 
@@ -41,9 +48,14 @@ impl HostedStore {
     }
 }
 
-fn run_migrations(conn: &Connection) {
-    for sql in MIGRATIONS {
-        // Ignore errors — duplicate column means the migration already ran.
-        let _ = conn.execute_batch(sql);
+/// Create or upgrade the schema in one write transaction (t205), so
+/// processes opening the file at once cannot race on an upgrade, and an
+/// upgrade that fails is reported rather than mistaken for one already done.
+fn initialize(conn: &mut Connection) -> SqliteResult<()> {
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    tx.execute_batch(INIT_SQL)?;
+    for (table, column, definition) in ADDED_COLUMNS {
+        crate::sqlite::ensure_column(&tx, table, column, definition)?;
     }
+    tx.commit()
 }

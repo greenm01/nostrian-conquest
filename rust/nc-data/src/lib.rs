@@ -36,6 +36,7 @@ mod report_blocks;
 mod rng;
 mod runtime_reports;
 mod ship_notation;
+pub mod sqlite;
 mod stardock;
 mod starmap;
 mod state_hash;
