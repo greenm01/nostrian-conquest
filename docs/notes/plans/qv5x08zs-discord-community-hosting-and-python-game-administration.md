@@ -219,6 +219,32 @@ Results (2026-10-17):
   before the campaign save. Not done: the attended check of two browser
   terminals keeping their orders through a turn.
 
+Release checks, 2026-10-18 (before a beta.3 refresh):
+
+- Upgrade paths for pre-beta.3 files are gone (`ensure_column`, the
+  pre-version record-table check, the Discord-keyed session check, short
+  `RUSTMAIL.QUE` lines); a schema change now bumps the version.
+- Windows (bean, native MSVC): the workspace passes. The run found and fixed:
+  - the door lost keys that arrived together on a piped stdin (Rust's
+    buffered `Stdin` hid them from the pipe peek), and hung on a stdin that is
+    a file or NUL; both are in the published beta.3;
+  - opening a new `hosted.db` from several sessions could fail as locked:
+    SQLite refuses the switch to WAL as busy without calling the busy
+    handler, so `open_for_writes` waits it out;
+  - test-only problems: deleting open files, an uncanonicalized root, a
+    socket closed before the door read, launch tests inheriting stdin.
+- Two door sessions at once (`nc-game/tests/door_sessions.rs`): both joins
+  kept; a join confirmed while maintenance runs is refused as paused and
+  leaves no trace; both callers come back to the new year. Passes on macOS
+  and Windows (20 runs).
+- Upgrade: a campaign created and played with the published beta.3 Windows
+  x64 archive (`7ee40f4a…`) kept working under the new build through a
+  returning login, a new join and maintenance; it gained its revision
+  counter and stayed `quick_check` ok.
+- A BBS caller without a reservation is no longer shown another caller's
+  reserved-seat screen; they join the first open unreserved seat, with no
+  invite code (codes belong to the web hosting).
+
 ### t121
 
 Package services, back up and restore campaigns, and exercise a private two-game
