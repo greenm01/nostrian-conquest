@@ -15,6 +15,7 @@ use nc_engine::{
 
 use crate::dashboard::overlays::fleet_list;
 
+use super::persistence::Refused;
 use super::state::{
     DashApp, FleetOrderScope, FleetOverlayChangeField, FleetOverlayPromptMode, FleetOverlayRowKey,
     FleetOverlayTransferClass, FleetOverlayTransferMode, HelpContext,
@@ -798,33 +799,41 @@ impl DashApp {
                         let roe = raw
                             .parse::<u8>()
                             .map_err(|_| "Enter an ROE from 0 to 10.".to_string())?;
-                        let mut successful = Vec::new();
-                        let mut failure_detail = None;
-                        for row in &rows {
-                            match self.game_data.set_fleet_rules_of_engagement(
-                                self.player_record_index_1_based,
-                                row.fleet_record_index_1_based,
-                                roe,
-                            ) {
-                                Ok(_) => successful.push(row.fleet_record_index_1_based),
-                                Err(err) => {
-                                    if failure_detail.is_none() {
-                                        failure_detail = Some(err.to_string());
+                        let player_record = self.player_record_index_1_based;
+                        let changed = self.change(|state| {
+                            let mut successful = Vec::new();
+                            let mut failure_detail = None;
+                            for row in &rows {
+                                match state.game_data.set_fleet_rules_of_engagement(
+                                    player_record,
+                                    row.fleet_record_index_1_based,
+                                    roe,
+                                ) {
+                                    Ok(_) => successful.push(row.fleet_record_index_1_based),
+                                    Err(err) => {
+                                        failure_detail.get_or_insert(err.to_string());
                                     }
                                 }
                             }
-                        }
-                        if successful.is_empty() {
-                            self.fleet_overlay.aux_status = Some(
-                                failure_detail
-                                    .unwrap_or_else(|| "Unable to change ROE.".to_string()),
-                            );
-                            return Ok(());
-                        }
+                            if successful.is_empty() {
+                                return Err(Box::new(Refused(
+                                    failure_detail
+                                        .unwrap_or_else(|| "Unable to change ROE.".to_string()),
+                                )));
+                            }
+                            Ok((successful, failure_detail))
+                        });
+                        let (successful, failure_detail) = match changed {
+                            Ok(changed) => changed,
+                            Err(err) if err.is::<Refused>() => {
+                                self.fleet_overlay.aux_status = Some(err.to_string());
+                                return Ok(());
+                            }
+                            Err(err) => return Err(err),
+                        };
                         for record_index in &successful {
                             self.stage_hosted_fleet_roe(*record_index, roe);
                         }
-                        self.save_and_refresh_runtime()?;
                         for record_index in &successful {
                             self.fleet_overlay
                                 .selected_fleet_record_indexes
@@ -875,14 +884,18 @@ impl DashApp {
                             .parse::<u16>()
                             .map_err(|_| "Enter a fleet ID from 1 up.".to_string())?;
                         let old_number = row.fleet_number;
-                        self.game_data
-                            .set_fleet_local_slot(
-                                self.player_record_index_1_based,
-                                row.fleet_record_index_1_based,
-                                id,
-                            )
-                            .map_err(|err| err.to_string())?;
-                        self.save_and_refresh_runtime()?;
+                        let player_record = self.player_record_index_1_based;
+                        self.change(|state| {
+                            state
+                                .game_data
+                                .set_fleet_local_slot(
+                                    player_record,
+                                    row.fleet_record_index_1_based,
+                                    id,
+                                )
+                                .map_err(|err| err.to_string())?;
+                            Ok(())
+                        })?;
                         self.cancel_fleet_aux_prompt();
                         self.fleet_overlay.aux_status = Some(format!(
                             "Fleet #{} renumbered to Fleet #{}.",
@@ -893,37 +906,45 @@ impl DashApp {
                         let speed = raw
                             .parse::<u8>()
                             .map_err(|_| "Enter a speed from 1 up.".to_string())?;
-                        let mut successful = Vec::new();
-                        let mut failure_detail = None;
-                        let mut applied_speed = speed;
-                        for row in &rows {
-                            match self.game_data.set_fleet_speed(
-                                self.player_record_index_1_based,
-                                row.fleet_record_index_1_based,
-                                speed,
-                            ) {
-                                Ok(applied) => {
-                                    applied_speed = applied;
-                                    successful.push(row.fleet_record_index_1_based);
-                                }
-                                Err(err) => {
-                                    if failure_detail.is_none() {
-                                        failure_detail = Some(err.to_string());
+                        let player_record = self.player_record_index_1_based;
+                        let changed = self.change(|state| {
+                            let mut successful = Vec::new();
+                            let mut failure_detail = None;
+                            let mut applied_speed = speed;
+                            for row in &rows {
+                                match state.game_data.set_fleet_speed(
+                                    player_record,
+                                    row.fleet_record_index_1_based,
+                                    speed,
+                                ) {
+                                    Ok(applied) => {
+                                        applied_speed = applied;
+                                        successful.push(row.fleet_record_index_1_based);
+                                    }
+                                    Err(err) => {
+                                        failure_detail.get_or_insert(err.to_string());
                                     }
                                 }
                             }
-                        }
-                        if successful.is_empty() {
-                            self.fleet_overlay.aux_status = Some(
-                                failure_detail
-                                    .unwrap_or_else(|| "Unable to change speed.".to_string()),
-                            );
-                            return Ok(());
-                        }
+                            if successful.is_empty() {
+                                return Err(Box::new(Refused(
+                                    failure_detail
+                                        .unwrap_or_else(|| "Unable to change speed.".to_string()),
+                                )));
+                            }
+                            Ok((successful, failure_detail, applied_speed))
+                        });
+                        let (successful, failure_detail, applied_speed) = match changed {
+                            Ok(changed) => changed,
+                            Err(err) if err.is::<Refused>() => {
+                                self.fleet_overlay.aux_status = Some(err.to_string());
+                                return Ok(());
+                            }
+                            Err(err) => return Err(err),
+                        };
                         for record_index in &successful {
                             self.stage_hosted_fleet_speed(*record_index, speed);
                         }
-                        self.save_and_refresh_runtime()?;
                         for record_index in &successful {
                             self.fleet_overlay
                                 .selected_fleet_record_indexes
@@ -988,17 +1009,20 @@ impl DashApp {
                     .into_iter()
                     .filter(|row| row.fleet_record_index_1_based != plan.host_record_index_1_based)
                 {
-                    self.game_data.set_join_fleet_order(
-                        self.player_record_index_1_based,
-                        row.fleet_record_index_1_based,
-                        plan.host_record_index_1_based,
-                    )?;
+                    let player_record = self.player_record_index_1_based;
+                    self.change(|state| {
+                        state.game_data.set_join_fleet_order(
+                            player_record,
+                            row.fleet_record_index_1_based,
+                            plan.host_record_index_1_based,
+                        )?;
+                        Ok(())
+                    })?;
                     self.stage_hosted_fleet_join(
                         row.fleet_record_index_1_based,
                         plan.host_record_index_1_based,
                     );
                 }
-                self.save_and_refresh_runtime()?;
                 self.fleet_overlay.clear_group_selection();
                 self.cancel_fleet_aux_prompt();
                 Ok(())
@@ -1022,16 +1046,19 @@ impl DashApp {
                     .into_iter()
                     .find(|row| row.fleet_number == host_number)
                     .ok_or_else(|| "Enter one of your fleet numbers.".to_string())?;
-                self.game_data.set_join_fleet_order(
-                    self.player_record_index_1_based,
-                    source.fleet_record_index_1_based,
-                    host.fleet_record_index_1_based,
-                )?;
+                let player_record = self.player_record_index_1_based;
+                self.change(|state| {
+                    state.game_data.set_join_fleet_order(
+                        player_record,
+                        source.fleet_record_index_1_based,
+                        host.fleet_record_index_1_based,
+                    )?;
+                    Ok(())
+                })?;
                 self.stage_hosted_fleet_join(
                     source.fleet_record_index_1_based,
                     host.fleet_record_index_1_based,
                 );
-                self.save_and_refresh_runtime()?;
                 self.cancel_fleet_aux_prompt();
                 Ok(())
             }
@@ -1525,23 +1552,19 @@ impl DashApp {
                 if speed == 0 { fleet.max_speed } else { speed }
             })
             .unwrap_or(selected_row.current_speed);
-        self.game_data.set_fleet_order(
-            selected_row.fleet_record_index_1_based,
-            speed,
-            mission_code,
-            target,
-            aux0,
-            aux1,
-        )?;
-        self.stage_hosted_fleet_order(
-            selected_row.fleet_record_index_1_based,
-            speed,
-            mission_code,
-            target,
-            aux0,
-            aux1,
-        );
-        self.save_and_refresh_runtime()?;
+        let fleet_record = selected_row.fleet_record_index_1_based;
+        self.change(|state| {
+            state.game_data.set_fleet_order(
+                fleet_record,
+                speed,
+                mission_code,
+                target,
+                aux0,
+                aux1,
+            )?;
+            Ok(())
+        })?;
+        self.stage_hosted_fleet_order(fleet_record, speed, mission_code, target, aux0, aux1);
         self.reselect_fleet_overlay_row(FleetOverlayRowKey::Fleet(
             selected_row.fleet_record_index_1_based,
         ));
@@ -1572,38 +1595,37 @@ impl DashApp {
         } else {
             None
         };
-        for (index, row) in selected_rows.iter().enumerate() {
-            let target = seek_home_targets
-                .as_ref()
-                .map_or(target, |targets| targets[index]);
-            let speed = self
-                .game_data
-                .fleets
-                .get(row.fleet_record_index_1_based.saturating_sub(1))
-                .map(|fleet| {
-                    let speed = fleet.speed;
-                    if speed == 0 { fleet.max_speed } else { speed }
-                })
-                .unwrap_or(row.current_speed);
-            self.game_data.set_fleet_order(
-                row.fleet_record_index_1_based,
-                speed,
-                mission_code,
-                target,
-                aux0,
-                aux1,
-            )?;
-            self.stage_hosted_fleet_order(
-                row.fleet_record_index_1_based,
-                speed,
-                mission_code,
-                target,
-                aux0,
-                aux1,
-            );
+        let orders = self.change(|state| {
+            let mut orders = Vec::new();
+            for (index, row) in selected_rows.iter().enumerate() {
+                let target = seek_home_targets
+                    .as_ref()
+                    .map_or(target, |targets| targets[index]);
+                let speed = state
+                    .game_data
+                    .fleets
+                    .get(row.fleet_record_index_1_based.saturating_sub(1))
+                    .map(|fleet| {
+                        let speed = fleet.speed;
+                        if speed == 0 { fleet.max_speed } else { speed }
+                    })
+                    .unwrap_or(row.current_speed);
+                state.game_data.set_fleet_order(
+                    row.fleet_record_index_1_based,
+                    speed,
+                    mission_code,
+                    target,
+                    aux0,
+                    aux1,
+                )?;
+                orders.push((row.fleet_record_index_1_based, speed, target));
+            }
+            Ok(orders)
+        })?;
+        for (fleet_record, speed, target) in orders {
+            self.stage_hosted_fleet_order(fleet_record, speed, mission_code, target, aux0, aux1);
         }
         let reselect = self.fleet_overlay.active_row_key;
-        self.save_and_refresh_runtime()?;
         self.fleet_overlay.clear_group_selection();
         if let Some(key) = reselect {
             self.reselect_fleet_overlay_row(key);
@@ -1621,16 +1643,19 @@ impl DashApp {
                 Some("Selected fleet is no longer available.".to_string());
             return Ok(());
         };
-        self.game_data.set_join_fleet_order(
-            self.player_record_index_1_based,
-            selected_row.fleet_record_index_1_based,
-            host.fleet_record_index_1_based,
-        )?;
+        let player_record = self.player_record_index_1_based;
+        self.change(|state| {
+            state.game_data.set_join_fleet_order(
+                player_record,
+                selected_row.fleet_record_index_1_based,
+                host.fleet_record_index_1_based,
+            )?;
+            Ok(())
+        })?;
         self.stage_hosted_fleet_join(
             selected_row.fleet_record_index_1_based,
             host.fleet_record_index_1_based,
         );
-        self.save_and_refresh_runtime()?;
         self.reselect_fleet_overlay_row(FleetOverlayRowKey::Fleet(
             selected_row.fleet_record_index_1_based,
         ));
@@ -1647,19 +1672,24 @@ impl DashApp {
             self.fleet_overlay.order_status = Some("Select at least one fleet.".to_string());
             return Ok(());
         }
+        let player_record = self.player_record_index_1_based;
+        self.change(|state| {
+            for row in &selected_rows {
+                state.game_data.set_join_fleet_order(
+                    player_record,
+                    row.fleet_record_index_1_based,
+                    host.fleet_record_index_1_based,
+                )?;
+            }
+            Ok(())
+        })?;
         for row in &selected_rows {
-            self.game_data.set_join_fleet_order(
-                self.player_record_index_1_based,
-                row.fleet_record_index_1_based,
-                host.fleet_record_index_1_based,
-            )?;
             self.stage_hosted_fleet_join(
                 row.fleet_record_index_1_based,
                 host.fleet_record_index_1_based,
             );
         }
         let reselect = self.fleet_overlay.active_row_key;
-        self.save_and_refresh_runtime()?;
         self.fleet_overlay.clear_group_selection();
         if let Some(key) = reselect {
             self.reselect_fleet_overlay_row(key);
@@ -1753,20 +1783,27 @@ impl DashApp {
                 Some("Hosted play does not support starbase move orders yet.".to_string());
             return Ok(());
         }
-        if destination == row.coords {
-            self.game_data.halt_starbase(
-                self.player_record_index_1_based,
-                row.base_record_index_1_based,
-            )?;
-        } else {
-            self.game_data.set_starbase_destination(
-                self.player_record_index_1_based,
-                row.base_record_index_1_based,
-                destination,
-            )?;
-        }
-        self.append_report_block(self.starbase_move_report_text(row, destination));
-        self.save_and_refresh_runtime()?;
+        let player_record = self.player_record_index_1_based;
+        let report_text = self.starbase_move_report_text(row, destination);
+        self.change(|state| {
+            if destination == row.coords {
+                state
+                    .game_data
+                    .halt_starbase(player_record, row.base_record_index_1_based)?;
+            } else {
+                state.game_data.set_starbase_destination(
+                    player_record,
+                    row.base_record_index_1_based,
+                    destination,
+                )?;
+            }
+            super::persistence::append_report_block(
+                &mut state.report_block_rows,
+                player_record as u8,
+                report_text,
+            );
+            Ok(())
+        })?;
         self.reselect_fleet_overlay_row(FleetOverlayRowKey::Starbase(
             row.base_record_index_1_based,
         ));
@@ -2091,14 +2128,17 @@ impl DashApp {
             return Ok(());
         }
         let selection = self.fleet_overlay.transfer_selection.clone();
-        self.game_data.transfer_ships_between_fleets(
-            self.player_record_index_1_based,
-            donor,
-            host,
-            selection.clone(),
-        )?;
+        let player_record = self.player_record_index_1_based;
+        self.change(|state| {
+            state.game_data.transfer_ships_between_fleets(
+                player_record,
+                donor,
+                host,
+                selection.clone(),
+            )?;
+            Ok(())
+        })?;
         self.stage_hosted_fleet_transfer(donor, host, selection);
-        self.save_and_refresh_runtime()?;
         self.fleet_overlay.clear_group_selection();
         self.cancel_fleet_aux_prompt();
         Ok(())

@@ -31,13 +31,14 @@ impl DashApp {
         if empire_slot as usize == self.player_record_index_1_based {
             return Ok(());
         }
-        self.game_data.set_stored_diplomatic_relation(
-            self.player_record_index_1_based as u8,
-            empire_slot,
-            relation,
-        )?;
+        let player_record = self.player_record_index_1_based as u8;
+        self.change(|state| {
+            state
+                .game_data
+                .set_stored_diplomatic_relation(player_record, empire_slot, relation)?;
+            Ok(())
+        })?;
         self.stage_hosted_diplomacy(empire_slot, relation);
-        self.save_and_refresh_runtime()?;
         Ok(())
     }
 
@@ -1048,8 +1049,7 @@ impl DashApp {
                         }
                         return;
                     }
-                    delete_selected_inbox_item(self);
-                    if let Err(err) = self.save_and_refresh_runtime() {
+                    if let Err(err) = delete_selected_inbox_item(self) {
                         self.command_line_toast_message = Some(err.to_string());
                     }
                     let total_rows = inbox::selection_rows(self).len();
@@ -1606,7 +1606,7 @@ impl DashApp {
             &self.inbox_overlay.compose_subject,
             &self.inbox_overlay.compose_body,
         )?;
-        self.queued_mail.push(nc_data::QueuedPlayerMail {
+        let mail = nc_data::QueuedPlayerMail {
             sender_empire_id: self.player_record_index_1_based as u8,
             recipient_empire_id: recipient,
             year: self.game_data.conquest.game_year,
@@ -1615,9 +1615,22 @@ impl DashApp {
             recipient_deleted: false,
             sender_deleted: false,
             cancelled: false,
-        });
+        };
+        let player_count = self.game_data.conquest.player_count;
+        self.change(|state| {
+            nc_data::validate_queued_player_message(
+                &state.queued_mail,
+                mail.sender_empire_id,
+                mail.recipient_empire_id,
+                mail.year,
+                player_count,
+                &mail.subject,
+                &mail.body,
+            )?;
+            state.queued_mail.push(mail);
+            Ok(())
+        })?;
         self.stage_hosted_message(recipient, subject, body);
-        self.save_and_refresh_runtime()?;
         self.close_inbox_prompt();
         Ok(())
     }
@@ -1650,8 +1663,7 @@ impl DashApp {
             .inbox_overlay
             .outbox_selected
             .min(messages.len().saturating_sub(1));
-        cancel_queued_message(self, &messages[selected]);
-        self.save_and_refresh_runtime()?;
+        cancel_queued_message(self, &messages[selected])?;
         let remaining = inbox::staged_outbox_messages(self).len();
         self.inbox_overlay.outbox_selected = self
             .inbox_overlay
@@ -2098,7 +2110,7 @@ pub(super) fn scroll_selected(selected: usize, lines: i32, total: usize) -> usiz
         selected.saturating_sub(lines as usize)
     }
 }
-fn delete_selected_inbox_item(app: &mut DashApp) {
+fn delete_selected_inbox_item(app: &mut DashApp) -> Result<(), Box<dyn std::error::Error>> {
     let viewer = app.player_record_index_1_based as u8;
     let state = &app.inbox_overlay;
     let current_year = app.game_data.conquest.game_year;
@@ -2114,31 +2126,53 @@ fn delete_selected_inbox_item(app: &mut DashApp) {
 
     let selected = state.selected.min(items.len().saturating_sub(1));
     let Some(item) = items.get(selected) else {
-        return;
+        return Ok(());
     };
 
     match item.source {
-        DashInboxItemSource::ReportBlock(idx) => nc_data::delete_report_block_for_viewer(
-            &mut app.report_block_rows,
-            &app.game_data.players,
-            idx,
-            viewer,
-        ),
-        DashInboxItemSource::QueuedMail(idx) if item.item_type == DashInboxItemType::Outgoing => {
-            if let Some(mail) = app.queued_mail.get(idx) {
-                let message = nc_data::TurnMessage {
-                    recipient_empire: mail.recipient_empire_id,
-                    subject: mail.subject.clone(),
-                    body: mail.body.clone(),
-                };
-                cancel_queued_message(app, &message);
-            }
+        DashInboxItemSource::ReportBlock(idx) => {
+            // Another player's change can add reports and so move rows: name
+            // the report by its key, not its position.
+            let Some(key) = app
+                .report_block_rows
+                .get(idx)
+                .map(|row| (row.viewer_empire_id, row.block_index))
+            else {
+                return Ok(());
+            };
+            app.change(|state| {
+                if let Some(idx) = state
+                    .report_block_rows
+                    .iter()
+                    .position(|row| (row.viewer_empire_id, row.block_index) == key)
+                {
+                    nc_data::delete_report_block_for_viewer(
+                        &mut state.report_block_rows,
+                        &state.game_data.players,
+                        idx,
+                        viewer,
+                    );
+                }
+                Ok(())
+            })
         }
-        DashInboxItemSource::QueuedMail(idx) => {
-            if let Some(mail) = app.queued_mail.get_mut(idx) {
+        DashInboxItemSource::QueuedMail(idx) if item.item_type == DashInboxItemType::Outgoing => {
+            let Some(mail) = app.queued_mail.get(idx) else {
+                return Ok(());
+            };
+            let message = nc_data::TurnMessage {
+                recipient_empire: mail.recipient_empire_id,
+                subject: mail.subject.clone(),
+                body: mail.body.clone(),
+            };
+            cancel_queued_message(app, &message)
+        }
+        DashInboxItemSource::QueuedMail(idx) => app.change(|state| {
+            if let Some(mail) = state.queued_mail.get_mut(idx) {
                 mail.mark_deleted_by_recipient();
             }
-        }
+            Ok(())
+        }),
     }
 }
 
@@ -2152,18 +2186,24 @@ fn first_message_recipient_default(app: &DashApp) -> String {
 /// Cancels one of the player's own messages before maintenance delivers it:
 /// the outbox and the inbox's outgoing rows both end here. The message leaves
 /// the visible queue and the hosted turn draft; its local record is retained.
-fn cancel_queued_message(app: &mut DashApp, message: &nc_data::TurnMessage) {
+fn cancel_queued_message(
+    app: &mut DashApp,
+    message: &nc_data::TurnMessage,
+) -> Result<(), Box<dyn std::error::Error>> {
     let sender = app.player_record_index_1_based as u8;
-    let year = app.game_data.conquest.game_year;
-    if let Some(index) = app.queued_mail.iter().position(|mail| {
-        mail.is_queued_by(sender, year)
-            && mail.recipient_empire_id == message.recipient_empire
-            && mail.year == year
-            && mail.subject == message.subject
-            && mail.body == message.body
-    }) {
-        app.queued_mail[index].cancel();
-    }
+    app.change(|state| {
+        let year = state.game_data.conquest.game_year;
+        if let Some(mail) = state.queued_mail.iter_mut().find(|mail| {
+            mail.is_queued_by(sender, year)
+                && mail.recipient_empire_id == message.recipient_empire
+                && mail.year == year
+                && mail.subject == message.subject
+                && mail.body == message.body
+        }) {
+            mail.cancel();
+        }
+        Ok(())
+    })?;
     let draft_index = app
         .hosted_turn_draft
         .as_ref()
@@ -2171,6 +2211,7 @@ fn cancel_queued_message(app: &mut DashApp, message: &nc_data::TurnMessage) {
     if let Some(index) = draft_index {
         app.remove_hosted_message(index);
     }
+    Ok(())
 }
 
 fn prompt_raw_value<'a>(input: &'a str, default: &'a str) -> &'a str {

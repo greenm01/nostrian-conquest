@@ -472,10 +472,14 @@ impl DashApp {
         if tax_rate > 100 {
             return Err("Enter an integer tax rate from 0 to 100.".into());
         }
-        self.game_data
-            .set_player_tax_rate(self.player_record_index_1_based, tax_rate)?;
+        let player_record = self.player_record_index_1_based;
+        self.change(|state| {
+            state
+                .game_data
+                .set_player_tax_rate(player_record, tax_rate)?;
+            Ok(())
+        })?;
         self.stage_hosted_tax_rate(tax_rate);
-        self.save_and_refresh_runtime()?;
         self.close_active_popup();
         let revenue = self
             .game_data

@@ -277,17 +277,19 @@ impl DashApp {
         let Some(unit) = build_unit_spec_by_kind(kind) else {
             return Ok(());
         };
-        self.game_data.remove_planet_build_points_by_kind(
-            planet_record_index_1_based,
-            kind,
-            unit.cost,
-        )?;
+        self.change(|state| {
+            state.game_data.remove_planet_build_points_by_kind(
+                planet_record_index_1_based,
+                kind,
+                unit.cost,
+            )?;
+            Ok(())
+        })?;
         self.stage_hosted_planet_remove_build(
             planet_record_index_1_based,
             1,
             production_item_kind_code(kind),
         );
-        self.save_and_refresh_runtime()?;
         self.reselect_planet_overlay_row(planet_record_index_1_based);
         self.planet_overlay.build_unit_input.clear();
         self.planet_overlay.build_unit_status = None;
@@ -318,13 +320,16 @@ impl DashApp {
             self.close_planet_build_overlay();
             return Ok(());
         };
-        self.game_data
-            .clear_planet_build_orders_by_kind(planet_record_index_1_based, kind)?;
+        self.change(|state| {
+            state
+                .game_data
+                .clear_planet_build_orders_by_kind(planet_record_index_1_based, kind)?;
+            Ok(())
+        })?;
         self.stage_hosted_planet_clear_build_kind(
             planet_record_index_1_based,
             production_item_kind_code(kind),
         );
-        self.save_and_refresh_runtime()?;
         self.reselect_planet_overlay_row(planet_record_index_1_based);
         self.planet_overlay.build_unit_input.clear();
         self.planet_overlay.build_unit_status = None;
@@ -533,18 +538,19 @@ impl DashApp {
         }
 
         let points = qty.saturating_mul(unit.cost);
-        self.game_data.append_planet_build_order(
-            planet_record_index_1_based,
-            points,
-            production_item_kind_code(kind),
-        )?;
-
+        self.change(|state| {
+            state.game_data.append_planet_build_order(
+                planet_record_index_1_based,
+                points,
+                production_item_kind_code(kind),
+            )?;
+            Ok(())
+        })?;
         self.stage_hosted_planet_build(
             planet_record_index_1_based,
             points,
             production_item_kind_code(kind),
         );
-        self.save_and_refresh_runtime()?;
         self.reselect_planet_overlay_row(planet_record_index_1_based);
         self.planet_overlay.build_unit_status = None;
         self.planet_overlay.build_quantity_status = None;

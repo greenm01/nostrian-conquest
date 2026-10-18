@@ -570,6 +570,7 @@ fn planet_overlay_minus_removes_one_selected_unit_in_place() {
     app.game_data
         .append_planet_build_order(1, 15, 1)
         .expect("queue build order");
+    store_edits(&mut app);
     app.open_planet_build_specify();
 
     app.handle_key(key(KeyCode::Char('-')));
@@ -1513,6 +1514,7 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
     let moving = &mut speed_app.game_data.fleets[speed_row.fleet_record_index_1_based - 1];
     moving.order = nc_data::Order::MoveOnly;
     moving.target = nc_data::Coords::from_array([1, 1]);
+    store_edits(&mut speed_app);
     speed_app.handle_key(key(KeyCode::Char('c')));
     speed_app.handle_key(key(KeyCode::Char('s')));
     assert_eq!(
@@ -1563,6 +1565,7 @@ fn checked_change_clears_only_successful_fleets_on_partial_roe_update() {
         nc_data::recompute_max_speed(support);
         support.rules_of_engagement = 0;
     }
+    store_edits(&mut app);
 
     app.handle_key(key(KeyCode::Char('c')));
     app.handle_key(key(KeyCode::Char('r')));
@@ -4291,6 +4294,17 @@ fn dash_app_with_starbase_store() -> DashApp {
         crate::dashboard::geometry::ScreenGeometry::new(108, 26),
         1,
     )
+}
+
+/// Store a test's edits to the dashboard's state, since a change applies to
+/// the stored campaign (t204).
+fn store_edits(app: &mut DashApp) {
+    let edited = app.game_data.clone();
+    app.change(|state| {
+        state.game_data = edited;
+        Ok(())
+    })
+    .expect("store the test's edits");
 }
 
 fn dash_app_with_store() -> DashApp {

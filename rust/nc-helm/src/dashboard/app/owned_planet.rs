@@ -143,13 +143,15 @@ impl DashApp {
             self.close_owned_planet_popup();
             return Ok(());
         };
-        let result = self.game_data.commission_planet_stardock_slot(
-            self.player_record_index_1_based,
-            record,
-            slot_0_based,
-        )?;
+        let player_record = self.player_record_index_1_based;
+        let result = self.change(|state| {
+            Ok(state.game_data.commission_planet_stardock_slot(
+                player_record,
+                record,
+                slot_0_based,
+            )?)
+        })?;
         self.stage_hosted_planet_commission(record, slot_0_based);
-        self.save_and_refresh_runtime()?;
         self.owned_planet_popup.report_lines = vec![self.format_commission_result_line(result)];
         self.owned_planet_popup.mode = OwnedPlanetPopupMode::CommissionResult;
         self.owned_planet_popup.input.clear();
@@ -192,13 +194,15 @@ impl DashApp {
             self.planet_overlay.clear_prompt();
             return Ok(());
         };
-        let result = self.game_data.commission_planet_stardock_slot(
-            self.player_record_index_1_based,
-            record,
-            slot_0_based,
-        )?;
+        let player_record = self.player_record_index_1_based;
+        let result = self.change(|state| {
+            Ok(state.game_data.commission_planet_stardock_slot(
+                player_record,
+                record,
+                slot_0_based,
+            )?)
+        })?;
         self.stage_hosted_planet_commission(record, slot_0_based);
-        self.save_and_refresh_runtime()?;
         let message = self.format_commission_result_line(result);
         self.close_planet_overlay_action_with_notice(message);
         Ok(())
@@ -215,15 +219,17 @@ impl DashApp {
     pub(crate) fn confirm_owned_planet_mass_commission(
         &mut self,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let report = self
-            .game_data
-            .auto_commission_all_stardock_units(self.player_record_index_1_based)?;
         let Some(record) = self.owned_planet_popup_record_index_1_based() else {
             self.close_owned_planet_popup();
             return Ok(());
         };
+        let player_record = self.player_record_index_1_based;
+        let report = self.change(|state| {
+            Ok(state
+                .game_data
+                .auto_commission_all_stardock_units(player_record)?)
+        })?;
         self.stage_hosted_planet_auto_commission(record);
-        self.save_and_refresh_runtime()?;
         let lines = self.format_auto_commission_report_lines(&report);
         if lines.is_empty() {
             self.set_owned_planet_popup_mode(OwnedPlanetPopupMode::Browse);
@@ -253,15 +259,17 @@ impl DashApp {
     pub(crate) fn confirm_planet_overlay_mass_commission(
         &mut self,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let report = self
-            .game_data
-            .auto_commission_all_stardock_units(self.player_record_index_1_based)?;
         let Some(record) = self.planet_overlay_action_planet_record_index_1_based() else {
             self.planet_overlay.clear_prompt();
             return Ok(());
         };
+        let player_record = self.player_record_index_1_based;
+        let report = self.change(|state| {
+            Ok(state
+                .game_data
+                .auto_commission_all_stardock_units(player_record)?)
+        })?;
         self.stage_hosted_planet_auto_commission(record);
-        self.save_and_refresh_runtime()?;
         if report.entries.is_empty() {
             self.close_planet_overlay_action_with_notice("Nothing was available to commission.");
             return Ok(());
@@ -409,35 +417,36 @@ impl DashApp {
             )
             .into());
         }
+        let player_record = self.player_record_index_1_based;
+        self.change(|state| {
+            match mode {
+                ArmyTransportMode::Load => state.game_data.load_planet_armies_onto_fleet(
+                    player_record,
+                    planet_record_index_1_based,
+                    fleet_record_index_1_based,
+                    qty,
+                ),
+                ArmyTransportMode::Unload => state.game_data.unload_fleet_armies_to_planet(
+                    player_record,
+                    planet_record_index_1_based,
+                    fleet_record_index_1_based,
+                    qty,
+                ),
+            }?;
+            Ok(())
+        })?;
         match mode {
-            ArmyTransportMode::Load => {
-                self.game_data.load_planet_armies_onto_fleet(
-                    self.player_record_index_1_based,
-                    planet_record_index_1_based,
-                    fleet_record_index_1_based,
-                    qty,
-                )?;
-                self.stage_hosted_fleet_load_armies(
-                    fleet_record_index_1_based,
-                    planet_record_index_1_based,
-                    qty,
-                );
-            }
-            ArmyTransportMode::Unload => {
-                self.game_data.unload_fleet_armies_to_planet(
-                    self.player_record_index_1_based,
-                    planet_record_index_1_based,
-                    fleet_record_index_1_based,
-                    qty,
-                )?;
-                self.stage_hosted_fleet_unload_armies(
-                    fleet_record_index_1_based,
-                    planet_record_index_1_based,
-                    qty,
-                );
-            }
+            ArmyTransportMode::Load => self.stage_hosted_fleet_load_armies(
+                fleet_record_index_1_based,
+                planet_record_index_1_based,
+                qty,
+            ),
+            ArmyTransportMode::Unload => self.stage_hosted_fleet_unload_armies(
+                fleet_record_index_1_based,
+                planet_record_index_1_based,
+                qty,
+            ),
         }
-        self.save_and_refresh_runtime()?;
         let fleet_number = self
             .planet_overlay
             .transport_selected_fleet_number
@@ -523,35 +532,36 @@ impl DashApp {
             )
             .into());
         }
+        let player_record = self.player_record_index_1_based;
+        self.change(|state| {
+            match mode {
+                ArmyTransportMode::Load => state.game_data.load_planet_armies_onto_fleet(
+                    player_record,
+                    planet_record_index_1_based,
+                    fleet_record_index_1_based,
+                    qty,
+                ),
+                ArmyTransportMode::Unload => state.game_data.unload_fleet_armies_to_planet(
+                    player_record,
+                    planet_record_index_1_based,
+                    fleet_record_index_1_based,
+                    qty,
+                ),
+            }?;
+            Ok(())
+        })?;
         match mode {
-            ArmyTransportMode::Load => {
-                self.game_data.load_planet_armies_onto_fleet(
-                    self.player_record_index_1_based,
-                    planet_record_index_1_based,
-                    fleet_record_index_1_based,
-                    qty,
-                )?;
-                self.stage_hosted_fleet_load_armies(
-                    fleet_record_index_1_based,
-                    planet_record_index_1_based,
-                    qty,
-                );
-            }
-            ArmyTransportMode::Unload => {
-                self.game_data.unload_fleet_armies_to_planet(
-                    self.player_record_index_1_based,
-                    planet_record_index_1_based,
-                    fleet_record_index_1_based,
-                    qty,
-                )?;
-                self.stage_hosted_fleet_unload_armies(
-                    fleet_record_index_1_based,
-                    planet_record_index_1_based,
-                    qty,
-                );
-            }
+            ArmyTransportMode::Load => self.stage_hosted_fleet_load_armies(
+                fleet_record_index_1_based,
+                planet_record_index_1_based,
+                qty,
+            ),
+            ArmyTransportMode::Unload => self.stage_hosted_fleet_unload_armies(
+                fleet_record_index_1_based,
+                planet_record_index_1_based,
+                qty,
+            ),
         }
-        self.save_and_refresh_runtime()?;
         let fleet_number = self
             .owned_planet_popup
             .transport_selected_fleet_number
@@ -617,9 +627,11 @@ impl DashApp {
             .get(record.saturating_sub(1))
             .map(|planet| planet.name.trim().to_string())
             .unwrap_or_else(|| "Planet".to_string());
-        self.game_data.set_planet_scorch_earth(record, scorched)?;
+        self.change(|state| {
+            state.game_data.set_planet_scorch_earth(record, scorched)?;
+            Ok(())
+        })?;
         self.stage_hosted_planet_scorch(record, scorched);
-        self.save_and_refresh_runtime()?;
         self.set_owned_planet_popup_mode(OwnedPlanetPopupMode::Browse);
         self.show_owned_planet_status(if scorched {
             format!("Planet \"{planet_name}\" will be scorched at maintenance.")
