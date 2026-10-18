@@ -7,6 +7,8 @@ Keep the manuals clear, direct, and in the spirit of classic game documentation 
 - **Player manuals**: Address the reader as "you". Use straightforward masculine defaults: he, him, his when referring to the player or a generic person. Speak plainly, like one gamer explaining the game to another.
 - **Admin/sysop manuals**: Use clear, imperative language. Be authoritative and precise — this is written for the men who run the server.
 - Overall: Short sentences. Active voice. Cut unnecessary words. Write as if it's 1992. Be complete but concise.
+- Prose follows *Dreyer's English*: plain words, no clutter, no stacked clauses, consistent terms. Aim for an 8th- to 9th-grade reading level without losing precision.
+- The rules must be complete enough that someone with only the manual could rebuild the game. State every order, price, and rounding rule.
 
 ## Core Principles
 - Clarity first. If something is confusing, rewrite it.
