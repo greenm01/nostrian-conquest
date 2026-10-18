@@ -114,9 +114,9 @@
 
 Beyond the mapped frontiers of the old Nostrian dominion lies a small galaxy of contested solar systems. The old masters are gone. Their stations are silent, their patrols vanished, and their subjects left with fleets, industry, and enough knowledge to build empires.
 
-You rise as one of the new Star Masters. From a single world and a few small fleets, you must tax, build, scout, bargain, threaten, and strike before rival powers can do the same. Some systems will join your banner willingly. Others will require persuasion from orbit.
+You rise as one of the new Star Masters. From a single world and a few small fleets, you must tax, build, scout, bargain, threaten, and strike before your rivals do the same. Some systems will join your banner willingly. Others will need persuasion from orbit.
 
-Each maintenance marks the passage of a year. In that span, fleets cross the dark between stars, colonies grow or starve, alliances turn cold, and victory is decided by industry, cunning, and will.
+Each maintenance marks the passage of a year. In that span, fleets cross the dark between stars, colonies grow or starve, alliances turn cold, and industry, cunning, and will decide the victor.
 
 Nostrian Conquest is a Rust recreation inspired by the classic 1990s BBS door game Esterian Conquest. All code, UI, and assets in this edition are original. It is not affiliated with any original release.
 
@@ -130,24 +130,24 @@ In homage to the 1990s door-game pioneers and to the ancient dreamers, strategis
 
 == Choose How to Play
 
-*Browser play* is the recommended way to join a community game. Open the
+*Browser play* is the best way to join a community game. Open the
 #link("https://play.nostrian-conquest.com")[game list] at
 `play.nostrian-conquest.com`, sign in with Discord, Nostr or Matrix, claim an
-empire, and play in your browser. No game client needs to be installed. The
-browser terminal uses *xterm.js* to preserve the old-school BBS feel: ANSI
-colors, text menus, and keyboard commands in an 80×25 screen.
+empire, and play in your browser. You install nothing. The browser terminal
+uses *xterm.js* to keep the old BBS feel: ANSI colors, text menus, and
+keyboard commands on an 80×25 screen.
 
 The home page, #link("https://nostrian-conquest.com")[`nostrian-conquest.com`],
 links to the game list, the manuals, screenshots and downloads.
 
-*Traditional BBS play* remains available. Connect to a bulletin board with a
+*BBS play* still works the old way. Connect to a bulletin board with a
 terminal client and launch NC from its doors menu. The sysop runs `nc-door`
 behind the board. See the *Sysop Manual* section *BBS Door Setup* for hosting
 instructions.
 
-*Localhost play* runs `nc-game` directly on the same machine as the campaign.
-Use it for solo play, hotseat testing, or trusted local sessions. See the
-*Sysop Manual* section *Localhost Session Setup* if you are hosting it yourself.
+*Localhost play* runs `nc-game` on the same machine as the campaign. Use it
+for solo play, hotseat testing, or trusted local sessions. See the *Sysop
+Manual* section *Localhost Session Setup* if you host it yourself.
 
 #admonition("NOTE", [
   Decentralized play through *Nostr GameServer* is on the roadmap. It is not
@@ -158,7 +158,7 @@ Use it for solo play, hotseat testing, or trusted local sessions. See the
 == Find Other Players
 
 Players gather in two places. Hosts announce new games there and hand out
-invite codes, and players trade news and strategy.
+invite codes. Players trade news and strategy.
 
 - *Discord:* the
   #link("https://discord.gg/eZMRpdQTu")[Nostrian Conquest Discord server]. Read
@@ -168,10 +168,10 @@ invite codes, and players trade news and strategy.
   space, the same community for players who don't use Discord.
 
 Whichever place you join, you can sign in to play with Discord, Nostr or
-Matrix. Ask a game's host for an invite code if the game needs one.
+Matrix. If a game needs an invite code, ask its host for one.
 
-To reach the author with questions, bug reports or ideas, message this Nostr
-public key. The #link("https://play.nostrian-conquest.com/contact")[contact page] also lists Discord and Matrix.
+For questions, bug reports or ideas, message the author at this Nostr public
+key. The #link("https://play.nostrian-conquest.com/contact")[contact page] also lists Discord and Matrix.
 
 #align(center)[`npub1cecl2g9z776jvpudpqxajsrsgwuvq4vp7w26q74tx2438zy3q9vq8st7pp`]
 
@@ -185,12 +185,12 @@ public key. The #link("https://play.nostrian-conquest.com/contact")[contact page
 
 To return, open the game list, sign in the same way, and choose *Play*.
 
-Each invite code claims one seat. Keep it private. You only need it once;
-your Discord account, Nostr key or Matrix account owns the seat afterward.
-Players using any of the three share the same games. Your player handle comes
-from your public profile name when you claim the seat and stays fixed for that
-game; ask the host to change it. Your empire name is a separate name you
-choose.
+Each invite code claims one seat. Keep it private. You need it only once.
+After that, your Discord account, Nostr key or Matrix account owns the seat.
+Players on all three share the same games. Your player handle comes from
+your public profile name when you claim the seat, and it stays fixed for that
+game. Ask the host if you need it changed. Your empire name is a separate
+name you choose.
 
 *Discord.* Choose *Sign in with Discord* and approve access. Your Discord
 display name becomes your player handle.
@@ -206,21 +206,21 @@ if asked. The game learns only your Matrix ID, not your messages or rooms. Your
 Matrix display name becomes your player handle. If your account is on another
 Matrix server, choose *Matrix account not on matrix.org?* instead and enter
 your Matrix ID, such as `@you:example.org`. The host's bot invites you to a
-private room and sends a sign-in link and a code that work once and expire
+private room and sends a sign-in link and a code. Each works once and expires
 after ten minutes.
 
 A recruiting game waits for its host to start it. Players can join and prepare
-orders while they wait. Filling all seats or opening *Play* does not start the
-game. The host sets the turn schedule. You do not need to stay online when
-maintenance runs.
+orders while they wait. Filling every seat does not start the game, and
+neither does opening *Play*. The host sets the turn schedule. You need not be
+online when maintenance runs.
 
 #pagebreak()
 
 == Play Through the Discord Bot
 
 Discord players can also join and play with the bot's slash commands. Give the
-game ID when a command asks for one. Bot replies and empire downloads are
-private to you.
+game ID when a command asks for one. Only you see the bot's replies and your
+empire downloads.
 
 - `/games` — List games and their IDs.
 - `/join` — Claim a seat: `/join game:beta-1 code:YOURCODE`. Replace the
@@ -239,9 +239,9 @@ Keep a printed map or spreadsheet beside your terminal to track your plans.
 
 == Join Through a BBS or Localhost
 
-For a BBS campaign, connect to the board normally and launch NC from its doors
-menu. Your sysop may reserve a seat for your BBS alias or leave seats open in
-the game's first-time join menu. A reserved alias takes you to its assigned
+For a BBS campaign, connect to the board as usual and launch NC from its doors
+menu. Your sysop may reserve a seat for your BBS alias, or leave seats open in
+the game's first-time join menu. A reserved alias takes you straight to its
 empire. Invite codes are for community browser games, not BBS logins.
 
 For localhost play, your sysop tells you which machine and player slot to use.
@@ -261,7 +261,7 @@ Your sysop may give you a different player number or run the command for you.
 
 You hold one world and a handful of ships. Somewhere beyond your sensors,
 other Star Masters hold the same. The galaxy will belong to whoever builds,
-claims, and strikes fastest. This chapter takes you through your first year in
+claims, and strikes fastest. This chapter walks you through your first year in
 command. @forces describes every unit you can build, and @missions every
 mission you can give.
 
@@ -277,7 +277,7 @@ Your empire begins with:
   And Colonization ship), and two lone destroyers.
 
 The colony fleets move at speed 3, the ETAC's pace. The destroyers move at
-speed 6, as fast as anything in the game. Send them out early to see what
+speed 6, as fast as any ship in the game. Send them out early to see what
 lies near you.
 
 Your objective is to become Emperor. You win when every rival empire is
@@ -288,19 +288,19 @@ Defeated and no rogue empire still holds a world (see @victory).
 There is no End Turn button. You read your reports, set your economy, give
 your fleets their orders, and log off. The host's schedule decides when
 maintenance runs. When it does, the game resolves every empire at once:
-fleets move, battles are fought, colonies grow, builds complete, and the year
-advances. Your next login opens with a fresh set of reports telling you what
-happened.
+fleets move, battles are fought, colonies grow, builds finish, and the year
+advances. Your next login opens with a fresh set of reports that tell you
+what happened.
 
 Each maintenance is one year. Reports are dated by week and year, as
 `Stardate WK/YYYY`, so a battle report tells you when in the year the fight
 took place. You need not be online when maintenance runs. The orders you give
-stand until it resolves them, and a new order replaces the old one.
+stand until maintenance resolves them, and a new order replaces the old one.
 
-The pace is deliberate. Players log in on their own schedules, which leaves
-time to plan, to bargain, and to read the map. Other players can be logged in
-at the same time as you. Each change you make is saved at once, and no
-player's change ever undoes another's.
+The pace is slow on purpose. Players log in on their own schedules, which
+leaves time to plan, to bargain, and to read the map. Other players can be
+logged in at the same time as you. The game saves each change at once, and
+no player's change ever undoes another's.
 
 #admonition("NOTE")[If maintenance runs while you are logged in, the game cannot save your next change. The menu notice line says: "Maintenance has run; your last change was not saved. Log in again." Log in again to carry on. In a BBS door the session ends and returns you to the BBS.]
 
@@ -312,22 +312,26 @@ later turns go faster.
 1. *Read your reports.* The login review scrolls your newest reports and
    messages. Note which worlds grew, where your fleets are, and whom you have
    met.
-2. *Look at the map.* Press *G*, then *M*, for the full galaxy map. Find your homeworld and the worlds nearest it. Back on the Main Menu, *T* opens the Total Planet Database, which lists what you know about each world. Keep a printed map or a
-   spreadsheet beside you and update it every turn: coordinates, owners,
-   Potential, and where your fleets are going. Localhost players can export a
-   text map and CSV files from the starmap screen. On a BBS, ask your sysop
-   for the export. On Discord, use `/map`.
-3. *Check your tax rate.* Press *P* for Planet Command; its Tax (*T*) sets one rate for every
-   world you own. You start at 50%. Leave it there, or lower, while your
-   colonies grow. Above 65%, a yearly penalty eats into Production.
+2. *Look at the map.* Press *G*, then *M*, for the full galaxy map. Find your
+   homeworld and the worlds nearest it. Back on the Main Menu, *T* opens the
+   Total Planet Database, which lists what you know about each world. Keep a
+   printed map or a spreadsheet beside you and update it every turn:
+   coordinates, owners, Potential, and where your fleets are going. Localhost
+   players can export a text map and CSV files from the starmap screen. On a
+   BBS, ask your sysop for the export. On Discord, use `/map`.
+3. *Check your tax rate.* Press *P* for Planet Command. Its Tax (*T*) sets one
+   rate for every world you own. You start at 50%. Leave it there, or lower,
+   while your colonies grow. Above 65%, a yearly penalty eats into Production.
 4. *Queue builds.* Build (*B*) in Planet Command spends your homeworld's
-   budget. An ETAC colonizes a world and survives to colonize another, a
-   transport carries one army, and a ground battery or a few more armies keep
+   budget. An ETAC colonizes a world and survives to colonize another. A
+   transport carries one army. A ground battery or a few more armies keep
    your homeworld safe while your fleets are away. @forces lists every unit
    with its cost, and @building explains the build queue.
-5. *Commission and load.* Builds finish at maintenance, so this step starts on your next visit. Finished ships wait in stardock until you commission them (*C*, or *M* for everything at once) into a fleet. Transports are
-   built empty: Load (*L*) armies aboard before they sail.
-6. *Give missions and ROE.* Press *F* for Fleet Command; its Mission (*O*)
+5. *Commission and load.* Builds finish at maintenance, so this step starts on
+   your next visit. Finished ships wait in stardock until you commission them
+   (*C*, or *M* for everything at once) into a fleet. Transports are built
+   empty: Load (*L*) armies aboard before they sail.
+6. *Give missions and ROE.* Press *F* for Fleet Command. Its Mission (*O*)
    sends a fleet out. Send your two colony fleets to Colonize a World (12) at
    two different promising worlds near you, and a destroyer on Move Fleet (1)
    or View a World (9) to see what is out there. When an ETAC has founded its
@@ -342,7 +346,7 @@ later turns go faster.
 
 #admonition("WARNING")[Ships in stardock are a bombardment target. Commission them as soon as they are built, or an enemy may destroy them before they ever fly.]
 
-#admonition("WARNING")[Above 65% tax, a yearly penalty eats into Production and mature worlds decline. Held steady, 65% brings in the most over the years; a higher rate buys cash now at the cost of later years, and no starbase removes the penalty.]
+#admonition("WARNING")[Above 65% tax, a yearly penalty eats into Production and mature worlds decline. Held at 65%, a world brings in the most over the years. A higher rate buys cash now and costs you later. No starbase removes the penalty.]
 
 #pagebreak()
 
@@ -374,29 +378,31 @@ You control five major force types: planets, ships, starbases, armies, and groun
 
 == Planets
 
-Planets are the foundation of your empire. Each one has a *Potential Production* --- the ceiling it can reach at full efficiency, ranging from 10 to 150 across the galaxy --- and a *Production*, which is what the planet can actually deliver right now. Production grows toward Potential over time, and the speed of that growth depends heavily on your tax rate.
+Planets are the foundation of your empire. Each one has a *Potential Production*, the ceiling it can reach at full efficiency. Potential ranges from 10 to 150 across the galaxy. Each also has a *Production*, which is what the planet delivers right now. Production grows toward Potential over time, and your tax rate sets the speed of that growth.
 
-Taxes convert Production into spendable build points each year. See @economy for the full tax rate, growth, and starbase economics model.
+Taxes turn Production into build points each year. See @economy for the full rules on tax rate, growth, and starbase economics.
 
 == Ships
 
-Ships operate in fleets. A fleet always moves at the speed of its slowest member and can hold anywhere from one to *3,000 ships* of mixed types.
+Ships travel in fleets. A fleet always moves at the speed of its slowest ship. It can hold from one to *3,000 ships* of mixed types.
 
 === Reading a Fleet
 
 The game writes a fleet as one line of ship codes, always in the same order.
 `BB2!1 CA12!3 DD8 TT*4` is two battleships (one crippled), twelve cruisers
-(three crippled), eight destroyers, and four loaded transports: `!` marks
-crippled ships and `*` loaded transports. In the Fleet List, a fleet too long for its column ends in `+`; Review (*R*) shows the rest. @ship-notation explains every code.
+(three crippled), eight destroyers, and four loaded transports. `!` marks
+crippled ships and `*` marks loaded transports. In the Fleet List, a fleet too
+long for its column ends in `+`; Review (*R*) shows the rest. @ship-notation
+explains every code.
 
 == Starbases
 
 Starbases are large space fortresses (Cost: 50, AS: 100, DS: 130). In orbit,
 they strengthen a world's defense and economy. They help weak colonies grow at
 sensible tax rates, and they let a planet spend up to *5x* its Production in
-one turn when enough points have been saved (see @economy). They are not a
+one turn when it has saved enough points (see @economy). They are not a
 license to tax a world to death. In deep space they serve as watch posts with
-slightly more firepower than a battleship, but they crawl at speed 1.
+a little more firepower than a battleship, but they crawl at speed 1.
 
 Unlike ships, starbases do not belong to fleets. You commission them one at a
 time from stardock and move them through the *Starbase Command* submenu.
@@ -407,7 +413,7 @@ Build a starbase where you mean to keep it. A base crawls one sector a year
 and spends its first year just climbing out of orbit, so a base ordered to a
 world a few sectors off spends years on the way. It enters orbit only over a
 world you own; anywhere else it stops in deep space. Its escort, the guard
-fleet at rest beside it, rides along, and your other fleets guarding it follow
+fleet at rest beside it, rides along. Your other fleets guarding it follow
 wherever it goes.
 
 A base in orbit needs your world beneath it. Lose the world and the base
@@ -417,13 +423,13 @@ also cancels the world's build orders that depend on the base's build
 capacity, so finish or trim the queue before the base leaves. @appendix-economy
 gives the exact condition.
 
-#admonition("NOTE")[Starbases must be commissioned from stardock before they can be moved or provide orbital benefits. An uncommissioned starbase sitting in stardock has no effect.]
+#admonition("NOTE")[Starbases must be commissioned from stardock before they can move or give orbital benefits. A starbase sitting in stardock does nothing.]
 
 == Ground Forces
 
-*Armies* (Cost: 2, AS: 10, DS: 10) defend your planets from invasion and are the only way to capture enemy worlds. Each troop transport carries one army, and a successful invasion requires landing enough armies to overwhelm the defending garrison.
+*Armies* (Cost: 2, AS: 10, DS: 10) defend your planets from invasion and are the only way to capture enemy worlds. Each troop transport carries one army. To take a world, you must land enough armies to beat the garrison.
 
-*Ground Batteries* (Cost: 20, AS: 90, DS: 66) are immobile land-based cannons that offer massive firepower per cost --- roughly equal to a battleship at less than half the price. Like a ship, a battery takes two steps: 66 hits cripple it, and it then fires at half strength until 66 more destroy it. Crippled batteries are repaired at the end of any year in which no one attacked the world. During an invasion, all batteries must be destroyed before transports can land. During a blitz, surviving batteries fire directly on descending transports, inflicting heavy losses. If a planet is captured via blitz, any surviving batteries transfer intact to the new owner.
+*Ground Batteries* (Cost: 20, AS: 90, DS: 66) are fixed cannons on the ground. They give huge firepower for the cost: about a battleship's attack at less than half the price. Like a ship, a battery takes two steps. 66 hits cripple it, and it then fires at half strength until 66 more destroy it. Crippled batteries are repaired at the end of any year in which no one attacked the world. During an invasion, all batteries must be destroyed before transports can land. During a blitz, surviving batteries fire on the descending transports and cause heavy losses. If a blitz captures the planet, any surviving batteries pass intact to the new owner.
 
 #pagebreak()
 
@@ -431,7 +437,7 @@ gives the exact condition.
 
 = Economy and Taxes <economy>
 
-Your empire runs on production. Every owned planet generates tax revenue each maintenance cycle, and that revenue pays for ships, defenses, and expansion. Managing the tension between short-term revenue and long-term growth is one of the deepest strategic challenges in the game.
+Your empire runs on production. Every planet you own pays tax revenue each maintenance, and that revenue pays for ships, defenses, and expansion. Balancing cash today against growth tomorrow is one of the hardest choices in the game.
 
 == Key Terms
 
@@ -445,54 +451,54 @@ Your empire runs on production. Every owned planet generates tax revenue each ma
 == Tax Revenue
 
 *One tax rate applies to every planet you own.* You cannot set separate rates
-for individual worlds. Planet Command’s Tax option changes this shared rate,
-regardless of which planet you have selected. Revenue per
-planet per year is a fixed percentage of Production, and your empire's
-Empire Revenue is the sum of that revenue across all owned planets. The screens
-show next year's revenue, rounded to the nearest whole point, and setting the
-tax rate reports the new Empire Revenue. Production and the Treasury keep their
-fractions from year to year; only what you read and spend is a whole number.
-See @appendix-economy for the exact formula.
+for single worlds. Planet Command's Tax option changes this shared rate,
+whichever planet you have selected. A planet's yearly revenue is a fixed share
+of its Production, and your Empire Revenue is the sum of that revenue across
+all your planets. The screens show next year's revenue, rounded to the nearest
+whole point, and setting the tax rate reports the new Empire Revenue.
+Production and the Treasury keep their fractions from year to year; only what
+you read and spend is a whole number. See @appendix-economy for the exact
+formula.
 
 == Growth Toward Potential
 
-Each maintenance turn, every owned planet grows toward its Potential. Lower
+Each maintenance, every planet you own grows toward its Potential. Lower
 taxes grow faster: a world taxed at 30% grows twice as fast as one taxed at
-65%, and three times as fast if a starbase orbits it.
-Growth also slows as the planet nears its ceiling: each year a planet closes
-a share of its gap to Potential, so it comes close to Potential without
-reaching it on a fixed date. Every point of tax costs growth, and there is no
-free yearly minimum.
+65%, and three times as fast if a starbase orbits it. Growth also slows as
+the planet nears its ceiling. Each year a planet closes a share of its gap to
+Potential, so it comes close to Potential without reaching it on a fixed
+date. Every point of tax costs growth, and there is no free yearly minimum.
 
-Growth is based on the gap to Potential and the remaining tax headroom. See
+Growth depends on the gap to Potential and the tax headroom left. See
 @appendix-economy for the exact formula.
 
 == The 65% Tax Threshold
 
 #admonition("WARNING")[Setting taxes above *65%* can directly _reduce_ Production on your planets, not just slow growth.]
 
-Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty kicks in that actively damages Production, and a mature planet settles below its Potential: with the empire-wide rate at 70%, a Potential-100 world settles at Production 88 and earns 62 a year; at 71%, it settles at 86 and earns 61. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster before you reach punitive tax rates, and it still preserves the powerful build-capacity bonus described below.
+Below 65%, growth is always positive, and lower is faster. Above 65%, a penalty damages Production each year, and a mature planet settles below its Potential. With the empire-wide rate at 70%, a Potential-100 world settles at Production 88 and earns 62 a year. At 71%, it settles at 86 and earns 61. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster at sane tax rates, and it still gives the build-capacity bonus described below.
 
 The tax rate is a choice between today and tomorrow. Your empire starts at
-50%. Keep it there, or lower, while your colonies grow, and raise it toward 65%
-as they near their Potential: held steady, 65% gives a mature world its highest revenue over the years. A higher rate can raise cash briefly, but starts reducing Production at the next maintenance. A
-starbase's growth bonus is full at 50% or below and gone at 65%, so the worlds
-with bases gain most from a modest rate.
-See @appendix-economy for the exact penalty and yearly update formulas.
+50%. Keep it there, or lower, while your colonies grow. Raise it toward 65%
+as they near their Potential: held at 65%, a mature world earns its highest
+revenue over the years. A higher rate raises cash for a short time, but it
+starts to cut Production at the next maintenance. A starbase's growth bonus
+is full at 50% or below and gone at 65%, so worlds with bases gain most from
+a modest rate. See @appendix-economy for the exact penalty and yearly update
+formulas.
 
 == Starbase Economic Effects
 
-A commissioned starbase in orbit provides two major benefits. First, the
-planet's yearly production growth gets a strong boost when taxes are modest ---
-half again as fast at *50% tax or lower*, fading steadily to nothing as taxes
-climb toward *65%*. This means underdeveloped planets with starbases catch up
-significantly faster when you are managing them sensibly, but the bonus is not
-meant to offset punitive taxes. A planet already at its Potential gains
-nothing from it. Second, the planet gains a *build capacity
-multiplier* --- it can spend up to *5x* its Production on builds in a
-single turn, drawing from its treasury. Without a starbase, a
-planet can only spend up to 1x its Production per turn. See
-@appendix-economy for the exact bonus fade and build-capacity formulas.
+A commissioned starbase in orbit gives two big benefits. First, the planet's
+yearly growth gets a strong boost when taxes are modest: half again as fast at
+*50% tax or lower*, fading to nothing as taxes climb toward *65%*. Young
+planets with starbases catch up much faster when you tax them sensibly, but
+the bonus is not meant to offset punishing taxes. A planet already at its
+Potential gains nothing from it. Second, the planet gains a *build capacity
+multiplier*: it can spend up to *5x* its Production on builds in one turn,
+drawing from its treasury. Without a starbase, a planet can spend only 1x its
+Production per turn. See @appendix-economy for the exact bonus fade and
+build-capacity formulas.
 
 More starbases at one world add defense, not growth or capacity. A starbase
 that is crippled in battle but survives keeps both bonuses.
@@ -501,28 +507,28 @@ that is crippled in battle but survives keeps both bonuses.
 
 == Treasury <treasury>
 
-Tax revenue that a planet does not spend accumulates in its *Treasury* --- the planet's savings reserve. The treasury is what allows starbase worlds to execute large builds: up to 5x Production in a single turn. Each turn, a planet's *Budget* is the lesser of its treasury and its build capacity. That is what the build screen shows as *BUDGET* --- how many production points remain uncommitted this turn. When maintenance processes a build queue, only the points actually spent that year are deducted from the treasury; unfinished builds keep their remaining cost for later turns. You spend whole points, and the treasury keeps any fraction. Only a world imported from a classic game can start in debt: a negative treasury buys nothing until later revenue pays it down.
+Tax revenue that a planet does not spend piles up in its *Treasury*, the planet's savings. The treasury is what lets a starbase world make large builds: up to 5x Production in one turn. Each turn, a planet's *Budget* is the lesser of its treasury and its build capacity. The build screen shows that as *BUDGET*: how many production points are still free to spend this turn. When maintenance works through a build queue, it takes from the treasury only the points spent that year; unfinished builds keep their remaining cost for later turns. You spend whole points, and the treasury keeps any fraction. Only a world imported from a classic game can start in debt. A negative treasury buys nothing until later revenue pays it off.
 
 == Newly Colonized Planets
 
 A new colony starts small: Production 3, or its Potential if that is lower,
 and an empty treasury. It earns nothing in the year it is founded. From the
 next year it grows and pays tax like any other world, so at a moderate tax
-rate most colonies have a small budget after their first full year. A very
-small world, or one in an empire with a low tax rate, may wait a year or more
+rate most colonies have a small budget after their first full year. A small
+world, or one in an empire with a low tax rate, may wait a year or more
 for its first whole point. The head start comes only with founding, never
 with capture. A low tax rate grows colonies fastest but fills their treasuries
 slowest. @appendix-economy gives the details.
 
 == Conquered Planets
 
-When you capture an enemy planet by invasion or blitz, the planet's industry needs *two quiet years* before it is converted. It pays no revenue and does not grow in the next two maintenance turns, and it pays full revenue from the third. Its Revenue reads 0 until then. Plan your logistics around this delay.
+When you capture an enemy planet by invasion or blitz, its industry needs *two quiet years* to convert. It pays no revenue and does not grow in the next two maintenances, and it pays full revenue from the third. Its Revenue reads 0 until then. Plan your supply lines around this delay.
 
 == Scorch Earth <scorch-earth>
 
-Scorch Earth denies a world to an invader. The *Scorch* command sets the order, and the same command rescinds it. Setting it asks three confirmations; rescinding it asks one. The order changes nothing at once. It stays in force until you rescind it or the world is captured, and it first takes effect at the next maintenance, before the year's fighting, so it is already in force when an assault strikes that year.
+Scorch Earth denies a world to an invader. The *Scorch* command sets the order, and the same command rescinds it. Setting it asks three confirmations; rescinding it asks one. The order changes nothing at once. It stays in force until you rescind it or the world is captured. It first takes effect at the next maintenance, before the year's fighting, so it is already in force when an assault strikes that year.
 
-Each year the order is in force, the planet's Production falls to between 30% and 49% of itself, never below 1, and its stored points fall to a tenth, or to their square root if that is smaller. The planet neither grows nor pays revenue, and its Revenue reads 0. Debt is left as it is. Potential Production is not touched, so a world that is not captured recovers by the normal growth rules once you rescind the order. Your maintenance report tells you each year what the order cost the planet.
+Each year the order is in force, the planet's Production falls to between 30% and 49% of itself, never below 1. Its stored points fall to a tenth, or to their square root if that is smaller. The planet neither grows nor pays revenue, and its Revenue reads 0. Debt is left as it is. Potential Production is not touched, so a world that is not captured recovers by the normal growth rules once you rescind the order. Your maintenance report tells you each year what the order cost the planet.
 
 If the world falls while the order stands, the conqueror gets a ruin. Its
 production and stored goods are halved, its stardock is emptied, and the order
@@ -536,7 +542,7 @@ to lose a world and want the victory to cost your enemy dearly.
 = Combat <combat>
 
 Battles fight themselves. You decide where your fleets go, what they are made
-of, and how much risk each one will take; maintenance does the rest, and your
+of, and how much risk each one will take. Maintenance does the rest, and your
 reports tell you what happened. For the full rules, see @appendix-combat.
 
 == What You Decide
@@ -552,36 +558,44 @@ the same place count together when they weigh the odds.
 
 #admonition("IMPORTANT")[A low ROE does not keep a fleet safe. A fleet that is attacked fights at least the first exchange, whatever its ROE.]
 
-Every new fleet starts at ROE 6, or at 0 if it has no warships; change it with
+Every new fleet starts at ROE 6, or at 0 if it has no warships. Change it with
 ROE (*C*) in Fleet Command. Scouts, transports, and ETACs never fight, so a
 fleet of only those ships is always ROE 0. Such a fleet cannot guard a world or
-a starbase: if a detach or transfer strips a guard fleet of its warships, maintenance sends it home, unless autopilot is running.
+a starbase. If a detach or transfer strips a guard fleet of its warships,
+maintenance sends it home, unless autopilot is running.
 
 *What each fleet is made of.* The ships you send decide what a victory is
-worth (see Cripple or Destroy below).
-Your warships screen your scouts, transports, and ETACs from ordinary fire while any of them stand, though a lucky hit can get through. A fleet holds up to 3,000 ships and moves at the speed of its
-slowest one.
+worth (see Cripple or Destroy below). Your warships screen your scouts,
+transports, and ETACs from ordinary fire while any warship stands, though a
+lucky hit can get through. A fleet holds up to 3,000 ships and moves at the
+speed of its slowest one.
 
 == Cripple or Destroy <cripple-or-destroy>
 
 Warships deal damage in two ways, and the mix in a fleet decides what its
 victories are worth.
 
-Cruisers and battleships spread their fire across the enemy line. They cripple the enemy's combat line before they finish it, and a crippled ship fights at half strength. That wins the battle in front of you, but a crippled ship that gets
-away recovers on its own two turns later. A fleet of heavy ships alone can
-win a battle and still face the same enemy fleet again.
+Cruisers and battleships spread their fire across the enemy line. They cripple
+the enemy's combat line before they finish it, and a crippled ship fights at
+half strength. That wins the battle in front of you, but a crippled ship that
+gets away recovers on its own two turns later. A fleet of heavy ships alone
+can win a battle and still face the same enemy fleet again.
 
-Destroyers and starbases pick out ships and destroy them outright. A healthy ship costs them twice the hits of a cripple, a crippled one only half of what crippling it cost, and what they destroy stays destroyed. Destroyers are also your fastest and most fragile warships; on their own they tend to lose to heavier fleets of the same cost.
+Destroyers and starbases pick out ships and destroy them outright. Destroying
+a healthy ship costs them twice its DS. Finishing a crippled one costs half
+its DS, and what they destroy stays destroyed. Destroyers are also your
+fastest and most fragile warships. On their own they tend to lose to heavier
+fleets of the same cost.
 
-Together they do what neither does alone: the heavy ships break the enemy
+Together they do what neither does alone. The heavy ships break the enemy
 line, and the destroyers turn that damage into lost ships at half price. The
 heavy ships also stand in front: enemy fire lands on battleships, then
 cruisers, then destroyers, so destroyers behind a heavy line live to finish
-what it cripples, and a fleet whose cruisers and battleships are worth
-twice the enemy's adds +1 to its die. Lean on cruisers
-and battleships to hold a system or win a skirmish; add destroyers when you
-mean to wipe out an enemy fleet. Ground batteries fire the way destroyers do,
-which is why ships attacking a fortified world are destroyed, not crippled.
+what it cripples. A fleet whose cruisers and battleships are worth twice the
+enemy's adds +1 to its die. Lean on cruisers and battleships to hold a system
+or win a skirmish. Add destroyers when you mean to wipe out an enemy fleet.
+Ground batteries fire the way destroyers do, which is why ships attacking a
+fortified world are destroyed, not crippled.
 
 == What to Expect
 
@@ -592,10 +606,13 @@ during the year, wherever fleets are that week, and your report gives the
 stardate.
 
 Both sides fire at the same moment, so there is no advantage in shooting
-first. Heavy fire cripples ships before it destroys them; destroyers, starbases, and ground batteries can destroy them outright. A crippled ship fights at
-half strength and recovers on its own two turns later, a turn sooner if it
-rests beside one of your starbases. A fleet that catches the enemy unseen
-gains an edge in the first round. Once your forces have spotted an empire in a system, keeping a fleet or starbase there preserves that warning against it.
+first. Heavy fire cripples ships before it destroys them. Destroyers,
+starbases, and ground batteries can destroy them outright. A crippled ship
+fights at half strength and recovers on its own two turns later, a turn
+sooner if it rests beside one of your starbases. A fleet that catches the
+enemy unseen gains an edge in the first round. Once your forces have spotted
+an empire in a system, keeping a fleet or starbase there keeps that warning
+against it.
 
 When the odds turn against a fleet, it breaks off and heads for your nearest
 world. A faster enemy may catch it on the way out, so retreat is not always
@@ -604,11 +621,11 @@ clean.
 == Attacking Worlds <attacking-worlds>
 
 You attack a world with one of three missions. First the fleet must win the
-orbit: the owner's starbase and warships there fight it before it can strike,
+orbit. The owner's starbase and warships there fight it before it can strike,
 and a fleet that loses is driven off (see @missions).
 
 *Bombard* wears a world down. Each year the fleet stays in orbit, it fires
-three rounds. Its hits go to the ground batteries first; only when none are
+three rounds. Its hits go to the ground batteries first. Only when none are
 left do they reach docked ships, then armies, stored goods, and factories.
 Bombardment therefore destroys what you might later capture. Use it to break a
 world's defenses or to ruin a world you cannot hold. All your fleets
@@ -619,49 +636,54 @@ Battleships make the best bombardiers, because they live through the return
 fire.
 
 *Invade* takes a world intact. The fleet fires the year's three rounds at the
-batteries only, and if any survive, no troops land: the fleet keeps its armies
+batteries only. If any survive, no troops land: the fleet keeps its armies
 aboard and its order, and suppresses again next year until the last battery
 falls. With the batteries gone, your ships soften the defending armies, never
 more than half of them, and the transports land. Invasion never bombards the
 economy, but a world taken by invasion keeps only part of its industry.
 
-*Blitz* lands at once. Your warships fire on the batteries first, and the stronger the escort, the fewer batteries are left; then your armies come down under the survivors' fire, which picks off transports before they reach the ground, but if you win, the world's
-factories, goods, and surviving batteries are yours. Use it against lightly
-defended worlds, or when speed matters more than losses.
+*Blitz* lands at once. Your warships fire on the batteries first, and the
+stronger the escort, the fewer batteries are left. Then your armies come down
+under the survivors' fire, which picks off transports before they reach the
+ground. If you win, the world's factories, goods, and surviving batteries are
+yours. Use it against lightly defended worlds, or when speed matters more
+than losses.
 
 On the ground, invasion and blitz fight the same battle, and the defenders fire
 first. Equal numbers are a poor bet: one army against one wins a third of the
 time, and large equal forces about one time in five. Half again as many is an
 even chance, and twice as many wins nine times in ten. A world with no armies
-falls to the first army that lands. A failed assault
-leaves your survivors in orbit on Hold.
+falls to the first army that lands. A failed assault leaves your survivors in
+orbit on Hold.
 
-*What a capture is worth.* An invasion wrecks most of a world's industry, and
-a blitz that lands in strength takes it almost whole (see Captured Worlds in the
-combat appendix); queued builds and any debt pass on either way. It pays no revenue for two years while its industry converts, then
-full revenue. If its owner set Scorch Earth, its production and goods are
-halved and its stardock emptied when it falls (see @scorch-earth). In short,
-bombardment costs you part of the prize, invasion keeps the prize but needs the
-batteries down first, and a blitz keeps everything at the price of armies and
-transports.
+*What a capture is worth.* An invasion wrecks most of a world's industry. A
+blitz that lands in strength takes it almost whole (see Captured Worlds in the
+combat appendix). Queued builds and any debt pass on either way. The world
+pays no revenue for two years while its industry converts, then full revenue.
+If its owner set Scorch Earth, its production and goods are halved and its
+stardock emptied when it falls (see @scorch-earth). In short: bombardment
+costs you part of the prize; invasion keeps the prize but needs the batteries
+down first; a blitz keeps everything at the price of armies and transports.
 
 == Defending Your Worlds
 
 *Ground batteries* are your cheapest firepower: 20 points buys the attack of a
 battleship. They destroy ships outright, they must fall before an invader can
 land, and they fire on transports during a blitz. An attacker needs about three
-times their cost in warships to take a fortress in a year; with less he must
+times their cost in warships to take a fortress in a year. With less he must
 besiege it for years, and an undersized fleet is destroyed. Lift his siege for
 a year and your crippled batteries are repaired.
 
 *Armies* decide the landing. Your defenders fire first, so an attacker needs
 about twice your armies to be confident, and a world with none falls to a
-single transport. At 2 points each, they are cheap
-insurance for any world worth taking.
+single transport. At 2 points each, they are cheap insurance for any world
+worth taking.
 
 *A starbase and warships in orbit* fight every hostile fleet before it can
-strike. A starbase adds 1 to your die and never retreats, and an attacker that
-loses the orbit is driven off without bombarding or landing. Once your forces there have spotted an empire, keeping a fleet or starbase in the system denies that empire a surprise attack.
+strike. A starbase adds 1 to your die and never retreats. An attacker that
+loses the orbit is driven off without bombarding or landing. Once your forces
+there have spotted an empire, keeping a fleet or starbase in the system denies
+that empire a surprise attack.
 
 *Scorch Earth* is a last resort. It denies a conqueror half the world's
 production and goods, but every year it is in force the world loses
@@ -673,7 +695,7 @@ production, grows nothing, and pays no revenue (see @scorch-earth).
 
 = Missions and Orders <missions>
 
-A fleet always has exactly one standing order. If you issue a new order before maintenance, it replaces whatever the fleet was doing. Missions fall into three categories. _One-shot_ missions cause the fleet to travel, perform an action, and revert to Hold Position --- you must issue new orders afterward. _Persistent_ missions remain active until you replace them or game rules invalidate them (for example, a Join mission is abandoned if the host fleet is destroyed). _Hostile_ missions send the fleet into orbit around a target world. It attacks the year it arrives. A bombarding fleet stays in orbit and bombards again each year until you change its orders. An invading or blitzing fleet makes one assault and, win or lose, its survivors hold position in orbit.
+A fleet always has exactly one standing order. If you give a new order before maintenance, it replaces whatever the fleet was doing. Missions come in three kinds. _One-shot_ missions send the fleet to travel, do one thing, and go back to Hold Position. You must give new orders afterward. _Persistent_ missions stay in force until you replace them or the rules cancel them (for example, a Join mission is dropped if the host fleet is destroyed). _Hostile_ missions send the fleet into orbit around a target world. It attacks the year it arrives. A bombarding fleet stays in orbit and bombards again each year until you change its orders. An invading or blitzing fleet makes one assault and, win or lose, its survivors hold position in orbit.
 
 #figure(
   table(
@@ -707,10 +729,10 @@ A fleet always has exactly one standing order. If you issue a new order before m
 The map is a grid of *sectors*, each named by its coordinates, such as
 `[21,21]`. A sector may hold a *world*. The space around that world is its
 *solar system*, and the space between sectors is *deep space*. Think of each
-world as one step below its sector: a fleet crosses the map in deep space,
+world as one step below its sector. A fleet crosses the map in deep space,
 descends into the system to reach the world, and climbs back out to leave. A
-full descent or climb costs one sector of movement, and a fleet covers as
-many sectors a year as its slowest ship allows.
+full descent or climb costs one sector of movement. A fleet covers as many
+sectors a year as its slowest ship allows.
 
 The map shows coordinates, not depth. A fleet in deep space and a starbase
 in the system can both be at `[21,21]` without being together. They cannot
@@ -725,7 +747,7 @@ A fleet never moves across and down at once. It climbs out of orbit, crosses
 the map in a straight line to the center of its target sector, and only then
 heads down toward the world. A fleet leaving a world spends its first sector
 of movement on the climb, so it covers one sector less in its first year.
-Distance is measured in a straight line, so three sectors on a diagonal is
+Distance is measured in a straight line, so three sectors on a diagonal are
 about 4.2 sectors of travel.
 
 When a fleet arrives depends on its mission.
@@ -751,9 +773,9 @@ for when a fleet counts as inside a system.
 
 === Where Missions Operate
 
-This is the space where each mission does its work, not a list of every layer
-it crosses in transit. The orders tables describe requirements and duration;
-this table explains positioning.
+This table shows where each mission does its work, not every layer it crosses
+on the way. The orders table above gives requirements and duration; this one
+gives position.
 
 #include "includes/mission_operating_space.typ"
 
@@ -761,37 +783,39 @@ this table explains positioning.
 
 Crippled ships mend on their own, but a starbase speeds the work. Send a
 damaged fleet to your starbase with Guard a Starbase (4) and leave it at rest
-beside the base, inside your own system, for a whole turn: its older cripples
+beside the base, inside your own system, for a whole turn. Its older cripples
 come back a turn early. A fleet that only shares the sector, or that arrives
-during that turn, gains nothing. Unarmed fleets cannot guard a base. A fleet on Guard a Starbase may merge into the base's escort when it arrives, so check your fleet list afterward. The exact conditions are in @starbase-recovery.
+during that turn, gains nothing. Unarmed fleets cannot guard a base. A fleet
+on Guard a Starbase may merge into the base's escort when it arrives, so check
+your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 == Mission Details
 
 === One-Shot Missions
 
-*Mission 1: Move Fleet.* A simple transit order. The fleet travels to the destination sector at the speed of its slowest ship, then stops and reverts to Hold Position. You must issue new orders if you want it to do anything else.
+*Mission 1: Move Fleet.* A plain transit order. The fleet travels to the target sector at the speed of its slowest ship, then stops and goes back to Hold Position. Give it new orders if you want it to do anything else.
 
-*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. It keeps that planet for as long as you own it, even if another becomes nearer on the way. If you lose the planet while the fleet is en route, the fleet turns at once for the nearest planet you still own, measured from where it is; with none left, it stops and holds where it is. On arrival, it reverts to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet; no keeps it on the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
+*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. It keeps that planet for as long as you own it, even if another becomes nearer on the way. If you lose the planet while the fleet is on the way, the fleet turns at once for the nearest planet you still own, measured from where it is. With none left, it stops and holds where it is. On arrival, it goes back to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet. No keeps it at the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
 
-*Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production data, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It reverts to Hold Position after reporting.
+*Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It goes back to Hold Position after reporting.
 
-*Mission 12: Colonize a World.* Requires at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, it is terraformed and claimed. The new colony starts with one garrison army, no treasury, and very low current production. It does not receive revenue or growth until later maintenance turns, and then develops faster when the empire-wide tax rate is low. The ETAC is not consumed --- it survives and can colonize additional planets. If the planet is already owned, the ETAC aborts, reports the owner's identity and production potential, writes that partial result into your Total Planet Database, and waits for new orders.
+*Mission 12: Colonize a World.* Needs at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, the ETAC terraforms and claims it. The new colony starts with one garrison army, no treasury, and low production. It gets no revenue or growth in the year it is founded, and then grows faster when the empire-wide tax rate is low. The ETAC is not used up. It survives and can colonize more planets. If the planet is already owned, the ETAC aborts, reports the owner and the world's Potential, writes that partial result into your Total Planet Database, and waits for new orders.
 
-*Mission 15: Salvage.* The fleet travels to one of your planets and scraps its ships for half their build cost, rounded up ship by ship, returned to that planet's treasury: 23 points for a battleship, 8 for a cruiser, 3 for a destroyer, 3 for a transport (loaded or empty), 10 for an ETAC, and 8 for a scout. Armies aboard loaded transports land on the planet, and the fleet is disbanded. If you lose the planet while the fleet is en route, the fleet salvages at the nearest planet you still own instead; with none left, it stops and holds where it is. The game offers the planet nearest the fleet as the default target; if you own only one planet, it takes that planet without asking. A group salvages at one planet.
+*Mission 15: Salvage.* The fleet travels to one of your planets and scraps its ships for half their build cost, rounded up ship by ship, paid into that planet's treasury: 23 points for a battleship, 8 for a cruiser, 3 for a destroyer, 3 for a transport (loaded or empty), 10 for an ETAC, and 8 for a scout. Armies aboard loaded transports land on the planet, and the fleet is disbanded. If you lose the planet while the fleet is on the way, the fleet salvages at the nearest planet you still own instead. With none left, it stops and holds where it is. The game offers the planet nearest the fleet as the default target. If you own only one planet, it takes that planet without asking. A group salvages at one planet.
 
 === Persistent Standing Missions
 
-*Mission 0: Hold Position.* The default idle state. The fleet stays at its current location and takes defensive action based on ROE if hostile fleets approach.
+*Mission 0: Hold Position.* The default idle state. The fleet stays where it is and acts on its ROE if hostile fleets come near.
 
-*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom (see @appendix-combat) allow, as far as your ROE permits. The mission remains active until you assign a new one.
+*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom (see @appendix-combat) allow, as far as your ROE permits. The mission stays in force until you assign a new one.
 
-*Mission 4: Guard a Starbase.* The fleet escorts a starbase and fights alongside it: an attack on either one is a battle against both, and the base joins any battle its guard is drawn into as a defender. A guard stays with its base and does not close on the contacts it spots, but it attacks, or joins an attack by your other fleets there, when the ROE odds favor the fight.
+*Mission 4: Guard a Starbase.* The fleet escorts a starbase and fights beside it. An attack on either one is a battle against both, and the base joins as a defender in any battle its guard is drawn into. A guard stays with its base and does not close on the contacts it spots. It attacks, or joins an attack by your other fleets there, when the ROE odds favor the fight.
 
-*Mission 5: Guard/Blockade a World.* A strategy of denial. The blockade watches the world five times as hard as an ordinary fleet. It attacks any fleet that comes to bombard, invade, or blitz the world, or to colonize it while it is unowned, and any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. It remains active until you assign a new mission.
+*Mission 5: Guard/Blockade a World.* A mission of denial. The blockade watches the world five times as hard as an ordinary fleet. It attacks any fleet that comes to bombard, invade, or blitz the world, or to colonize it while it is unowned. It also attacks any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. The mission stays in force until you assign a new one.
 
-*Missions 10 and 11: Scout a Sector / Scout a Solar System.* Both require at least one Scout ship, and a fleet consisting of a single Scout is the least likely to be detected. Scout a Sector is a stealthy watch over the sector: a scout on station looks five times as hard as an ordinary fleet and identifies what it spots, and with ROE 0 it never attacks. Scout a Solar System is an active spy run where the Scout penetrates the system to report on ground batteries, armies, current production, stardock contents, and orbiting fleets; entering the system means the owner's fleets there may attack it. Both are persistent missions: the fleet remains on station and generates a new report each maintenance turn for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before a full scout/view report is earned.
+*Missions 10 and 11: Scout a Sector / Scout a Solar System.* Both need at least one Scout ship, and a fleet of a single Scout is the hardest to detect. Scout a Sector is a quiet watch over the sector. A scout on station looks five times as hard as an ordinary fleet and identifies what it spots, and with ROE 0 it never attacks. Scout a Solar System is an active spy run. The Scout enters the system and reports on ground batteries, armies, current production, stardock contents, and orbiting fleets. Entering the system means the owner's fleets there may attack it. Both are persistent missions: the fleet stays on station and sends a new report each maintenance for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before you earn a full scout or view report.
 
-*Missions 13 and 14: Fleet Coordination.* Mission 13 (Join Another Fleet) causes the fleet to chase a specific host fleet and merge with it when they meet. If the host is destroyed before they rendezvous, the joining fleet abandons the mission. Mission 14 (Rendezvous at Sector) sends multiple fleets to a sector where the fleet with the lowest Fleet ID becomes the host of the combined force. The rendezvous point remains active so additional fleets can keep merging there.
+*Missions 13 and 14: Fleet Coordination.* Mission 13 (Join Another Fleet) sends the fleet to chase a chosen host fleet and merge with it when they meet. If the host is destroyed before they meet, the joining fleet drops the mission. Mission 14 (Rendezvous at Sector) sends several fleets to a sector, where the fleet with the lowest Fleet ID becomes the host of the combined force. The rendezvous point stays active so more fleets can keep merging there.
 
 === Hostile Missions
 
@@ -806,7 +830,7 @@ is told to attack the world attacks at the next maintenance.
 *It must first win the orbit.* The owner's starbase and any fleet of his with
 warships there fight your fleet the week it arrives, whether they had spotted
 it or not. If your fleet's ROE will not take them on, it turns for home
-without a shot; if it loses, it is driven off. Only a fleet that holds the
+without a shot. If it loses, it is driven off. Only a fleet that holds the
 orbit attacks. Bring enough to win that fight, or clear the orbit first.
 
 *Bombard repeats; Invade and Blitz are single assaults.* A bombarding fleet
@@ -814,12 +838,12 @@ stays in orbit and fires again every year until you change its orders. An
 invading or blitzing fleet makes one assault and then, win or lose, its
 survivors hold position in orbit. Order any further attack yourself.
 
-*A fleet in orbit on a hostile mission is very easy to see.* It has entered
-the owner's solar system, where every fleet is easier to spot, and a fleet at
-its target on an attack mission stands out above all. Expect his fleets to
-find it and attack it, and set its ROE to match.
+*A fleet in orbit on a hostile mission is easy to see.* It has entered the
+owner's solar system, where every fleet is easier to spot, and a fleet at its
+target on an attack mission stands out most of all. Expect his fleets to find
+it and attack it, and set its ROE to match.
 
-Only destroyers, cruisers, and battleships fire at a world; scouts,
+Only destroyers, cruisers, and battleships fire at a world. Scouts,
 transports, and ETACs carry no guns. Invade needs loaded transports and
 warships. Blitz needs loaded transports. It can go in without warships, but
 then it brings no fire of its own, and if the owner has a starbase or a
@@ -835,14 +859,14 @@ Three keys on the *Main Menu* open your command menus: General Command (*G*) for
 
 == Visual Themes
 
-The `nc-game` client supports several visual themes. In a local session, open
-*C>olor Theme* from the Main Menu or First Time Menu to choose one. Your last
-local choice is remembered for that empire in that campaign.
+The `nc-game` client has several visual themes. In a local session, open
+*C>olor Theme* from the Main Menu or First Time Menu to choose one. The game
+remembers your last local choice for that empire in that campaign.
 
 In BBS door mode, the game keeps the classic *A>nsi color ON/OFF* toggle.
-Each session starts from the `mag16` theme so ANSI16 terminals stay
-stable. Press *A* to switch between that view and monochrome for the current
-session. Saved local theme preferences do not apply in door mode.
+Each session starts from the `mag16` theme so ANSI16 terminals stay stable.
+Press *A* to switch between that view and monochrome for the current
+session. Saved local theme choices do not apply in door mode.
 
 == General Command
 
@@ -856,17 +880,19 @@ them; fleets on any other mission are left alone. @autopilot gives the details.
 
 *Diplomacy (E)* sets each rival empire to Neutral or Enemy, and the choice
 decides where your fleets fight. Your fleets attack an Enemy's fleets wherever
-they meet them, as far as their ROE allows. A Neutral's fleets are left alone
-unless they enter one of your solar systems, come to attack or colonize a world you blockade, race your fleet to colonize the same unowned world, or guard a world your fleet has come to attack or colonize. His declaration
-against you changes nothing about how your fleets behave. There are no allies:
-no other empire ever joins your battles, and a battle never changes anyone's
-diplomacy.
+they meet them, as far as their ROE allows. Your fleets leave a Neutral's
+fleets alone unless they enter one of your solar systems, come to attack or
+colonize a world you blockade, race your fleet to colonize the same unowned
+world, or guard a world your fleet has come to attack or colonize. His
+declaration against you changes nothing about how your fleets behave. There
+are no allies. No other empire ever joins your battles, and a battle never
+changes anyone's diplomacy.
 
 *Messages (C)* lets you write to other empires. In the message editor,
 *^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark.
 Messages reach their recipients at the next maintenance. Your *Sent* folder
-shows *Queued* until delivery, then the year sent. *Enter* reads a message;
-*D* asks before cancelling queued mail or removing a delivered copy from your
+shows *Queued* until delivery, then the year sent. *Enter* reads a message.
+*D* asks before it cancels queued mail or removes a delivered copy from your
 view. Removing your sent copy does not affect the recipient's copy. *D* on
 the recipient list also opens your queued messages.
 
@@ -874,69 +900,71 @@ You may queue up to three messages to each opponent per turn. The inbox has
 three folders: *R* for Reports, *M* for received Messages, and *S* for Sent.
 *Y* filters the selected folder by year. *D* removes one selected item after
 confirmation. General Command's *Delete ALL reports* clears only Reports;
-it leaves Messages and Sent alone. All reports and messages remain in the
+it leaves Messages and Sent alone. All reports and messages stay in the
 game database: removal only hides them from your view. Cancelled mail also
 stays stored, but is never delivered.
 
 New reports and messages from the latest maintenance appear in the scrolling
-login review. You can read and remove them there before reaching the main menu.
+login review. You can read and remove them there before you reach the main
+menu.
 
-The empire rankings table shows each joined empire in one of three
-states: *Active*, *MIA*, or *Defeated*. *MIA* means inactivity autopilot is
-currently running because that player missed three consecutive turns.
-*Defeated* means the empire has been eliminated from active command.
+The empire rankings table shows each joined empire in one of three states:
+*Active*, *MIA*, or *Defeated*. *MIA* means inactivity autopilot is running
+because that player missed three turns in a row. *Defeated* means the empire
+has been removed from active command.
 
 == Defeat, Recovery, and Victory <victory>
 
-Losing your last planet does not always defeat you immediately. If you still
-have a recovery path, you remain *Active* and receive a *three-turn recovery
-window* to reclaim a world. A recovery path means at least one loaded troop
-transport (`TT*`) somewhere in your surviving fleets, or at least one ETAC
-while any unowned planet still exists anywhere on the map. If you retake or
-colonize a world before the window expires, the countdown clears and your
-empire continues normally.
+Losing your last planet does not always defeat you at once. If you still have
+a recovery path, you stay *Active* and get a *three-turn recovery window* to
+reclaim a world. A recovery path means at least one loaded troop transport
+(`TT*`) somewhere in your surviving fleets, or at least one ETAC while any
+unowned planet still exists anywhere on the map. If you retake or colonize a
+world before the window runs out, the countdown clears and your empire goes
+on as normal.
 
-If your last recovery force is destroyed while you are planetless, or if the
-three-turn recovery window expires first, your empire becomes *Defeated*.
-Fleet Command sends you a final defeat report, and you receive one last
-review-only login so you can read the closing reports and messages. After that
-final review, you may no longer enter the campaign. At the next maintenance,
-your planetless empire becomes a computer-controlled rogue empire. Its
-remaining warships patrol; this does not restore your ability to play or
-take away your final review.
+If your last recovery force is destroyed while you hold no planet, or if the
+three-turn recovery window runs out first, your empire becomes *Defeated*.
+Fleet Command sends you a final defeat report, and you get one last
+review-only login to read the closing reports and messages. After that final
+review, you may no longer enter the campaign. At the next maintenance, your
+planetless empire becomes a computer-controlled rogue empire. Its remaining
+warships patrol. This does not restore your ability to play or take away your
+final review.
 
 *Rogue empires* are run by the computer. A seat no player has claimed stands
 "In Civil Disorder": its empire grows nothing and gives no orders. A defeated
 empire also falls into civil disorder, and once it holds no world it turns
 rogue. A rogue that still holds worlds gathers its fleets at its best world
-and guards it hard. Rogue empires are never eliminated. A rogue empire that loses
-its last planet sends its warships on patrol, marks every player's empire an
-enemy, and disbands its other fleets and starbases. Without a planet it does
-not contend for the throne, and taking its last planet delivers no final blow.
+and guards it hard. Rogue empires are never eliminated. A rogue empire that
+loses its last planet sends its warships on patrol, marks every player's
+empire an enemy, and disbands its other fleets and starbases. Without a
+planet it does not contend for the throne, and taking its last planet
+delivers no final blow.
 
-When you eliminate another empire, Fleet Command reports that you delivered the
-final blow. This is separate from overall game victory. You become Emperor,
-and the game ends, when no other empire remains in contention: every rival is
-Defeated, and no rogue empire still holds a world. At that point every still-playable empire receives a game-over report
-naming the victor. The winner may continue to log in in *survey mode* to
-inspect the final state of the galaxy, but may not issue orders or submit
-turns. All other players receive one final review-only pass and are then
-blocked from further play.
+When you eliminate another empire, Fleet Command reports that you delivered
+the final blow. This is separate from winning the game. You become Emperor,
+and the game ends, when no other empire is still in contention: every rival
+is Defeated, and no rogue empire still holds a world. At that point every
+still-playable empire gets a game-over report naming the victor. The winner
+may keep logging in, in *survey mode*, to look over the final state of the
+galaxy, but may not give orders or submit turns. All other players get one
+final review-only pass and are then blocked from further play.
 
 == Planet Command
 
-Planet Command controls your economy and ground operations. Tax (*T*) sets the rate for every planet you own, not just the selected planet. From the main Planet Command menu, Scorch Earth (*S*) sets or rescinds the order that wears down your own industry to deny it to an invader (see @scorch-earth). Build (*B*) spends production points on ships, defenses, or starbases. Commission (*C*) assigns newly built ships from stardock into active fleets. *Mass Commission* (*M*) commissions every ship and starbase currently waiting in stardock. Load and Unload (*L* / *U*) move armies between the planet surface and troop transports.
+Planet Command controls your economy and ground operations. Tax (*T*) sets the rate for every planet you own, not just the selected planet. From the main Planet Command menu, Scorch Earth (*S*) sets or rescinds the order that wears down your own industry to deny it to an invader (see @scorch-earth). Build (*B*) spends production points on ships, defenses, or starbases. Commission (*C*) moves newly built ships from stardock into active fleets. *Mass Commission* (*M*) commissions every ship and starbase waiting in stardock. Load and Unload (*L* / *U*) move armies between the planet surface and troop transports.
 
-The *Planet List* shows your worlds one row each. Highlight a world and act on it: Build (*B*), Display Queue (*D*), Abort Builds (*A*), Mass Commission (*M*), Commission (*C*), Load / Unload armies (*L* / *U*), and Scorch Earth (*X*). On that screen, *S* is reserved for *Sort*, while *I* or *Enter* opens planet information for the selected row. Owned-planet information includes the planet's *Budget* as well as its *Treasury*.
+The *Planet List* shows your worlds one row each. Highlight a world and act on it: Build (*B*), Display Queue (*D*), Abort Builds (*A*), Mass Commission (*M*), Commission (*C*), Load / Unload armies (*L* / *U*), and Scorch Earth (*X*). On that screen, *S* is reserved for *Sort*, while *I* or *Enter* opens planet information for the selected row. Information on a planet you own includes its *Budget* as well as its *Treasury*.
 
 == Fleet Command
 
-Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement, ID, or speed. A speed change takes 1 up to the fleet's maximum and touches nothing else; a fleet on Hold, or already at its target, keeps speed 0. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves individual ships between fleets.
+Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement, ID, or speed. A speed change takes 1 up to the fleet's maximum and touches nothing else. A fleet on Hold, or already at its target, keeps speed 0. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves single ships between fleets.
 
 The *Fleet List* lets you work on many fleets at once through its *Sel* column. Press *Space* on a fleet row to check or uncheck it. When one or more
 fleets are checked, *O* assigns one mission to the checked set, *C* changes
-their shared ROE or speed, *M* merges the checked fleets using the lowest
-Fleet ID as the host, and *T* opens ship transfer for a checked pair. Row-based
+their shared ROE or speed, *M* merges the checked fleets with the lowest
+Fleet ID as the host, and *T* opens ship transfer for a checked pair. Row
 commands such as *Review*, *ETA*, *Detach*, *Load*, and *Unload* still use the
 highlighted fleet.
 
@@ -949,43 +977,43 @@ maintenance report says when ships have recovered.
 code (`BB`, `CA`, `DD`, `TT*`, `TT`, `SC`, or `ETAC`), then a quantity. A plain
 quantity such as `3` takes healthy ships first and takes crippled ships only
 when the class has too few healthy ones. A quantity followed by a bang, such as
-`3!`, takes exactly three crippled ships; the game refuses it when the fleet has
+`3!`, takes exactly three crippled ships. The game refuses it when the fleet has
 fewer, and it never fills the gap with healthy ships. When the selected class
 has crippled ships left to stage, `1! = 1 crippled` appears above the quantity
-prompt. Among crippled ships, those
-crippled most recently go first, then those with the most recovery time left.
-The *Staged* line shows the ships that will move, in the same notation: `CA3!1`
-is three cruisers, one of them crippled. Moving crippled ships never repairs
-them or restarts their recovery, and each keeps the time it has left.
+prompt. Among crippled ships, those crippled most recently go first, then those
+with the most recovery time left. The *Staged* line shows the ships that will
+move, in the same notation: `CA3!1` is three cruisers, one of them crippled.
+Moving crippled ships never repairs them or restarts their recovery, and each
+keeps the time it has left.
 
 In *Detach*, type *D* to finish staging early. When only one ship remains on the
-donor, confirmation opens automatically. Press *Enter* or *Y* to detach the
-staged ships, *N* to return to editing, or *Q* to cancel. While editing, *X*
+donor, confirmation opens on its own. Press *Enter* or *Y* to detach the
+staged ships, *N* to go back to editing, or *Q* to cancel. While editing, *X*
 clears the staged selection. If the donor needs a lower speed after detaching,
 the game asks for it before moving the ships.
 
-*Transfer* uses the same staging and confirmation flow. Type *T* or press
+*Transfer* uses the same staging and confirmation steps. Type *T* or press
 *Enter* at an empty class prompt to finish staging early. Confirmation opens
-automatically when only one ship remains on the source. Review the staged
-ships, source remainder, and destination after transfer; then press *Enter*
-or *Y* to transfer, *N* to keep editing, or *Q* to cancel. *X* clears staging
-while editing.
+on its own when only one ship remains on the source. Review the staged ships,
+what remains on the source, and the destination after transfer. Then press
+*Enter* or *Y* to transfer, *N* to keep editing, or *Q* to cancel. *X* clears
+staging while editing.
 
 == Building and Commissioning <building>
 
-Each planet keeps a build queue, and your *budget* is the only limit on it: you may order any number of units of any kind, so long as the budget covers them. During maintenance, a planet processes as many queued build points as its current per-turn build capacity allows. Small orders may finish in one maintenance turn, while larger ones can stay queued across multiple years until the remaining cost reaches zero. As enough points are applied to complete individual units, ships and starbases move to *Stardock* --- a holding area on the planet where they sit idle and vulnerable until commissioned --- even if other units from the same order remain queued. Ships are commissioned into numbered fleets, while starbases are commissioned individually and managed through their own Starbase Command submenu. Armies and ground batteries, by contrast, deploy directly to the planet surface and do not pass through stardock.
+Each planet keeps a build queue, and your *budget* is the only limit on it. You may order any number of units of any kind, so long as the budget covers them. During maintenance, a planet works through as many queued build points as its per-turn build capacity allows. Small orders may finish in one maintenance. Larger ones can stay queued for several years until the remaining cost reaches zero. As enough points go in to finish single units, ships and starbases move to *Stardock*, a holding area on the planet where they sit idle and open to attack until commissioned, even if other units from the same order remain queued. Ships are commissioned into numbered fleets. Starbases are commissioned one at a time and managed through their own Starbase Command submenu. Armies and ground batteries deploy straight to the planet surface and never pass through stardock.
 
 Aborting the queue releases the points still unpaid. Points already spent on a part-built unit are not returned.
 
-A planet without a starbase can spend up to its Production, rounded to the nearest point, in a single turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). The build screen shows *BUDGET* --- your treasury capped by build capacity, minus what you have already committed this turn.
+A planet without a starbase can spend up to its Production, rounded to the nearest point, in one turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). The build screen shows *BUDGET*: your treasury capped by build capacity, minus what you have already committed this turn.
 
 #admonition("NOTE")[A world holds at most 255 armies and 255 ground batteries. An order that would pass either limit waits in the queue and spends nothing until there is room.]
 
-#admonition("WARNING")[Troop transports are built empty. You must manually load armies onto them before sending them into battle.]
+#admonition("WARNING")[Troop transports are built empty. Load armies onto them yourself before you send them into battle.]
 
 #admonition("WARNING")[Stardock contents are a prime target for enemy bombardment. Commission your ships promptly or risk losing them before they ever see combat.]
 
-#admonition("NOTE")[The starmap can be exported as a TXT file, a CSV grid, and a CSV details sheet for offline planning. Local Rust-client play can export it directly from the in-game starmap view, and BBS operators can hand the exported files to players out of band if they want offline planning aids.]
+#admonition("NOTE")[The starmap can be exported as a TXT file, a CSV grid, and a CSV details sheet for offline planning. A local Rust-client session can export it straight from the in-game starmap view. BBS operators can hand the exported files to players out of band.]
 
 #pagebreak()
 
@@ -1064,8 +1092,10 @@ the build capacity and the defense. Build the base where you mean to keep it:
 it crawls one sector a year.
 
 *Raise taxes as worlds mature.* A world near its Potential has little growth
-left to lose. Move the rate toward 65% as most of your worlds get there: held steady, 65% gives a mature world its best revenue over the years. Tax higher only in an emergency: you get cash now and smaller worlds later. One rate
-covers every world, so time the change for the empire as a whole.
+left to lose. Move the rate toward 65% as most of your worlds get there. Held
+at 65%, a mature world earns its best revenue over the years. Tax higher only
+in an emergency: you get cash now and smaller worlds later. One rate covers
+every world, so time the change for the empire as a whole.
 
 *Scout before you invade.* Never attack a world blind. Scout a Solar System
 (11) reports its batteries, armies, production, stardock, and the fleets in
@@ -1076,12 +1106,11 @@ armies to be confident of the landing (see @attacking-worlds).
 
 *Choose your enemies.* Diplomacy knows only Neutral and Enemy. Declare an
 empire Enemy and your fleets attack its fleets wherever they meet, as far as
-their ROE allows. Leave it
-Neutral and your fleets let its fleets pass, except in your own solar systems
-and at worlds you are guarding or attacking. There are no alliances. Nobody
-ever joins your battles, and any pact you make rests on the other empire's
-word alone. You cannot fight everyone at once, so fight one rival at a time
-and keep the rest Neutral until you are ready.
+their ROE allows. Leave it Neutral and your fleets let its fleets pass, except
+in your own solar systems and at worlds you are guarding or attacking. There
+are no alliances. Nobody ever joins your battles, and any pact you make rests
+on the other empire's word alone. You cannot fight everyone at once, so fight
+one rival at a time and keep the rest Neutral until you are ready.
 
 == Late Game: Total War
 
@@ -1122,18 +1151,18 @@ closer to the throne.
 = Historical Context
 
 *The BBS Era (1990--1992)* \
-The original game emerged between 1990 and 1992 as a "door game" for Bulletin Board Systems. In an era before the World Wide Web, players dialed into servers over phone lines to play strategy games against dozens of strangers. Everything ran through rigid 80x25 text terminals --- every menu, every star map, every battle report squeezed into that tiny viewport. It stood alongside classics like _TradeWars 2002_ and _Solar Realms Elite_, but was distinguished by its depth, its hands-off design, and the sheer scale of its campaigns.
+The original game appeared between 1990 and 1992 as a "door game" for Bulletin Board Systems. Before the World Wide Web, players dialed into servers over phone lines to play strategy games against dozens of strangers. Everything ran through strict 80x25 text terminals. Every menu, every star map, and every battle report fit into that small screen. It stood beside classics like _TradeWars 2002_ and _Solar Realms Elite_, but it stood out for its depth, its hands-off design, and the sheer scale of its campaigns.
 
 *What Made It Special* \
-Most multiplayer games of the era demanded constant attention. Esterian Conquest was different. You checked in once a day, submitted your orders, and went about your life. Overnight, the engine processed every empire simultaneously --- fleets moved, economies grew, battles resolved, and alliances were tested. When you logged in the next day, a stack of reports was waiting. Campaigns ran for months, and the stories they produced --- surprise invasions, desperate blockades, betrayals at the worst possible moment --- were the kind that stuck with players for years.
+Most multiplayer games of the era demanded constant attention. Esterian Conquest was different. You checked in once a day, gave your orders, and went about your life. Overnight, the engine processed every empire at once: fleets moved, economies grew, battles resolved, and alliances were tested. When you logged in the next day, a stack of reports was waiting. Campaigns ran for months, and the stories they produced (surprise invasions, desperate blockades, betrayals at the worst possible moment) stuck with players for years.
 
 *The Rust Port (2026)* \
-This edition rebuilds the game for modern machines while keeping the old
-campaign rhythm intact. The core rules were recovered from the original game
-and manuals, then rewritten into a clear modern engine. Where the old game
-hid things behind opaque internals, this edition uses explicit documented
-rules instead. If you played the original game on a BBS, it should feel
-familiar. If you are new to it, this manual gives you the rules straight.
+This edition rebuilds the game for modern machines and keeps the old
+campaign rhythm. The core rules were recovered from the original game and
+manuals, then rewritten into a clear modern engine. Where the old game hid
+things inside its code, this edition uses explicit, documented rules. If you
+played the original game on a BBS, it should feel familiar. If you are new to
+it, this manual gives you the rules straight.
 
 #pagebreak()
 
@@ -1163,9 +1192,9 @@ Maintenance credits this revenue to the planet's treasury after the year's
 growth and any high-tax penalty, so `present_production` here is the updated
 value. Nothing is rounded: production and the treasury keep their fractions.
 The Revenue shown on the planet and empire screens is next year's figure,
-rounded to the nearest whole point, on the assumption that the tax rate, the
-owner, and the starbase stay as they are. Empire Revenue is the sum of those
-figures over all owned planets.
+rounded to the nearest whole point, assuming the tax rate, the owner, and the
+starbase stay as they are. Empire Revenue is the sum of those figures over
+all your planets.
 
 == Yearly Growth
 
@@ -1212,9 +1241,9 @@ with every point above it.
 
 A commissioned starbase boosts growth at low and moderate tax rates, and the
 bonus fades to nothing by `65%`. Only a base of yours resting in orbit over the
-world when the year begins counts. A base under way, even one that arrives
-during the year, gives no growth bonus, nor does a base in deep space. More
-than one base does not add to the bonus.
+world when the year begins counts. A base under way gives no growth bonus,
+even one that arrives during the year, and neither does a base in deep space.
+More than one base does not add to the bonus.
 
 #align(left)[
   #stack(
@@ -1248,11 +1277,11 @@ A base ordered elsewhere, or one in deep space, does not count. One base is
 enough; more add nothing.
 
 Moving a base out of orbit cancels every build order of the world beneath it
-that relies on the base: when a queued unit, or the whole queue, costs more
-than the world's Production and no other starbase of yours rests in orbit
-there.
+that relies on the base. An order relies on the base when a queued unit, or
+the whole queue, costs more than the world's Production and no other starbase
+of yours rests in orbit there.
 
-A planet's *treasury* accumulates unspent production points across turns, with
+A planet's *treasury* collects unspent production points across turns, with
 their fractions. You can spend only its whole points:
 
 #align(left)[
@@ -1267,26 +1296,26 @@ their fractions. You can spend only its whole points:
 A negative treasury is a debt. It stays negative, and later revenue pays it
 down.
 
-The BUDGET field on the build screen shows how many points remain after
+The BUDGET field on the build screen shows how many points remain after the
 committed queue entries are subtracted. Maintenance deducts only the build
-points actually processed that year; any remaining build cost stays queued for
-later turns, and blocked builds do not consume the treasury. Aborting the
-queue releases the points still unpaid, not points already spent.
+points it processes that year. Any remaining build cost stays queued for later
+turns, and blocked builds do not touch the treasury. Aborting the queue
+releases the points still unpaid, not points already spent.
 
 == New Colonies
 
 A colony starts with `present_production = min(3, potential_production)` and no
 treasury. This applies only when the colony is founded, never on capture,
 recapture, or recovery, and the tax rate does not change it. The maintenance
-that founds the colony credits it no growth and no revenue; both begin the next
+that founds the colony credits it no growth and no revenue. Both begin the next
 year, growth first and then revenue on the grown Production. The treasury
-counts whole points only, so a very small colony, or one taxed at a low rate,
+counts whole points only, so a small colony, or one taxed at a low rate,
 can sit at zero budget for a year or more.
 
 == Scorch Earth
 
-While a planet's Scorch Earth order is in force, each yearly pass, after the
-build queue and in place of growth and revenue, does this:
+While a planet's Scorch Earth order is in force, each yearly pass does this,
+after the build queue and in place of growth and revenue:
 
 #align(left)[
   #stack(
@@ -1307,29 +1336,32 @@ Production is unchanged, and the planet's Revenue reads 0.
 
 = Combat Rules and Tables <appendix-combat>
 
-Battles resolve automatically during maintenance. This appendix gives the exact
-rules and tables behind them.
-Battle reports are short, but the fighting is not random brawling. Combat is
-simultaneous and rule-driven. Both sides fire in the same round. Losses are
-then applied. This keeps battle outcomes clear, severe, and consistent.
+Battles resolve on their own during maintenance. This appendix gives the exact
+rules and tables behind them. Battle reports are short, but the fighting is
+not a random brawl. Combat follows rules, and both sides fire in the same
+round. Losses are then applied. This keeps battle outcomes clear, severe, and
+consistent.
 
 == The Rules of Battle
 
 Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
-Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Under suppression fire, all nominal ships in the current target group (the combat line first, auxiliaries afterward) must be crippled before any crippled ship in it is destroyed; execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Ordinary fleet fire targets the combat line first, heaviest hull first --- battleships, cruisers, destroyers, and starbases --- so the heavy ships cover the destroyers behind them, and fire too weak for the ship in front cannot reach those behind it. Scouts, transports, and ETACs are protected from it as long as any combat-line ships remain, so your non-combat vessels survive as long as your warships hold the line, except against a critical hit.
+Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Under suppression fire, every nominal ship in the current target group (the combat line first, auxiliaries after) must be crippled before any crippled ship in it is destroyed. Execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. It recovers on its own at the end of the second maintenance after the one that damaged it, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets that only share the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation).
 
-Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Execution fire from destroyers and starbases finishes a crippled ship for half its DS, rounded up. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
+Ordinary fleet fire targets the combat line first, heaviest hull first: battleships, cruisers, destroyers, and starbases. The heavy ships cover the destroyers behind them, and fire too weak for the ship in front cannot reach those behind it. Scouts, transports, and ETACs are safe from it as long as any combat-line ship remains. Your non-combat ships survive as long as your warships hold the line, except against a critical hit.
+
+Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Execution fire from destroyers and starbases finishes a crippled ship for half its DS, rounded up. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost. The next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
 Three bonuses add to your die roll. A starbase fighting on your side adds +1.
 An attack that catches the enemy unprepared adds +1 to the attacker's first
 round (see *Surprise* under Who Fights Whom). A heavy line adds +1: your
 cruisers, battleships, and starbases in the battle cost at least twice the
 enemy's, crippled ones at full price, judged again every round. Destroyers
-count for neither side, and a side with no heavies never gets it. A roll pushed past 9 counts
-as 9. An unmodified 9 is a critical hit that destroys one more enemy
-ship outright. In a draw, the defender wins. The exact ROE thresholds, combat values,
-effectiveness table, and assault formulas follow later in this appendix.
+count for neither side, and a side with no heavies never gets it. A roll
+pushed past 9 counts as 9. An unmodified 9 is a critical hit that destroys one
+more enemy ship outright. In a draw, the defender wins. The exact ROE
+thresholds, combat values, effectiveness table, and assault formulas follow
+later in this appendix.
 
 == How a Fleet Battle Is Fought <fleet-battle-sequence>
 
@@ -1427,13 +1459,13 @@ cannot see a fleet passing overhead in deep space, and neither can fight the
 other. Movement is 2.5D: the map is a flat board with each world one step
 below its sector, and a full descent or climb costs one sector of movement.
 Seek Home and Colonize a World finish at the end of the first year the fleet
-is at least halfway down; every other world mission acts only from full orbit.
+is at least halfway down. Every other world mission acts only from full orbit.
 
 A year is 52 weeks. Each week, every fleet and starbase takes a turn, in an
 order drawn at random once a year. In its turn a fleet moves one week's
-distance, scans the alien fleets and starbases sharing its sector and layer,
-and then carries out its order. Battles therefore happen in the middle of the
-year, wherever fleets happen to be that week, and the report carries that
+distance, scans the alien fleets and starbases that share its sector and
+layer, and then carries out its order. Battles therefore happen in the middle
+of the year, wherever fleets are that week, and the report carries that
 week's stardate.
 
 *Sighting.* Each week a fleet has a chance of spotting each alien unit near
@@ -1441,10 +1473,9 @@ it. Big fleets are easier to see than small ones: battleships and ETACs show
 most, then cruisers and transports, then destroyers; scouts add a little. A
 fleet in a solar system is five times easier to see than one in deep space,
 and a fast-moving fleet is easier to see than a slow one. A fleet at its
-target on a bombard, invade, or blitz mission is twenty times easier again (a
-hundred times, counting the solar system),
-and patrols, colonizers, and system scouts twice as easy. Starbases are fairly
-conspicuous.
+target on a bombard, invade, or blitz mission is twenty times easier again
+(a hundred times, counting the solar system). Patrols, colonizers, and system
+scouts are twice as easy. Starbases are fairly easy to see.
 
 How hard a fleet looks depends on its order. A patrol that has reached its
 sector looks ten times as hard as an ordinary fleet; a scout or a blockade on
@@ -1474,38 +1505,37 @@ does not close.
 
 Any other alien fleet is ignored. A sector with no world is nobody's system.
 
-Whether your fleet then attacks is decided by its ROE and the odds, the first
-time it identifies a target as on every later week (see Rules of Engagement
-Thresholds below).
-Identifying an enemy first commits nothing: a cautious fleet does not attack
-a stronger enemy just because it saw it first. For these odds each warship
-counts its attack strength --- a destroyer 12, a cruiser 33, a battleship 90
---- and a starbase 100, the same values the battle fires with. Scouts,
-transports, and ETACs count nothing, and a fleet without warships never
-attacks, whatever its ROE.
+Whether your fleet then attacks depends on its ROE and the odds, the first
+time it identifies a target and on every later week (see Rules of Engagement
+Thresholds below). Identifying an enemy first commits nothing. A cautious
+fleet does not attack a stronger enemy just because it saw it first. For
+these odds each warship counts its attack strength (a destroyer 12, a cruiser
+33, a battleship 90) and a starbase 100, the same values the battle fires
+with. Scouts, transports, and ETACs count nothing, and a fleet without
+warships never attacks, whatever its ROE.
 
 The odds are those of the sides as they would fight. Your fleets in the same
 sector and layer fight together, so each of them weighs all of them against
-all of the enemy's there: two fleets of five cruisers at ROE 6 would each
+all of the enemy's there. Two fleets of five cruisers at ROE 6 would each
 refuse ten cruisers alone, and take them on together. Each of your fleets
-there volunteers under its own ROE: one that refuses the assembled odds stays
-out, and the others re-check without it. If the fleet that spotted the enemy
-is the one that refuses, there is no attack that week; another willing fleet
-of yours attacks only when it spots and catches the enemy itself.
+there volunteers under its own ROE. One that refuses the combined odds stays
+out, and the others check again without it. If the fleet that spotted the
+enemy is the one that refuses, there is no attack that week. Another willing
+fleet of yours attacks only when it spots and catches the enemy itself.
 
 *Intercept.* A fleet with a higher maximum speed always catches its target.
 Otherwise the target may notice the attack and run. A stopped target cannot
-run; a moving one escapes more often the faster it moves and the slower its
+run. A moving one escapes more often the faster it moves and the slower its
 pursuer. A target that already knows the attacker rarely notices it coming,
 and then it stays to fight only if its own ROE accepts the odds.
 
 *Battle.* Every battle is between two empires. Your side is your fleets in
-the sector and layer that volunteered; the enemy's side is all of his fleets
-there, whatever their ROE --- a fleet that is attacked fights, ROE 0 included
---- with the starbase that was attacked or that a guard fleet among them
-guards. Nobody else joins: not a third empire, not allies, not fleets that
-arrive later in the week. The fleet that started the attack spends the week
-fighting instead of moving. A fight does not change the empires' diplomacy.
+the sector and layer that volunteered. The enemy's side is all of his fleets
+there, whatever their ROE (a fleet that is attacked fights, ROE 0 included),
+plus the starbase that was attacked or that a guard fleet among them guards.
+Nobody else joins: not a third empire, not allies, not fleets that arrive
+later in the week. The fleet that started the attack spends the week fighting
+instead of moving. A fight does not change the empires' diplomacy.
 
 *Surprise.* Your empire remembers, in each sector and layer where it has a
 fleet or a starbase, which opposing empires it has spotted there. Whenever any
@@ -1513,31 +1543,31 @@ of your fleets or starbases there spots an alien unit, its empire goes into
 that memory, and so does the empire of any fleet you fight there. All of your
 fleets and starbases in that sector and layer share it. The memory lasts,
 from week to week and year to year, for as long as you keep a fleet or a
-starbase in that sector and layer; when the last one leaves or is destroyed it
-is gone, and an opponent that leaves and comes back does not erase it. It is
+starbase in that sector and layer. When the last one leaves or is destroyed,
+it is gone. An opponent that leaves and comes back does not erase it. It is
 local readiness, not knowledge of the whole empire: what a scout learned in
 another sector does nothing here.
 
 An attack is a *surprise* when the defending empire's memory there does not
 include the attacker's empire: none of its fleets or starbases there has
 spotted the attacker, and the two have not fought there. The attacking side
-then adds 1 to its die in the first round of the battle. The bonus counts
-within the +2 limit, an unmodified 9 is still the only critical hit, and a
-pursuit round never gets it. Only the attacker can surprise: a defender
-that was hidden earns nothing for it. Spotting is not the same as
-identifying, and a fleet that spots an enemy and declines to attack, because
-of its ROE or because the odds are against it, still remembers. The battle
-report says "We attacked by surprise." or "The enemy attacked by surprise."
-Staying unseen therefore keeps your chance of a surprise, and watching a
-system keeps your defenders ready.
+then adds 1 to its die in the first round of the battle. The bonus adds to
+the other die bonuses, a result above 9 still reads as 9, an unmodified 9 is
+still the only critical hit, and a pursuit round never gets it. Only the attacker can surprise. A defender that
+was hidden earns nothing for it. Spotting is not the same as identifying, and
+a fleet that spots an enemy and declines to attack, because of its ROE or
+because the odds are against it, still remembers. The battle report says "We
+attacked by surprise." or "The enemy attacked by surprise." Staying unseen
+therefore keeps your chance of a surprise, and watching a system keeps your
+defenders ready.
 
-*Starbases* scan, and what they identify every fleet of their empire knows,
+*Starbases* scan, and every fleet of their empire knows what they identify,
 but they never start a fight and never join one to attack. A fleet attacks a
 starbase only if its empire has declared the base's owner an enemy, or if
 the base protects the world the fleet has come to bombard, invade, or blitz.
 Either way the fleet weighs the base, its guard, and the owner's other fleets
-there against its own side, and if the odds are against it, it avoids the
-base or aborts its mission.
+there against its own side. If the odds are against it, it avoids the base or
+aborts its mission.
 
 *Blockades.* A blockade does not stop a neutral fleet leaving the world or
 arriving at it, unless the arrival comes to attack or colonize it. A blockade
@@ -1547,35 +1577,33 @@ fleet takes to climb out of orbit.
 
 == Tactical Roles and Split Fire
 
-Combat is more than just a numbers game. Different ship classes perform specific tactical roles based on how they deliver fire. Hits generated by a task force are split into two pools:
+Combat is more than a numbers game. Each ship class has a tactical role set by how it delivers fire. The hits a side generates are split into two pools:
 
-- *Suppression Fire (Cruisers and Battleships):* These heavy vessels provide volume and suppression. Their hits are dispersed across the enemy fleet, reducing nominal ships to a *crippled* state. This effectively knocks enemy guns offline and wins the immediate field, but it does not always result in permanent kills.
-- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying 2x DS for a healthy ship and half DS, rounded up, for a crippled one to blow ships up one by one.
+- *Suppression Fire (Cruisers and Battleships):* These heavy ships bring volume. Their hits are spread across the enemy fleet, knocking nominal ships down to *crippled*. This takes enemy guns offline and wins the field in front of you, but it does not always kill for good.
+- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to pick off single targets. Their hits skip the crippled state and go straight to *destroyed*, paying 2x DS for a healthy ship and half DS, rounded up, for a crippled one. They blow ships up one by one.
 
-This creates a deadly pair. Heavy ships soften the line and stand in front
-of it. Destroyers finish it from behind them. Each pool carries its own leftover hits: suppression hits
-never pay for an execution kill, and execution hits never pay for a cripple.
+Together they are a deadly pair. Heavy ships soften the line and stand in front of it. Destroyers finish it from behind them. Each pool carries its own leftover hits: suppression hits never pay for an execution kill, and execution hits never pay for a cripple.
 
-#admonition("NOTE")[All planetary return fire from ground batteries is treated as *Execution Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one, destroyers first. Fortified worlds do not "soften" an attacker; they destroy him.]
+#admonition("NOTE")[All return fire from ground batteries counts as *Execution Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one, destroyers first. Fortified worlds do not "soften" an attacker; they destroy him.]
 
 == Fleet Limits
 
-A fleet can contain as few as one ship and as many as *3,000 ships* of mixed types. A fleet always moves at the speed of its slowest member. A fleet sent to guard a starbase joins the escort already beside it when it arrives, unless the two together would pass 3,000 ships.
+A fleet can hold as few as one ship and as many as *3,000 ships* of mixed types. A fleet always moves at the speed of its slowest ship. A fleet sent to guard a starbase joins the escort already beside it when it arrives, unless the two together would pass 3,000 ships.
 
 == Rules of Engagement (ROE)
 
-You assign an ROE level (0--10) to control when your fleet attacks. ROE 0
+You give each fleet an ROE level (0--10) to control when it attacks. ROE 0
 never attacks, but a fleet on ROE 0 that is attacked still fights the first
 exchange. Any higher ROE attacks a hostile fleet when the force ratio of the
 two sides, your fleets in the sector and layer against the enemy's, meets the
-ROE threshold (see Who Fights Whom); seeing the enemy first changes nothing.
-ROE also decides when your fleet breaks off a battle: after the compulsory
+ROE threshold (see Who Fights Whom). Seeing the enemy first changes nothing.
+ROE also decides when your fleet breaks off a battle. After the compulsory
 first exchange it checks the same odds after every exchange and leaves as
 soon as they fail (see Withdrawal and Retreat).
 
 The full ROE threshold table follows below.
 
-Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*). A fleet that Detach creates starts at ROE 6, or at 0 when it has no warships, whatever the donor's ROE is.
+Non-combat fleets (scouts, transports, and ETACs only) count as ROE 0 on their own. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*). A fleet that Detach creates starts at ROE 6, or at 0 when it has no warships, whatever the donor's ROE is.
 
 == Withdrawal and Retreat
 
@@ -1586,15 +1614,15 @@ whatever their ROE. After it, and after every exchange that follows, each of
 your fleets in the battle checks its own ROE against the odds as they now
 stand, your side's attack strength against the enemy's, and breaks off as
 soon as they fail. Every fleet whose ROE fails leaves at once, on both sides
-together, and the fleets that stay re-check the odds without them. A fleet
-that has left does not come back, even if the odds later turn in your
-favour. A fleet with no armed ship left, including one that has just lost
-its last warship, tries to escape at once, whatever its ROE. A starbase
-never breaks off; the fleets beside it, its guard included, leave under
-their own ROE like any other.
+together, and the fleets that stay check the odds again without them. A
+fleet that has left does not come back, even if the odds later turn in your
+favor. A fleet with no armed ship left, including one that has just lost its
+last warship, tries to escape at once, whatever its ROE. A starbase never
+breaks off. The fleets beside it, its guard included, leave under their own
+ROE like any other.
 
 Losses are shared among your fleets in proportion to each fleet's eligible
-ships: of the ships the enemy's fire reaches, a fleet with eight cruisers and
+ships. Of the ships the enemy's fire reaches, a fleet with eight cruisers and
 one with two share three losses as two and one. Ties are broken at random.
 Splitting or merging fleets can shift a rounding loss by one hull. Loaded
 transports are hit before empty ones across all your fleets there, so moving
@@ -1604,7 +1632,7 @@ Breaking off is not always a clean escape. A fleet that leaves while the rest
 of your side fights on gets away for now, but the enemy may still catch it
 once later. When your whole side has broken off and the enemy stays with
 armed ships, he may pursue each fleeing fleet. A pursuer whose ships are
-faster than yours catches you for certain; otherwise it is a roll, likelier
+faster than yours catches you for certain. Otherwise it is a roll, likelier
 the faster he is and the slower you are. A catch is one more exchange for
 the fleets caught, with die bonuses and carried hits on both sides, and then
 the battle is over. When both sides break off, nobody pursues. Each enemy
@@ -1613,38 +1641,39 @@ that pursuit failed, in one more attack while the fleet is still leaving the
 sector. After that the fleet has got away from that empire until it leaves
 the sector or you give it a new order. Your warships still screen your
 auxiliaries during a pursuit exchange; only a critical hit reaches past the
-line. A battle still undecided after 64 exchanges simply ends: nobody wins,
+line. A battle still undecided after 64 exchanges just ends: nobody wins,
 nobody retreats, and the next week's encounter rules decide whether the
 fleets meet again.
 
-A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home: it heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector. Its report says why it left --- its ROE, or no warships left --- and whether it was caught on the way out.
+A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home. It heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector. Its report says why it left (its ROE, or no warships left) and whether it was caught on the way out.
 
 == Planetary Combat
 
-When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
+When fleets attack planets by bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall. While they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships (destroyers, cruisers, and battleships) add bombardment firepower. Scouts, transports, and ETACs do not.
 
 *Winning the orbit.* Before a fleet on a bombard, invade, or blitz mission can
 strike, it must get past whatever the owner keeps in orbit. His starbase and
 his fleets there with warships fight it the week it reaches orbit, spotted or
 not, and your other fleets in that orbit join it under their own ROE. If its
 ROE will not take them on with the side it has, it turns for home without a
-shot; if it loses, it is driven off, and the batteries do not fire on it as it
+shot. If it loses, it is driven off, and the batteries do not fire on it as it
 goes. Only a fleet that holds the orbit attacks, in that same week. Your
 fleets in orbit there under Bombard join it and bombard as one force, once a
-year; an invading or blitzing fleet attacks on its own as it arrives, and a
+year. An invading or blitzing fleet attacks on its own as it arrives, and a
 second one need not fight defenders the first has beaten. A fleet told to
-attack the world it already orbits attacks at the next maintenance. A fleet of loaded transports may attempt a blitz without
-warships, but then it brings no orbital fire of its own; the owner's ships
-without warships do not stop it, but his starbase or any fleet of his with
-warships in orbit does, and the transports turn for home.
+attack the world it already orbits attacks at the next maintenance. A fleet of
+loaded transports may try a blitz without warships, but then it brings no
+orbital fire of its own. The owner's ships without warships do not stop it,
+but his starbase or any fleet of his with warships in orbit does, and the
+transports turn for home.
 
-#admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries bypass the crippled state and directly destroy ships, making them far more lethal than dispersed ship-to-ship fire. A commander who brings a large fleet to orbit a fortified world will find his ships being picked off one by one by concentrated ground fire.]
+#admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 
-Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only: they cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. Hits beyond what the batteries can take are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
+Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only. They cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. Hits beyond what the batteries can take are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's soft targets survive another turn.
 
-Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more; an army takes 10 hits, and a ship in the stardock as many hits as its own DS. Orbital fire is far less effective than ship-to-ship fire: ships firing at dug-in guns, and guns firing at ships in orbit, both read the bombardment table at a third of fleet strength. A lone cruiser cannot level a fortified world in a single volley.
+Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Orbital fire is far less effective than ship-to-ship fire: ships firing at dug-in guns read the bombardment table at a third of fleet strength. Guns firing at ships in orbit read it at full strength. A lone cruiser cannot level a fortified world in a single volley.
 
-Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in a year or so; twice their cost, kept on station and reinforced, takes it in two or three years; and a force no larger than the batteries' cost is destroyed. Build batteries to buy time; bring heavy fleets to break through faster.
+Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in a year or so. Twice their cost, kept on station and reinforced, takes it in two or three years. A force no larger than the batteries' cost is destroyed. Build batteries to buy time; bring heavy fleets to break through faster.
 
 @missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The bombardment table, the two-step battery rule, the batteries-only return-fire rule, and the other combat tables follow below.
 
@@ -1652,45 +1681,46 @@ Crippled batteries stay crippled from one year to the next while the world is un
 
 Armies that land fight on the same table as fleets, army against army, with no force-ratio columns. Each round the *defenders fire first*. Each side rolls one `d10` for its whole army: 0--2 deals 25%, 3--5 deals 50%, and 6--9 deals 100% of its armies' strength. The attackers' losses come off, and the attackers who survive fire back the same way. Rounds repeat until one side has no armies left.
 
-Damage short of a whole army carries into the next round of the same landing and is lost when the landing ends. There is no defender bonus, no homeworld bonus, and no critical hit; firing first is the defender's advantage. The attackers fire only with what survives, so both sides are never destroyed together. Your reports show whole armies lost and remaining; the carried fractions stay hidden.
+Damage short of a whole army carries into the next round of the same landing and is lost when the landing ends. There is no defender bonus, no homeworld bonus, and no critical hit. Firing first is the defender's advantage. The attackers fire only with what survives, so both sides are never destroyed together. Your reports show whole armies lost and remaining; the carried fractions stay hidden.
 
-Capture odds follow the ratio of landed armies to defending armies, roughly the same at any scale. Equal numbers take a world about one time in five. At 1.5 to 1 the odds are about even, and at 2 to 1 the attackers win nine times in ten. Overwhelming numbers still win every time. The Landing Battle table below gives the figures.
+Capture odds follow the ratio of landed armies to defending armies, about the same at any scale. Equal numbers take a world about one time in five. At 1.5 to 1 the odds are about even, and at 2 to 1 the attackers win nine times in ten. Overwhelming numbers still win every time. The Landing Battle table below gives the figures.
 
 === Captured Worlds
 
-A world falls when its last defending army is destroyed, and your surviving armies become its garrison. The fight wrecks part of what it was worth, as in classic Esterian Conquest. An *invasion* leaves 20--40% of the world's production, 10--50% of its stored goods, and a share of its docked ships, and no batteries: the slow assault gives the defenders time to sabotage. A *blitz* keeps most of the world intact: production, goods, docked ships, and batteries are kept in proportion to how well the landing went, `f = min(1, sqrt(surviving attackers / starting defenders))` --- production `85--100% x f`, goods `55--100% x f`, batteries `35--100% x f`. A blitz that lands in strength takes a world almost whole. Each share is a seeded roll. Production never falls below 1.0 on a world with potential, the queued build work survives, and debt is never forgiven. Your capture report lists the goods, the docked ships, and the queued work you inherit.
+A world falls when its last defending army is destroyed, and your surviving armies become its garrison. The fight wrecks part of what it was worth, as in classic Esterian Conquest. An *invasion* leaves 20--40% of the world's production, 10--50% of its stored goods, a share of its docked ships, and no batteries. The slow assault gives the defenders time to sabotage. A *blitz* keeps most of the world intact. Production, goods, docked ships, and batteries are kept in proportion to how well the landing went, `f = min(1, sqrt(surviving attackers / starting defenders))`: production `85--100% x f`, goods `55--100% x f`, batteries `35--100% x f`. A blitz that lands in strength takes a world almost whole. Each share is a seeded roll. Production never falls below 1.0 on a world with potential, the queued build work survives, and debt is never forgiven. Your capture report lists the goods, the docked ships, and the queued work you inherit.
 
 A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
 
 === Failed Assaults
 
-Failure is not defeat. A fleet whose landing fails keeps its survivors in orbit on Hold and receives a failure report. An Invade blocked because batteries survived its year lands nothing, keeps its armies aboard, and keeps its order: it suppresses again next year. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
+Failure is not defeat. A fleet whose landing fails keeps its survivors in orbit on Hold and gets a failure report. An Invade blocked because batteries survived its year lands nothing, keeps its armies aboard, and keeps its order. It suppresses again next year. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above. The world's batteries fire on no fleet except one that strikes.
 
 
 == Starbase Recovery <starbase-recovery>
 
 Suppose your world and commissioned starbase are at `[21,21]`. A fleet on Move
-to Sector (1) stops in deep space there. Hold (0) leaves it in deep space;
-matching coordinates does not put it beside the base inside the system.
+to Sector (1) stops in deep space there. Hold (0) leaves it in deep space.
+Matching coordinates does not put it beside the base inside the system.
 
-For a damaged fleet with warships, use Guard a Starbase (4) and select your base.
-Let the fleet reach the base inside your owned system. Keep the fleet and base
-at rest there for the whole following turn. You may leave Guard a Starbase in
-force, or change to Hold after it reaches the base. Guard fleets may merge
-with an existing escort; check your fleet list after maintenance.
+For a damaged fleet with warships, use Guard a Starbase (4) and select your
+base. Let the fleet reach the base inside your own system. Keep the fleet and
+base at rest there for the whole following turn. You may leave Guard a
+Starbase in force, or change to Hold after it reaches the base. Guard fleets
+may merge with an existing escort; check your fleet list after maintenance.
 
-The bonus is automatic, not a Guard a Starbase reward: any qualifying fleet
-resting there can receive it. Unarmed fleets cannot use Guard a Starbase. Seek
-Home (2) brings a fleet into its nearest owned system and finishes on Hold,
-but the world chosen may not have a base. Guard/Blockade a World (5) is another
-way for a combat fleet to enter a particular owned system. View (9) is not a
-parking order; after scanning it climbs back out.
+The bonus comes on its own. It is not a reward for Guard a Starbase: any
+qualifying fleet resting there can get it. Unarmed fleets cannot use Guard a
+Starbase. Seek Home (2) brings a fleet into its nearest owned system and
+finishes on Hold, but the world it picks may not have a base. Guard/Blockade a
+World (5) is another way for a combat fleet to enter a chosen owned system.
+View (9) is not a parking order; after scanning it climbs back out.
 
-You must keep the world, fleet, and the same assisting base throughout the
-resting turn. The base must remain at rest inside the system too. Arriving or
-merging into position during that turn does not grant an immediate bonus.
-Ships crippled during that turn receive no extra recovery then. Older
-cripples can recover one turn sooner; a starbase cannot speed its own recovery.
+You must keep the world, the fleet, and the same assisting base through the
+whole resting turn. The base must stay at rest inside the system too. A fleet
+that arrives or merges into position during that turn gets no bonus that
+turn. Ships crippled during that turn get no extra recovery then. Older
+cripples can recover one turn sooner. A starbase cannot speed its own
+recovery.
 
 == Rules of Engagement Thresholds
 
@@ -1718,8 +1748,8 @@ cripples can recover one turn sooner; a starbase cannot speed its own recovery.
 
 == Unit Combat Values
 
-The combat tables use a *10x internal scale*. That keeps attrition granular and
-lets crippled light ships keep contributing fire.
+The combat tables use a *10x internal scale*. That keeps losses fine-grained
+and lets crippled light ships keep adding fire.
 
 #figure(
   table(
@@ -1758,7 +1788,7 @@ lets crippled light ships keep contributing fire.
 )
 
 Fleet battles, the pursuit exchange included, read the modified `d10` on
-this table. The force ratio plays no part in a volley; it decides only
+this table. The force ratio plays no part in a volley. It decides only
 whether a fleet attacks and whether it stays, as attack strength against
 attack strength, a starbase counting 100.
 
@@ -1900,8 +1930,9 @@ Planetary return fire is:
   )
 ]
 
-Planetary return fire from batteries uses the *focus fire* rule. Hits bypass
-the crippled state and allocate directly to the destroyed pool, paying `2x DS` for a healthy ship and `1x DS` for a crippled one.
+Return fire from batteries uses the *focus fire* rule. Hits skip the crippled
+state and go straight to the destroyed pool, paying `2x DS` for a healthy ship
+and `1x DS` for a crippled one.
 
 Orbital hits on a world pay each target's DS on the same 10x scale:
 
@@ -1914,7 +1945,7 @@ Orbital hits on a world pay each target's DS on the same 10x scale:
   point then destroys `25` stored goods and `1` factory
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
-over to the next round. Once the stardock is exposed, hits too few for the next
+over to the next round. Once the stardock is exposed, hits too few for one
 docked item pass on to the next stardock entry. Invasion suppression and blitz
 cover fire pay the same battery cost and never reach the stardock.
 
@@ -1941,17 +1972,18 @@ exchange.
   exchange.
 
 Invasion suppresses for up to three rounds, as a bombardment does, but its
-hits strike the batteries only and never the stardock, armies, or industry; it
-stops as soon as the last battery falls. If batteries are cleared, the softening pass targets armies only --- industry and stored goods
-are not damaged during invasion. Its CRT column compares bombardment AS
-against `armies x 10`. Orbital softening may destroy at most half of
-the defender's starting armies, ensuring a meaningful landing battle whenever a
-world began the assault with a garrison. Once armies land, the landing battle
-in invasion and blitz is fought as described next.
+hits strike the batteries only and never the stardock, armies, or industry. It
+stops as soon as the last battery falls. Once the batteries are cleared, the
+softening pass targets armies only. Industry and stored goods take no damage
+during an invasion. Its CRT column compares bombardment AS against
+`armies x 10`. Orbital softening may destroy at most half of the defender's
+starting armies, so there is always a real landing battle when a world began
+the assault with a garrison. Once armies land, the landing battle in invasion
+and blitz is fought as described next.
 
 A fleet whose landing fails holds in orbit on Hold with a failure report. An
 Invade blocked by surviving batteries keeps its order and its armies, and tries
-again next year. Neither blockades the world automatically.
+again next year. Neither blockades the world on its own.
 
 == Landing Battle
 
@@ -1959,7 +1991,7 @@ Armies (AS 10, DS 10) fight on the same table as fleet battles, unmodified, in
 rounds. In each round the defenders roll and fire first, the attackers' losses
 come off, and the surviving attackers roll and fire back. A side with `n`
 armies deals `n x 1`, `n x 2`, or `n x 4` quarters of an army on a roll of
-`0`--`2`, `3`--`5`, or `6`--`9`; four quarters destroy one army. Damage short
+`0`--`2`, `3`--`5`, or `6`--`9`. Four quarters destroy one army. Damage short
 of an army carries into the next round of the same landing and is lost when the
 landing ends. There is no defender modifier, homeworld bonus, or critical hit,
 and one side always survives. Rounds repeat until one side has no armies.
@@ -1997,7 +2029,7 @@ ratio at every scale; overwhelming ratios still win every time.
 = Preservation and Original Sources <appendix-preservation>
 
 This edition preserves the game in a playable modern form. The aim is simple:
-keep the campaign rules legible, playable, and documented.
+keep the campaign rules readable, playable, and documented.
 
 == Source Hierarchy
 
@@ -2005,7 +2037,7 @@ This manual is the authoritative player manual for the Rust edition of
 Nostrian Conquest.
 
 The preserved originals in `original/v1.5/` remain historical references and
-an ambiguity fallback:
+a fallback when a rule is unclear:
 
 - `ECQSTART.DOC` --- Quick-start guide
 - `ECPLAYER.DOC` --- Detailed player manual
@@ -2016,29 +2048,29 @@ an ambiguity fallback:
 
 == Preservation Policy
 
-- This manual is the authoritative player-facing manual for the Rust edition.
-- The original manuals are preserved historical references and an ambiguity
-  fallback for classic intent and terminology.
+- This manual is the authoritative player manual for the Rust edition.
+- The original manuals are preserved historical references and a fallback for
+  classic intent and terms when a rule is unclear.
 - The original DOS binaries remain the final compatibility check.
 - This edition keeps the player-visible classic behavior that matters.
 - When an exact classic formula is still unknown, this manual states the rule
   plainly instead of pretending otherwise.
-- When the preserved originals clarify an ambiguity, that clarification should
-  be folded back into the current manuals/specs rather than left only in the
-  legacy `.DOC` set.
+- When the preserved originals clear up an unclear rule, that answer should be
+  folded back into the current manuals and specs rather than left only in the
+  old `.DOC` set.
 
 == BBS Drop File Compatibility
 
-Rust BBS hosting uses `nc-door`, not the old DOS binary path. It reads
-`DOOR32.SYS`, `DOOR.SYS`, and `CHAIN.TXT` directly. For a player, the practical
-point is simple: log into the board, launch the door, and play. If you are the
+Rust BBS hosting uses `nc-door`, not the old DOS binary. It reads
+`DOOR32.SYS`, `DOOR.SYS`, and `CHAIN.TXT` directly. For a player, the point
+is simple: log into the board, launch the door, and play. If you are the
 sysop, see the *Sysop Manual* for setup details.
 
 == This Manual
 
-This manual combines the original player guidance with the appendix reference
-tables in @appendix-economy, @appendix-combat, and @appendix-table-ui. The
-main body stays player-facing. The appendices collect formulas, tables,
+This manual combines the original player guidance with the reference tables
+in @appendix-economy, @appendix-combat, and @appendix-table-ui. The main body
+is written for the player. The appendices collect formulas, tables,
 list-screen codes, and interface details.
 
 #pagebreak()
@@ -2052,13 +2084,12 @@ details of autopilot.
 
 == Table Filters
 
-The main list screens all use the same command-line filter system. This lets
-you cut a long table down to the exact rows you want instead of paging
-through dead weight.
+The main list screens all use the same command-line filter. It lets you cut a
+long table down to the rows you want instead of paging through dead weight.
 
-One filter is active at a time on each table. If you choose a new filter, it
-replaces the old one. If a filter matches nothing, the table stays filtered
-and tells you no rows match.
+One filter is active at a time on each table. A new filter replaces the old
+one. If a filter matches nothing, the table stays filtered and tells you no
+rows match.
 
 == Filtering Procedure
 
@@ -2073,12 +2104,12 @@ NOTE: `Q` or `Esc` cancels the current filter prompt without changing the
 active filter.
 
 If your prefix matches more than one code, the command line stays open and
-shows the matching codes so you can narrow the entry.
+shows the matching codes so you can narrow it down.
 
 == Value Rules
 
-- *Text columns:* Enter plain text. Matching is case-insensitive and looks for
-  that text anywhere in the cell.
+- *Text columns:* Enter plain text. Case does not matter, and the filter looks
+  for that text anywhere in the cell.
 - *Number columns:* Enter a bare number for an exact match, or use
   `>`, `>=`, `<`, `<=`, `=`, or `!=`.
 - *Coordinate columns:* Enter `xx,yy` for one exact sector, or `xx,yy/r` for
@@ -2184,7 +2215,7 @@ The active sort and active filter both appear in the table title.
 
 == Reading Fleet Compositions <ship-notation>
 
-Wherever the game lists ships in one line, it uses one notation, and always the same order: scouts, battleships, cruisers, destroyers, loaded transports, empty transports, ETACs, starbases. A planet's stardock and build queue read the same way, with armies (`AR`) and ground batteries (`GB`) after the starbases. Each token is a ship code, the total number of ships of that kind, and, when some of them are crippled, a `!` and the number crippled. The total always includes the crippled ships. A single ship still shows its count, a kind the fleet lacks is left out, and `!0` is never written.
+Wherever the game lists ships in one line, it uses one notation, and always the same order: scouts, battleships, cruisers, destroyers, loaded transports, empty transports, ETACs, starbases. A planet's stardock and build queue read the same way, with armies (`AR`) and ground batteries (`GB`) after the starbases. Each token is a ship code, the total number of ships of that kind, and, when some of them are crippled, a `!` and the number crippled. The total always includes the crippled ships. A single ship still shows its count. A kind the fleet lacks is left out, and `!0` is never written.
 
 #figure(
   table(
@@ -2203,28 +2234,28 @@ Wherever the game lists ships in one line, it uses one notation, and always the 
   ),
 )
 
-A fleet of `BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2` therefore holds nine transports, five empty and four loaded: the star marks cargo, the bang marks damage, and the two never mix. The short legend, repeated in the in-game help, is: `! = crippled; * = loaded`.
+A fleet of `BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2` therefore holds nine transports, five empty and four loaded. The star marks cargo, the bang marks damage, and the two never mix. The short legend, repeated in the in-game help, is: `! = crippled; * = loaded`.
 
-Loaded and empty transports are damaged separately, so `TT*4!1 TT5!2` says exactly which transports are crippled. Loading an army uses your healthy empty transports first and a crippled one only when no healthy one is left; unloading or landing puts the armies aboard crippled transports ashore first. A crippled transport keeps its recovery time either way.
+Loaded and empty transports are damaged separately, so `TT*4!1 TT5!2` says exactly which transports are crippled. Loading an army uses your healthy empty transports first and a crippled one only when no healthy one is left. Unloading or landing puts the armies aboard crippled transports ashore first. A crippled transport keeps its recovery time either way.
 
-In the Fleet List the Ships cell is narrow. When it cannot hold the whole composition, it ends in `+`. Review shows the full composition, including any crippled ships omitted from the table.
+In the Fleet List the Ships cell is narrow. When it cannot hold the whole composition, it ends in `+`. Review shows the full composition, including any crippled ships left out of the table.
 
 == Autopilot <autopilot>
 
 Autopilot switches on after three missed turns. Your first real return that
-year --- logging into `nc-game`, entering through `nc-door`, or submitting a
-valid turn file --- turns that inactivity autopilot back off. Manual autopilot
+year turns that inactivity autopilot back off: logging into `nc-game`,
+entering through `nc-door`, or submitting a valid turn file. Manual autopilot
 stays on until you change it yourself.
 
-Before giving orders, autopilot combines stationary Hold and Guard/Blockade
-fleets in orbit of your own worlds, up to 3000 ships per fleet. A stationary
-Guard a Starbase fleet can take those fleets in when its base is at rest; it is
-never absorbed by this automatic merge. While autopilot runs, each year it
+Before giving orders, autopilot merges stationary Hold and Guard/Blockade
+fleets in orbit of your own worlds, up to 3,000 ships per fleet. A stationary
+Guard a Starbase fleet can take those fleets in when its base is at rest, but
+this automatic merge never absorbs it. While autopilot runs, each year it
 sends every fleet on Hold Position to the planet of yours that is best for its
 distance and production. Warships already in orbit there take Guard/Blockade,
-raising an ROE of 0 to 6. Any fleet of yours on Guard/Blockade that sits still
-in orbit with a starbase of yours that has no escort escorts that starbase,
-whether or not autopilot gave it the order. Fleets with any other order are
-left alone. Under autopilot, a fleet without warships that is on Guard/Blockade
-a World or Guard a Starbase stays on it; without autopilot, maintenance sends
-such a fleet home.
+and an ROE of 0 rises to 6. Any fleet of yours on Guard/Blockade that sits
+still in orbit with a starbase of yours that has no escort becomes that
+starbase's escort, whether or not autopilot gave it the order. Fleets with any
+other order are left alone. Under autopilot, a fleet without warships that is
+on Guard/Blockade a World or Guard a Starbase stays on it. Without autopilot,
+maintenance sends such a fleet home.

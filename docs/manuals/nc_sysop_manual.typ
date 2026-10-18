@@ -119,8 +119,8 @@ public key. The #link("https://play.nostrian-conquest.com/contact")[contact page
 #align(center)[`npub1cecl2g9z776jvpudpqxajsrsgwuvq4vp7w26q74tx2438zy3q9vq8st7pp`]
 
 This manual is the authoritative sysop manual for the Rust edition. The
-preserved `.DOC` files in `original/v1.5/` remain historical reference
-material and an ambiguity fallback for classic operator intent.
+preserved `.DOC` files in `original/v1.5/` are historical reference. Use them
+as a fallback when classic operator intent is unclear.
 
 
 // ─── 2. Getting Started: Hosting a Campaign ───────────────────────────────────
@@ -132,8 +132,7 @@ material and an ambiguity fallback for classic operator intent.
 - Linux, macOS, or Windows
 - Rust toolchain (stable) for normal localhost builds
 - A terminal emulator for localhost play
-- A BBS server with socket support only if you specifically want legacy door
-  deployment
+- A BBS server with socket support, only if you want legacy door deployment
 
 == Building from Source
 
@@ -144,9 +143,9 @@ cd rust
 cargo build --release -p nc-sysop -p nc-game
 ```
 
-The release binaries will be in `rust/target/release/`.
+The release binaries are in `rust/target/release/`.
 
-#admonition("IMPORTANT")[If you update to a newer build and the game reports that the runtime schema is unsupported, the `ncgame.db` in that directory is stale for that build. Recreate or refresh `ncgame.db` before launching again. `nc-door` now shows this as an in-app error screen instead of dropping straight back to the shell.]
+#admonition("IMPORTANT")[If you update to a newer build and the game reports an unsupported runtime schema, the `ncgame.db` in that directory is stale for that build. Recreate or refresh `ncgame.db` before you launch again. `nc-door` shows this as an in-app error screen instead of dropping back to the shell.]
 
 == Package Distribution
 
@@ -224,7 +223,7 @@ BBS door campaigns keep a minimal live config file beside the runtime DB:
   ncgame.db
 ```
 
-All tools take `--dir /path/to/mygame` to locate the game.
+All tools take `--dir /path/to/mygame` to find the game.
 
 == Initializing a New Game
 
@@ -244,23 +243,23 @@ nc-sysop new-game --bbs /path/to/mygame
 
 Use these creation flags:
 
-- *`--name`:* String. Optional game title stored in `ncgame.db`. If omitted,
-  `nc-sysop` derives a title from the directory slug.
+- *`--name`:* String. Optional game title stored in `ncgame.db`. If you omit
+  it, `nc-sysop` builds a title from the directory slug.
 - *`--players`:* Integer. Number of empires. Supported range: `1-25`. Default:
   `4`.
 - *`--seed`:* Integer. Optional campaign RNG seed. It controls map layout,
-  starting positions, and all random events. If omitted, the engine picks a
-  random seed and saves it to `ncgame.db`. The seed cannot be changed after
+  starting positions, and all random events. If you omit it, the engine picks
+  a random seed and saves it to `ncgame.db`. The seed cannot be changed after
   creation.
 - *`--bbs`:* Flag. Initialize a BBS campaign from an existing per-game
   `config.kdl`. In this mode, `--name` and `--players` are not accepted on the
-  command line. Use `--seed` only if you intentionally want a reproducible map
-  for that one campaign.
+  command line. Use `--seed` only when you want a reproducible map for that
+  one campaign.
 
 #admonition("NOTE")[Use a different seed for every game. Reusing the same seed produces the same map, starting positions, and event sequence every time. For BBS campaigns, keep that override on the `new-game --bbs --seed ...` command line instead of storing it in `config.kdl`.]
 
 The target directory basename becomes the stable game slug. It must use only
-lowercase ASCII letters, digits, and dashes. The slug is distinct from the
+lowercase ASCII letters, digits, and dashes. The slug is not the
 human-readable `game_name`.
 
 // ─── 3. Game Directory Structure ─────────────────────────────────────────────
@@ -283,7 +282,7 @@ Keep the live paths separate:
 
 - Live state: per-game `ncgame.db`
 - Runtime path: `nc-game --dir ... --player ...` on localhost
-- Operator rule: use the normal `nc-sysop settings ...` surface and schedule
+- Operator rule: use the normal `nc-sysop settings ...` commands and schedule
   `nc-sysop maint` yourself
 
 == BBS Door Host
@@ -320,8 +319,8 @@ nc-sysop settings remove-ai-seat --dir /srv/nc/games/friday-night --player 3
 `--personality` picks the seat's style. The default is `land-grab`, which
 expands hard and early and strikes when it has the odds. `rusher` goes to war
 at once and attacks at long odds. `turtle` keeps strong garrisons and
-starbases, always guards threatened worlds, and attacks late. Seats can mix
-styles.
+starbases, always guards threatened worlds, and attacks late. Different seats
+can use different styles.
 
 Difficulty is `easy`, `normal` or `hard`. `hard` is the agent at full
 strength. On test maps it won about two games in three against three scripted
@@ -340,7 +339,7 @@ maintenance without it.
 == BBS `config.kdl`
 
 BBS campaigns use a minimal live per-game `config.kdl` instead of the non-BBS
-settings surface:
+settings commands:
 
 ```kdl
 players 4
@@ -350,7 +349,7 @@ reservations {
 }
 ```
 
-Supported BBS fields are only:
+The BBS file supports only these fields:
 
 - `players`
 - `reservations`
@@ -374,7 +373,7 @@ this file for you. `settings set` is for non-BBS campaigns.
 
 == Display Defaults
 
-The default display look is controlled by `default_theme_key`. That key names a
+`default_theme_key` sets the default display look. That key names a
 compiled-in color set. It is not a file path.
 
 Players may still choose a local color theme inside `nc-game`. That choice is
@@ -388,19 +387,18 @@ clients get a predictable baseline.
 
 = Terminal Access
 
-`nc-game` is a direct terminal client. The primary supported path is local
-same-machine play, but if you manually remote into a trusted shell and launch
-`nc-game` there, it behaves the same way. No special session flags are
-required.
+`nc-game` is a direct terminal client. The main supported path is local
+same-machine play. If you remote into a trusted shell and launch `nc-game`
+there, it behaves the same way. No special session flags are needed.
 
-Color mode is auto-detected from the environment:
+The client detects color mode from the environment:
 
 - `COLORTERM=truecolor` → 24-bit RGB
 - `TERM` containing `256color` → 256-color
 - Otherwise → 16-color ANSI fallback
 
-Force a specific mode with `--color-mode` if your terminal setup does not
-propagate `COLORTERM` reliably:
+Force a mode with `--color-mode` if your terminal does not pass `COLORTERM`
+through reliably:
 
 ```
 nc-game --dir /path/to/mygame --player 1 --color-mode 256
@@ -426,7 +424,7 @@ nc-game --dir /path/to/mygame --player 1
 3. Run `nc-sysop maint /path/to/mygame` when you want the year to advance.
 
 Color mode and encoding default to `auto` / `utf8`. The client reads
-`COLORTERM` and `TERM` automatically.
+`COLORTERM` and `TERM` on its own.
 
 // ─── 8. BBS Door Setup ────────────────────────────────────────────────────────
 
@@ -442,17 +440,16 @@ host is a BBS. Keep `nc-game` for direct localhost sessions. In door mode,
 nc-door --dir /path/to/mygame --dropfile /path/to/DOOR32.SYS --encoding cp437 --color-mode ansi16
 ```
 
-`--encoding cp437` switches box-drawing characters and other extended
-characters to the CP437 code page, which is required for correct rendering
-in classic ANSI-aware BBS terminals (SyncTERM, NetRunner, etc.).
+`--encoding cp437` switches box-drawing and other extended characters to the
+CP437 code page. Classic ANSI BBS terminals (SyncTERM, NetRunner, etc.) need
+it to render the screen correctly.
 
-When `--encoding cp437` is active, `--color-mode` defaults to `ansi16`
-automatically. Override only if you know your BBS clients support a richer
-color depth.
+When `--encoding cp437` is active, `--color-mode` defaults to `ansi16`.
+Override it only if you know your BBS clients support a richer color depth.
 
-Door sessions also force the bundled `mag16` theme regardless of the campaign's
-normal `default_theme_key`. The in-game *A>nsi color ON/OFF* command toggles
-between that ANSI16 palette and a greyscale monochrome projection.
+Door sessions also force the bundled `mag16` theme, whatever the campaign's
+`default_theme_key` says. The in-game *A>nsi color ON/OFF* command switches
+between that ANSI16 palette and a greyscale monochrome view.
 
 == Drop File
 
@@ -462,7 +459,8 @@ between that ANSI16 palette and a greyscale monochrome projection.
 nc-door --dir /path/to/mygame --dropfile /path/to/DOOR32.SYS
 ```
 
-Supported drop file formats (auto-detected by filename, case-insensitive):
+`nc-door` detects the format from the filename, ignoring case. Supported
+formats:
 
 - `DOOR32.SYS` — modern standard (Enigma, Mystic, Talisman, etc.)
 - `DOOR.SYS` — legacy, widest BBS software support
@@ -470,22 +468,23 @@ Supported drop file formats (auto-detected by filename, case-insensitive):
 
 The drop file supplies the player alias and session time limit. Explicit CLI
 flags always override drop file values. Drop files may be written in CP437 or
-UTF-8. When `--dropfile` is given and
-`--encoding` is not, encoding defaults to `cp437` automatically.
+UTF-8. When `--dropfile` is given and `--encoding` is not, encoding defaults
+to `cp437`.
 
-`DOOR.SYS` supplies the handle from line 36, or the real name from line 10
-when line 36 is missing or blank. When the handle matches no seat, the real
-name is tried. It resumes a seat reserved under the real name, or a joined
-seat not yet bound by handle; that seat then takes the caller's handle. A seat
-is bound by handle once its player joins or enters it with a handle, and from
-then on the real name never matches it, so a caller whose real name equals
-another player's handle cannot enter that player's empire.
+`DOOR.SYS` supplies the handle from line 36. When line 36 is missing or blank,
+it supplies the real name from line 10 instead. When the handle matches no
+seat, `nc-door` tries the real name. The real name resumes a seat reserved
+under that name, or a joined seat not yet bound by handle. That seat then
+takes the caller's handle. A seat is bound by handle once its player joins or
+enters it with a handle. From then on the real name never matches it. So a
+caller whose real name equals another player's handle cannot enter that
+player's empire.
 
 A `DOOR.SYS` with no handle on line 36 gives only the real name. When that
 name matches the handle of a seat bound by handle, `nc-door` refuses the
-login. The caller sees that the login could not be matched and that the sysop
-has been notified. `nc-door` writes the real name and the seat number to
-standard error, and to the log when `--log-file` is set, then exits with
+login. The caller is told that the login could not be matched and that the
+sysop has been notified. `nc-door` writes the real name and the seat number
+to standard error, and to the log when `--log-file` is set, then exits with
 status 1. To fix it, set the BBS to write handles on line 36. If the caller
 owns that seat, you can instead reserve it under the real name:
 
@@ -493,31 +492,31 @@ owns that seat, you can instead reserve it under the real name:
 nc-sysop settings reserve --dir /path/to/mygame --player 2 --alias "Real Name"
 ```
 
-`--timeout <minutes>` sets a session time limit independently of a drop file.
+`--timeout <minutes>` sets a session time limit, with or without a drop file.
 
-In door mode the time limit is enforced: when it runs out, `nc-door` shows a
-short message and exits normally, just as if the caller had quit. Game state
-is saved as each action is applied, so nothing is lost. When the limit is
-longer than two minutes, the caller sees a one-line warning two minutes before
-it runs out, on the row above the command line; the next screen redraw clears
-it. The time limit counts from door launch. A non-BBS campaign
-played through door mode also ends the session after
-`session_max_idle_minutes` without a keypress. BBS campaigns have no idle
-setting; the time limit bounds an abandoned session instead.
+In door mode the time limit is enforced. When it runs out, `nc-door` shows a
+short message and exits normally, as if the caller had quit. The game saves
+state as each action is applied, so nothing is lost. When the limit is longer
+than two minutes, the caller sees a one-line warning two minutes before it
+runs out, on the row above the command line. The next screen redraw clears
+it. The time limit counts from door launch. A non-BBS campaign played through
+door mode also ends the session after `session_max_idle_minutes` without a
+keypress. BBS campaigns have no idle setting. There the time limit bounds an
+abandoned session instead.
 
 Players of one campaign can be in sessions at the same time. Each change a
 player makes is applied to the latest saved state and saved in one database
-transaction, so no player's change undoes another's, and each session then
-shows the others' changes too. The same holds for `nc-game submit-turn` and
-for `nc-helm` with a campaign store.
+transaction. No player's change undoes another's, and each session then shows
+the others' changes. The same holds for `nc-game submit-turn` and for
+`nc-helm` with a campaign store.
 
 Keep the game directory on a local disk of the machine that runs the doors and
-maintenance. Sessions share `ncgame.db` through SQLite's write-ahead log,
-which works only between processes on one machine: a network share, mapped
-drive or synced folder can fail saves or damage the file. Beside `ncgame.db`
-you will see `ncgame.db-wal` and `ncgame.db-shm` while sessions are open.
-They belong to the database: never delete them, and copy the game only while
-no session or maintenance is running.
+maintenance. Sessions share `ncgame.db` through SQLite's write-ahead log. That
+works only between processes on one machine. A network share, mapped drive or
+synced folder can fail saves or damage the file. Beside `ncgame.db` you will
+see `ncgame.db-wal` and `ncgame.db-shm` while sessions are open. They belong
+to the database. Never delete them, and copy the game only while no session
+or maintenance is running.
 
 A session that stays open across a maintenance run cannot save into the
 finished year. Its next save is refused, and the caller is told "Maintenance
@@ -528,8 +527,7 @@ shows that line and exits normally, as it does at the time limit. A local
 its load and its save.
 
 Reserve seats in the BBS campaign's `config.kdl` when you want the caller
-alias to determine the empire automatically. You can either edit the file
-directly or use:
+alias to pick the empire. Edit the file directly or use:
 
 ```sh
 nc-sysop settings reserve --dir /path/to/mygame --player 1 --alias SYSOP
@@ -541,10 +539,10 @@ If the caller alias is not reserved, `nc-door` still uses the same
 dropfile-only door flow:
 
 - if the alias already matches a stored joined player handle, that caller
-  resumes the matching empire automatically
+  resumes the matching empire
 - if the alias does not match an existing joined empire, the caller lands on
-  the BBS first-time menu and can claim the lowest-numbered open unreserved
-  empire only when the join is actually confirmed
+  the BBS first-time menu. He claims the lowest-numbered open unreserved
+  empire only when he confirms the join
 - if the game is full, the caller still reaches the BBS first-time menu, but
   `J` is refused with the normal no-open-empires notice
 
@@ -558,12 +556,12 @@ dropfile-only door flow:
 
 == Verified BBS Hosts
 
-The native Rust `nc-door` binary is now verified on Mystic, ENiGMA½, and
-Synchronet, and WWIV now has a validated Linux path. The shared core launch
-shape is simple: pass `--dir` and a dropfile. ENiGMA½ also passes
+The native Rust `nc-door` binary is verified on Mystic, ENiGMA½, and
+Synchronet. WWIV has a validated Linux path. The core launch is the same on
+every host: pass `--dir` and a dropfile. ENiGMA½ also passes
 `--socket-port`, and Windows Synchronet also passes `--socket-descriptor`.
-The helper wrapper at `tools/bbs/run_nc_rust.sh` remains useful only for
-source-tree testing and is not the normal packaged door path.
+The helper wrapper at `tools/bbs/run_nc_rust.sh` is for source-tree testing
+only. It is not the normal packaged door path.
 
 Mystic uses the direct dropfile path:
 
@@ -583,21 +581,20 @@ Windows Synchronet also passes the inherited socket descriptor:
 nc-door --dir /path/to/mygame --dropfile %f --socket-descriptor %H
 ```
 
-Linux Synchronet is validated with the same `DOOR32` dropfile shape. If
-your Synchronet install mangles a long native `cmd=` line, keep the full
-`nc-door --dir ... --dropfile ...` invocation inside a tiny wrapper and pass
-only `%f` into that wrapper.
+Linux Synchronet is validated with the same `DOOR32` dropfile. If your
+Synchronet install mangles a long `cmd=` line, put the full
+`nc-door --dir ... --dropfile ...` command in a small wrapper script and pass
+only `%f` to that wrapper.
 
-WWIV is documented separately as a validated Linux `CHAIN.TXT` path:
+WWIV uses a validated Linux `CHAIN.TXT` path:
 
 ```
 nc-door --dir /path/to/mygame --dropfile /path/to/CHAIN.TXT
 ```
 
-Treat native Windows WWIV as unvalidated for now. In one local Windows 11 test
-with an older 2023 WWIV Windows package, Defender quarantined the downloaded
-binary and `bbs.exe` then crashed before login in both remote and local-node
-flows.
+Treat native Windows WWIV as unvalidated for now. In one Windows 11 test with
+a 2023 WWIV Windows package, Defender quarantined the downloaded binary, and
+`bbs.exe` then crashed before login on both remote and local nodes.
 
 For the exact launcher setups, see
 `docs/sysop/bbs/mystic-bbs-setup.md`,
@@ -624,8 +621,9 @@ nc-game submit-turn --dir /path/to/mygame --player 1 --file /path/to/player1-tur
 ```
 
 The `--player` value must match the `turn player=...` header in the file. If
-any order in the file is invalid, the entire submission is rejected and nothing
-is written. This is a direct apply command, not a queue or upload inbox.
+any order in the file is invalid, the whole submission is rejected and nothing
+is written. This command applies the file directly. It is not a queue or an
+upload inbox.
 
 A minimal turn file:
 
@@ -653,7 +651,8 @@ message to=2 subject="Border" body="Watching the north lane."
 ```
 
 A `seek_home` or `salvage` order may leave out `x` and `y`. The fleet then
-heads for the owned world nearest it, the world the game would pick.
+heads for the nearest world its player owns, the same world the game would
+pick.
 
 `speed value=N` inside a `fleet` block changes only that fleet's speed, as
 the in-game speed change does.
@@ -670,30 +669,31 @@ Run yearly maintenance with:
 nc-sysop maint /path/to/mygame [turns]
 ```
 
-`nc-sysop maint` advances the campaign in `ncgame.db` immediately. It does not
+`nc-sysop maint` advances the campaign in `ncgame.db` at once. It does not
 change the schedule fields. NC does not schedule maintenance by itself.
 
 While it runs, players can stay logged in, but their changes are refused with
-"Campaign paused; your last change was not saved. Try again later.", so the
-year it resolves cannot change under it. When it finishes, their sessions are
-told that maintenance has run and must log in again. Only one maintenance run
-goes at a time for a campaign; a second is refused. If a run is killed or the
-machine stops, players stay paused until you run `nc-sysop maint` again, which
-reports the interrupted run and runs the year.
+"Campaign paused; your last change was not saved. Try again later." This
+keeps the year it resolves from changing under it. When it finishes, their
+sessions are told that maintenance has run and they must log in again. Only
+one maintenance run goes at a time for a campaign. A second is refused. If a
+run is killed or the machine stops, players stay paused until you run
+`nc-sysop maint` again. That run reports the interrupted run and runs the
+year.
 
 Every session checks the campaign file when it opens it. A damaged file is
 reported as "the campaign file ... is damaged; tell the sysop" instead of
 being played. Restore it from a backup.
 
-Use one of these methods:
+Run maintenance by one of these methods:
 
 - a `systemd` timer
 - `cron`
 - a BBS event runner
 - or manual sysop operation
 
-To put one game on a real schedule, turn scheduling on and set the first due
-time yourself:
+To record a maintenance schedule for one game, turn scheduling on and set the
+first due time yourself:
 
 ```
 nc-sysop settings set --dir /srv/nc/games/friday-night --maintenance-enabled on --maintenance-interval-minutes 10080 --maintenance-next-due 1775347200
@@ -701,7 +701,7 @@ nc-sysop settings set --dir /srv/nc/games/friday-night --maintenance-enabled on 
 
 That example enables weekly scheduling. `10080` is seven days in minutes.
 `1775347200` is only a sample Unix timestamp. Replace it with the first due
-time you actually want.
+time you want.
 
 Treat these schedule fields as optional metadata. They do not create their own
 timer. They are not BBS `config.kdl` fields. If you run a direct localhost
@@ -713,29 +713,28 @@ yet, keep their own schedule in `hosted.db`. `nc-host serve` runs a game's
 maintenance when that schedule is due, and `nc-host maint /path/to/game
 [turns]` runs it by hand. Both apply the turns players submitted over the
 relay, run the same yearly pass as `nc-sysop maint`, and send each claimed
-seat its new state. A game that has never been scheduled is armed one
-interval from the moment the daemon first sees it.
+seat its new state. A game that has never been scheduled becomes due one
+interval after the daemon first sees it.
 
 // ─── 11. Player Management ────────────────────────────────────────────────────
 
 = Player Management
 
 Non-BBS campaigns keep player reservations and the carried-forward
-inactivity-related state in `ncgame.db`. BBS door campaigns do not use a
-separate inactivity block in `config.kdl`; caller idle handling belongs to the
-BBS software.
+inactivity state in `ncgame.db`. BBS door campaigns have no inactivity block
+in `config.kdl`. The BBS software handles caller idle time.
 
 For direct DB-only campaigns, the default inactivity autopilot threshold is
-`3` turns. Set `inactivity_autopilot_after_turns=0` if you want it disabled. A
-player counts as active for the year by either reaching the live `nc-game`
-menus or successfully applying a `submit-turn` file.
+`3` turns. Set `inactivity_autopilot_after_turns=0` to disable it. A player
+counts as active for the year when he reaches the live `nc-game` menus or
+applies a `submit-turn` file.
 
 
-A defeated player retains one final review-only login. If the empire has
-no planets, the next maintenance turns it into a computer-controlled rogue
-empire. The former player's identity and final-review state remain in the
-store; this does not reopen the seat or restore orders. A planetless rogue
-patrols with its warships and does not contend for the throne.
+A defeated player keeps one final review-only login. If the empire has no
+planets, the next maintenance turns it into a computer-controlled rogue
+empire. The former player's identity and final-review state stay in the
+store. This does not reopen the seat or restore orders. A planetless rogue
+patrols with its warships and does not compete for the throne.
 
 == Reserving Seats
 
@@ -749,10 +748,10 @@ nc-sysop settings reserve --dir /path/to/mygame --player 2 --alias NightShade
 
 Each `seat` entry binds one 1-based empire slot to one caller alias. Alias
 matching is ASCII case-insensitive, so `NightShade`, `nightshade`, and
-`NIGHTSHADE` are treated as the same reservation.
+`NIGHTSHADE` count as the same reservation.
 
 With reservations in place, launch `nc-door` with `--dropfile` and let the
-caller alias choose the empire automatically:
+caller alias choose the empire:
 
 ```sh
 nc-door --dir /path/to/mygame --dropfile /path/to/DOOR32.SYS
@@ -762,20 +761,22 @@ IMPORTANT:
 
 - if the caller alias is reserved, `--dropfile` alone is enough
 - if the caller alias is not reserved and already matches a stored joined
-  player handle, that caller resumes the matching empire automatically
+  player handle, that caller resumes the matching empire
 - if the caller alias is not reserved and does not match an existing joined
   player handle, the caller starts on the BBS first-time menu
-- if a reservation conflicts with an already-stored different player handle, `nc-door` will stop with a clear error so the sysop can reconcile the reservation and the runtime state
+- if a reservation conflicts with a different stored player handle, `nc-door`
+  stops with a clear error so the sysop can reconcile the reservation and the
+  runtime state
 - if no open unreserved empires remain, `J` from the BBS first-time menu is
   refused and the caller stays on that menu
 
-Reserving a seat does not join or pre-name the empire by itself. It only routes
-the caller to the intended slot. The usual first-time join flow still claims an
-empire only on successful join confirmation, and that first successful join
-records the caller alias for later dropfile logins.
+Reserving a seat does not join or name the empire by itself. It only routes
+the caller to the intended slot. The first-time join flow still claims an
+empire only when the caller confirms the join. That first join records the
+caller alias for later dropfile logins.
 
-For localhost and direct console play, use `nc-game` and follow the localhost
-setup section earlier in this manual instead of the BBS dropfile path.
+For localhost and direct console play, use `nc-game` and follow the Localhost
+Session Setup section earlier in this manual instead of the BBS dropfile path.
 
 // ─── 12. Terminology ──────────────────────────────────────────────────────────
 
@@ -790,7 +791,7 @@ setup section earlier in this manual instead of the BBS dropfile path.
 - *`nc-game`:* The Rust TUI player client for direct localhost sessions.
 
 - *`nc-door`:* The Rust BBS door entrypoint. It runs the same game flow as
-  `nc-game`, but it is the staged binary for Windows and Linux BBS hosts.
+  `nc-game`, but it is the binary shipped for Windows and Linux BBS hosts.
 
 - *`ncgame.db`:* The SQLite database that is the runtime source of truth for the
   Rust engine.
@@ -859,7 +860,7 @@ Interactive client flags:
 
 `submit-turn` flags:
 
-- *`--check`:* Validate the KDL file without mutating the campaign.
+- *`--check`:* Validate the KDL file without changing the campaign.
 - *`--dir <path>`:* Game directory containing `ncgame.db`. Required.
 - *`--player <N>`:* 1-based empire index. Required, and it must match the KDL
   header.
