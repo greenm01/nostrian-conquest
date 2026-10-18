@@ -194,8 +194,10 @@ the only hosted game.
 
 ## Release context
 
-Beta.3 is published. t024 is complete: all four BBS/sysop packages, their
-signed checksum manifest, and the matching download page are live. The
+Beta.3 is published, refreshed on 2026-10-18 from `d16e43de` (t204/t205
+databases, Windows door input fixes); see the release plan for hashes. t024
+is complete: all four BBS/sysop packages, their signed checksum manifest, and
+the matching download page are live. The
 quick-start PDF appears above the full manuals. All seven archive/manual links
 returned HTTP 200 with matching hashes; downloaded checksums and the GPG
 signature verified. See the [release plan](../notes/plans/fv6fg33o-release-v1-0-0-beta-3.md)
