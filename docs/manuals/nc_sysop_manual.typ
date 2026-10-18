@@ -143,7 +143,10 @@ cd rust
 cargo build --release -p nc-sysop -p nc-game
 ```
 
-The release binaries are in `rust/target/release/`.
+This builds all three binaries: `nc-sysop`, `nc-game`, and `nc-door`. The
+`nc-game` package holds both `nc-game` and `nc-door`, so `-p nc-game` builds
+both. The release bundle script runs the same build. The release binaries are
+in `rust/target/release/`.
 
 #admonition("IMPORTANT")[If you update to a newer build and the game reports an unsupported runtime schema, the `ncgame.db` in that directory is stale for that build. Recreate or refresh `ncgame.db` before you launch again. `nc-door` shows this as an in-app error screen instead of dropping back to the shell.]
 
@@ -292,7 +295,8 @@ Keep the live paths separate:
   and Windows Synchronet passes `--socket-descriptor`
 - Operator rule: BBS `config.kdl` supports only `players` and `reservations`;
   `settings set` does not apply
-- Common hosts: Mystic, ENiGMA½, and Synchronet on Windows or Linux
+- Common hosts: Mystic, ENiGMA½, and Synchronet on Windows or Linux; WWIV on
+  Linux with its `CHAIN.TXT` drop file
 
 Use `nc-sysop settings ...` to inspect any non-BBS campaign:
 
@@ -383,7 +387,7 @@ In BBS door mode, `nc-door` does not use `default_theme_key` at runtime. Door
 sessions always force the bundled `mag16` palette so ANSI16 terminals and BBS
 clients get a predictable baseline.
 
-// ─── 6. Terminal Access ───────────────────────────────────────────────────────
+// ─── 5. Terminal Access ───────────────────────────────────────────────────────
 
 = Terminal Access
 
@@ -408,7 +412,7 @@ UTF-8 encoding (the default) is correct for normal terminals. Use
 `--encoding cp437` only when you are proxying through a BBS or a CP437
 terminal emulator over SSH.
 
-// ─── 7. Localhost Session Setup ───────────────────────────────────────────────
+// ─── 6. Localhost Session Setup ───────────────────────────────────────────────
 
 = Localhost Session Setup
 
@@ -426,7 +430,7 @@ nc-game --dir /path/to/mygame --player 1
 Color mode and encoding default to `auto` / `utf8`. The client reads
 `COLORTERM` and `TERM` on its own.
 
-// ─── 8. BBS Door Setup ────────────────────────────────────────────────────────
+// ─── 7. BBS Door Setup ────────────────────────────────────────────────────────
 
 = BBS Door Setup
 
@@ -499,16 +503,22 @@ short message and exits normally, as if the caller had quit. The game saves
 state as each action is applied, so nothing is lost. When the limit is longer
 than two minutes, the caller sees a one-line warning two minutes before it
 runs out, on the row above the command line. The next screen redraw clears
-it. The time limit counts from door launch. A non-BBS campaign played through
-door mode also ends the session after `session_max_idle_minutes` without a
-keypress. BBS campaigns have no idle setting. There the time limit bounds an
+it. The time limit counts from door launch.
+
+Door mode also has an idle limit. It comes from the campaign setting
+`session_max_idle_minutes`, not from an `nc-door` flag. Set it with
+`nc-sysop settings set --dir /path/to/mygame --session-max-idle <minutes>`.
+The default is `10` minutes. The most is `120`. `0` turns it off. Only a
+keypress counts as activity. The idle clock restarts at each key. When no key
+arrives in that time, `nc-door` shows "No key was pressed for too long.
+Returning to the BBS." and exits normally. BBS campaigns have no idle limit,
+because `config.kdl` has no such field. There the time limit bounds an
 abandoned session instead.
 
 Players of one campaign can be in sessions at the same time. Each change a
 player makes is applied to the latest saved state and saved in one database
 transaction. No player's change undoes another's, and each session then shows
-the others' changes. The same holds for `nc-game submit-turn` and for
-`nc-helm` with a campaign store.
+the others' changes. The same holds for `nc-game submit-turn`.
 
 Keep the game directory on a local disk of the machine that runs the doors and
 maintenance. Sessions share `ncgame.db` through SQLite's write-ahead log. That
@@ -522,7 +532,7 @@ A session that stays open across a maintenance run cannot save into the
 finished year. Its next save is refused, and the caller is told "Maintenance
 has run; your last change was not saved. Log in again." In door mode `nc-door`
 shows that line and exits normally, as it does at the time limit. A local
-`nc-game` or `nc-helm` session shows the line and stays open without saving.
+`nc-game` session shows the line and stays open without saving.
 `nc-game submit-turn` fails with the same message if maintenance runs between
 its load and its save.
 
@@ -602,7 +612,7 @@ For the exact launcher setups, see
 `docs/sysop/bbs/synchronet-bbs-setup.md`, and
 `docs/sysop/bbs/wwiv-bbs-setup.md`.
 
-// ─── 9. File-Based Turn Submission ──────────────────────────────────────────
+// ─── 8. File-Based Turn Submission ──────────────────────────────────────────
 
 = File-Based Turn Submission
 
@@ -659,7 +669,7 @@ the in-game speed change does.
 
 For the full node reference and schema, see `docs/sysop/rust/turn-kdl.md`.
 
-// ─── 10. Turn Processing and Maintenance ─────────────────────────────────────
+// ─── 9. Turn Processing and Maintenance ─────────────────────────────────────
 
 = Turn Processing and Maintenance
 
@@ -692,31 +702,33 @@ Run maintenance by one of these methods:
 - a BBS event runner
 - or manual sysop operation
 
-To record a maintenance schedule for one game, turn scheduling on and set the
-first due time yourself:
+A non-BBS campaign stores three schedule fields in `ncgame.db`. They are
+notes for you and your scheduler. Nothing in `nc-sysop` or `nc-game` reads
+them to start a run.
+
+- *`maintenance_enabled`:* `on` or `off`. Default: `off`. Marks the game as
+  scheduled.
+- *`maintenance_interval_minutes`:* Minutes between runs. Default: `1440`,
+  one day. Must be at least `1`.
+- *`maintenance_next_due_unix_seconds`:* When the next run is due, as a Unix
+  timestamp in seconds. Blank until you set it.
+
+`nc-sysop settings show` prints all three. Set them with `settings set`:
 
 ```
 nc-sysop settings set --dir /srv/nc/games/friday-night --maintenance-enabled on --maintenance-interval-minutes 10080 --maintenance-next-due 1775347200
 ```
 
-That example enables weekly scheduling. `10080` is seven days in minutes.
+That example records a weekly schedule. `10080` is seven days in minutes.
 `1775347200` is only a sample Unix timestamp. Replace it with the first due
-time you want.
+time you want. Pass `--maintenance-next-due ""` to clear the due time.
 
-Treat these schedule fields as optional metadata. They do not create their own
-timer. They are not BBS `config.kdl` fields. If you run a direct localhost
-game, you can ignore them and schedule `nc-sysop maint /path/to/mygame`
-yourself.
+`nc-sysop maint` never changes these fields. If your timer reads them, it
+must update the due time itself after each run. BBS campaigns have no
+schedule fields, because `config.kdl` has none. For any campaign, the turn
+runs when your timer or you run `nc-sysop maint`.
 
-Hosted games on the `nc-host` path, which is not part of the live workflow
-yet, keep their own schedule in `hosted.db`. `nc-host serve` runs a game's
-maintenance when that schedule is due, and `nc-host maint /path/to/game
-[turns]` runs it by hand. Both apply the turns players submitted over the
-relay, run the same yearly pass as `nc-sysop maint`, and send each claimed
-seat its new state. A game that has never been scheduled becomes due one
-interval after the daemon first sees it.
-
-// ─── 11. Player Management ────────────────────────────────────────────────────
+// ─── 10. Player Management ────────────────────────────────────────────────────
 
 = Player Management
 
@@ -778,7 +790,7 @@ caller alias for later dropfile logins.
 For localhost and direct console play, use `nc-game` and follow the Localhost
 Session Setup section earlier in this manual instead of the BBS dropfile path.
 
-// ─── 12. Terminology ──────────────────────────────────────────────────────────
+// ─── 11. Terminology ──────────────────────────────────────────────────────────
 
 = Terminology
 
@@ -804,15 +816,22 @@ Session Setup section earlier in this manual instead of the BBS dropfile path.
 - *`config.kdl`:* Present only for BBS door campaigns. It holds `players` and
   optional seat `reservations`.
 
-// ─── 13. CLI Reference ────────────────────────────────────────────────────────
+// ─── 12. CLI Reference ────────────────────────────────────────────────────────
 
 = CLI Reference
 
 == nc-sysop
 
 ```text
-nc-sysop <subcommand> [options]
+nc-sysop [--log-file <path>] [--log-level <level>] <subcommand> [options]
 ```
+
+Logging flags come before the subcommand:
+
+- *`--log-file <path>`:* Append diagnostic log lines to this text file. Off by
+  default. Missing parent folders are created.
+- *`--log-level <error|warn|info|debug|trace>`:* How much to log. Default:
+  `info`.
 
 - *`new-game`:* Create a new campaign directory. Direct `nc-game` campaigns use
   `--name`, `--players`, and `--seed`. BBS campaigns use `new-game --bbs` with
@@ -853,10 +872,16 @@ Interactive client flags:
   for Synchronet-style socket door launches.
 - *`--timeout <minutes>`:* Session time limit in minutes. It overrides any
   drop file value. Door mode ends the session when it runs out.
-- *`--export-root <path>`:* Optional map or export staging root for local or
-  BBS file handoff.
-- *`--queue-dir <path>`:* Override turn queue directory. Default:
-  `<game_dir>/queue`.
+- *`--export-root <path>`:* Folder where the star map export writes its
+  `ECMAP-P<player>-Y<year>` `.TXT`, `.CSV`, and `-DETAILS.CSV` files.
+  Default: `<game_dir>/exports`. Also set by `NC_GAME_EXPORT_ROOT`.
+- *`--queue-dir <path>`:* Optional second folder. When set, each star map
+  export is also copied there, for a BBS download or queue area. Off by
+  default. Also set by `NC_GAME_QUEUE_DIR`.
+- *`--log-file <path>`:* Append diagnostic log lines to this text file. Off by
+  default. Also set by `NC_GAME_LOG_FILE`.
+- *`--log-level <error|warn|info|debug|trace>`:* How much to log. Default:
+  `info`.
 
 `submit-turn` flags:
 

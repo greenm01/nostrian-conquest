@@ -512,7 +512,8 @@ Tax revenue that a planet does not spend piles up in its *Treasury*, the planet'
 == Newly Colonized Planets
 
 A new colony starts small: Production 3, or its Potential if that is lower,
-and an empty treasury. It earns nothing in the year it is founded. From the
+an empty treasury, and one army on the ground. It earns nothing in the year it
+is founded. From the
 next year it grows and pays tax like any other world, so at a moderate tax
 rate most colonies have a small budget after their first full year. A small
 world, or one in an empire with a low tax rate, may wait a year or more
@@ -614,9 +615,10 @@ enemy unseen gains an edge in the first round. Once your forces have spotted
 an empire in a system, keeping a fleet or starbase there keeps that warning
 against it.
 
-When the odds turn against a fleet, it breaks off and heads for your nearest
-world. A faster enemy may catch it on the way out, so retreat is not always
-clean.
+When the odds turn against a fleet, it breaks off and seeks home: it heads
+for the nearest world you own, measured from where it is, and never the world
+of the system it is in (see Withdrawal and Retreat in @appendix-combat). A
+faster enemy may catch it on the way out, so retreat is not always clean.
 
 == Attacking Worlds <attacking-worlds>
 
@@ -712,7 +714,7 @@ A fleet always has exactly one standing order. If you give a new order before ma
     [04], [Guard a Starbase],  [Persistent], [Escort a starbase; fight alongside it. Needs warships.],
     [05], [Guard/Blockade a World],        [Persistent], [Watch a world. Attacks assaults, colonizers of an unowned world, and declared enemies. Needs warships.],
     [06], [Bombard a World],         [Hostile],    [Damage factories, batteries, armies, stardock contents, and production.],
-    [07], [Invade a World],          [Hostile],    [Suppress batteries, bombard, then land armies. Requires loaded transports.],
+    [07], [Invade a World],          [Hostile],    [Suppress the batteries, soften the armies, then land. Spares industry and goods. Needs warships and loaded transports.],
     [08], [Blitz a World],           [Hostile],    [Drop armies at once, under battery fire. High army risk.],
     [09], [View a World],            [One-shot],   [Quick scan of owner and production; the fleet dives in and climbs back out.],
     [10], [Scout a Sector],    [Persistent], [Watch a sector closely and identify traffic (requires Scout).],
@@ -795,7 +797,7 @@ your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 *Mission 1: Move Fleet.* A plain transit order. The fleet travels to the target sector at the speed of its slowest ship, then stops and goes back to Hold Position. Give it new orders if you want it to do anything else.
 
-*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. It keeps that planet for as long as you own it, even if another becomes nearer on the way. If you lose the planet while the fleet is on the way, the fleet turns at once for the nearest planet you still own, measured from where it is. With none left, it stops and holds where it is. On arrival, it goes back to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet. No keeps it at the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
+*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. It keeps that planet for as long as you own it, even if another becomes nearer on the way. If you lose the planet while the fleet is on the way, the fleet turns at once for the nearest planet you still own, measured from where it is and never the world of a system it is in. With none left, it stops and holds where it is. On arrival, it goes back to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet. No keeps it at the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
 
 *Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It goes back to Hold Position after reporting.
 
@@ -1304,9 +1306,12 @@ releases the points still unpaid, not points already spent.
 
 == New Colonies
 
-A colony starts with `present_production = min(3, potential_production)` and no
-treasury. This applies only when the colony is founded, never on capture,
-recapture, or recovery, and the tax rate does not change it. The maintenance
+A colony starts with `present_production = min(3, potential_production)`, no
+treasury, and one army on the ground as its garrison. The army comes with the
+founding; no transport lands it, and the colony fleet keeps its own ships.
+This applies only when the colony is founded, never on capture, recapture, or
+recovery, and the tax rate does not change it. A captured world gets no such
+army: its garrison is the attacking armies that survived the landing. The maintenance
 that founds the colony credits it no growth and no revenue. Both begin the next
 year, growth first and then revenue on the grown Production. The treasury
 counts whole points only, so a small colony, or one taxed at a low rate,
@@ -1645,7 +1650,7 @@ line. A battle still undecided after 64 exchanges just ends: nobody wins,
 nobody retreats, and the next week's encounter rules decide whether the
 fleets meet again.
 
-A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home. It heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector. Its report says why it left (its ROE, or no warships left) and whether it was caught on the way out.
+A fleet that retreats, or aborts a mission its ROE will not let it fight for, is put on Seek Home at full speed. It heads for the nearest planet you own, measured from where it is. If the fleet is in a solar system, that system's world is never chosen, even when you own it. A fleet beaten in deep space may go down to the world below it. The game picks the planet the same way when a fleet on Seek Home loses its target on the way. With no planet to go to, the fleet holds where it is, with one exception: a fleet that backs away from an enemy fleet climbs out to the deep space of its own sector at full speed on Move Only. On arrival it goes back to Hold Position. Its report says why it left (its ROE, or no warships left) and whether it was caught on the way out.
 
 == Planetary Combat
 

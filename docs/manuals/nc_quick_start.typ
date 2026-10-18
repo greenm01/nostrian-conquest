@@ -104,7 +104,7 @@ ETACs claim unowned worlds with the *Colonize* mission (12). Troop transports (`
 + *Keep a map beside you.* Print your player map or track known systems in a spreadsheet. Mark coordinates, owners, production potential, and fleet destinations. Update it from each turn’s reports. From the main menu, press `G`, then `M` to open the galaxy map. Ask your sysop for a printable map or a CSV export if he offers one.
 + *Read your reports.* From the main menu, press `G`, then `R` to open the Inbox. It has three folders: Reports, Messages, and Sent. Press `Q` to go back.
 + *Inspect your worlds.* From the main menu, press `P` to open Planet Command. Press `T` to set the tax rate. *One rate applies to every planet you own.* You cannot set a separate rate for each world. A rate of 50–65% is a good start. Lower taxes help growth. Higher taxes collect more now. Above 65%, production takes a penalty.
-+ *Queue useful builds.* In Planet Command, press `B`, then `S` to enter build orders. Builds advance during maintenance and may take several turns. Finished ships wait in stardock. Commission them with Planet Command `C` or `M` before you use them.
++ *Queue useful builds.* In Planet Command, press `B`, then `S` to enter build orders. Builds advance during maintenance and may take several turns. Finished ships wait in stardock. Commission them with Planet Command `C` or `M` before you use them. `C` picks one world and the ships you choose from its stardock, and they form a new fleet. It also commissions a starbase, one at a time. `M` asks once, then commissions every ship and starbase waiting in stardock on all your worlds.
 + *Explore and colonize.* From the main menu, press `F` to open Fleet Command. Press `O` to choose a fleet, a mission, and a target. Send a destroyer on *View* (9) to look at a world. Send a cruiser-and-ETAC fleet on *Colonize* (12) to claim an unowned world. Scout missions 10 and 11 need a Scout (`SC`).
 + *Check travel time, then log off.* Use Fleet Command `E` (ETA). For a world mission, add the time the fleet needs to enter the system. Check your targets and standing orders. Go back to the main menu and press `Q` to quit.
 
@@ -129,6 +129,8 @@ ETACs claim unowned worlds with the *Colonize* mission (12). Troop transports (`
 )
 
 Speed is sectors per year. A fleet moves no faster than its slowest ship. You can order it to move slower. Leaving orbit costs one sector of movement. Entering orbit at the destination costs one more. Check the ETA. Do not assume a nearby world is one turn away.
+
+A starbase always moves at speed 1, and you cannot change it. It crawls one sector a year. Leaving orbit takes its whole first year. Build a base where you mean to keep it.
 
 == Read the Ship Notation
 
@@ -204,9 +206,9 @@ may not have a base.
 
 A fleet that is attacked must fight one exchange. After each exchange, its ROE decides whether it stays. Fleets without warships try to escape. A faster enemy can catch a fleet that retreats, so a low ROE does not promise safety. While the combat line holds, escorts shield the auxiliaries from ordinary fire. Critical hits can still reach past the line.
 
-*Prepare before you assault.* Troop transports are built empty. At your own world, use Fleet Command `L` to load armies. Each transport carries one. Scout the target and bring escorts. Defenders in orbit can stop a planetary strike before it reaches the surface. Then choose the mission:
+*Prepare before you assault.* Troop transports are built empty. At your own world, use Fleet Command `L` to load armies. Each transport carries one. Scout the target and bring escorts. Defenders in orbit can stop a planetary strike before it reaches the surface. An *assault* is Invade or Blitz. The fleet wins the orbit, then lands armies to take the world. Then choose the mission:
 
-- *Bombard (6):* repeated attacks that can destroy batteries, docked ships, armies, goods, and production. The attack repeats each year until you change orders.
+- *Bombard (6):* not an assault. The fleet fires on the world from orbit and lands no one. Repeated attacks can destroy batteries, docked ships, armies, goods, and production. The attack repeats each year until you change orders.
 - *Invade (7):* needs warships and loaded transports. The fleet suppresses the batteries for the year, softens the garrison, then lands armies. If any batteries survive, no one lands. The fleet keeps its order and tries again next year. A world taken by invasion keeps only 20--40% of its production.
 - *Blitz (8):* needs loaded transports. Escorting warships give brief cover fire. Then the surviving batteries fire on your landing transports. A blitz that lands in strength takes the world almost whole, batteries included.
 
@@ -225,10 +227,13 @@ Keys depend on the menu you are in. These paths start at the *main menu*. If you
   [`P`, then `B`], [Build ships and defenses.],
   [`F`, then `O`], [Assign a fleet mission.],
   [`F`, then `C`], [Change fleet ROE, ID, or speed.],
+  [`F`, then `E`], [Calculate a fleet's travel time to a destination.],
+  [`F`, then `L`], [Load armies from a world onto a fleet's transports.],
   [`G`, then `R`], [Review the Inbox: Reports, Messages, Sent.],
   [`G`, then `C`], [Send a message to another empire.],
   [`G`, then `M`], [Open the galaxy map.],
   [`G`, then `E`], [Declare or list enemies.],
+  [`G`, then `D`], [Clear all reports.],
   [`V`], [View a partial map.],
   [`B` or `D`], [Brief or detailed empire report.],
   [`H` or `?`], [Help for the current screen.],
