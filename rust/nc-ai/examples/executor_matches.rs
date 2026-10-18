@@ -6,7 +6,7 @@
 //!     [--weights baseline|tuned|classic|PERSONALITY|FILE.kdl] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic|PERSONALITY] \
 //!     [--with strike_weakest|strike_by_value|suppress_first|blockader|mixed_hulls] \
-//!     [--games 64] [--years 60] [--first-map 0] [--paired]
+//!     [--games 64] [--years 60] [--first-map 0] [--paired [--baseline PERSONALITY|FILE.kdl]]
 //! ```
 //!
 //! `classic` is t154's tuned executor with its original build order, kept
@@ -16,7 +16,8 @@
 //! `--paired` plays every map twice, the candidate seat with and without
 //! the `--with` switches against the same opponents, and reports the mean
 //! difference in win share with its standard error. Map luck cancels, so
-//! this is the test for a doctrine change.
+//! this is the test for a doctrine change. `--baseline` plays the second
+//! run with another style's weights instead, to compare two tunings.
 //!
 //! Games run on every core. A win is the declared winner or, without one,
 //! the most production at the end (a tie shares the win).
@@ -48,8 +49,9 @@ fn main() {
         Some("classic") => SeatPolicy::Executor(Weights::CLASSIC),
         Some(other) => SeatPolicy::Executor(style(other)),
     };
-    // Doctrine switches to turn on for the candidate seat only.
-    let without = weights;
+    // Doctrine switches to turn on for the candidate seat only. With
+    // `--baseline`, the paired run compares against that style instead.
+    let without = arg("--baseline").map_or(weights, |name| style(&name));
     let mut weights = weights;
     for switch in arg("--with").iter().flat_map(|names| names.split(',')) {
         match switch {
