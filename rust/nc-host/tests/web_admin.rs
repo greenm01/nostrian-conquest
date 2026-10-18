@@ -102,6 +102,86 @@ fn independent_games_atomic_seats_and_lifecycle() {
             .is_err()
     );
 }
+/// A turn whose process died midway leaves the game in maintenance, its run
+/// marked running and players' writes blocked. The next scheduled check
+/// replays it under its own request ID and the game plays again (t205).
+#[test]
+fn the_next_due_check_recovers_a_turn_that_crashed() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    create(root, "one");
+    publish(root, "one");
+    start(root, "one");
+    let hosted = rusqlite::Connection::open(root.join("one").join("hosted.db")).unwrap();
+    hosted
+        .execute_batch(
+            "INSERT INTO web_runs(request_id,expected_year,state,started_at)
+             VALUES ('crashed-turn',3000,'running',0);
+             UPDATE game_metadata SET status='maintenance';",
+        )
+        .unwrap();
+    let campaign = CampaignStore::open_default_in_dir(&root.join("one")).unwrap();
+    campaign.set_hosting_write_blocked(true).unwrap();
+
+    let due = execute(root, Request::Due).unwrap();
+    assert_eq!(due[0]["recovered"], true, "{due}");
+    assert_eq!(due[0]["run"]["end_year"], 3001, "{due}");
+    let inspect = execute(root, Request::Inspect { game: "one".into() }).unwrap();
+    assert_eq!(inspect["state"], "running", "{inspect}");
+    assert!(!campaign.hosting_writes_blocked().unwrap());
+    let state: String = hosted
+        .query_row(
+            "SELECT state FROM web_runs WHERE request_id='crashed-turn'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(state, "done");
+}
+
+/// A terminal opening while a turn holds the admin lock is answered at once
+/// (t205): authorizing a seat only reads.
+#[test]
+fn authorizing_a_seat_does_not_wait_for_a_turn() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().canonicalize().unwrap();
+    create(&root, "one");
+    publish(&root, "one");
+    let account = nc_data::AccountIdentity::Discord("123".into());
+    execute(
+        &root,
+        Request::Join {
+            game: "one".into(),
+            account: account.clone(),
+            display_name: None,
+        },
+    )
+    .unwrap();
+    let held = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(root.join(".admin.lock"))
+        .unwrap();
+    held.lock().unwrap();
+    let (sender, answer) = std::sync::mpsc::channel();
+    let request_root = root.clone();
+    std::thread::spawn(move || {
+        let _ = sender.send(execute(
+            &request_root,
+            Request::Authorize {
+                game: "one".into(),
+                account,
+            },
+        ));
+    });
+    let access = answer
+        .recv_timeout(std::time::Duration::from_secs(5))
+        .expect("answered while the lock is held")
+        .unwrap();
+    assert_eq!(access["seat"], 1);
+    drop(held);
+}
+
 #[test]
 fn maintenance_retries_restore_and_integrity() {
     let temp = tempfile::tempdir().unwrap();

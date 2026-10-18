@@ -169,7 +169,7 @@ pub use starmap::{
 pub use storage::{
     AiDifficulty, AiSeat, CampaignRuntimeState, CampaignSettings, CampaignStore,
     CampaignStoreError, CommittedChange, DEFAULT_AI_PERSONALITY, DEFAULT_CAMPAIGN_DB_NAME,
-    DEFAULT_CAMPAIGN_THEME_KEY, DEFAULT_MAINTENANCE_INTERVAL_MINUTES, IntelTier,
+    DEFAULT_CAMPAIGN_THEME_KEY, DEFAULT_MAINTENANCE_INTERVAL_MINUTES, IntelTier, MaintenanceRun,
     PlanetIntelSnapshot, PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState,
     RuntimeChange, STALE_SESSION_MESSAGE, SeatBindSource, TerminalOutcome, WinnerState,
 };

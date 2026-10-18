@@ -102,6 +102,11 @@ pub fn run_rust_maintenance_with_options(
 
     let campaign_store = CampaignStore::open_default_in_dir(dir)?;
     import_directory_if_store_empty(dir, &campaign_store)?;
+    // Players' changes are refused as paused until the run ends (t205).
+    let run = campaign_store.begin_maintenance()?;
+    if run.took_over() {
+        eprintln!("Warning: an earlier maintenance run stopped before finishing; running again.");
+    }
     // Loading refuses a campaign whose winner has been declared.
     let mut maintenance = CampaignMaintenance::load(&campaign_store)?;
     let start_year = maintenance.start_year();
@@ -150,7 +155,8 @@ pub fn run_rust_maintenance_with_options(
     // Saving consumes the run, so the rankings are read before it.
     let rankings_text = build_rankings_text(&maintenance.game_data);
     let player_count = maintenance.game_data.conquest.player_count;
-    maintenance.save(&campaign_store)?;
+    maintenance.save(run.store())?;
+    drop(run);
 
     fs::write(dir.join("RANKINGS.TXT"), rankings_text.as_bytes())?;
     save_diplomacy_overrides_if_needed(dir, player_count, &diplomacy_overrides)?;

@@ -23,6 +23,7 @@ mod snapshot_core;
 
 pub use ai_seats::{AiDifficulty, AiSeat, DEFAULT_AI_PERSONALITY};
 pub use change::{CommittedChange, RuntimeChange};
+pub use hosting::MaintenanceRun;
 pub use player_activity::PlayerActivityState;
 pub use player_lifecycle::{PlayerLifecycleState, TerminalOutcome, WinnerState};
 pub use player_war_stats::PlayerWarStatsState;
@@ -157,6 +158,8 @@ pub struct CampaignStore {
     path: PathBuf,
     expected_revision: Option<i64>,
     maintenance_receipt: Option<(String, u16)>,
+    /// The store of a [`MaintenanceRun`]: its saves pass the run's block.
+    in_maintenance_run: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -257,6 +260,7 @@ impl CampaignStore {
             path: path.as_ref().to_path_buf(),
             expected_revision: None,
             maintenance_receipt: None,
+            in_maintenance_run: false,
         };
         store.initialize()?;
         Ok(store)

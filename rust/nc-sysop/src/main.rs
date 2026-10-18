@@ -437,6 +437,11 @@ fn run_maintenance_for_dir(
         if turns == 1 { "" } else { "s" }
     );
     let store = CampaignStore::open_default_in_dir(dir)?;
+    // Players' changes are refused as paused until the run ends (t205).
+    let run = store.begin_maintenance()?;
+    if run.took_over() {
+        eprintln!("warning: an earlier maintenance run stopped before finishing; running again");
+    }
     let mut maintenance = CampaignMaintenance::load(&store)?;
     let start_year = maintenance.start_year();
     let mut ai = CampaignAi::load(&store, &maintenance, model_from_env().as_deref())?;
@@ -462,10 +467,11 @@ fn run_maintenance_for_dir(
     }
 
     let end_year = maintenance.game_data.conquest.game_year;
-    maintenance.save(&store)?;
+    maintenance.save(run.store())?;
     if let Some(ai) = &ai {
         ai.save(&store, end_year)?;
     }
+    drop(run);
 
     if update_schedule {
         let mut settings = store.load_campaign_settings()?;

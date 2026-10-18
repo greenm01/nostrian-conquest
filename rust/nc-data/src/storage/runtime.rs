@@ -251,7 +251,10 @@ impl CampaignStore {
         let mut conn = self.write_connection()?;
         let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         refuse_if_superseded(&tx, loaded_year)?;
-        if self.maintenance_receipt.is_none() && super::hosting::writes_blocked(&tx)? {
+        if self.maintenance_receipt.is_none()
+            && !self.in_maintenance_run
+            && super::hosting::writes_blocked(&tx)?
+        {
             return Err(CampaignStoreError::HostingPaused);
         }
         if let Some(expected) = self.expected_revision {

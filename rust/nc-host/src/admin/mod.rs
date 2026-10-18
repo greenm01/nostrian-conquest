@@ -196,6 +196,19 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
         }
     }
     let root = root.canonicalize()?;
+    // Reads that sessions make when a terminal opens need no lock, so they
+    // answer at once while a turn runs under it (t205); a game in
+    // maintenance cannot be played, so its sync is refused at once too.
+    match &request {
+        Request::Authorize { game, account } => return seats::authorize(&root, game, account),
+        Request::Membership { game, account } => return seats::membership(&root, game, account),
+        Request::SyncPlayerHandle { game, account, .. }
+            if seats::authorize(&root, game, account)?["can_play"] != true =>
+        {
+            return Err("campaign is not accepting sessions".into());
+        }
+        _ => {}
+    }
     // Administrative changes cannot interleave across processes. Player writes
     // use SQLite revision checks and the per-game write gate instead.
     let lock = std::fs::OpenOptions::new()

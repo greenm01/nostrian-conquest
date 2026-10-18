@@ -67,6 +67,13 @@ pub(super) fn restore(root: &Path, source: &Path, game: &str) -> Result<Value> {
         // Backup locations belong to the source installation. Restore keeps
         // audit history, but starts its own backup inventory in this root.
         store.connection().execute("DELETE FROM web_backups", [])?;
+        // A run interrupted when the backup was taken did not survive into
+        // the restored game; leaving it running would block the next turn.
+        store.connection().execute(
+            "UPDATE web_runs SET state='failed',result='interrupted; restored from backup'
+             WHERE state='running'",
+            [],
+        )?;
         CampaignStore::open_default_in_dir(&destination)?.set_hosting_write_blocked(true)?;
         campaign::record(
             &store,

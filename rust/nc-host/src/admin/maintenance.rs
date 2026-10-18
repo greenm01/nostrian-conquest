@@ -212,6 +212,29 @@ pub(super) fn due(root: &Path) -> Result<Value> {
     let listing = campaign::list(root)?;
     let mut results = Vec::new();
     for game in listing.as_array().ok_or("invalid listing")? {
+        if game["state"] == "maintenance" {
+            // Every run holds the admin lock, as this one does, so a run
+            // still marked running stopped with its process: replay it under
+            // its own request ID, which finishes a year already saved or runs
+            // it again (t205).
+            let id = game["game"].as_str().ok_or("missing game ID")?;
+            let (_, store) = store(root, id)?;
+            let stopped: Option<(String, u16)> = store
+                .connection()
+                .query_row(
+                    "SELECT request_id,expected_year FROM web_runs WHERE state='running'",
+                    [],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .optional()?;
+            if let Some((request, year)) = stopped {
+                results.push(match run(root, id, year, &request) {
+                    Ok(value) => json!({"recovered":true,"run":value}),
+                    Err(error) => json!({"game":id,"recovered":false,"error":error.to_string()}),
+                });
+            }
+            continue;
+        }
         if game["state"] != "running" {
             continue;
         }
