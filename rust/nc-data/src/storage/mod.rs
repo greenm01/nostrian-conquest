@@ -38,6 +38,8 @@ pub const DEFAULT_CAMPAIGN_DB_NAME: &str = "ncgame.db";
 pub const STALE_SESSION_MESSAGE: &str =
     "Maintenance has run; your last change was not saved. Log in again.";
 const RUNTIME_SCHEMA_VERSION: i64 = 17;
+/// How long a save waits for another session's save to finish (t204).
+const WRITE_BUSY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 const LEGACY_RECORD_TABLES: [&str; 7] = [
     "player_record_fields",
     "planet_record_fields",
@@ -517,8 +519,11 @@ impl CampaignStore {
     /// A connection for saving state. It puts the file in WAL mode (t204), so
     /// sessions reading the campaign never block a player's change, nor it
     /// them. The mode is stored in the file; reads leave it as it is.
+    /// Writers queue for the lock; SQLite's wait is not fair, so a busy
+    /// campaign can keep one waiting well past rusqlite's default 5 s.
     fn write_connection(&self) -> Result<Connection, CampaignStoreError> {
         let conn = self.connection()?;
+        conn.busy_timeout(WRITE_BUSY_TIMEOUT)?;
         conn.query_row("PRAGMA journal_mode = WAL", [], |row| {
             row.get::<_, String>(0)
         })?;

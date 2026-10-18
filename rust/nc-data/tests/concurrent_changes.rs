@@ -353,3 +353,220 @@ fn simultaneous_changes_from_many_sessions_all_commit() {
         );
     }
 }
+
+/// A small xorshift, so each session's random play is repeatable.
+struct Rng(u64);
+
+impl Rng {
+    fn below(&mut self, n: usize) -> usize {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 7;
+        self.0 ^= self.0 << 17;
+        (self.0 % n as u64) as usize
+    }
+}
+
+/// Four sessions play at once, each giving its own empire random orders:
+/// commissioning ships, splitting fleets, setting rules of engagement and
+/// sending mail. Every change commits, every message is kept, the fleet
+/// and base chains stay whole, and maintenance then runs.
+#[test]
+fn random_play_from_many_sessions_loses_nothing() {
+    let temp = campaign();
+    let mut stocked = temp
+        .store
+        .load_latest_runtime_state()
+        .expect("load")
+        .expect("a snapshot");
+    for empire in 1..=4 {
+        let home = home_index(&stocked.game_data, empire);
+        stocked.game_data.planets[home].stardock.destroyers = 40;
+        stocked.game_data.planets[home].stardock.starbases = 2;
+    }
+    temp.store
+        .save_runtime_state_structured(
+            3000,
+            &stocked.game_data,
+            &stocked.report_block_rows,
+            &stocked.queued_mail,
+        )
+        .expect("stock the stardocks");
+    let start = stocked.game_data;
+    let path = temp.store.path().to_path_buf();
+    let threads: Vec<_> = (1..=4u8)
+        .map(|empire| {
+            let path = path.clone();
+            std::thread::spawn(move || {
+                let store = CampaignStore::open(&path).expect("session");
+                let mut rng = Rng(0x9e37_79b9_7f4a_7c15 ^ u64::from(empire));
+                let mut sent = 0;
+                for _ in 0..40 {
+                    let pick = rng.below(4);
+                    let roe = rng.below(11) as u8;
+                    let at = rng.below(1000);
+                    change(&store, |state| {
+                        let game_data = &mut state.game_data;
+                        let own: Vec<usize> = game_data
+                            .fleets
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, fleet)| fleet.owner.0 == empire)
+                            .map(|(idx, _)| idx + 1)
+                            .collect();
+                        match pick {
+                            0 => {
+                                game_data
+                                    .auto_commission_all_stardock_units(usize::from(empire))?;
+                            }
+                            1 => {
+                                let Some(&donor) = own
+                                    .iter()
+                                    .filter(|&&record| {
+                                        game_data.fleets[record - 1].ships.destroyers > 1
+                                    })
+                                    .nth(at % own.len().max(1))
+                                else {
+                                    return Ok(());
+                                };
+                                game_data.detach_ships_to_new_fleet(
+                                    usize::from(empire),
+                                    donor,
+                                    FleetDetachSelection {
+                                        destroyers: 1,
+                                        ..FleetDetachSelection::default()
+                                    },
+                                    None,
+                                    0,
+                                )?;
+                            }
+                            2 => {
+                                if let Some(&record) = own.get(at % own.len().max(1)) {
+                                    let _ = game_data.set_fleet_rules_of_engagement(
+                                        usize::from(empire),
+                                        record,
+                                        roe,
+                                    );
+                                }
+                            }
+                            _ => state.queued_mail.push(mail(empire, empire % 4 + 1)),
+                        }
+                        Ok(())
+                    });
+                    if pick == 3 {
+                        sent += 1;
+                    }
+                }
+                sent
+            })
+        })
+        .collect();
+    let sent: Vec<usize> = threads
+        .into_iter()
+        .map(|thread| thread.join().expect("every session's changes commit"))
+        .collect();
+
+    let stored = temp
+        .store
+        .load_latest_runtime_state()
+        .expect("load")
+        .expect("a snapshot");
+    for (idx, &count) in sent.iter().enumerate() {
+        let empire = idx as u8 + 1;
+        assert_eq!(
+            stored
+                .queued_mail
+                .iter()
+                .filter(|m| m.sender_empire_id == empire)
+                .count(),
+            count,
+            "empire {empire}'s messages"
+        );
+    }
+    assert_chains_whole(&stored.game_data, &start);
+    let mut after = stored.game_data.clone();
+    nc_engine::run_maintenance_turn(&mut after).expect("maintenance runs on the result");
+}
+
+/// Maintenance runs while players keep changing the campaign, as the host
+/// runs it: player writes are blocked, the year is run and saved with its
+/// receipt, and writes resume. A change made while writes are blocked is
+/// refused and retried; one from the closed year is refused. Every change
+/// committed before the year closed is in the new year.
+#[test]
+fn maintenance_amid_changes_loses_no_committed_change() {
+    let temp = campaign();
+    let path = temp.store.path().to_path_buf();
+    let committing = std::sync::Arc::new(AtomicU64::new(0));
+    let writers: Vec<_> = (1..=4u8)
+        .map(|empire| {
+            let path = path.clone();
+            let committing = committing.clone();
+            std::thread::spawn(move || {
+                let store = CampaignStore::open(&path).expect("session");
+                let mut last = None;
+                // Change until maintenance closes the year, so the year is
+                // always closed while every session is still changing it.
+                for k in 0..100_000 {
+                    let handle = format!("p{empire}-{k}");
+                    let changed: Result<((), _), CampaignStoreError> =
+                        store.change(3000, |state| {
+                            nc_data::set_player_handle(
+                                &mut state.game_data.players[usize::from(empire) - 1],
+                                &handle,
+                            );
+                            Ok(())
+                        });
+                    match changed {
+                        Ok(_) => {
+                            if last.replace(handle).is_none() {
+                                committing.fetch_add(1, Ordering::SeqCst);
+                            }
+                        }
+                        Err(CampaignStoreError::HostingPaused) => {
+                            std::thread::sleep(std::time::Duration::from_millis(5));
+                        }
+                        Err(CampaignStoreError::StaleSnapshot { .. }) => return last,
+                        Err(err) => panic!("empire {empire}'s change failed: {err}"),
+                    }
+                }
+                panic!("empire {empire}'s session never saw maintenance close the year")
+            })
+        })
+        .collect();
+    // Close the year once every session has committed a change.
+    while committing.load(Ordering::SeqCst) < 4 {
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let store = CampaignStore::open(&path).expect("maintenance store");
+    store.set_hosting_write_blocked(true).expect("block writes");
+    let mut run = nc_engine::CampaignMaintenance::load(&store).expect("load the year");
+    run.run_turn().expect("run the year");
+    run.save(
+        &store
+            .recording_maintenance("t204-stress", 3000)
+            .expect("receipt"),
+    )
+    .expect("maintenance saves the new year");
+    store
+        .set_hosting_write_blocked(false)
+        .expect("resume writes");
+    let last: Vec<Option<String>> = writers
+        .into_iter()
+        .map(|writer| writer.join().expect("writer"))
+        .collect();
+
+    let stored = temp
+        .store
+        .load_latest_runtime_state()
+        .expect("load")
+        .expect("a snapshot");
+    assert_eq!(stored.game_year, 3001);
+    for (idx, last) in last.iter().enumerate() {
+        let handle = last.as_deref().expect("every session committed a change");
+        assert!(
+            nc_data::player_handle_matches(&stored.game_data.players[idx], handle),
+            "empire {}'s last committed change survives maintenance",
+            idx + 1
+        );
+    }
+}
