@@ -263,11 +263,12 @@ replaced the `63dc9594` archives on `release-artifacts`:
 
 The archives and signed manifest replaced the beta.3 assets on
 `release-artifacts`, and its note now describes the new fleet rules. The
-website's three manual PDFs were replaced earlier the same day. The archvps
-community stack moved to release `63dc9594` (signed tarball built on
-bean-void, verified on the host) after a `nc-admin` backup of Beta 1; Beta 1
-stayed recruiting at year 3000 with one of four seats claimed, and
-`6c381989` is kept for rollback.
+website's three manual PDFs match `02ec0297`. The archvps community stack
+moved to release `63dc9594`, then to `ea1a6b3b` the same evening for the
+help line (signed tarballs built on bean-void, verified on the host). Each
+switch followed an `nc-admin` backup of Beta 1; Beta 1 stayed recruiting at
+year 3000 with one of four seats claimed, and `63dc9594` is kept for
+rollback.
 
 ## Connections
 
