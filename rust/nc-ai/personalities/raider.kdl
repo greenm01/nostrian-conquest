@@ -33,7 +33,6 @@ doctrine {
     watch #true
     forward-muster #true
     pickets #false
-    stage #false
 }
 // Tuning keeps the style: destroyers preferred, short odds, early-ish war.
 bounds {

@@ -36,7 +36,6 @@ doctrine {
     watch #true
     forward-muster #true
     pickets #false
-    stage #false
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {
