@@ -205,8 +205,8 @@ the only hosted game.
 
 ## Release context
 
-Beta.3 is published, refreshed on 2026-10-18 from `63dc9594` (t206 fleet
-rules, plain-prose manuals, on top of `d16e43de`'s t204/t205 databases and
+Beta.3 is published, refreshed on 2026-10-18 from `ea1a6b3b` (t206 fleet
+rules, plain-prose manuals with the review gaps filled, Planet `C` help line, on top of `d16e43de`'s t204/t205 databases and
 Windows door input fixes); see the release plan for hashes. t024
 is complete: all four BBS/sysop packages, their signed checksum manifest, and
 the matching download page are live. The

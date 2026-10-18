@@ -248,12 +248,18 @@ passes) and reports build commit `63dc9594`; the Windows archives passed
 Defender scans. The manifest is signed with the release subkey on the Mac
 mini and a fresh download verifies.
 
+Later the same evening a review of all three manuals filled the content
+gaps it found (`02ec0297`) and a wrong Planet Command `C` help line was
+fixed (`ea1a6b3b`), so the four archives were built again from `ea1a6b3b`
+on the same hosts with the same smoke runs and Defender scans. These
+replaced the `63dc9594` archives on `release-artifacts`:
+
 | Archive suffix | SHA-256 |
 | --- | --- |
-| `linux-x64.tar.gz` | `f8849da1db9a2417afdde5fe8055d0e3e8c87ae574ec151025cfdea95d60f88d` |
-| `windows-x64.zip` | `61d28ffb0b6178fcb8287fed313e0e60fd11c26ae230fca621f224f94e443260` |
-| `windows-x86.zip` | `0780a8d3e326453eb60e1bb8fbf77628a23350f291fad9e8f70066fdd150e00b` |
-| `windows7-x86.zip` | `482853a79b3731a0c502d807a7e39fb2a5c5dff5cf79cd697e2671045522aa52` |
+| `linux-x64.tar.gz` | `4156eaf1fef610a94022b126e9bc3f6abd5987d1d03d7938a9f3db730bb7dec7` |
+| `windows-x64.zip` | `1e0d3442524ccb45b5e87ebbca9498c447818cefd61239d9870f016273fe23a8` |
+| `windows-x86.zip` | `8fcb9e69a189f98d380753a08518347c45735b0d912c1b0cf1495cc84a1f5c61` |
+| `windows7-x86.zip` | `ccb35adb6c65fb3628d770e441ed5002c93f29935cbb67a2a64bf7af8d1d8b2e` |
 
 The archives and signed manifest replaced the beta.3 assets on
 `release-artifacts`, and its note now describes the new fleet rules. The
