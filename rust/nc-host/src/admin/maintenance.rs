@@ -24,14 +24,29 @@ fn backup_blocked(
             .join(format!("{game}-{}-{:016x}", now(), rand::random::<u64>()));
     std::fs::create_dir_all(&destination)?;
     let result = (|| -> Result<Value> {
-        for name in ["ncgame.db", "hosted.db"] {
-            let source = Connection::open(dir.join(name))?;
-            source.backup(DatabaseName::Main, destination.join(name), None)?;
-            let copy = Connection::open(destination.join(name))?;
-            let check: String = copy.query_row("PRAGMA integrity_check", [], |r| r.get(0))?;
-            if check != "ok" {
-                return Err(format!("backup integrity check: {check}").into());
+        {
+            // The pair must match (t205): players' campaign writes are
+            // blocked, and holding hosted.db's write lock across both copies
+            // stops every other hosted write until both are taken.
+            // The copy reads through its own connection, which WAL lets read
+            // while another holds the write lock.
+            let guard = nc_data::sqlite::open_for_writes(&dir.join("hosted.db"))?;
+            let held = nc_data::sqlite::write_transaction(&guard)?;
+            for name in ["ncgame.db", "hosted.db"] {
+                let source = nc_data::sqlite::open(&dir.join(name))?;
+                source.backup(DatabaseName::Main, destination.join(name), None)?;
+                let copy = Connection::open(destination.join(name))?;
+                // A copy is a single file: out of WAL mode, so opening it
+                // to verify or restore never creates -wal or -shm files.
+                copy.query_row("PRAGMA journal_mode = DELETE", [], |r| {
+                    r.get::<_, String>(0)
+                })?;
+                let check: String = copy.query_row("PRAGMA integrity_check", [], |r| r.get(0))?;
+                if check != "ok" {
+                    return Err(format!("backup integrity check: {check}").into());
+                }
             }
+            held.rollback()?;
         }
         let info = campaign::inspect(root, game)?;
         let mut manifest =

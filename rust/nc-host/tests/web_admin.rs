@@ -182,6 +182,88 @@ fn authorizing_a_seat_does_not_wait_for_a_turn() {
     drop(held);
 }
 
+/// Backups taken while players change the campaign and the host writes
+/// hosted.db each verify, are single files with no -wal or -shm beside
+/// them, and restore into a campaign that loads (t205).
+#[test]
+fn backups_taken_during_writes_verify_and_restore() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().to_path_buf();
+    create(&root, "one");
+    publish(&root, "one");
+    start(&root, "one");
+    let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let mut writers = Vec::new();
+    for player in 0..2usize {
+        let (dir, stop) = (root.join("one"), stop.clone());
+        writers.push(std::thread::spawn(move || {
+            let store = CampaignStore::open_default_in_dir(&dir).unwrap();
+            let mut k = 0u8;
+            while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+                k = k.wrapping_add(1);
+                match store.change(3000, |state| {
+                    state.game_data.players[player].tax_rate = k % 100;
+                    Ok::<_, nc_data::CampaignStoreError>(())
+                }) {
+                    Ok(_) | Err(nc_data::CampaignStoreError::HostingPaused) => {}
+                    Err(err) => panic!("a player's change failed: {err}"),
+                }
+            }
+        }));
+    }
+    {
+        let (dir, stop) = (root.join("one"), stop.clone());
+        writers.push(std::thread::spawn(move || {
+            let hosted = nc_data::sqlite::open_for_writes(&dir.join("hosted.db")).unwrap();
+            while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+                hosted
+                    .execute(
+                        "INSERT INTO web_history(at,operation,detail) VALUES (0,'test','{}')",
+                        [],
+                    )
+                    .unwrap();
+            }
+        }));
+    }
+    let mut last = None;
+    for _ in 0..5 {
+        let copy = execute(&root, Request::Backup { game: "one".into() }).unwrap();
+        let path = copy["path"].as_str().unwrap().to_owned();
+        assert_eq!(
+            execute(&root, Request::VerifyBackup { path: path.clone() }).unwrap()["year"],
+            3000
+        );
+        for side in [
+            "ncgame.db-wal",
+            "ncgame.db-shm",
+            "hosted.db-wal",
+            "hosted.db-shm",
+        ] {
+            assert!(
+                !std::path::Path::new(&path).join(side).exists(),
+                "{side} beside the backup"
+            );
+        }
+        last = Some(path);
+    }
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    for writer in writers {
+        writer.join().unwrap();
+    }
+    std::fs::rename(root.join("one"), root.join("one-old")).unwrap();
+    let restored = execute(
+        &root,
+        Request::Restore {
+            path: last.unwrap(),
+            game: "one".into(),
+        },
+    )
+    .unwrap();
+    assert_eq!(restored["year"], 3000);
+    let campaign = CampaignStore::open_default_in_dir(&root.join("one")).unwrap();
+    assert!(campaign.load_latest_runtime_state().unwrap().is_some());
+}
+
 #[test]
 fn maintenance_retries_restore_and_integrity() {
     let temp = tempfile::tempdir().unwrap();
