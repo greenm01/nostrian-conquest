@@ -5,7 +5,7 @@
 #[allow(dead_code)]
 mod common;
 
-use common::tuned_without_stations;
+use common::arrays::tuned_without_stations;
 use nc_ai::{BatchActions, BatchEnv, Families, FleetArrays, Seat, Weights};
 
 const PLAYERS: u8 = 4;

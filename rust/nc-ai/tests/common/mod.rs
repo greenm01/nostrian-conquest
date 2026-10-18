@@ -2,7 +2,7 @@
 
 pub mod arrays;
 
-use nc_ai::{Doctrine, SeatedGame, Weights};
+use nc_ai::SeatedGame;
 use nc_data::{CoreGameData, DiplomaticRelation};
 use nc_fuzz::{CaseSetup, Policy};
 use nc_harness::{ScenarioPlay, build_scenario};
@@ -70,19 +70,4 @@ pub fn scramble_others(game_data: &CoreGameData, empire: u8) -> CoreGameData {
         }
     }
     scrambled
-}
-
-/// The tuned executor without named stations (`Doctrine::watch`). Network
-/// action arrays hold only the choices a network makes, so a station has no
-/// array form; tests that feed the executor's orders through arrays use
-/// these weights. Hybrid seats keep stations because they never pass
-/// through arrays.
-pub fn tuned_without_stations() -> Weights {
-    Weights {
-        doctrine: Doctrine {
-            watch: false,
-            ..Weights::TUNED.doctrine
-        },
-        ..Weights::TUNED
-    }
 }

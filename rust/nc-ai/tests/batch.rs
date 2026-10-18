@@ -7,8 +7,9 @@
 #[allow(dead_code)]
 mod common;
 
+use common::arrays::tuned_without_stations;
 use common::arrays::{Arrays, Rng, random_arrays};
-use common::{seated_game, tuned_without_stations};
+use common::seated_game;
 use nc_ai::{
     BatchEnv, MISSION_CHOICES, Seat, SeatPolicy, Weights, commission_submission, executor_turn,
     plan_turn, play_match, seat_masks,

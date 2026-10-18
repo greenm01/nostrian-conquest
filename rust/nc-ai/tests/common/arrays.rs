@@ -4,8 +4,8 @@
 
 use nc_ai::{
     BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, BatchActions, BatchEnv, BatchMasks,
-    DETACH_CHOICES, MISSION_CHOICES, ROE_CHOICES, SPEED_CHOICES, SeatAction, TAX_CHOICES,
-    WAYPOINT_CHOICES,
+    DETACH_CHOICES, Doctrine, MISSION_CHOICES, ROE_CHOICES, SPEED_CHOICES, SeatAction, TAX_CHOICES,
+    WAYPOINT_CHOICES, Weights,
 };
 
 /// Owned action arrays, borrowed as [`BatchActions`].
@@ -159,4 +159,19 @@ pub fn random_arrays(env: &BatchEnv, masks: &BatchMasks, rng: &mut Rng) -> Array
         };
     }
     arrays
+}
+
+/// The tuned executor without named stations (`Doctrine::watch`). Network
+/// action arrays hold only the choices a network makes, so a station has no
+/// array form; tests that feed the executor's orders through arrays use
+/// these weights. Hybrid seats keep stations because they never pass
+/// through arrays.
+pub fn tuned_without_stations() -> Weights {
+    Weights {
+        doctrine: Doctrine {
+            watch: false,
+            ..Weights::TUNED.doctrine
+        },
+        ..Weights::TUNED
+    }
 }
