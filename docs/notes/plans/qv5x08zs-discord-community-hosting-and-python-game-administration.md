@@ -83,22 +83,53 @@ would make two concurrent commissions collide. The design (owner,
    through it. Mutators that rely on the UI for ownership (build queue,
    scorch, fleet orders, homeworld rename) check it themselves. First-time
    join chooses its seat inside the transaction.
-2. **Phase 2, live tables and row-level writes.** The current year lives in
-   tables keyed by IDs the database allocates; history is the snapshot
-   maintenance writes when it closes a year. A change writes only the
-   rows it altered, found by comparing the records before and after the
-   mutator inside the transaction. The engine's record links (base
-   records, fleet chain IDs) become stable IDs, with classic positions
-   derived for export; maintenance stays one transaction with its
-   expected-year guard.
+2. **Phase 2, row-level writes (scope corrected with the owner,
+   2026-10-17).** The store keeps one snapshot per year, so the latest
+   year's rows are already the live state and older years the history;
+   only the rewrite of the whole current year on every change is waste. A
+   change writes only the records it altered, found by comparing the
+   records before and after the mutator inside the transaction, into the
+   current year's rows. Phase 1 serialises every change on the latest
+   state, so positional record keys cannot collide within a year and no
+   engine ID refactor is needed; that refactor would also put classic
+   compliance at risk. A revision counter in `campaign_metadata` replaces
+   the snapshot ID as the "campaign changed" signal (maintenance's stale
+   check reads it). No schema change: existing campaigns keep loading.
+
+Results (phase 1, 2026-10-17): every player change in `nc-game`,
+`nc-helm` (local store), `submit-turn` and `nc-host`'s seat operations
+runs through `CampaignStore::change`; WAL journal; saves wait up to 30 s
+for the write lock, since SQLite's wait is not fair. A change costs 1.4 ms
+on a 4-player campaign and 9.3 ms on a 25-player one (release build). Not
+done: ownership checks inside the four mutators that rely on the UI (build
+queue, scorch, fleet order, homeworld rename), since ownership changes only
+in maintenance; the whole-state save methods stay public for maintenance,
+import and game creation. Found on the way: a seeded game leaves
+`fleets_first` at 0, so its starting fleets are on no chain.
+
+Results (phase 2, 2026-10-17): a change rewrites only the changed records'
+rows in the current year's snapshot, including a player's diplomacy rows
+only with its diplomacy, and the derived intel, owned-since, activity and
+lifecycle rows only where a full save would change them. A tax change
+writes 3 rows instead of 567; a change costs 0.8 ms on a 4-player campaign
+and 4.9 ms on a 25-player one (release build), most of it loading the year
+the mutators read. The `revision` counter in `campaign_metadata` replaces
+the snapshot ID as the change signal (`expecting_revision`,
+`ConcurrentChange`), for maintenance and the hosted map export. Tests:
+`nc-data/tests/row_changes.rs` (the same random changes through row-level
+writes and through rewriting the year leave identical tables; write counts;
+maintenance refused when a change commits during its run) and
+`nc-data/tests/concurrent_changes.rs`.
 
 **Exit:** two sessions on one campaign interleave orders, and every order
 of both is saved with no refusal (store and `nc-game` regression tests); a
 session that loaded before maintenance is still refused. A stress test of
 several processes giving random orders to one campaign loses no order and
 leaves fleet and base chains valid, and maintenance then runs. Phase 2: an
-action writes only the rows it changes, and the classic oracle tests stay
-green.
+action writes only the rows it changes; the same changes through the old
+full rewrite and the row-level path leave identical tables; maintenance
+refuses a save when a change committed during its run; the classic oracle
+tests stay green.
 
 ### t121
 
