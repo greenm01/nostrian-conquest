@@ -622,6 +622,10 @@ fn windows_socket_door_terminal_reads_and_writes_over_inherited_descriptor() {
         assert!(rendered.contains("SOCKET OK"), "rendered={rendered:?}");
         stream.write_all(b"q").expect("write keypress");
         stream.flush().expect("flush keypress");
+        // Closing with output still unread resets the connection on Windows,
+        // which can reach the door before the key: keep it open until the
+        // door has read.
+        stream
     });
 
     let client = TcpStream::connect(addr).expect("connect client");
@@ -640,7 +644,7 @@ fn windows_socket_door_terminal_reads_and_writes_over_inherited_descriptor() {
     let key = terminal.read_key().expect("read key from socket transport");
     assert_eq!(key.code, KeyCode::Char('q'));
 
-    server.join().expect("server thread should finish");
+    drop(server.join().expect("server thread should finish"));
 }
 
 #[cfg(windows)]
