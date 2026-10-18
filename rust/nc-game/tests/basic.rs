@@ -204,6 +204,7 @@ fn client_renders_startup_splash_from_fixture() {
             "--player",
             "1",
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -240,6 +241,7 @@ fn reserved_dropfile_alias_can_launch_without_player_flag() {
             "--dropfile",
             dropfile.to_str().expect("dropfile path should be utf-8"),
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -271,6 +273,7 @@ fn reserved_dropfile_alias_rejects_mismatched_explicit_player() {
             "--dropfile",
             dropfile.to_str().expect("dropfile path should be utf-8"),
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -296,6 +299,7 @@ fn unreserved_dropfile_alias_without_player_opens_first_time_menu() {
             "--dropfile",
             dropfile.to_str().expect("dropfile path should be utf-8"),
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -392,6 +396,7 @@ fn explicit_player_out_of_range_is_refused() {
             "--player",
             "9",
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -454,6 +459,7 @@ fn reserved_dropfile_alias_rejects_conflicting_stored_player_handle() {
             "--dropfile",
             dropfile.to_str().expect("dropfile path should be utf-8"),
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -485,6 +491,7 @@ fn nc_game_opt_in_log_file_captures_startup_without_stderr_noise() {
             "--log-level",
             "debug",
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
@@ -518,6 +525,7 @@ fn nc_game_rejects_invalid_log_level() {
             "--log-level",
             "loud",
         ])
+        .stdin(Stdio::null())
         .output()
         .expect("nc-game should run");
 
