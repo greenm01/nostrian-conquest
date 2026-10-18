@@ -1743,6 +1743,48 @@ case, and still loses. Before retrying, measure the parallel-conquest
 hypothesis directly: worlds taken per year while the home force is split
 and while it is stacked.
 
+**Hull roles under today's rules (2026-10-18): cruisers are the right
+fleet.** Measured on the Mac mini at `6702e1ce`.
+
+Equal-cost battles (`nc-fuzz` `combat_odds`, 450 points a side, ROE 6,
+1,000 trials): 30 cruisers beat 27 cruisers + 9 destroyers 66.3% to
+33.5%, and 24 cruisers + 18 destroyers by the same margin; 30 cruisers
+beat 10 battleships 56.2% to 43.0%, and 5 battleships + 15 cruisers
+54.4% to 44.4%. The manual's pairing, heavy ships crippling and
+destroyers finishing, does not make up for the destroyer's lower DS per
+point: adding destroyers to a cruiser fleet makes it weaker.
+
+Campaigns agree. `mixed_hulls` with battleships zeroed, so only cruisers
+and destroyers mix (no speed cost, since destroyers are faster), paired on
+512 maps against three default seats:
+
+| Destroyer share of the hull weight | 60 years | 100 years |
+| --- | ---: | ---: |
+| 10% | -0.029 ± 0.022 | -0.011 ± 0.025 |
+| 25% | -0.046 ± 0.022 | -0.015 ± 0.024 |
+| 40% | -0.052 ± 0.024 | -0.022 ± 0.026 |
+
+Battleships do have a role against batteries. `siege_odds`, with
+cruisers swapped in at equal cost for a one-off copy (not committed): a
+single force worth three times the batteries' cost clears them 72-88% of
+the time with battleships, 46-73% with cruisers, and loses 1.3-1.7 against
+1.9-2.1 times the batteries' cost. But a trial `siege_hulls` switch
+(battleships instead of the preferred hull while the strike target has at
+least N known batteries or a starbase) lost in campaigns, more the more
+often it fired: 1,024 paired maps for land grab, N = 1, 4 and 8, -0.005 to
+-0.007 at 60 years and -0.020 to -0.032 (± 0.010) at 100. The battleships
+join the cruiser force and slow it to speed 4, which costs more than the
+better siege gains, as the earlier armada trials found. The switch was
+removed rather than left off.
+
+So under the current combat rules, a cruiser fleet beats every mix the
+executor has tried, and variety costs strength. Per the owner's rule
+above, this goes to the owner as a combat-balance finding: ship prices
+stay classic, so variety needs either a combat-rule change (for example,
+destroyers' execution fire counting for more, so the pairing pays) or
+roles that keep slow battleships out of the cruiser force entirely (a
+separate siege group with its own rendezvous, not yet tried).
+
 ### t203
 
 Early warning: pickets on the approaches, threats tracked from what the
