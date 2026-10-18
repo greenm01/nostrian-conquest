@@ -209,7 +209,10 @@ passed explicit Defender scans and runtime smoke tests on Windows 11; Windows
 workspace passed 3,233 tests, zero failures and 11 ignored; five packaging
 tests passed.
 
-Run `zk queue` before starting new work. The current priority is the approved community-hosting work. Windows builds use a native MSVC host;
+On 2026-10-18 the owner closed t119, t120, t143, t144 and t205 as built and
+tested; their attended checks (sign-in on all three providers, two browser
+terminals through a turn, live announcements once `NC_DISCORD_CHANNEL_ID` is
+set) are now t121's pilot exit. Run `zk queue` before starting new work. The current priority is the approved community-hosting work. Windows builds use a native MSVC host;
 sync by git bundle rather than remote `git pull`, which has hung before.
 Check its tree before updating it.
 

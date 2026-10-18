@@ -233,6 +233,9 @@ ran the switch, which restarted all three services. Game database dumps and the
 four sessions were unchanged, Beta 1 stayed recruiting at year 3000, and live
 pages match source with the Nostr name box removed.
 
+Closed by the owner on 2026-10-18 without the attended sign-in, which moved
+to t121's pilot.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed

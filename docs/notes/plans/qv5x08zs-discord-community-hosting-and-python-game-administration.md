@@ -40,11 +40,17 @@ a game selector and the existing 80x25 terminal. Enforce campaign/seat isolation
 one terminal per seat, child cleanup and exact authorized private exports.
 Do not trust identity query parameters. Preserve ordinary BBS launch semantics.
 
+Closed by the owner on 2026-10-18; built and tested (see the implementation
+evidence). Its attended Discord sign-in and seat checks moved to t121's pilot.
+
 ### t120
 
 Provide Discord game discovery, join/play links, real status and successful-turn
 announcements across games. Recruiting seats are self-service; replacements
 require an operator. Use game/account authorization for every private download.
+
+Closed by the owner on 2026-10-18; built and tested. Choosing the announcement
+channel and checking live discovery and announcements moved to t121's pilot.
 
 ### t204
 
@@ -253,7 +259,10 @@ t121's pilot.
 Package services, back up and restore campaigns, and exercise a private two-game
 pilot. Verify concurrency (two browser terminals in one campaign keep their
 orders through a turn, carried over from t205), login, reconnect, schedules,
-failure recovery and 80x25 rendering. Public launch needs configured Discord credentials and attended
+failure recovery and 80x25 rendering. Carried over on 2026-10-18: attended Discord,
+Nostr and Matrix sign-in, seat claims and locked handles (t119, t144), and
+live discovery and turn announcements after the owner sets
+`NC_DISCORD_CHANNEL_ID` (t120). Public launch needs configured Discord credentials and attended
 acceptance. Keep 30 daily backups and pre-upgrade snapshots, plus off-server
 copies. Document operator commands and the server-independent installation.
 
