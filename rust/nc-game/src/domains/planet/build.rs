@@ -674,21 +674,29 @@ impl App {
         let planet_record = self
             .current_commission_planet_row()?
             .planet_record_index_1_based;
-        let result = match self.game_data.commission_planet_stardock_slots(
-            self.player.record_index_1_based,
-            planet_record,
-            &selected_slots,
-        ) {
+        let player_record = self.player.record_index_1_based;
+        let committed = self.change(|state| {
+            Ok(state.game_data.commission_planet_stardock_slots(
+                player_record,
+                planet_record,
+                &selected_slots,
+            )?)
+        });
+        let result = match committed {
             Ok(result) => result,
-            Err(GameStateMutationError::InvalidCommissionSelection) => {
+            Err(err)
+                if matches!(
+                    err.downcast_ref::<GameStateMutationError>(),
+                    Some(GameStateMutationError::InvalidCommissionSelection)
+                ) =>
+            {
                 self.planet.commission_status = Some(
                     "Select either ships for one fleet or one starbase by itself.".to_string(),
                 );
                 return Ok(());
             }
-            Err(err) => return Err(err.into()),
+            Err(err) => return Err(err),
         };
-        self.save_game_data()?;
         let result_notice = match result {
             CommissionResult::Fleet {
                 fleet_record_index_1_based,
@@ -757,12 +765,14 @@ impl App {
         let planet_record = self
             .current_commission_planet_row()?
             .planet_record_index_1_based;
-        let result = self.game_data.commission_planet_stardock_slots(
-            self.player.record_index_1_based,
-            planet_record,
-            &[slot_0_based],
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let result = self.change(|state| {
+            Ok(state.game_data.commission_planet_stardock_slots(
+                player_record,
+                planet_record,
+                &[slot_0_based],
+            )?)
+        })?;
 
         let result_notice = match result {
             CommissionResult::Fleet {
@@ -821,13 +831,18 @@ impl App {
         let planet_record = self
             .current_commission_planet_row()?
             .planet_record_index_1_based;
-        let result = self.game_data.commission_planet_stardock_slots_with_draft(
-            self.player.record_index_1_based,
-            planet_record,
-            &self.planet.commission_draft_slots,
-            draft,
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let draft_slots = self.planet.commission_draft_slots.clone();
+        let result = self.change(|state| {
+            Ok(state
+                .game_data
+                .commission_planet_stardock_slots_with_draft(
+                    player_record,
+                    planet_record,
+                    &draft_slots,
+                    draft,
+                )?)
+        })?;
 
         let fleet_record_index_1_based = match result {
             CommissionResult::Fleet {
@@ -904,10 +919,12 @@ impl App {
         if !self.inline_planet_auto_commission_active_on_current_screen() {
             return Ok(());
         }
-        let report = self
-            .game_data
-            .auto_commission_all_stardock_units(self.player.record_index_1_based)?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let report = self.change(|state| {
+            Ok(state
+                .game_data
+                .auto_commission_all_stardock_units(player_record)?)
+        })?;
         self.remember_auto_commissioned_fleets(&report);
         self.close_planet_auto_commission_prompt();
         let rows = self.build_auto_commission_report_rows(&report);
@@ -1127,17 +1144,21 @@ impl App {
             .planet
             .build_list_delete_qty_pending
             .unwrap_or(row.queue_qty);
-        if let Some(unit) = build_unit_spec_by_kind(row.kind) {
-            self.game_data.remove_planet_build_points_by_kind(
-                planet_record,
-                row.kind,
-                quantity.saturating_mul(unit.cost),
-            )?;
-        } else {
-            self.game_data
-                .clear_planet_build_orders_by_kind(planet_record, row.kind)?;
-        }
-        self.save_game_data()?;
+        let kind = row.kind;
+        self.change(|state| {
+            if let Some(unit) = build_unit_spec_by_kind(kind) {
+                state.game_data.remove_planet_build_points_by_kind(
+                    planet_record,
+                    kind,
+                    quantity.saturating_mul(unit.cost),
+                )?;
+            } else {
+                state
+                    .game_data
+                    .clear_planet_build_orders_by_kind(planet_record, kind)?;
+            }
+            Ok(())
+        })?;
         self.reset_planet_build_list_delete_state();
         // Clamp cursor after deletion.
         let new_total = self.planet_build_list_rows().len();
@@ -1281,12 +1302,14 @@ impl App {
         let planet_record = self.current_build_planet_row()?.planet_record_index_1_based;
 
         let points = qty.saturating_mul(unit.cost);
-        self.game_data.append_planet_build_order(
-            planet_record,
-            points,
-            production_item_kind_code(kind),
-        )?;
-        self.save_game_data()?;
+        self.change(|state| {
+            state.game_data.append_planet_build_order(
+                planet_record,
+                points,
+                production_item_kind_code(kind),
+            )?;
+            Ok(())
+        })?;
         self.planet.build_unit_input.clear();
         self.planet.build_unit_status = None;
         self.planet.build_unit_notice = Some(format!("Queued {} {}.", qty, unit.label));
@@ -1305,10 +1328,11 @@ impl App {
         if !self.inline_planet_build_abort_active_on_current_screen() {
             return Ok(());
         }
-        let row = self.current_build_planet_row()?;
-        self.game_data
-            .clear_planet_build_queue(row.planet_record_index_1_based)?;
-        self.save_game_data()?;
+        let planet_record = self.current_build_planet_row()?.planet_record_index_1_based;
+        self.change(|state| {
+            state.game_data.clear_planet_build_queue(planet_record)?;
+            Ok(())
+        })?;
         self.close_planet_build_abort_prompt();
         if self.planet.build_return_to_list {
             self.clear_command_menu_notice();

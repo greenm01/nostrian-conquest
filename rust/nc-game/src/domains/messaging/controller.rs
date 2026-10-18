@@ -383,7 +383,7 @@ impl App {
             self.current_screen = ScreenId::ComposeMessageBody;
             return Ok(());
         }
-        self.queued_mail.push(QueuedPlayerMail {
+        let mail = QueuedPlayerMail {
             sender_empire_id: self.player.record_index_1_based as u8,
             recipient_empire_id,
             year: self.game_data.conquest.game_year,
@@ -392,8 +392,17 @@ impl App {
             recipient_deleted: false,
             sender_deleted: false,
             cancelled: false,
-        });
-        self.save_game_data()?;
+        };
+        self.change(|state| {
+            validate_queue_message_limit(
+                &state.queued_mail,
+                mail.sender_empire_id,
+                mail.recipient_empire_id,
+                mail.year,
+            )?;
+            state.queued_mail.push(mail);
+            Ok(())
+        })?;
         self.messaging.compose_sent_status = Some(format!(
             "Message queued for Empire {recipient_empire_id}. It will be delivered after turn maintenance."
         ));
@@ -513,8 +522,10 @@ impl App {
             return Ok(());
         };
 
-        self.cancel_queued_mail(queue_index);
-        self.save_game_data()?;
+        self.change(|state| {
+            state.queued_mail[queue_index].cancel();
+            Ok(())
+        })?;
         self.messaging.compose_outbox_input.clear();
         self.messaging.compose_outbox_status = None;
 
@@ -528,11 +539,6 @@ impl App {
         self.messaging.compose_outbox_scroll_offset =
             self.messaging.compose_outbox_scroll_offset.min(max_offset);
         Ok(())
-    }
-
-    /// Retains cancelled mail in history while preventing delivery. The caller saves.
-    pub(crate) fn cancel_queued_mail(&mut self, queue_index: usize) {
-        self.queued_mail[queue_index].cancel();
     }
 
     /// Resolves the typed queue number, or the highlighted row when nothing is
@@ -667,27 +673,24 @@ impl App {
     }
 
     pub fn delete_reviewables(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        delete_report_blocks_for_viewer(
-            &mut self.report_block_rows,
-            &self.game_data.players,
-            self.player.record_index_1_based as u8,
-        );
-        if let Some(player) = self
-            .game_data
-            .players
-            .get_mut(self.player.record_index_1_based - 1)
-        {
-            nc_data::set_login_reviewables_present(
-                player,
-                crate::reports::has_visible_runtime_messages(
-                    self.player.record_index_1_based as u8,
-                    &self.queued_mail,
-                    self.game_data.conquest.game_year,
-                ),
+        let player_record = self.player.record_index_1_based;
+        self.change(|state| {
+            delete_report_blocks_for_viewer(
+                &mut state.report_block_rows,
+                &state.game_data.players,
+                player_record as u8,
             );
-            nc_data::set_results_chain(player, None);
-        }
-        self.save_game_data()?;
+            let messages = crate::reports::has_visible_runtime_messages(
+                player_record as u8,
+                &state.queued_mail,
+                state.game_data.conquest.game_year,
+            );
+            if let Some(player) = state.game_data.players.get_mut(player_record - 1) {
+                nc_data::set_login_reviewables_present(player, messages);
+                nc_data::set_results_chain(player, None);
+            }
+            Ok(())
+        })?;
         self.messaging.delete_reviewables_prompt_active = false;
         self.show_command_menu_notice(CommandMenu::General, "Reports cleared.");
         Ok(())

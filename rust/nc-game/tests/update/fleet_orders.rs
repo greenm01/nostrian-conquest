@@ -5313,6 +5313,10 @@ fn fleet_list_checked_change_clears_only_successful_fleets_on_partial_roe_update
         nc_data::recompute_max_speed(support);
         support.rules_of_engagement = 0;
     }
+    // Changes apply to the stored campaign, so store the edited fleets.
+    let mut state = latest_runtime_state(&fixture_dir);
+    state.game_data = app.game_data.clone();
+    save_runtime_state(&fixture_dir, &state);
     let combat_record_index = app
         .game_data
         .fleets

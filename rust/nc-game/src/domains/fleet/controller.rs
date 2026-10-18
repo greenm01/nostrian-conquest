@@ -1154,11 +1154,14 @@ impl App {
                     .map_err(|_| "Enter an ROE from 0 to 10.".to_string())?;
                 let checked_rows = self.checked_fleet_rows();
                 if self.fleet_list_has_checked_selection() {
+                    let player_record = self.player.record_index_1_based;
+                    let (successful, failure_detail) = self
+                        .change(|state| {
                     let mut successful = Vec::new();
                     let mut failure_detail = None;
                     for row in &checked_rows {
-                        match self.game_data.set_fleet_rules_of_engagement(
-                            self.player.record_index_1_based,
+                        match state.game_data.set_fleet_rules_of_engagement(
+                            player_record,
                             row.fleet_record_index_1_based,
                             roe,
                         ) {
@@ -1185,11 +1188,13 @@ impl App {
                         }
                     }
                     if successful.is_empty() {
-                        return Err(
-                            failure_detail.unwrap_or_else(|| "Unable to change ROE.".to_string())
-                        );
+                        return Err(failure_detail
+                            .unwrap_or_else(|| "Unable to change ROE.".to_string())
+                            .into());
                     }
-                    self.save_game_data().map_err(|err| err.to_string())?;
+                    Ok((successful, failure_detail))
+                        })
+                        .map_err(|err| err.to_string())?;
                     for record_index in &successful {
                         self.fleet.group_selected_fleets.remove(record_index);
                     }
@@ -1219,10 +1224,15 @@ impl App {
                     }
                 } else {
                     let row = self.prompt_context_fleet_row()?;
-                    self.game_data
+                    let (player_record, fleet_record) = (
+                        self.player.record_index_1_based,
+                        row.fleet_record_index_1_based,
+                    );
+                    self.change(|state| {
+                    state.game_data
                         .set_fleet_rules_of_engagement(
-                            self.player.record_index_1_based,
-                            row.fleet_record_index_1_based,
+                            player_record,
+                            fleet_record,
                             roe,
                         )
                         .map_err(|err| match err {
@@ -1240,7 +1250,9 @@ impl App {
                             } => "Enter an ROE from 0 to 10.".to_string(),
                             other => other.to_string(),
                         })?;
-                    self.save_game_data().map_err(|err| err.to_string())?;
+                    Ok(())
+                    })
+                    .map_err(|err| err.to_string())?;
                     self.show_fleet_context_success(
                         format!("Fleet #{} ROE set to {}.", row.fleet_number, roe),
                         true,
@@ -1252,19 +1264,23 @@ impl App {
                 let local_slot = raw
                     .parse::<u16>()
                     .map_err(|_| "Enter a fleet ID from 1 up.".to_string())?;
-                self.game_data
-                    .set_fleet_local_slot(
-                        self.player.record_index_1_based,
-                        row.fleet_record_index_1_based,
-                        local_slot,
-                    )
-                    .map_err(|err| match err {
-                        nc_data::GameStateMutationError::InvalidFleetLocalSlot { .. } => {
-                            "Fleet ID is already in use.".to_string()
-                        }
-                        other => other.to_string(),
-                    })?;
-                self.save_game_data().map_err(|err| err.to_string())?;
+                let (player_record, fleet_record) = (
+                    self.player.record_index_1_based,
+                    row.fleet_record_index_1_based,
+                );
+                self.change(|state| {
+                    state
+                        .game_data
+                        .set_fleet_local_slot(player_record, fleet_record, local_slot)
+                        .map_err(|err| match err {
+                            nc_data::GameStateMutationError::InvalidFleetLocalSlot { .. } => {
+                                "Fleet ID is already in use.".to_string()
+                            }
+                            other => other.to_string(),
+                        })?;
+                    Ok(())
+                })
+                .map_err(|err| err.to_string())?;
                 self.show_fleet_context_success(
                     format!(
                         "Fleet #{} renumbered to Fleet #{}.",
@@ -1279,18 +1295,21 @@ impl App {
                     .map_err(|_| "Enter a speed from 1 up.".to_string())?;
                 let checked_rows = self.checked_fleet_rows();
                 if self.fleet_list_has_checked_selection() {
-                    let mut successful = Vec::new();
-                    let mut failure_detail = None;
-                    for row in &checked_rows {
-                        match self.game_data.set_fleet_speed(
-                            self.player.record_index_1_based,
-                            row.fleet_record_index_1_based,
-                            speed,
-                        ) {
-                            Ok(_) => successful.push(row.fleet_record_index_1_based),
-                            Err(err) => {
-                                if failure_detail.is_none() {
-                                    failure_detail = Some(match err {
+                    let player_record = self.player.record_index_1_based;
+                    let (successful, failure_detail) = self
+                        .change(|state| {
+                            let mut successful = Vec::new();
+                            let mut failure_detail = None;
+                            for row in &checked_rows {
+                                match state.game_data.set_fleet_speed(
+                                    player_record,
+                                    row.fleet_record_index_1_based,
+                                    speed,
+                                ) {
+                                    Ok(_) => successful.push(row.fleet_record_index_1_based),
+                                    Err(err) => {
+                                        if failure_detail.is_none() {
+                                            failure_detail = Some(match err {
                                         nc_data::GameStateMutationError::InvalidFleetSpeed {
                                             max,
                                             ..
@@ -1299,16 +1318,18 @@ impl App {
                                         }
                                         other => other.to_string(),
                                     });
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    }
-                    if successful.is_empty() {
-                        return Err(
-                            failure_detail.unwrap_or_else(|| "Unable to change speed.".to_string())
-                        );
-                    }
-                    self.save_game_data().map_err(|err| err.to_string())?;
+                            if successful.is_empty() {
+                                return Err(failure_detail
+                                    .unwrap_or_else(|| "Unable to change speed.".to_string())
+                                    .into());
+                            }
+                            Ok((successful, failure_detail))
+                        })
+                        .map_err(|err| err.to_string())?;
                     for record_index in &successful {
                         self.fleet.group_selected_fleets.remove(record_index);
                     }
@@ -1342,20 +1363,24 @@ impl App {
                     }
                 } else {
                     let row = self.prompt_context_fleet_row()?;
+                    let (player_record, fleet_record) = (
+                        self.player.record_index_1_based,
+                        row.fleet_record_index_1_based,
+                    );
                     let applied = self
-                        .game_data
-                        .set_fleet_speed(
-                            self.player.record_index_1_based,
-                            row.fleet_record_index_1_based,
-                            speed,
-                        )
-                        .map_err(|err| match err {
-                            nc_data::GameStateMutationError::InvalidFleetSpeed { max, .. } => {
-                                format!("Enter a speed from 1 to {max}.")
-                            }
-                            other => other.to_string(),
-                        })?;
-                    self.save_game_data().map_err(|err| err.to_string())?;
+                        .change(|state| {
+                            Ok(state
+                                .game_data
+                                .set_fleet_speed(player_record, fleet_record, speed)
+                                .map_err(|err| match err {
+                                    nc_data::GameStateMutationError::InvalidFleetSpeed {
+                                        max,
+                                        ..
+                                    } => format!("Enter a speed from 1 to {max}."),
+                                    other => other.to_string(),
+                                })?)
+                        })
+                        .map_err(|err| err.to_string())?;
                     self.show_fleet_context_success(
                         if applied == speed {
                             format!("Fleet #{} speed set to {}.", row.fleet_number, speed)

@@ -427,26 +427,27 @@ impl App {
         row: StarbaseRow,
         destination: [u8; 2],
     ) -> Result<(), String> {
-        if destination == row.coords {
-            self.game_data
-                .halt_starbase(
-                    self.player.record_index_1_based,
-                    row.base_record_index_1_based,
-                )
-                .map_err(|err| err.to_string())?;
-        } else {
-            self.game_data
-                .set_starbase_destination(
-                    self.player.record_index_1_based,
-                    row.base_record_index_1_based,
-                    destination,
-                )
-                .map_err(|err| err.to_string())?;
-        }
-
+        let player_record = self.player.record_index_1_based;
+        let base_record = row.base_record_index_1_based;
         let report_text = self.starbase_move_report_text(&row, destination);
-        self.append_report_block(report_text);
-        self.save_game_data().map_err(|err| err.to_string())?;
+        self.change(|state| {
+            if destination == row.coords {
+                state.game_data.halt_starbase(player_record, base_record)?;
+            } else {
+                state.game_data.set_starbase_destination(
+                    player_record,
+                    base_record,
+                    destination,
+                )?;
+            }
+            crate::app::persistence::append_report_block(
+                &mut state.report_block_rows,
+                player_record as u8,
+                report_text,
+            );
+            Ok(())
+        })
+        .map_err(|err| err.to_string())?;
         self.clear_starbase_move_prompt();
         let notice = if destination == row.coords {
             format!(

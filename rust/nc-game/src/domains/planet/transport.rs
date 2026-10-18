@@ -673,36 +673,45 @@ impl App {
             return Ok(());
         }
         let planet = self.current_planet_transport_planet_row(mode)?;
-        let result = match mode {
-            PlanetTransportMode::Load => self.game_data.load_planet_armies_onto_fleet(
-                self.player.record_index_1_based,
-                planet.planet_record_index_1_based,
-                fleet.fleet_record_index_1_based,
-                qty,
-            ),
-            PlanetTransportMode::Unload => self.game_data.unload_fleet_armies_to_planet(
-                self.player.record_index_1_based,
-                planet.planet_record_index_1_based,
-                fleet.fleet_record_index_1_based,
-                qty,
-            ),
-        };
-        match result {
-            Ok(()) => {}
-            Err(GameStateMutationError::PlanetArmyCapacityExceeded { available, .. }) => {
-                self.planet.transport_status = Some(if available == 0 {
-                    "This planet is already at the maximum 255 armies.".to_string()
-                } else {
-                    format!("Planet can receive only {available} more armies.")
-                });
-                if !inline_menu {
-                    self.current_screen = ScreenId::PlanetTransportFleetSelect(mode);
-                }
-                return Ok(());
+        let player_record = self.player.record_index_1_based;
+        let (planet_record, fleet_record) = (
+            planet.planet_record_index_1_based,
+            fleet.fleet_record_index_1_based,
+        );
+        let result = self.change(|state| {
+            match mode {
+                PlanetTransportMode::Load => state.game_data.load_planet_armies_onto_fleet(
+                    player_record,
+                    planet_record,
+                    fleet_record,
+                    qty,
+                ),
+                PlanetTransportMode::Unload => state.game_data.unload_fleet_armies_to_planet(
+                    player_record,
+                    planet_record,
+                    fleet_record,
+                    qty,
+                ),
+            }?;
+            Ok(())
+        });
+        if let Err(err) = result {
+            let Some(&GameStateMutationError::PlanetArmyCapacityExceeded { available, .. }) =
+                err.downcast_ref::<GameStateMutationError>()
+            else {
+                return Err(err);
+            };
+            self.planet.transport_status = Some(if available == 0 {
+                "This planet is already at the maximum 255 armies.".to_string()
+            } else {
+                format!("Planet can receive only {available} more armies.")
+            });
+            if !inline_menu {
+                self.current_screen = ScreenId::PlanetTransportFleetSelect(mode);
             }
-            Err(err) => return Err(err.into()),
+            return Ok(());
         }
-        self.save_game_data()?;
+
         if self.planet.transport_fleet_first {
             let fleet_number = fleet.fleet_number;
             let planet_name = planet.planet_name.clone();

@@ -1797,7 +1797,9 @@ mod tests {
             key(KeyCode::Char('x')),
         ];
         door_app.door_mode = true;
-        door_app.save_game_data().expect_err("the save is refused");
+        door_app
+            .change(|_| Ok(()))
+            .expect_err("the save is refused");
         let mut door_terminal = ScriptedTerminal::new(keys);
         run_interactive(&mut door_app, &mut door_terminal, false)
             .expect("a stale door session is a normal exit");
@@ -1806,7 +1808,9 @@ mod tests {
 
         // A local session is not thrown out: it keeps running until the
         // player quits, but never saves again.
-        local_app.save_game_data().expect_err("the save is refused");
+        local_app
+            .change(|_| Ok(()))
+            .expect_err("the save is refused");
         let mut local_terminal = ScriptedTerminal::new(keys);
         run_interactive(&mut local_app, &mut local_terminal, false).expect("local session ends");
         assert!(local_terminal.captures.is_empty());

@@ -34,19 +34,22 @@ impl App {
         plan: nc_engine::CheckedFleetMergePlan,
     ) -> Result<(), String> {
         let checked_rows = self.checked_fleet_rows();
-        for source in checked_rows
-            .iter()
-            .filter(|row| row.fleet_record_index_1_based != plan.host_record_index_1_based)
-        {
-            self.game_data
-                .set_join_fleet_order(
-                    self.player.record_index_1_based,
+        let player_record = self.player.record_index_1_based;
+        let host_record = plan.host_record_index_1_based;
+        self.change(|state| {
+            for source in checked_rows
+                .iter()
+                .filter(|row| row.fleet_record_index_1_based != host_record)
+            {
+                state.game_data.set_join_fleet_order(
+                    player_record,
                     source.fleet_record_index_1_based,
-                    plan.host_record_index_1_based,
-                )
-                .map_err(|err| err.to_string())?;
-        }
-        self.save_game_data().map_err(|err| err.to_string())?;
+                    host_record,
+                )?;
+            }
+            Ok(())
+        })
+        .map_err(|err| err.to_string())?;
         self.clear_checked_fleet_selection();
         self.show_fleet_context_success(
             format!(
@@ -102,14 +105,16 @@ impl App {
                 source_row.fleet_number,
             )
         };
-        self.game_data
-            .set_join_fleet_order(
-                self.player.record_index_1_based,
+        let player_record = self.player.record_index_1_based;
+        self.change(|state| {
+            state.game_data.set_join_fleet_order(
+                player_record,
                 source_record_index_1_based,
                 host_fleet_record_index_1_based,
-            )
-            .map_err(|err| err.to_string())?;
-        self.save_game_data().map_err(|err| err.to_string())?;
+            )?;
+            Ok(())
+        })
+        .map_err(|err| err.to_string())?;
         self.fleet.merge_source_record_index_1_based = None;
         self.show_fleet_context_success(
             format!(
@@ -1046,16 +1051,19 @@ impl App {
         } else {
             None
         };
-        let result = self.game_data.detach_ships_to_new_fleet(
-            self.player.record_index_1_based,
-            donor_record_index_1_based,
-            self.fleet.detach_selection,
-            donor_speed,
-            // ECGAME's default for the new fleet; the detach screen has no
-            // ROE prompt, so the player sets another with <C> afterwards.
-            NEW_FLEET_DEFAULT_ROE,
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let selection = self.fleet.detach_selection;
+        let result = self.change(|state| {
+            Ok(state.game_data.detach_ships_to_new_fleet(
+                player_record,
+                donor_record_index_1_based,
+                selection,
+                donor_speed,
+                // ECGAME's default for the new fleet; the detach screen has no
+                // ROE prompt, so the player sets another with <C> afterwards.
+                NEW_FLEET_DEFAULT_ROE,
+            )?)
+        })?;
         self.reset_fleet_detach_staging();
         // The chain sort can move the donor to another record.
         self.fleet.detach_donor_record_index_1_based =
@@ -1181,13 +1189,17 @@ impl App {
             self.fleet.transfer_status = Some("Select two fleets for transfer.".to_string());
             return Ok(());
         };
-        self.game_data.transfer_ships_between_fleets(
-            self.player.record_index_1_based,
-            donor_record_index_1_based,
-            host_record_index_1_based,
-            self.fleet.transfer_selection.clone(),
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let selection = self.fleet.transfer_selection.clone();
+        self.change(|state| {
+            state.game_data.transfer_ships_between_fleets(
+                player_record,
+                donor_record_index_1_based,
+                host_record_index_1_based,
+                selection,
+            )?;
+            Ok(())
+        })?;
         let donor_fleet_number = self
             .fleet_number_for_record_index(donor_record_index_1_based)
             .unwrap_or(0);

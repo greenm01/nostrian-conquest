@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use nc_data::{
     CampaignStore, CoreGameData, PlanetIntelSnapshot, PlayerAccessMode, PlayerActivityState,
-    PlayerLifecycleState, QueuedPlayerMail, ReportBlockRow, WinnerState, player_access_mode,
+    PlayerLifecycleState, QueuedPlayerMail, ReportBlockRow, Setup, WinnerState, player_access_mode,
 };
 
 use crate::app::help::PopupHelp;
@@ -138,26 +138,31 @@ impl App {
             .clone()
             .unwrap_or_else(|| game_dir.join("exports"));
         let campaign_store = CampaignStore::open_default_in_dir(&game_dir)?;
-        let runtime_state = campaign_store.load_latest_runtime_state()?.ok_or(
-            "campaign store has no snapshots; initialize the campaign with nc-sysop first",
-        )?;
+        let load_latest = || -> Result<_, Box<dyn std::error::Error>> {
+            Ok(campaign_store.load_latest_runtime_state()?.ok_or(
+                "campaign store has no snapshots; initialize the campaign with nc-sysop first",
+            )?)
+        };
+        let mut runtime_state = load_latest()?;
+        // Apply campaign-setting overrides to the stored setup. Only save
+        // when a field actually changed, to avoid churn on clean starts.
+        if apply_setup_overrides(
+            &mut runtime_state.game_data.setup.clone(),
+            &config.game_config,
+        ) {
+            campaign_store.change(runtime_state.game_year, |state| {
+                apply_setup_overrides(&mut state.game_data.setup, &config.game_config);
+                Ok::<_, Box<dyn std::error::Error>>(())
+            })?;
+            runtime_state = load_latest()?;
+        }
         let snapshot_id = runtime_state.snapshot_id;
         let campaign_seed = runtime_state.campaign_seed;
         let report_block_rows = runtime_state.report_block_rows;
         let queued_mail = runtime_state.queued_mail;
         let winner_state = runtime_state.winner_state;
 
-        // Apply campaign-setting overrides to game_data. Only save a new
-        // snapshot if any field actually changed, to avoid churn on clean
-        // starts.
-        let (game_data, snapshot_id) = apply_game_config_overrides(
-            runtime_state.game_data,
-            &config.game_config,
-            &campaign_store,
-            snapshot_id,
-            &report_block_rows,
-            &queued_mail,
-        )?;
+        let game_data = runtime_state.game_data;
 
         let reports = ReportsPreview::from_block_rows(
             &game_data,
@@ -322,20 +327,9 @@ fn apply_player_theme_preference(
     Ok(())
 }
 
-/// Apply runtime operational settings to `game_data.setup`.
-///
-/// If any Setup byte changed, save a new snapshot so the engine always
-/// sees the current config on the next run.  Returns the (possibly updated)
-/// `CoreGameData` and the active snapshot id (new if saved, original if not).
-fn apply_game_config_overrides(
-    mut game_data: CoreGameData,
-    cfg: &RuntimeConfig,
-    store: &CampaignStore,
-    current_snapshot_id: i64,
-    report_block_rows: &[ReportBlockRow],
-    queued_mail: &[QueuedPlayerMail],
-) -> Result<(CoreGameData, i64), Box<dyn std::error::Error>> {
-    let s = &mut game_data.setup;
+/// Apply runtime operational settings to `setup`, and say whether any
+/// field changed.
+fn apply_setup_overrides(s: &mut Setup, cfg: &RuntimeConfig) -> bool {
     let mut changed = false;
 
     macro_rules! apply {
@@ -366,18 +360,5 @@ fn apply_game_config_overrides(
         apply!(autopilot_after_turns, u16::from(value));
     }
 
-    let snapshot_id = if changed {
-        store
-            .expecting_snapshot(current_snapshot_id)
-            .save_runtime_state_structured(
-                game_data.conquest.game_year,
-                &game_data,
-                report_block_rows,
-                queued_mail,
-            )?
-    } else {
-        current_snapshot_id
-    };
-
-    Ok((game_data, snapshot_id))
+    changed
 }

@@ -1849,31 +1849,32 @@ impl App {
             } else {
                 None
             };
-        for (index, row) in selected_rows.iter().enumerate() {
-            let speed = self
-                .game_data
-                .fleets
-                .get(row.fleet_record_index_1_based - 1)
-                .map(|fleet| {
-                    let speed = fleet.speed;
-                    if speed == 0 { fleet.max_speed } else { speed }
-                })
-                .unwrap_or(row.current_speed);
-            self.game_data.set_fleet_order(
-                row.fleet_record_index_1_based,
-                speed,
-                mission_code,
-                match &seek_home_targets {
-                    Some(targets) => targets[index],
-                    None if fleet_group_order_requires_target(mission_code) => target,
-                    None => [0, 0],
-                },
-                aux0,
-                aux1,
-            )?;
-        }
-        self.save_game_data()?;
-        Ok(())
+        self.change(|state| {
+            for (index, row) in selected_rows.iter().enumerate() {
+                let speed = state
+                    .game_data
+                    .fleets
+                    .get(row.fleet_record_index_1_based - 1)
+                    .map(|fleet| {
+                        let speed = fleet.speed;
+                        if speed == 0 { fleet.max_speed } else { speed }
+                    })
+                    .unwrap_or(row.current_speed);
+                state.game_data.set_fleet_order(
+                    row.fleet_record_index_1_based,
+                    speed,
+                    mission_code,
+                    match &seek_home_targets {
+                        Some(targets) => targets[index],
+                        None if fleet_group_order_requires_target(mission_code) => target,
+                        None => [0, 0],
+                    },
+                    aux0,
+                    aux1,
+                )?;
+            }
+            Ok(())
+        })
     }
 
     fn apply_fleet_group_order(
@@ -1913,14 +1914,17 @@ impl App {
             self.fleet.group_status = Some("Select at least one fleet.".to_string());
             return Ok(());
         }
-        for row in &selected_rows {
-            self.game_data.set_join_fleet_order(
-                self.player.record_index_1_based,
-                row.fleet_record_index_1_based,
-                host.fleet_record_index_1_based,
-            )?;
-        }
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        self.change(|state| {
+            for row in &selected_rows {
+                state.game_data.set_join_fleet_order(
+                    player_record,
+                    row.fleet_record_index_1_based,
+                    host.fleet_record_index_1_based,
+                )?;
+            }
+            Ok(())
+        })?;
         self.fleet.group_mode = FleetGroupOrderMode::SelectingFleets;
         self.fleet.group_mission_code = None;
         self.clear_fleet_group_target_inputs();
@@ -1996,12 +2000,16 @@ impl App {
             ));
             return Ok(());
         };
-        self.game_data.set_join_fleet_order(
-            self.player.record_index_1_based,
-            selected_row.fleet_record_index_1_based,
-            host.fleet_record_index_1_based,
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let fleet_record = selected_row.fleet_record_index_1_based;
+        self.change(|state| {
+            state.game_data.set_join_fleet_order(
+                player_record,
+                fleet_record,
+                host.fleet_record_index_1_based,
+            )?;
+            Ok(())
+        })?;
         self.fleet.order_mode = FleetSingleOrderMode::EnteringTarget;
         self.fleet.order_mission_code = None;
         self.clear_fleet_order_target_inputs();

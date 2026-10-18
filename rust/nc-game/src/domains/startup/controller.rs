@@ -6,15 +6,15 @@ use crate::domains::startup::screens::startup::{
 };
 use crate::domains::startup::state::FirstTimeOnboardingMode;
 use crate::model::{ClassicLoginState, MainMenuSummary};
-use crate::reports::{ReportsPreview, has_visible_runtime_messages};
+use crate::reports::{ReportsPreview, has_visible_runtime_messages, has_visible_runtime_reports};
 use crate::screen::{
     CommandMenu, FIRST_TIME_INTRO_PAGE_COUNT, STARTUP_SPLASH_PAGE_COUNT, ScreenId,
     StartupReviewMode,
 };
 use crate::startup::{StartupPhase, StartupSummary};
 use nc_data::{
-    PlayerAccessMode, SeatBindSource, TerminalOutcome, delete_report_block_for_viewer,
-    layout_classic_results,
+    PlayerAccessMode, RuntimeChange, SeatBindSource, TerminalOutcome,
+    delete_report_block_for_viewer, layout_classic_results,
 };
 use nc_session::onboarding::first_time_onboarding_mode as shared_first_time_onboarding_mode;
 
@@ -45,17 +45,15 @@ impl App {
         {
             return Ok(());
         }
-        nc_data::record_interactive_participation(
-            &mut self.game_data,
-            self.player.record_index_1_based,
-            &mut self.player_activity_states,
-        );
-        if matches!(self.player_access_mode, PlayerAccessMode::Normal) {
-            self.save_game_data()?;
-        } else {
-            self.save_terminal_access_state()?;
-        }
-        Ok(())
+        let player_record = self.player.record_index_1_based;
+        self.change(|state| {
+            nc_data::record_interactive_participation(
+                &mut state.game_data,
+                player_record,
+                &mut state.player_activity_states,
+            );
+            Ok(())
+        })
     }
 
     pub fn enter_unbound_bbs_first_time_mode(&mut self) {
@@ -144,20 +142,29 @@ impl App {
                 .result_blocks()
                 .get(block_idx)
                 .and_then(|block| block.runtime_report_index);
-            if let Some(row_idx) = row_idx {
-                delete_report_block_for_viewer(
-                    &mut self.report_block_rows,
-                    &self.game_data.players,
-                    row_idx,
-                    self.player.record_index_1_based as u8,
-                );
-            }
-            self.sync_player_review_flags();
-            if matches!(self.player_access_mode, PlayerAccessMode::Normal) {
-                self.save_game_data()?;
-            } else {
-                self.save_terminal_access_state()?;
-            }
+            // Another player's change can add reports and so move rows: name
+            // the report by its key, not its position.
+            let report_key = row_idx
+                .and_then(|idx| self.report_block_rows.get(idx))
+                .map(|row| (row.viewer_empire_id, row.block_index));
+            let player_record = self.player.record_index_1_based;
+            self.change_review(move |state| {
+                if let Some(idx) = report_key.and_then(|key| {
+                    state
+                        .report_block_rows
+                        .iter()
+                        .position(|row| (row.viewer_empire_id, row.block_index) == key)
+                }) {
+                    delete_report_block_for_viewer(
+                        &mut state.report_block_rows,
+                        &state.game_data.players,
+                        idx,
+                        player_record as u8,
+                    );
+                }
+                sync_player_review_flags(state, player_record);
+                Ok(())
+            })?;
             self.refresh_review_context()?;
             self.startup_state.results_deleted_any = true;
             self.startup_state.results_page = 0;
@@ -173,15 +180,14 @@ impl App {
                 .message_blocks()
                 .get(block_idx)
                 .and_then(|block| block.runtime_mail_index);
-            if let Some(mail) = mail_index.and_then(|idx| self.queued_mail.get_mut(idx)) {
-                mail.mark_deleted_by_recipient();
-            }
-            self.sync_player_review_flags();
-            if matches!(self.player_access_mode, PlayerAccessMode::Normal) {
-                self.save_game_data()?;
-            } else {
-                self.save_terminal_access_state()?;
-            }
+            let player_record = self.player.record_index_1_based;
+            self.change_review(move |state| {
+                if let Some(mail) = mail_index.and_then(|idx| state.queued_mail.get_mut(idx)) {
+                    mail.mark_deleted_by_recipient();
+                }
+                sync_player_review_flags(state, player_record);
+                Ok(())
+            })?;
             self.refresh_review_context()?;
             self.startup_state.messages_deleted_any = true;
             self.startup_state.messages_page = 0;
@@ -1311,51 +1317,38 @@ impl App {
     }
 
     fn complete_first_time_join(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if self.startup_state.unbound_bbs_caller {
-            let runtime_state = self
-                .planet
-                .campaign_store
-                .load_latest_runtime_state()?
-                .ok_or(
-                    "campaign store has no snapshots; initialize the campaign with nc-sysop first",
-                )?;
-            let player_record_index_1_based = runtime_state
-                .game_data
-                .players
-                .iter()
-                .enumerate()
-                .find_map(|(idx, _)| {
-                    let seat = idx + 1;
-                    (runtime_state
-                        .game_data
-                        .player_slot_is_open_for_first_join(seat)
-                        && self.game_config.reservation_for_player(seat).is_none())
-                    .then_some(seat)
-                })
-                .ok_or("This game is already full. No open empires remain.")?;
-            self.reload_runtime_state_and_bind_player_record_index_1_based(
-                player_record_index_1_based,
-            )?;
-        } else {
-            self.reload_runtime_state_and_bind_player_record_index_1_based(
-                self.player.record_index_1_based,
-            )?;
-        }
-        self.game_data.join_player(
-            self.player.record_index_1_based,
-            &self.startup_state.first_time_empire_name,
-        )?;
-        if let Some(alias) = self.startup_state.caller_alias.as_deref() {
-            if let Some(player) = self
-                .game_data
-                .players
-                .get_mut(self.player.record_index_1_based - 1)
-            {
-                nc_data::set_player_handle(player, alias);
+        let unbound = self.startup_state.unbound_bbs_caller;
+        let bound_seat = self.player.record_index_1_based;
+        let empire_name = self.startup_state.first_time_empire_name.clone();
+        let alias = self.startup_state.caller_alias.clone();
+        let reserved: Vec<usize> = (1..=self.game_data.players.len())
+            .filter(|&seat| self.game_config.reservation_for_player(seat).is_some())
+            .collect();
+        // An unbound caller's seat is chosen in the same change that joins
+        // it, so two callers joining at once take different seats.
+        let seat = self.change(|state| {
+            let seat = if unbound {
+                (1..=state.game_data.players.len())
+                    .find(|&seat| {
+                        state.game_data.player_slot_is_open_for_first_join(seat)
+                            && !reserved.contains(&seat)
+                    })
+                    .ok_or("This game is already full. No open empires remain.")?
+            } else {
+                bound_seat
+            };
+            state.game_data.join_player(seat, &empire_name)?;
+            if let Some(alias) = alias.as_deref() {
+                if let Some(player) = state.game_data.players.get_mut(seat - 1) {
+                    nc_data::set_player_handle(player, alias);
+                }
             }
+            Ok(seat)
+        })?;
+        if seat != bound_seat {
+            self.bind_player_record_index_1_based(seat)?;
         }
         self.startup_state.unbound_bbs_caller = false;
-        self.save_game_data()?;
         if self.startup_state.caller_alias.is_some() {
             self.planet.campaign_store.set_seat_bind_source(
                 self.player.record_index_1_based,
@@ -1384,14 +1377,22 @@ impl App {
         let player = self
             .game_data
             .players
-            .get_mut(seat - 1)
+            .get(seat - 1)
             .ok_or("player record missing for handle binding")?;
         if !nc_data::player_handle_matches(player, handle) {
             if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
                 return Ok(false);
             }
-            nc_data::set_player_handle(player, handle);
-            self.save_game_data()?;
+            let handle = handle.to_string();
+            self.change(|state| {
+                let player = state
+                    .game_data
+                    .players
+                    .get_mut(seat - 1)
+                    .ok_or("player record missing for handle binding")?;
+                nc_data::set_player_handle(player, &handle);
+                Ok(())
+            })?;
             self.refresh_player_context()?;
         }
         self.planet
@@ -1401,11 +1402,14 @@ impl App {
     }
 
     fn complete_first_time_homeworld_name(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.game_data.rename_player_homeworld(
-            self.player.record_index_1_based,
-            &self.startup_state.first_time_homeworld_name,
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let name = self.startup_state.first_time_homeworld_name.clone();
+        self.change(|state| {
+            state
+                .game_data
+                .rename_player_homeworld(player_record, &name)?;
+            Ok(())
+        })?;
         self.refresh_player_context()?;
         Ok(())
     }
@@ -1416,12 +1420,14 @@ impl App {
             .colony_world_planet_record_index_1_based
             .or_else(|| self.colony_world_target_planet_index())
             .ok_or("colony world prompt missing target planet")?;
-        self.game_data.rename_owned_planet(
-            self.player.record_index_1_based,
-            planet_index,
-            &self.startup_state.colony_world_name,
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let name = self.startup_state.colony_world_name.clone();
+        self.change(|state| {
+            state
+                .game_data
+                .rename_owned_planet(player_record, planet_index, &name)?;
+            Ok(())
+        })?;
         self.refresh_player_context()?;
         self.startup_state.colony_world_planet_record_index_1_based = None;
         self.startup_state.colony_world_name.clear();
@@ -1429,13 +1435,17 @@ impl App {
     }
 
     fn complete_preloaded_empire_rename(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let player = self
-            .game_data
-            .players
-            .get_mut(self.player.record_index_1_based - 1)
-            .ok_or("player record missing for pre-loaded rename")?;
-        nc_data::set_empire_name(player, &self.startup_state.first_time_empire_name);
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        let name = self.startup_state.first_time_empire_name.clone();
+        self.change(|state| {
+            let player = state
+                .game_data
+                .players
+                .get_mut(player_record - 1)
+                .ok_or("player record missing for pre-loaded rename")?;
+            nc_data::set_empire_name(player, &name);
+            Ok(())
+        })?;
         self.refresh_player_context()?;
         Ok(())
     }
@@ -1503,26 +1513,16 @@ impl App {
         }
     }
 
-    fn sync_player_review_flags(&mut self) {
-        let has_results = self.has_active_report_blocks();
-        let results_chain =
-            layout_classic_results(&self.game_data.players, &self.report_block_rows)
-                .chain_for(self.player.record_index_1_based as u8);
-        if let Some(player) = self
-            .game_data
-            .players
-            .get_mut(self.player.record_index_1_based - 1)
-        {
-            nc_data::set_login_reviewables_present(
-                player,
-                has_results
-                    || has_visible_runtime_messages(
-                        self.player.record_index_1_based as u8,
-                        &self.queued_mail,
-                        self.game_data.conquest.game_year,
-                    ),
-            );
-            nc_data::set_results_chain(player, results_chain);
+    /// A review change: saved in any access mode, since a finished empire
+    /// still reviews and deletes its last reports.
+    fn change_review(
+        &mut self,
+        apply: impl FnOnce(&mut RuntimeChange) -> Result<(), Box<dyn std::error::Error>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if matches!(self.player_access_mode, PlayerAccessMode::Normal) {
+            self.change(apply)
+        } else {
+            self.change_in_any_access_mode(apply)
         }
     }
 
@@ -1581,9 +1581,12 @@ impl App {
             .get(player_idx)
             .map(|state| state.terminal_outcome)
             .unwrap_or(TerminalOutcome::None);
-        if let Some(state) = self.player_lifecycle_states.get_mut(player_idx) {
-            state.terminal_review_consumed = true;
-        }
+        self.change_in_any_access_mode(|state| {
+            if let Some(lifecycle) = state.player_lifecycle_states.get_mut(player_idx) {
+                lifecycle.terminal_review_consumed = true;
+            }
+            Ok(())
+        })?;
         self.player_access_mode = PlayerAccessMode::LockedOut;
         self.terminal_notice_lines = match outcome {
             TerminalOutcome::Defeated => vec![
@@ -1601,7 +1604,7 @@ impl App {
                 "Press any key to exit.".to_string(),
             ],
         };
-        self.save_terminal_access_state()
+        Ok(())
     }
 
     fn pending_naming_screen(&self) -> Option<ScreenId> {
@@ -1688,5 +1691,21 @@ impl App {
                     && *idx + 1 != homeworld_index
             })
             .map(|(idx, _)| idx + 1)
+    }
+}
+
+fn sync_player_review_flags(state: &mut RuntimeChange, player_record: usize) {
+    let viewer = player_record as u8;
+    let has_results = has_visible_runtime_reports(viewer, &state.report_block_rows);
+    let results_chain = layout_classic_results(&state.game_data.players, &state.report_block_rows)
+        .chain_for(viewer);
+    let has_messages = has_visible_runtime_messages(
+        viewer,
+        &state.queued_mail,
+        state.game_data.conquest.game_year,
+    );
+    if let Some(player) = state.game_data.players.get_mut(player_record - 1) {
+        nc_data::set_login_reviewables_present(player, has_results || has_messages);
+        nc_data::set_results_chain(player, results_chain);
     }
 }

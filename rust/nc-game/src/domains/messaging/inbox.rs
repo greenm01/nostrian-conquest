@@ -324,26 +324,47 @@ impl App {
             return Ok(());
         };
         let deleted_id = self.current_inbox_display_id();
-        match item.source {
-            InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Outgoing => {
-                self.cancel_queued_mail(index);
-            }
-            InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Sent => {
-                self.queued_mail[index].sender_deleted = true;
-            }
-            InboxItemSource::QueuedMail(index) => {
-                if let Some(mail) = self.queued_mail.get_mut(index) {
-                    mail.mark_deleted_by_recipient();
+        let viewer = self.player.record_index_1_based as u8;
+        // Another player's change can add reports and so move rows: name the
+        // report by its key, not its position.
+        let report_key = match item.source {
+            InboxItemSource::ReportBlock(index) => self
+                .report_block_rows
+                .get(index)
+                .map(|row| (row.viewer_empire_id, row.block_index)),
+            InboxItemSource::QueuedMail(_) => None,
+        };
+        self.change(|state| {
+            match item.source {
+                InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Outgoing => {
+                    state.queued_mail[index].cancel();
+                }
+                InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Sent => {
+                    state.queued_mail[index].sender_deleted = true;
+                }
+                InboxItemSource::QueuedMail(index) => {
+                    if let Some(mail) = state.queued_mail.get_mut(index) {
+                        mail.mark_deleted_by_recipient();
+                    }
+                }
+                InboxItemSource::ReportBlock(_) => {
+                    if let Some(index) = report_key.and_then(|key| {
+                        state
+                            .report_block_rows
+                            .iter()
+                            .position(|row| (row.viewer_empire_id, row.block_index) == key)
+                    }) {
+                        delete_report_block_for_viewer(
+                            &mut state.report_block_rows,
+                            &state.game_data.players,
+                            index,
+                            viewer,
+                        );
+                    }
                 }
             }
-            InboxItemSource::ReportBlock(index) => delete_report_block_for_viewer(
-                &mut self.report_block_rows,
-                &self.game_data.players,
-                index,
-                self.player.record_index_1_based as u8,
-            ),
-        }
-        self.save_game_data()?;
+            Ok(())
+        })?;
         self.messaging.inbox_prompt_mode = InboxPromptMode::Normal;
         self.messaging.inbox_feedback = Some(PromptFeedback::notice(format!(
             "Deleted item {deleted_id}."

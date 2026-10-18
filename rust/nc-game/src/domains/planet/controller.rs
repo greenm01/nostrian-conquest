@@ -1464,9 +1464,11 @@ impl App {
             self.planet.tax_error = Some("Enter an integer tax rate from 0 to 100.".to_string());
             return Ok(());
         }
-        self.game_data
-            .set_player_tax_rate(self.player.record_index_1_based, parsed)?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based;
+        self.change(|state| {
+            state.game_data.set_player_tax_rate(player_record, parsed)?;
+            Ok(())
+        })?;
         self.close_planet_tax_prompt();
         let revenue = self
             .game_data

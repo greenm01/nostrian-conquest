@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
 use nc_data::{
-    CampaignStoreError, PlayerAccessMode, ReportBlockRow, STALE_SESSION_MESSAGE, player_access_mode,
+    CampaignStoreError, CommittedChange, PlayerAccessMode, ReportBlockRow, RuntimeChange,
+    STALE_SESSION_MESSAGE, player_access_mode,
 };
 
 use super::state::App;
@@ -85,82 +86,78 @@ impl App {
         self.bind_player_record_index_1_based(player_record_index_1_based)
     }
 
-    pub(crate) fn append_report_block(&mut self, text: impl Into<String>) {
-        let next_index = self
-            .report_block_rows
-            .iter()
-            .map(|row| row.block_index)
-            .max()
-            .map(|idx| idx + 1)
-            .unwrap_or(0);
-        self.report_block_rows.push(ReportBlockRow {
-            viewer_empire_id: self.player.record_index_1_based as u8,
-            block_index: next_index,
-            decoded_text: text.into(),
-            raw_bytes: None,
-            recipient_deleted: false,
-        });
+    /// Apply one change of this player's to the campaign's latest state and
+    /// save it, in one store transaction (t204): other players' changes made
+    /// since this session loaded are kept, and the session then holds the
+    /// committed state, theirs included. `apply` edits that state only; it
+    /// must not prompt. When it fails, nothing is saved and the session's
+    /// state is unchanged.
+    ///
+    /// If maintenance has since written a newer year the store refuses; the
+    /// session is then marked stale and never saves again (the refusal is
+    /// reported once the current action finishes).
+    pub(crate) fn change<T>(
+        &mut self,
+        apply: impl FnOnce(&mut RuntimeChange) -> Result<T, Box<dyn std::error::Error>>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
+        if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
+            return Err("campaign state is read-only in the current access mode".into());
+        }
+        self.change_in_any_access_mode(apply)
     }
 
-    /// Save the in-memory state over the snapshot of the year this session
-    /// loaded. If maintenance has since written a newer year the store
-    /// refuses; the session is then marked stale and never saves again (the
-    /// refusal is reported once the current action finishes).
-    fn persist_runtime_snapshot(&mut self) -> Result<i64, Box<dyn std::error::Error>> {
+    /// [`App::change`] for the one change a session in a read-only access
+    /// mode makes: recording that a finished empire reviewed its outcome.
+    pub(crate) fn change_in_any_access_mode<T>(
+        &mut self,
+        apply: impl FnOnce(&mut RuntimeChange) -> Result<T, Box<dyn std::error::Error>>,
+    ) -> Result<T, Box<dyn std::error::Error>> {
         if self.session_stale {
             self.stale_notice_due = true;
             return Err(STALE_SESSION_MESSAGE.into());
         }
-        let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count)
-            .map(|viewer_empire_id| {
-                self.planet
-                    .campaign_store
-                    .latest_planet_intel_for_viewer(viewer_empire_id)
-                    .map(|snapshots| {
-                        snapshots
-                            .into_iter()
-                            .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
-                            .collect::<BTreeMap<_, _>>()
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let saved = self
+        let changed = self
             .planet
             .campaign_store
-            .expecting_snapshot(self.snapshot_id)
-            .save_runtime_state_structured_with_intel_activity_and_lifecycle(
-                self.game_data.conquest.game_year,
-                &self.game_data,
-                &self.report_block_rows,
-                &self.queued_mail,
-                &planet_intel_by_viewer,
-                &self.player_activity_states,
-                &self.player_lifecycle_states,
-                self.winner_state,
-            );
-        match saved {
-            Ok(snapshot_id) => Ok(snapshot_id),
-            Err(err @ CampaignStoreError::ConcurrentSnapshot { .. }) => {
-                self.concurrent_notice_due =
-                    Some("Game updated; your last change was not saved. Please try again.".into());
-                Err(err.into())
+            .change(self.game_data.conquest.game_year, apply);
+        match changed {
+            Ok((value, committed)) => {
+                self.adopt_committed_change(committed)?;
+                Ok(value)
             }
-            Err(err @ CampaignStoreError::HostingPaused) => {
-                self.concurrent_notice_due = Some(err.to_string());
-                Err(err.into())
+            Err(err) => {
+                match err.downcast_ref::<CampaignStoreError>() {
+                    Some(CampaignStoreError::HostingPaused) => {
+                        self.concurrent_notice_due = Some(err.to_string());
+                    }
+                    Some(CampaignStoreError::StaleSnapshot { .. }) => {
+                        tracing::warn!(
+                            player = self.player.record_index_1_based,
+                            error = ?err,
+                            "save refused: maintenance has run since this session loaded"
+                        );
+                        self.session_stale = true;
+                        self.stale_notice_due = true;
+                    }
+                    _ => {}
+                }
+                Err(err)
             }
-            Err(err @ CampaignStoreError::StaleSnapshot { .. }) => {
-                tracing::warn!(
-                    player = self.player.record_index_1_based,
-                    error = ?err,
-                    "save refused: maintenance has run since this session loaded"
-                );
-                self.session_stale = true;
-                self.stale_notice_due = true;
-                Err(err.into())
-            }
-            Err(err) => Err(err.into()),
         }
+    }
+
+    fn adopt_committed_change(
+        &mut self,
+        committed: CommittedChange,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.snapshot_id = committed.snapshot_id;
+        self.campaign_seed = committed.campaign_seed;
+        let state = committed.state;
+        self.game_data = state.game_data;
+        self.report_block_rows = state.report_block_rows;
+        self.queued_mail = state.queued_mail;
+        self.winner_state = state.winner_state;
+        self.bind_player_record_index_1_based(self.player.record_index_1_based)
     }
 
     /// Once an action that tried to save has finished, tell the player in the
@@ -185,48 +182,31 @@ impl App {
         }
     }
 
-    pub(crate) fn save_game_data(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
-            return Err("campaign state is read-only in the current access mode".into());
-        }
-        self.snapshot_id = self.persist_runtime_snapshot()?;
-        self.planet_intel_snapshots = self
-            .planet
-            .campaign_store
-            .latest_planet_intel_for_viewer(self.player.record_index_1_based as u8)?
-            .into_iter()
-            .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
-            .collect::<BTreeMap<_, _>>();
-        self.owned_planet_years = self
-            .planet
-            .campaign_store
-            .latest_owned_planet_years_for_empire(self.player.record_index_1_based as u8)?;
-        self.planet.intel_snapshots = self.planet_intel_snapshots.clone();
-        self.player_activity_states = self
-            .planet
-            .campaign_store
-            .latest_player_activity_states(self.game_data.conquest.player_count)?;
-        self.player_lifecycle_states = self
-            .planet
-            .campaign_store
-            .latest_player_lifecycle_states(self.game_data.conquest.player_count)?;
-        self.player_access_mode = player_access_mode(
-            self.player.record_index_1_based,
-            &self.player_lifecycle_states,
-            self.winner_state,
-        );
-        Ok(())
-    }
-
-    pub(crate) fn save_terminal_access_state(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.snapshot_id = self.persist_runtime_snapshot()?;
-        Ok(())
-    }
-
     pub(crate) fn has_active_report_blocks(&self) -> bool {
         has_visible_runtime_reports(
             self.player.record_index_1_based as u8,
             &self.report_block_rows,
         )
     }
+}
+
+/// Add a report for `viewer_empire_id` after every stored report.
+pub(crate) fn append_report_block(
+    rows: &mut Vec<ReportBlockRow>,
+    viewer_empire_id: u8,
+    text: impl Into<String>,
+) {
+    let next_index = rows
+        .iter()
+        .map(|row| row.block_index)
+        .max()
+        .map(|idx| idx + 1)
+        .unwrap_or(0);
+    rows.push(ReportBlockRow {
+        viewer_empire_id,
+        block_index: next_index,
+        decoded_text: text.into(),
+        raw_bytes: None,
+        recipient_deleted: false,
+    });
 }

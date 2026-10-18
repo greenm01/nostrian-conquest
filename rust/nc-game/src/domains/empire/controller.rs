@@ -78,14 +78,16 @@ impl App {
     }
 
     pub fn toggle_autopilot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let player = &mut self.game_data.players[self.player.record_index_1_based - 1];
-        player.autopilot = !player.autopilot;
-        nc_data::clear_inactivity_autopilot_pending(
-            self.player.record_index_1_based,
-            &mut self.player_activity_states,
-        );
-        self.save_game_data()?;
-        Ok(())
+        let player_record = self.player.record_index_1_based;
+        self.change(|state| {
+            let player = &mut state.game_data.players[player_record - 1];
+            player.autopilot = !player.autopilot;
+            nc_data::clear_inactivity_autopilot_pending(
+                player_record,
+                &mut state.player_activity_states,
+            );
+            Ok(())
+        })
     }
 
     pub fn append_enemies_char(&mut self, ch: char) {
@@ -152,12 +154,13 @@ impl App {
             }
             nc_data::DiplomaticRelation::Enemy => nc_data::DiplomaticRelation::Neutral,
         };
-        self.game_data.set_stored_diplomatic_relation(
-            self.player.record_index_1_based as u8,
-            empire_id,
-            next,
-        )?;
-        self.save_game_data()?;
+        let player_record = self.player.record_index_1_based as u8;
+        self.change(|state| {
+            state
+                .game_data
+                .set_stored_diplomatic_relation(player_record, empire_id, next)?;
+            Ok(())
+        })?;
         self.empire.enemies_status = None;
         self.empire.enemies_input.clear();
         Ok(())

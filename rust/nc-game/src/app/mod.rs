@@ -2,7 +2,7 @@ pub mod action;
 mod help;
 pub(crate) mod helpers;
 mod input;
-mod persistence;
+pub(crate) mod persistence;
 mod quit;
 mod render;
 pub mod runtime_config;

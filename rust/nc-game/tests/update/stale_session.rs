@@ -109,8 +109,11 @@ fn a_save_with_no_maintenance_in_between_goes_through() {
     );
 }
 
+/// Two players change the same campaign in the same year (t204): the
+/// second's change, from a session loaded before the first's, is kept with
+/// the first's, and each session then sees both.
 #[test]
-fn two_players_cannot_overwrite_each_others_same_year_orders() {
+fn two_players_changing_one_campaign_keep_both_changes() {
     let dir = temp_game_copy();
     let mut first = load_player_one(&dir);
     let mut second = App::load(AppConfig {
@@ -126,31 +129,22 @@ fn two_players_cannot_overwrite_each_others_same_year_orders() {
 
     apply_action(&mut first, Action::ToggleAutopilot);
     apply_action(&mut second, Action::ToggleAutopilot);
-    let after_conflict = latest_runtime_state(&dir);
-    assert_eq!(
-        after_conflict.game_data.players[0].autopilot, !before.game_data.players[0].autopilot,
-        "player two must not undo player one's order"
-    );
-    assert_eq!(
-        after_conflict.game_data.players[1].autopilot, before.game_data.players[1].autopilot,
-        "the stale action must be refused"
-    );
-    assert!(
-        !second.session_stale,
-        "same-year conflicts can refresh without logging out"
-    );
 
-    apply_action(&mut second, Action::ToggleAutopilot);
-    let after_retry = latest_runtime_state(&dir);
+    let after = latest_runtime_state(&dir);
+    for (idx, player) in after.game_data.players.iter().take(2).enumerate() {
+        assert_eq!(
+            player.autopilot,
+            !before.game_data.players[idx].autopilot,
+            "player {}'s order is kept",
+            idx + 1
+        );
+    }
+    assert!(!second.session_stale);
+    assert!(!notice_is_shown(&mut second));
     assert_eq!(
-        after_retry.game_data.players[0].autopilot,
-        !before.game_data.players[0].autopilot
+        second.game_data, after.game_data,
+        "the session sees both orders"
     );
-    assert_eq!(
-        after_retry.game_data.players[1].autopilot,
-        !before.game_data.players[1].autopilot
-    );
-    assert!(after_retry.snapshot_id > after_conflict.snapshot_id);
 }
 
 #[test]

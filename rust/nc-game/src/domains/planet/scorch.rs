@@ -200,10 +200,13 @@ impl App {
             .name
             .trim()
             .to_string();
-        self.game_data
-            .set_planet_scorch_earth(planet_record_index, scorched)
-            .map_err(|err| err.to_string())?;
-        self.save_game_data().map_err(|err| err.to_string())?;
+        self.change(|state| {
+            state
+                .game_data
+                .set_planet_scorch_earth(planet_record_index, scorched)?;
+            Ok(())
+        })
+        .map_err(|err| err.to_string())?;
         self.clear_planet_scorch_prompt();
         self.show_planet_context_notice(if scorched {
             format!("Planet \"{planet_name}\" will be scorched at maintenance.")
