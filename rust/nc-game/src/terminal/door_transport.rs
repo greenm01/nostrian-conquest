@@ -474,35 +474,21 @@ fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
         Some(Instant::now() + Duration::from_millis(timeout_ms as u64))
     };
     if !stdin.is_terminal() {
-        loop {
-            let mut total_bytes_available = 0u32;
-            let rc = unsafe {
-                PeekNamedPipe(
-                    handle as *mut _,
-                    std::ptr::null_mut(),
-                    0,
-                    std::ptr::null_mut(),
-                    &mut total_bytes_available,
-                    std::ptr::null_mut(),
-                )
-            };
-            if rc != 0 {
-                return Ok(total_bytes_available > 0);
-            }
-
-            let err = io::Error::last_os_error();
-            if timeout_ms == 0 {
-                return Ok(false);
-            }
-            if deadline.is_some_and(|value| Instant::now() >= value) {
-                return Ok(false);
-            }
-            if err.kind() == io::ErrorKind::BrokenPipe {
-                // Closed pipe: the read reports EOF instead of waiting.
-                return Ok(true);
-            }
-            std::thread::sleep(Duration::from_millis(5));
-        }
+        let mut total_bytes_available = 0u32;
+        let rc = unsafe {
+            PeekNamedPipe(
+                handle as *mut _,
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null_mut(),
+                &mut total_bytes_available,
+                std::ptr::null_mut(),
+            )
+        };
+        // The peek fails only for a closed pipe or an input that is no pipe
+        // (a file, or NUL). Either way the read returns at once, with bytes
+        // or EOF, instead of waiting.
+        return Ok(rc == 0 || total_bytes_available > 0);
     }
 
     // The console handle is signaled while any input record is queued, but
