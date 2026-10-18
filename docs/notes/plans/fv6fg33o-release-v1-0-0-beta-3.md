@@ -229,6 +229,40 @@ committed ones. A fresh download of all six assets passed GPG and checksum
 verification, and the three manual PDFs on the site are served as
 `application/pdf` and match the committed files.
 
+## Combat-rules and manual refresh, 2026-10-18
+
+All four archives were rebuilt from `63dc9594`, the same evening. It
+carries t206's destroyer cover rules (cruisers, battleships and starbases
+take fire before the destroyers behind them; destroyers and starbases
+finish cripples at half defense strength; a heavy line worth twice the
+enemy's adds one to the die; batteries keep the old order), the
+re-recorded AI fixtures that followed, and the three manuals rewritten in
+plain prose with the fleet battle procedure in the player manual's combat
+appendix. No database or door changes since `d16e43de`.
+
+Linux was built on bean-void (Rust 1.98), Windows x64 on bean (stable 1.99)
+and both x86 targets on bean (nightly 1.101, source-built std). The
+workspace passed 3,385 tests on bean-void at `6452cdf7`; only docs changed
+after that. Each archive passed a smoke run (fresh game, two maintenance
+passes) and reports build commit `63dc9594`; the Windows archives passed
+Defender scans. The manifest is signed with the release subkey on the Mac
+mini and a fresh download verifies.
+
+| Archive suffix | SHA-256 |
+| --- | --- |
+| `linux-x64.tar.gz` | `f8849da1db9a2417afdde5fe8055d0e3e8c87ae574ec151025cfdea95d60f88d` |
+| `windows-x64.zip` | `61d28ffb0b6178fcb8287fed313e0e60fd11c26ae230fca621f224f94e443260` |
+| `windows-x86.zip` | `0780a8d3e326453eb60e1bb8fbf77628a23350f291fad9e8f70066fdd150e00b` |
+| `windows7-x86.zip` | `482853a79b3731a0c502d807a7e39fb2a5c5dff5cf79cd697e2671045522aa52` |
+
+The archives and signed manifest replaced the beta.3 assets on
+`release-artifacts`, and its note now describes the new fleet rules. The
+website's three manual PDFs were replaced earlier the same day. The archvps
+community stack moved to release `63dc9594` (signed tarball built on
+bean-void, verified on the host) after a `nc-admin` backup of Beta 1; Beta 1
+stayed recruiting at year 3000 with one of four seats claimed, and
+`6c381989` is kept for rollback.
+
 ## Connections
 
 Ships the work recorded in the

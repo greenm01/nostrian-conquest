@@ -184,7 +184,10 @@ On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
 inside the `#nostrian:matrix.org` space, and its display name became
 `ncbot`.
 
-Signed release `6c381989` (a fix for a joint-bombardment crash) followed `08f44280`, which had replaced it the same day, adding t202's
+Signed release `63dc9594` went live on 2026-10-18 with t206's destroyer
+cover rules and the plain-prose manuals; an `nc-admin` backup of Beta 1 was
+taken first, it stayed recruiting at year 3000, and `6c381989` is kept for
+rollback. Before that, signed release `6c381989` (a fix for a joint-bombardment crash) followed `08f44280`, which had replaced it the same day, adding t202's
 planetary combat (two-step batteries, full-strength battery fire, classic
 capture damage); Beta 1 stayed recruiting at year 3000, a manual backup was
 taken first, and `1c1de2a7` is kept for rollback (`4456d589` removed). Before
@@ -202,8 +205,9 @@ the only hosted game.
 
 ## Release context
 
-Beta.3 is published, refreshed on 2026-10-18 from `d16e43de` (t204/t205
-databases, Windows door input fixes); see the release plan for hashes. t024
+Beta.3 is published, refreshed on 2026-10-18 from `63dc9594` (t206 fleet
+rules, plain-prose manuals, on top of `d16e43de`'s t204/t205 databases and
+Windows door input fixes); see the release plan for hashes. t024
 is complete: all four BBS/sysop packages, their signed checksum manifest, and
 the matching download page are live. The
 quick-start PDF appears above the full manuals. All seven archive/manual links
