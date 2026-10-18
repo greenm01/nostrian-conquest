@@ -273,11 +273,27 @@ copies per game. Manual/pre-upgrade copies are never pruned automatically.
 Off-server automation must be configured and checked before public launch;
 local snapshots alone are not disaster recovery.
 
-If a turn stops with state `maintenance`, use `nc-admin games inspect GAME --json`
-to find its request ID in `unfinished_runs` before retrying the same ID and expected year.
-The runtime receipt commits with the new year. Recovery finishes metadata if
-that receipt exists, otherwise it can resume the interrupted operation. Do not
-invent a new request ID to bypass an unresolved turn. Failed runs remain paused.
+If a turn stops with state `maintenance` because its process died, the next
+`due` check (the turns timer, every minute) replays it under its own request
+ID: every turn runs under the admin lock, so a run still marked running when
+`due` holds that lock has stopped. The runtime receipt commits with the new
+year, so replay finishes the metadata if the year was saved and runs the year
+otherwise. To do it by hand, use `nc-admin games inspect GAME --json` to find
+its request ID in `unfinished_runs` and retry the same ID and expected year. Do
+not invent a new request ID to bypass an unresolved turn. A run that failed,
+rather than stopped, stays paused for the operator. Restoring a backup marks a
+run that was in progress when the backup was taken as failed, so it does not
+block the next turn.
+
+Terminal sign-in does not wait for a turn: seat authorization only reads, so a
+player opening a terminal during maintenance is told at once that the game is
+not accepting sessions. Backups copy `ncgame.db` and `hosted.db` as one matching
+pair, with both files' writes held, and each copy is a single file (no `-wal`).
+
+All the SQLite files (`ncgame.db`, `hosted.db`, `roster.db`,
+`.web-sessions.db`) use WAL, enforce foreign keys and wait up to 30 s for
+another process's write. Sessions log a save that waited longer than a second
+and every save that failed.
 
 For a binary rollback, first stop the timer and both services and make a backup.
 Never load a newer incompatible database with an older binary. Restore a matching

@@ -665,6 +665,18 @@ nc-sysop maint /path/to/mygame [turns]
 `nc-sysop maint` advances the campaign in `ncgame.db` immediately. It does not
 change the schedule fields. NC does not schedule maintenance by itself.
 
+While it runs, players can stay logged in, but their changes are refused with
+"Campaign paused; your last change was not saved. Try again later.", so the
+year it resolves cannot change under it. When it finishes, their sessions are
+told that maintenance has run and must log in again. Only one maintenance run
+goes at a time for a campaign; a second is refused. If a run is killed or the
+machine stops, players stay paused until you run `nc-sysop maint` again, which
+reports the interrupted run and runs the year.
+
+Every session checks the campaign file when it opens it. A damaged file is
+reported as "the campaign file ... is damaged; tell the sysop" instead of
+being played. Restore it from a backup.
+
 Use one of these methods:
 
 - a `systemd` timer

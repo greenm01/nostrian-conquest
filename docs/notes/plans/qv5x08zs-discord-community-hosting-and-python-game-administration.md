@@ -177,6 +177,48 @@ Approach (owner-approved plan, 2026-10-17):
 reports latency; a backup taken during writes restores into a playable game;
 two browser terminals keep their orders through a turn.
 
+Results (2026-10-17):
+
+- `nc_data::sqlite` opens every hosted SQLite file: foreign keys, WAL for
+  writers, `synchronous=NORMAL`, and a 30 s wait that retries the lock every
+  millisecond (SQLite's own backoff let one of four nonstop writers wait 6 s;
+  the retry cut the longest wait to 0.36 s at the same throughput). Schema
+  upgrades of the campaign store, `hosted.db` and `roster.db` run in one
+  `BEGIN IMMEDIATE`; hosted transactions use `write_transaction`.
+- Maintenance: `nc-sysop maint` and `nc-cli maint` run under
+  `CampaignStore::begin_maintenance` (an OS lock, players paused, a crashed
+  run's block taken over by the next); the admin `due` check replays a turn a
+  dead process left in maintenance; restore marks such a run failed; seat
+  authorization does not wait for the admin lock.
+- Backups hold `hosted.db`'s write lock across both copies and leave each
+  copy out of WAL mode.
+- Operations: a door checks the file with `quick_check` at open; `nc-game`
+  logs saves that waited over 1 s and failed saves; whole-year saves are
+  `save_year*`.
+- Tests: `nc-data/tests/process_stress.rs` (writer processes killed with
+  SIGKILL over three rounds lose no logged change and leave no partial one;
+  maintenance amid four processes), `row_changes.rs` (sixteen change kinds
+  over three years with maintenance, and four concurrent sessions replayed
+  in commit order, match the year rewrite), `maintenance_run.rs`,
+  `hosted_connections.rs`, `storage_failures.rs` (an unwritable file fails
+  the change and changes nothing; a damaged file is reported), the Matrix
+  request race, and `nc-host` tests for crashed-turn recovery, sign-in during
+  a turn, and backups taken during writes. The stress, crash, maintenance and
+  hosted tests passed ten runs in a row; the workspace passes (3381 tests, no
+  warnings on Linux).
+- Soak (bean-void, 60 min, `nc-data/examples/soak.rs`): eight writer
+  processes changing a 25-empire campaign nonstop, a reader, maintenance
+  every 3 min (20 years, 0.2-1.6 s each) and a backup every minute (60, all
+  intact). About 107,000 changes, no writer failure, intact file and chains;
+  WAL at most 7 MB; database 97 MB after 20 years of history. Reader loads p50
+  39 ms, p99 60 ms. Changes p50 160 ms, p99 1.2 s, max 4.0 s: with eight
+  writers back to back, each change (about 20 ms on the late-game campaign)
+  queues behind the others; capacity is about 30 changes a second.
+- Not hardened (development only): `nc-host serve`'s worker, whose turn queue,
+  settings rewrite and roster handles race and which commits accepted turns
+  before the campaign save. Not done: the attended check of two browser
+  terminals keeping their orders through a turn.
+
 ### t121
 
 Package services, back up and restore campaigns, and exercise a private two-game
