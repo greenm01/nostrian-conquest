@@ -59,15 +59,13 @@ fn hidden_and_cancelled_mail_survives_database_reload_and_year_advance() {
     }];
     delete_report_blocks_for_viewer(&mut reports, &game.players, 1);
     let store = CampaignStore::open(dir.join("game.db")).unwrap();
-    store
-        .save_runtime_state_structured(3001, &game, &reports, &messages)
-        .unwrap();
+    store.save_year(3001, &game, &reports, &messages).unwrap();
     let reopened = CampaignStore::open(dir.join("game.db")).unwrap();
     let state = reopened.load_latest_runtime_state().unwrap().unwrap();
     assert_eq!(state.queued_mail, messages);
     assert_eq!(state.report_block_rows, reports);
     reopened
-        .save_runtime_state_structured(
+        .save_year(
             3001,
             &state.game_data,
             &state.report_block_rows,
@@ -93,7 +91,7 @@ fn hidden_and_cancelled_mail_survives_database_reload_and_year_advance() {
     game.conquest.game_year = 3002;
     let next_reports = carry_unread_report_blocks(&reports, vec![]);
     reopened
-        .save_runtime_state_structured(3001, &game, &next_reports, &messages)
+        .save_year(3001, &game, &next_reports, &messages)
         .unwrap();
     assert_eq!(
         reopened

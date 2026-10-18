@@ -524,7 +524,7 @@ fn apply_turn_batch_internal(
         submission.apply_to(&mut runtime.game_data, &mut runtime.queued_mail)?;
     }
 
-    store.save_runtime_state_structured(
+    store.save_year(
         runtime.game_year,
         &runtime.game_data,
         &runtime.report_block_rows,

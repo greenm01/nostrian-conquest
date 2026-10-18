@@ -33,7 +33,7 @@ fn run_maintenance(fixture_dir: &Path) {
     let mut runtime = latest_runtime_state(fixture_dir);
     nc_engine::run_maintenance_turn(&mut runtime.game_data).expect("maintenance should run");
     store
-        .save_runtime_state_structured(
+        .save_year(
             runtime.game_year,
             &runtime.game_data,
             &runtime.report_block_rows,

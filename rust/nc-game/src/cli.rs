@@ -1110,7 +1110,7 @@ mod tests {
             .expect("join player");
         nc_data::set_player_handle(&mut data.players[player - 1], alias);
         store
-            .save_runtime_state_structured(data.conquest.game_year, &data, &[], &[])
+            .save_year(data.conquest.game_year, &data, &[], &[])
             .expect("save runtime state");
     }
 
@@ -1783,7 +1783,7 @@ mod tests {
             .expect("snapshot exists");
         nc_engine::run_maintenance_turn(&mut state.game_data).expect("maintenance should run");
         store
-            .save_runtime_state_structured(
+            .save_year(
                 state.game_year,
                 &state.game_data,
                 &state.report_block_rows,

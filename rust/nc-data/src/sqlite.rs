@@ -9,16 +9,29 @@ use std::time::Duration;
 use rusqlite::{Connection, Transaction, TransactionBehavior};
 
 /// How long a connection waits for another process's write to finish.
-/// SQLite's wait is not fair, so a busy file can keep a writer waiting well
-/// past rusqlite's default 5 s.
 pub const BUSY_TIMEOUT: Duration = Duration::from_secs(30);
 
-/// A connection with foreign keys enforced and [`BUSY_TIMEOUT`]. It leaves
+/// How often a waiting connection tries the lock again. SQLite's own wait
+/// backs off to 100 ms between tries, so while others keep taking the lock
+/// one writer can wait seconds; trying every millisecond keeps the wait
+/// close to the time the writers ahead of it take (t205 soak).
+const BUSY_RETRY: Duration = Duration::from_millis(1);
+
+fn wait_for_lock(attempts: i32) -> bool {
+    if u128::try_from(attempts).unwrap_or(0) * BUSY_RETRY.as_micros() >= BUSY_TIMEOUT.as_micros() {
+        return false;
+    }
+    std::thread::sleep(BUSY_RETRY);
+    true
+}
+
+/// A connection with foreign keys enforced that waits up to [`BUSY_TIMEOUT`]
+/// for another process's write. It leaves
 /// the file's journal mode as it is, so opening a campaign only to read it
 /// changes nothing.
 pub fn open(path: &Path) -> rusqlite::Result<Connection> {
     let conn = Connection::open(path)?;
-    conn.busy_timeout(BUSY_TIMEOUT)?;
+    conn.busy_handler(Some(wait_for_lock))?;
     conn.execute_batch("PRAGMA foreign_keys = ON;")?;
     Ok(conn)
 }

@@ -58,7 +58,7 @@ fn campaign() -> TempStore {
         recipient_deleted: false,
     };
     store
-        .save_runtime_state_structured(
+        .save_year(
             data.conquest.game_year,
             &data,
             &[report(0, 0), report(2, 1)],
@@ -271,7 +271,7 @@ fn a_change_from_a_year_maintenance_has_closed_is_refused() {
         .expect("a snapshot");
     nc_engine::run_maintenance_turn(&mut state.game_data).expect("maintenance should run");
     temp.store
-        .save_runtime_state_structured(
+        .save_year(
             3000,
             &state.game_data,
             &state.report_block_rows,
@@ -384,7 +384,7 @@ fn random_play_from_many_sessions_loses_nothing() {
         stocked.game_data.planets[home].stardock.starbases = 2;
     }
     temp.store
-        .save_runtime_state_structured(
+        .save_year(
             3000,
             &stocked.game_data,
             &stocked.report_block_rows,

@@ -43,7 +43,7 @@ where
             None,
         );
     }
-    store.save_runtime_state_structured_with_intel(
+    store.save_year_with_intel(
         state.game_year,
         &state.game_data,
         &state.report_block_rows,

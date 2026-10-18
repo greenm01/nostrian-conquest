@@ -300,6 +300,6 @@ pub fn seed_campaign(store: &CampaignStore, players: u8) {
     let mut first = mail(1, 2, "first".into());
     first.year = 3000;
     store
-        .save_runtime_state_structured(3000, &data, &reports, &[first])
+        .save_year(3000, &data, &reports, &[first])
         .expect("seed store");
 }

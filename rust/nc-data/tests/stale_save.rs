@@ -35,7 +35,7 @@ fn store_at_year_3000() -> TempStore {
     let store = CampaignStore::open_default_in_dir(&dir).expect("open store");
     let data = build_seeded_initialized_game(4, 3000, 1515).expect("seeded game");
     store
-        .save_runtime_state_structured(data.conquest.game_year, &data, &[], &[])
+        .save_year(data.conquest.game_year, &data, &[], &[])
         .expect("seed store");
     TempStore { dir, store }
 }
@@ -52,7 +52,7 @@ fn load(store: &CampaignStore) -> CampaignRuntimeState {
 fn run_maintenance(store: &CampaignStore) -> Result<i64, CampaignStoreError> {
     let mut state = load(store);
     nc_engine::run_maintenance_turn(&mut state.game_data).expect("maintenance should run");
-    store.save_runtime_state_structured(
+    store.save_year(
         state.game_year,
         &state.game_data,
         &state.report_block_rows,
@@ -64,7 +64,7 @@ fn save_as_session(
     store: &CampaignStore,
     session: &CampaignRuntimeState,
 ) -> Result<i64, CampaignStoreError> {
-    store.save_runtime_state_structured(
+    store.save_year(
         session.game_year,
         &session.game_data,
         &session.report_block_rows,

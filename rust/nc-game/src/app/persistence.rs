@@ -6,6 +6,9 @@ use nc_data::{
 };
 
 use super::state::App;
+
+/// A save that waits longer than this for other sessions is logged (t205).
+const SLOW_SAVE: std::time::Duration = std::time::Duration::from_secs(1);
 use crate::reports::has_visible_runtime_reports;
 use crate::screen::CommandMenu;
 
@@ -122,10 +125,24 @@ impl App {
             .change(self.game_data.conquest.game_year, apply);
         match changed {
             Ok((value, committed)) => {
+                if committed.waited > SLOW_SAVE {
+                    tracing::warn!(
+                        player = self.player.record_index_1_based,
+                        waited_ms = committed.waited.as_millis(),
+                        "save waited for other sessions"
+                    );
+                }
                 self.adopt_committed_change(committed)?;
                 Ok(value)
             }
             Err(err) => {
+                if err.downcast_ref::<CampaignStoreError>().is_some() {
+                    tracing::warn!(
+                        player = self.player.record_index_1_based,
+                        error = %err,
+                        "save failed"
+                    );
+                }
                 match err.downcast_ref::<CampaignStoreError>() {
                     Some(CampaignStoreError::HostingPaused) => {
                         self.concurrent_notice_due = Some(err.to_string());

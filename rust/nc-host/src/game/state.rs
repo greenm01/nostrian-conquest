@@ -37,13 +37,7 @@ pub fn initialize_runtime_state(
             merge_player_intel_from_runtime(&game_data, viewer_empire_id, year, None, None)
         })
         .collect::<Vec<_>>();
-    campaign_store.save_runtime_state_structured_with_intel(
-        year,
-        &game_data,
-        &[],
-        &[],
-        &intel_by_viewer,
-    )?;
+    campaign_store.save_year_with_intel(year, &game_data, &[], &[], &intel_by_viewer)?;
     campaign_store.save_campaign_settings(&CampaignSettings::new(slug, game_name))?;
 
     Ok(game_data)

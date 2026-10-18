@@ -172,7 +172,7 @@ pub(crate) fn seed_player1_tui_stress(
     replace_player_one_reports(&mut state, game_year);
     replace_player_one_mail(&mut state, game_year);
 
-    store.save_runtime_state_structured_with_intel(
+    store.save_year_with_intel(
         game_year,
         &state.game_data,
         &state.report_block_rows,

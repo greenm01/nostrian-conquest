@@ -25,6 +25,8 @@ pub struct CommittedChange {
     /// The campaign's revision after this change; changes commit in its
     /// order.
     pub revision: i64,
+    /// How long the change waited for other sessions' changes to finish.
+    pub waited: std::time::Duration,
     pub campaign_seed: u64,
     pub state: RuntimeChange,
 }
@@ -85,9 +87,11 @@ impl CampaignStore {
         E: From<CampaignStoreError>,
     {
         let mut conn = self.write_connection()?;
+        let waiting = std::time::Instant::now();
         let tx = conn
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
             .map_err(CampaignStoreError::Sql)?;
+        let waited = waiting.elapsed();
         super::runtime::refuse_if_superseded(&tx, loaded_year)?;
         if super::hosting::writes_blocked(&tx)? {
             return Err(CampaignStoreError::HostingPaused.into());
@@ -157,6 +161,7 @@ impl CampaignStore {
             CommittedChange {
                 snapshot_id,
                 revision,
+                waited,
                 campaign_seed,
                 state,
             },

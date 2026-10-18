@@ -110,7 +110,7 @@ fn setup_classic_probe_planets(target: &Path) {
         })
         .collect::<Vec<_>>();
     store
-        .save_runtime_state_structured_with_intel(
+        .save_year_with_intel(
             game_data.conquest.game_year,
             &game_data,
             &state.report_block_rows,
@@ -266,7 +266,7 @@ fn db_import_refuses_a_directory_older_than_the_stored_year() {
     state.game_data.conquest.game_year += 1;
     let newer_year = state.game_data.conquest.game_year;
     store
-        .save_runtime_state_structured(
+        .save_year(
             newer_year,
             &state.game_data,
             &state.report_block_rows,
@@ -317,7 +317,7 @@ fn db_export_says_the_recovery_state_of_crippled_hulls_is_lost() {
     state.game_data.fleets[0].crippled.destroyers.fresh = 2;
     state.game_data.fleets[1].crippled.cruisers.turns[0] = 1;
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,
@@ -360,7 +360,7 @@ fn db_export_says_the_sighting_memory_is_not_written() {
     state.game_data.sightings.note(1, Coords::new(7, 9), 1, 2);
     state.game_data.sightings.note(2, Coords::new(7, 9), 1, 1);
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,

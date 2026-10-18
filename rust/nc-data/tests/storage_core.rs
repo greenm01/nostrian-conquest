@@ -66,7 +66,7 @@ fn classic_files(game_data: &CoreGameData) -> [Vec<u8>; 7] {
 
 fn store_round_trip(store: &CampaignStore, game_data: &CoreGameData) -> CoreGameData {
     let snapshot_id = store
-        .save_runtime_state_structured(game_data.conquest.game_year, game_data, &[], &[])
+        .save_year(game_data.conquest.game_year, game_data, &[], &[])
         .expect("save snapshot");
     store
         .load_snapshot_game_data(snapshot_id)

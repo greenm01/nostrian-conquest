@@ -61,7 +61,7 @@ fn run_maint_rust_with_planted_build_slot(
     let mut game_data = state.game_data;
     game_data.planets[planet_idx].build_queue[0] = slot;
     store
-        .save_runtime_state_structured(
+        .save_year(
             game_data.conquest.game_year,
             &game_data,
             &state.report_block_rows,

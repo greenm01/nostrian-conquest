@@ -67,14 +67,18 @@ impl CampaignStore {
         }))
     }
 
-    /// Save a runtime snapshot for `game_data`'s year.
+    /// Save the whole of `game_data`'s year as a new snapshot: for
+    /// maintenance, import and game creation only. A player's change goes
+    /// through [`CampaignStore::change`], which keeps other players' changes
+    /// made meanwhile; a whole-year save from a copy loaded earlier would undo
+    /// them (t205).
     ///
-    /// Every `save_runtime_state_*` method takes `loaded_year`, the game year
+    /// Every `save_year*` method takes `loaded_year`, the game year
     /// the caller loaded its state from (the year being written when it
     /// creates state from nothing). If a newer snapshot exists, nothing is
     /// written and the save fails with [`CampaignStoreError::StaleSnapshot`].
     /// Maintenance loads year Y and writes Y + 1, so it is never refused.
-    pub fn save_runtime_state_structured(
+    pub fn save_year(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,
@@ -95,7 +99,7 @@ impl CampaignStore {
         )
     }
 
-    pub fn save_runtime_state_structured_with_intel(
+    pub fn save_year_with_intel(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,
@@ -103,7 +107,7 @@ impl CampaignStore {
         queued_mail: &[QueuedPlayerMail],
         planet_intel_by_viewer: &[BTreeMap<usize, PlanetIntelSnapshot>],
     ) -> Result<i64, CampaignStoreError> {
-        self.save_runtime_state_structured_with_intel_and_seed(
+        self.save_year_with_intel_and_seed(
             loaded_year,
             game_data,
             report_block_rows,
@@ -113,7 +117,7 @@ impl CampaignStore {
         )
     }
 
-    pub fn save_runtime_state_structured_with_intel_and_seed(
+    pub fn save_year_with_intel_and_seed(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,
@@ -136,7 +140,7 @@ impl CampaignStore {
         )
     }
 
-    pub fn save_runtime_state_structured_with_intel_and_activity(
+    pub fn save_year_with_intel_and_activity(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,
@@ -159,7 +163,7 @@ impl CampaignStore {
         )
     }
 
-    pub fn save_runtime_state_structured_with_intel_activity_and_war_stats(
+    pub fn save_year_with_intel_activity_and_war_stats(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,
@@ -183,7 +187,7 @@ impl CampaignStore {
         )
     }
 
-    pub fn save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
+    pub fn save_year_with_intel_activity_lifecycle_and_war_stats(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,
@@ -209,7 +213,7 @@ impl CampaignStore {
         )
     }
 
-    pub fn save_runtime_state_structured_with_intel_activity_and_lifecycle(
+    pub fn save_year_with_intel_activity_and_lifecycle(
         &self,
         loaded_year: u16,
         game_data: &CoreGameData,

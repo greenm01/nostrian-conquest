@@ -284,6 +284,21 @@ impl CampaignStore {
         store
     }
 
+    /// Whether the campaign file is intact, by SQLite's `quick_check`; a
+    /// damaged file is reported for the sysop rather than played on (t205).
+    pub fn check_integrity(&self) -> Result<(), CampaignStoreError> {
+        let result: String = self
+            .connection()?
+            .query_row("PRAGMA quick_check", [], |row| row.get(0))?;
+        if result != "ok" {
+            return Err(CampaignStoreError::InvalidState(format!(
+                "the campaign file {} is damaged ({result}); tell the sysop",
+                self.path.display()
+            )));
+        }
+        Ok(())
+    }
+
     /// The campaign's revision, raised by every save (t204).
     pub fn latest_revision(&self) -> Result<i64, CampaignStoreError> {
         metadata::load_revision(&self.connection()?)

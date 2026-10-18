@@ -201,7 +201,7 @@ fn seed_one_campaign(
 
     let store = CampaignStore::open_default_in_dir(dir)?;
     let game_data = build_seeded_new_game(profile.player_count, 3000, seed)?;
-    store.save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])?;
+    store.save_year(game_data.conquest.game_year, &game_data, &[], &[])?;
     store.save_campaign_settings(&CampaignSettings::new(profile.slug, &profile.game_name()))?;
 
     join_helm_lab_empires(dir, profile.player_count)?;

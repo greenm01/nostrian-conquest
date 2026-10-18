@@ -328,7 +328,7 @@ impl CampaignStore {
             changed = true;
         }
         if changed {
-            self.save_runtime_state_structured(
+            self.save_year(
                 runtime_state.game_year,
                 &game_data,
                 &runtime_state.report_block_rows,

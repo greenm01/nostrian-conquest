@@ -143,7 +143,7 @@ fn the_store_round_trips_sighting_memory_per_snapshot() {
     state.game_data.sightings.note(1, HERE, 1, 3);
     state.game_data.sightings.note(2, HERE, 0, 1);
     let first = store
-        .save_runtime_state_structured(year, &state.game_data, &[], &[])
+        .save_year(year, &state.game_data, &[], &[])
         .expect("save with memory");
     assert_eq!(
         store
@@ -164,7 +164,7 @@ fn the_store_round_trips_sighting_memory_per_snapshot() {
     later.conquest.game_year = year + 1;
     later.sightings.forget(1, HERE, 1);
     let second = store
-        .save_runtime_state_structured(year + 1, &later, &[], &[])
+        .save_year(year + 1, &later, &[], &[])
         .expect("save the next year");
     let loaded = store.load_snapshot_game_data(second).expect("load");
     assert_eq!(loaded.sightings, later.sightings);
@@ -201,7 +201,7 @@ fn a_classic_export_drops_sighting_memory_and_leaves_the_store_alone() {
         .expect("runtime snapshot");
     state.game_data.sightings.note(1, HERE, 1, 2);
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,

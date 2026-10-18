@@ -34,7 +34,7 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
         .expect("player two join should succeed");
 
     store
-        .save_runtime_state_structured(game.conquest.game_year, &game, &[], &[])
+        .save_year(game.conquest.game_year, &game, &[], &[])
         .expect("save initial snapshot");
 
     let initial_year = game.conquest.game_year;
@@ -68,7 +68,7 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
     game.planets[captured_planet].years_under_owner = 2;
 
     store
-        .save_runtime_state_structured(game.conquest.game_year, &game, &[], &[])
+        .save_year(game.conquest.game_year, &game, &[], &[])
         .expect("save second snapshot");
 
     let latest_empire_one = store
@@ -82,7 +82,7 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
     game.planets[captured_planet].years_under_owner = 2;
 
     store
-        .save_runtime_state_structured(game.conquest.game_year, &game, &[], &[])
+        .save_year(game.conquest.game_year, &game, &[], &[])
         .expect("save third snapshot");
 
     let latest_empire_one = store

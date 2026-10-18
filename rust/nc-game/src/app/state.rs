@@ -138,6 +138,7 @@ impl App {
             .clone()
             .unwrap_or_else(|| game_dir.join("exports"));
         let campaign_store = CampaignStore::open_default_in_dir(&game_dir)?;
+        campaign_store.check_integrity()?;
         let load_latest = || -> Result<_, Box<dyn std::error::Error>> {
             Ok(campaign_store.load_latest_runtime_state()?.ok_or(
                 "campaign store has no snapshots; initialize the campaign with nc-sysop first",

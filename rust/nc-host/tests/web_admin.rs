@@ -98,7 +98,7 @@ fn independent_games_atomic_seats_and_lifecycle() {
     assert!(
         store
             .expecting_revision(state.revision)
-            .save_runtime_state_structured(state.game_year, &state.game_data, &[], &[])
+            .save_year(state.game_year, &state.game_data, &[], &[])
             .is_err()
     );
 }
@@ -446,14 +446,12 @@ fn simultaneous_snapshot_writers_get_one_winner_and_one_conflict() {
                 state.game_data.players[player].autopilot =
                     !state.game_data.players[player].autopilot;
                 barrier.wait();
-                store
-                    .expecting_revision(state.revision)
-                    .save_runtime_state_structured(
-                        state.game_year,
-                        &state.game_data,
-                        &state.report_block_rows,
-                        &state.queued_mail,
-                    )
+                store.expecting_revision(state.revision).save_year(
+                    state.game_year,
+                    &state.game_data,
+                    &state.report_block_rows,
+                    &state.queued_mail,
+                )
             })
         })
         .collect::<Vec<_>>();
@@ -519,7 +517,7 @@ fn maintenance_cannot_overwrite_a_newer_player_snapshot() {
     player.game_data.players[0].autopilot = !player.game_data.players[0].autopilot;
     store
         .expecting_revision(player.revision)
-        .save_runtime_state_structured(
+        .save_year(
             player.game_year,
             &player.game_data,
             &player.report_block_rows,

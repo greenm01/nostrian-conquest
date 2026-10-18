@@ -135,7 +135,7 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
         .expect("runtime snapshot");
     set_empire_name(&mut state.game_data.players[0], "Runtime Empire");
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,
@@ -185,7 +185,7 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
         [1, host_number]
     );
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,
@@ -240,7 +240,7 @@ fn sqlite_store_round_trips_escape_episodes_and_classic_export_drops_them() {
     state.game_data.fleets[0].escape = Some(episode);
     assert_eq!(state.game_data.fleets[1].escape, None);
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,
@@ -301,7 +301,7 @@ fn sqlite_store_round_trips_crippled_hulls_and_classic_export_writes_whole_hulls
     state.game_data.bases[0].crippled = base_damage;
     let ships = state.game_data.fleets[0].ships;
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,
@@ -359,7 +359,7 @@ fn sqlite_store_persists_explicit_campaign_seed() {
     assert_eq!(initial.campaign_seed, expected_seed);
 
     store
-        .save_runtime_state_structured(
+        .save_year(
             initial.game_data.conquest.game_year,
             &initial.game_data,
             &initial.report_block_rows,
@@ -390,7 +390,7 @@ fn sqlite_store_generates_and_reuses_campaign_seed() {
     assert_ne!(initial.campaign_seed, 0);
 
     store
-        .save_runtime_state_structured(
+        .save_year(
             initial.game_data.conquest.game_year,
             &initial.game_data,
             &initial.report_block_rows,
@@ -422,7 +422,7 @@ fn sqlite_store_persists_the_planet_scorch_flag() {
     initial.game_data.planets[6].scorch_earth = true;
 
     store
-        .save_runtime_state_structured(
+        .save_year(
             initial.game_data.conquest.game_year,
             &initial.game_data,
             &initial.report_block_rows,

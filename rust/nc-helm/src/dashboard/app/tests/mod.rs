@@ -4269,7 +4269,7 @@ fn dash_app_with_starbase_store() -> DashApp {
         .latest_player_lifecycle_states(game_data.conquest.player_count)
         .expect("default player lifecycle");
     store
-        .save_runtime_state_structured_with_intel_and_activity(
+        .save_year_with_intel_and_activity(
             game_data.conquest.game_year,
             &game_data,
             &[],
@@ -4332,7 +4332,7 @@ fn dash_app_with_store() -> DashApp {
         .latest_player_lifecycle_states(game_data.conquest.player_count)
         .expect("default player lifecycle");
     store
-        .save_runtime_state_structured_with_intel_and_activity(
+        .save_year_with_intel_and_activity(
             game_data.conquest.game_year,
             &game_data,
             &[],

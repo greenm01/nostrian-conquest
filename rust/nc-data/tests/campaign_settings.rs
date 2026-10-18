@@ -29,7 +29,7 @@ fn seeded_store(prefix: &str) -> (PathBuf, CampaignStore, CoreGameData) {
     let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
     let game_data = build_seeded_new_game(4, 3000, 1515).expect("seeded game");
     store
-        .save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])
+        .save_year(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("save runtime state");
     (root, store, game_data)
 }
@@ -167,7 +167,7 @@ fn latest_player_activity_states_derives_from_last_run_year_when_sidecar_missing
     let (root, store, mut game_data) = seeded_store("nc-data-settings-activity-derive");
     game_data.players[0].last_year_on = 2998;
     store
-        .save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])
+        .save_year(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("save runtime state");
 
     let conn = rusqlite::Connection::open(root.join("ncgame.db")).expect("open sqlite db");

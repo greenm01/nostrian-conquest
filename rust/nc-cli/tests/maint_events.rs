@@ -29,7 +29,7 @@ fn run_maint_rust_with_planted_state(
     let mut game_data = state.game_data;
     plant(&mut game_data);
     store
-        .save_runtime_state_structured(
+        .save_year(
             game_data.conquest.game_year,
             &game_data,
             &state.report_block_rows,

@@ -13,7 +13,7 @@ fn run_maintenance(store: &CampaignStore) {
     let mut state = latest(store);
     nc_engine::run_maintenance_turn(&mut state.game_data).expect("maintenance should run");
     store
-        .save_runtime_state_structured(
+        .save_year(
             state.game_year,
             &state.game_data,
             &state.report_block_rows,

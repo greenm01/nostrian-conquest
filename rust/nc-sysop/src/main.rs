@@ -192,7 +192,7 @@ fn run_new_game(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         (player_count, seed.unwrap_or_else(generate_campaign_seed))
     };
     let game_data = build_seeded_new_game(player_count, 3000, seed)?;
-    store.save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])?;
+    store.save_year(game_data.conquest.game_year, &game_data, &[], &[])?;
     store.save_campaign_settings(&CampaignSettings::new(&slug, &game_name))?;
     println!(
         "Initialized new game at: {} (name={}, players={}, year=3000, seed={})",

@@ -32,7 +32,7 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
         .map(|seat| seat.planet_intel.clone())
         .collect();
     store
-        .save_runtime_state_structured_with_intel_and_seed(
+        .save_year_with_intel_and_seed(
             start.conquest.game_year,
             start,
             &[],
@@ -135,7 +135,7 @@ fn ai_seats_refuse_a_campaign_that_is_not_four_players() {
         .map(|seat| seat.planet_intel.clone())
         .collect();
     store
-        .save_runtime_state_structured_with_intel_and_seed(
+        .save_year_with_intel_and_seed(
             start.conquest.game_year,
             start,
             &[],

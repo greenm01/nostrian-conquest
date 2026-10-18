@@ -167,7 +167,7 @@ fn runtime_store_persists_war_stats_rows() {
         .build_initialized_baseline()
         .expect("baseline");
     store
-        .save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])
+        .save_year(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("initial save");
 
     let initial = store
@@ -194,7 +194,7 @@ fn runtime_store_persists_war_stats_rows() {
     let intel = vec![BTreeMap::new(); game_data.conquest.player_count as usize];
     let activity = default_player_activity_states(game_data.conquest.player_count);
     store
-        .save_runtime_state_structured_with_intel_activity_and_war_stats(
+        .save_year_with_intel_activity_and_war_stats(
             game_data.conquest.game_year,
             &game_data,
             &[],

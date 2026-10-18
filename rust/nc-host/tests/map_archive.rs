@@ -50,7 +50,7 @@ fn bundle_is_authorized_and_all_formats_share_the_player_snapshot() {
     }
     store
         .expecting_revision(snapshot.revision)
-        .save_runtime_state_structured(
+        .save_year(
             snapshot.game_year,
             &snapshot.game_data,
             &snapshot.report_block_rows,

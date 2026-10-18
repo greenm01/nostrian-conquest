@@ -25,7 +25,7 @@ fn local_dashboard_launch_opens_hosted_route_without_boot_effects() {
         .build_initialized_baseline()
         .expect("baseline game");
     store
-        .save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])
+        .save_year(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("save runtime state");
 
     let (app, effects) = App::new_local_dashboard(&game_dir).expect("build local dashboard app");

@@ -2069,7 +2069,7 @@ fn defeated_player_with_pending_reports_uses_returning_review_flow() {
     player_lifecycle_states[0].terminal_outcome = nc_data::TerminalOutcome::Defeated;
     player_lifecycle_states[0].terminal_review_consumed = false;
     store
-        .save_runtime_state_structured_with_intel_activity_and_lifecycle(
+        .save_year_with_intel_activity_and_lifecycle(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,
@@ -2137,7 +2137,7 @@ fn first_time_join_does_not_offer_spent_civil_disorder_seats() {
         .latest_player_activity_states(player_count)
         .expect("load player activity");
     store
-        .save_runtime_state_structured_with_intel_and_activity(
+        .save_year_with_intel_and_activity(
             state.game_data.conquest.game_year,
             &state.game_data,
             &state.report_block_rows,

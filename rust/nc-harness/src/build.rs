@@ -90,7 +90,7 @@ pub fn save_built_scenario(
 ) -> Result<SavedScenarioReport, HarnessError> {
     fs::create_dir_all(target_dir)?;
     let store = CampaignStore::open_default_in_dir(target_dir)?;
-    store.save_runtime_state_structured(
+    store.save_year(
         built.game_data.conquest.game_year,
         &built.game_data,
         &built.report_block_rows,

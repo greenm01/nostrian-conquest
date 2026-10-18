@@ -144,7 +144,7 @@ impl CampaignMaintenance {
         apply_maintenance_events_to_player_war_stats(&mut self.player_war_stats, &self.events);
         store
             .expecting_revision(self.start_revision)
-            .save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
+            .save_year_with_intel_activity_lifecycle_and_war_stats(
                 self.start_year,
                 &self.game_data,
                 &report_block_rows,

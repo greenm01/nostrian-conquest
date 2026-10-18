@@ -22,9 +22,7 @@ fn campaign(name: &str) -> (TempDir, CampaignStore) {
     std::fs::create_dir_all(&dir.0).expect("temp dir");
     let store = CampaignStore::open_default_in_dir(&dir.0).expect("open store");
     let data = build_seeded_initialized_game(4, 3000, 1515).expect("seeded game");
-    store
-        .save_runtime_state_structured(3000, &data, &[], &[])
-        .expect("seed store");
+    store.save_year(3000, &data, &[], &[]).expect("seed store");
     (dir, store)
 }
 
