@@ -100,7 +100,7 @@ const STARBASE_LINES: [&str; 8] = [
 const PLANET_LINES: [&str; 14] = [
     "<M> - mass commission ships and starbases waiting in stardock",
     "<B> - open the build menu to spend production on local construction",
-    "<C> - open the commission menu for fine-grained ground-defense control",
+    "<C> - commission chosen ships from one planet's stardock into a new fleet",
     "<D> - display a detailed list of your planets and their economies",
     "<?> - show Planet Command help",
     "<I> - display information you know about any planet",
