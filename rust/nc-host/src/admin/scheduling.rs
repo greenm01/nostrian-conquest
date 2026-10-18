@@ -93,7 +93,7 @@ pub(super) fn configure(root: &Path, game: &str, zone: Option<&str>) -> Result<V
     let blocked = runtime.hosting_writes_blocked()?;
     runtime.set_hosting_write_blocked(true)?;
     let result = (|| -> Result<()> {
-        let tx = store.connection().unchecked_transaction()?;
+        let tx = nc_data::sqlite::write_transaction(store.connection())?;
         set_option(&tx, "schedule", zone.unwrap_or("manual"))?;
         let due = if meta.status == "running" { next } else { None };
         tx.execute("UPDATE game_metadata SET maintenance_enabled=?1,maintenance_next_due_unix_seconds=?2 WHERE id=?3",params![due.is_some(),due,game])?;

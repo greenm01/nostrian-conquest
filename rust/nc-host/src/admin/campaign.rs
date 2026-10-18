@@ -143,7 +143,7 @@ pub(super) fn transition(
     let runtime = CampaignStore::open_default_in_dir(&dir)?;
     runtime.set_hosting_write_blocked(true)?;
     let conn = store.connection();
-    let tx = conn.unchecked_transaction()?;
+    let tx = nc_data::sqlite::write_transaction(&conn)?;
     tx.execute("UPDATE game_metadata SET status=?1,maintenance_enabled=?2,
         maintenance_next_due_unix_seconds=?3,maintenance_interval_minutes=COALESCE(?4,maintenance_interval_minutes),
         recruiting=?5,lobby_visibility=?6,updated_at=?7 WHERE id=?8",

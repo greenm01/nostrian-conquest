@@ -67,3 +67,46 @@ fn only_matrix_identities_can_be_requested() {
     let conn = store();
     assert!(request(&conn, &AccountIdentity::Discord("123".into()), T).is_err());
 }
+
+/// The bridge queues requests while the bot takes them, each through its
+/// own connection to one file (t205): every request is delivered once.
+#[test]
+fn requests_queued_while_the_bot_takes_them_are_each_delivered_once() {
+    let dir = std::env::temp_dir().join(format!("nc-matrix-requests-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join(".web-sessions.db");
+    ensure(&nc_data::sqlite::open_for_writes(&path).unwrap()).unwrap();
+    let bridges: Vec<_> = (0..4)
+        .map(|bridge| {
+            let path = path.clone();
+            std::thread::spawn(move || {
+                let conn = nc_data::sqlite::open_for_writes(&path).unwrap();
+                for n in 0..50 {
+                    let account = user(&format!("b{bridge}-{n}"));
+                    assert_eq!(request(&conn, &account, T).unwrap(), Request::Queued);
+                }
+            })
+        })
+        .collect();
+    let bot = {
+        let path = path.clone();
+        std::thread::spawn(move || {
+            let conn = nc_data::sqlite::open_for_writes(&path).unwrap();
+            let mut taken = Vec::new();
+            while taken.len() < 200 {
+                taken.extend(take_requests(&conn, T + 1).unwrap());
+            }
+            taken
+        })
+    };
+    for bridge in bridges {
+        bridge.join().unwrap();
+    }
+    let taken = bot.join().unwrap();
+    let mut keys: Vec<String> = taken.iter().map(|a| a.storage_key()).collect();
+    keys.sort();
+    keys.dedup();
+    assert_eq!(keys.len(), 200, "each request delivered once");
+    assert_eq!(taken.len(), 200);
+    let _ = std::fs::remove_dir_all(&dir);
+}

@@ -169,7 +169,7 @@ pub(super) fn run(root: &Path, game: &str, expected_year: u16, request_id: &str)
 
 fn finalize(store: &HostedStore, game: &str, request_id: &str, year: u16) -> Result<()> {
     let settings = hosted::get_settings(store.connection(), game)?;
-    let tx = store.connection().unchecked_transaction()?;
+    let tx = nc_data::sqlite::write_transaction(store.connection())?;
     let changed = tx.execute(
         "UPDATE web_runs SET state='done',result=?1 WHERE request_id=?2 AND state!='done'",
         params![year.to_string(), request_id],

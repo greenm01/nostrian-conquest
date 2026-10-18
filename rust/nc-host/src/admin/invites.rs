@@ -41,7 +41,7 @@ pub(super) fn create(root: &Path, game: &str, count: u8) -> Result<Value> {
     if seats.len() < usize::from(count) {
         return Err("not enough unclaimed, unreserved seats".into());
     }
-    let tx = conn.unchecked_transaction()?;
+    let tx = nc_data::sqlite::write_transaction(&conn)?;
     let mut issued = Vec::new();
     for seat in seats.into_iter().take(usize::from(count)) {
         let code = loop {

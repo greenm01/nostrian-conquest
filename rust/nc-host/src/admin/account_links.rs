@@ -56,7 +56,7 @@ pub(super) fn change(
             );
         }
     }
-    let tx = conn.unchecked_transaction()?;
+    let tx = nc_data::sqlite::write_transaction(&conn)?;
     if link {
         tx.execute(
             "INSERT INTO web_seats(seat,account) VALUES (?1,?2)",

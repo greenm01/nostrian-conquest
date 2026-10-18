@@ -63,7 +63,7 @@ pub fn issue(
     if !matches!(account, AccountIdentity::Matrix(_)) {
         return Err("Matrix sign-in codes require a Matrix identity".into());
     }
-    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    let tx = crate::sqlite::write_transaction(&conn).map_err(|e| e.to_string())?;
     tx.execute("DELETE FROM matrix_login_codes WHERE expires<=?1", [now])
         .map_err(|e| e.to_string())?;
     let last: Option<i64> = tx

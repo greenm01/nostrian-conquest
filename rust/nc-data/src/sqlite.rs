@@ -6,7 +6,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use rusqlite::Connection;
+use rusqlite::{Connection, Transaction, TransactionBehavior};
 
 /// How long a connection waits for another process's write to finish.
 /// SQLite's wait is not fair, so a busy file can keep a writer waiting well
@@ -33,6 +33,13 @@ pub fn open_for_writes(path: &Path) -> rusqlite::Result<Connection> {
     })?;
     conn.execute_batch("PRAGMA synchronous = NORMAL;")?;
     Ok(conn)
+}
+
+/// A write transaction on a shared connection, taking the write lock at once
+/// (`BEGIN IMMEDIATE`), so a transaction that reads before it writes waits
+/// for other writers instead of failing when it comes to write.
+pub fn write_transaction(conn: &Connection) -> rusqlite::Result<Transaction<'_>> {
+    Transaction::new_unchecked(conn, TransactionBehavior::Immediate)
 }
 
 /// Add `column` to `table` with `definition` unless it is already there.

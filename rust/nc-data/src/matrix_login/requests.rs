@@ -33,7 +33,7 @@ pub fn request(conn: &Connection, account: &AccountIdentity, now: i64) -> Result
     if !matches!(account, AccountIdentity::Matrix(_)) {
         return Err("Matrix sign-in requests require a Matrix identity".into());
     }
-    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    let tx = crate::sqlite::write_transaction(&conn).map_err(|e| e.to_string())?;
     tx.execute(
         "DELETE FROM matrix_login_requests WHERE requested<=?1",
         [now - REQUEST_COOLDOWN_SECS],
@@ -72,7 +72,7 @@ pub fn request(conn: &Connection, account: &AccountIdentity, now: i64) -> Result
 /// Claims waiting requests for delivery. Each is returned once; its row stays
 /// until the cooldown ends so the same ID cannot be requested again sooner.
 pub fn take_requests(conn: &Connection, now: i64) -> rusqlite::Result<Vec<AccountIdentity>> {
-    let tx = conn.unchecked_transaction()?;
+    let tx = crate::sqlite::write_transaction(&conn)?;
     let accounts = tx
         .prepare(
             "UPDATE matrix_login_requests SET pending=0 WHERE pending=1 RETURNING account,requested",

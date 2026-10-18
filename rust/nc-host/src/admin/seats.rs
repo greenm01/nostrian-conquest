@@ -97,7 +97,7 @@ pub(super) fn join(
     if ai_seats.contains(&seat) {
         return Err(format!("seat {seat} is played by the AI").into());
     }
-    let tx = store.connection().unchecked_transaction()?;
+    let tx = nc_data::sqlite::write_transaction(store.connection())?;
     if replacement.is_some() {
         invites::revoke_seat(&tx, seat)?;
         handles::unlock(&tx, seat)?;
