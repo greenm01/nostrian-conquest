@@ -1824,6 +1824,35 @@ Most destroyers already fight under cover, so no commissioning change is
 needed. The next suspect is weights tuned for a cruiser fleet: both arms
 are retuned under t206 (below).
 
+**Mixed hulls adopted under t206 (owner's bar, 2026-10-18).** The owner set
+the bar: adopt if the mixed executor does not lose to a cruiser executor
+tuned the same way, and keep battleships out of the line this round. Both
+arms were retuned from the land-grab style (`tune_executor --against-default`,
+30 generations of 24 candidates, 64 fresh maps a generation, 100 years):
+the cruiser arm on the Mac mini, the mixed arm on bean-void with
+`mixed_hulls` on and the battleship weight pinned at 0.
+
+| Weight | Cruiser retune | Mixed retune |
+| --- | ---: | ---: |
+| cruiser | 0.80 | 0.26 |
+| destroyer | 0.33 | 0.32 |
+| battleship | 0.05 | 0 (pinned) |
+| attack ratio | 3.17 | 3.74 |
+| scouts / starbases | 0.0 / 0.07 | 0.21 / 0.44 |
+
+The cruiser arm builds only its largest weight, so its destroyer weight
+has no effect. Paired, each against three default seats, 1,024 maps from
+1500000 (`executor_matches --weights mixed --baseline cruiser --paired`):
+the mixed retune wins 0.272 against 0.284 at 60 years (-0.012 ± 0.018) and
+0.244 against 0.263 at 100 (-0.020 ± 0.018). Neither difference is
+distinct from zero, so mixed hulls pass. `Doctrine::CURRENT` has
+`mixed_hulls` on, and the mixed retune is `Weights::TUNED` and the
+land-grab style, whose bounds now pin battleships at 0 and keep destroyers
+at 0.1 or more (`dc979f43`). The executor builds for the network seat, so
+the deployed agent's fleets mix too. The seat fixtures' games were
+re-recorded; `tiny.onnx` stays the pre-t190 graph that tests old inputs.
+The rusher and turtle are retuned next under the same doctrine.
+
 ### t203
 
 Early warning: pickets on the approaches, threats tracked from what the
