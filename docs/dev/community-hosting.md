@@ -258,9 +258,10 @@ pause or maintenance ends its authorization; active sessions check before input
 and every five seconds. A terminal has a thirty-minute maximum and a five-minute
 idle timeout. It remains 80x25. The header links back to the game list.
 
-Same-year stale saves fail and reload instead of overwriting another player's
-orders. A player must retry the rejected action. A new-year stale session must
-log in again. A paused action is discarded, not saved later on resume.
+Players of one game can play at the same time. Each change applies to the
+latest saved state in one database transaction, so no player's change undoes
+another's. A session that loaded before maintenance must log in again. A paused
+action is discarded, not saved later on resume.
 
 ## Recovery and acceptance
 

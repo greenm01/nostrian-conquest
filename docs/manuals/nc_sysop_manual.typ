@@ -505,6 +505,12 @@ played through door mode also ends the session after
 `session_max_idle_minutes` without a keypress. BBS campaigns have no idle
 setting; the time limit bounds an abandoned session instead.
 
+Players of one campaign can be in sessions at the same time. Each change a
+player makes is applied to the latest saved state and saved in one database
+transaction, so no player's change undoes another's, and each session then
+shows the others' changes too. The same holds for `nc-game submit-turn` and
+for `nc-helm` with a campaign store.
+
 A session that stays open across a maintenance run cannot save into the
 finished year. Its next save is refused, and the caller is told "Maintenance
 has run; your last change was not saved. Log in again." In door mode `nc-door`

@@ -298,7 +298,9 @@ took place. You need not be online when maintenance runs. The orders you give
 stand until it resolves them, and a new order replaces the old one.
 
 The pace is deliberate. Players log in on their own schedules, which leaves
-time to plan, to bargain, and to read the map.
+time to plan, to bargain, and to read the map. Other players can be logged in
+at the same time as you. Each change you make is saved at once, and no
+player's change ever undoes another's.
 
 #admonition("NOTE")[If maintenance runs while you are logged in, the game cannot save your next change. The menu notice line says: "Maintenance has run; your last change was not saved. Log in again." Log in again to carry on. In a BBS door the session ends and returns you to the BBS.]
 
