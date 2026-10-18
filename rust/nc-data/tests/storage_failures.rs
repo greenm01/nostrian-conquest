@@ -2,7 +2,6 @@
 //! campaign is left as it was; a damaged file is reported before anyone
 //! plays on it (t205).
 
-use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 use nc_data::{CampaignStore, CampaignStoreError};
@@ -29,9 +28,43 @@ fn campaign(name: &str) -> (TempDir, CampaignStore) {
     (dir, store)
 }
 
-fn set_mode(path: &std::path::Path, mode: u32) {
-    if path.exists() {
-        std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode)).expect("chmod");
+/// Make the campaign folder and its database files unwritable, or writable
+/// again. Unix uses mode bits, the folder included, so SQLite cannot create
+/// a journal; Windows has only the read-only attribute, which it honours on
+/// files but not on folders.
+fn set_unwritable(dir: &std::path::Path, files: &[PathBuf], unwritable: bool) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let set = |path: &std::path::Path, mode| {
+            if path.exists() {
+                std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode))
+                    .expect("chmod");
+            }
+        };
+        let (file_mode, dir_mode) = if unwritable {
+            (0o444, 0o555)
+        } else {
+            (0o644, 0o755)
+        };
+        if !unwritable {
+            set(dir, dir_mode);
+        }
+        for file in files {
+            set(file, file_mode);
+        }
+        if unwritable {
+            set(dir, dir_mode);
+        }
+    }
+    #[cfg(windows)]
+    {
+        let _ = dir;
+        for file in files.iter().filter(|file| file.exists()) {
+            let mut permissions = std::fs::metadata(file).expect("metadata").permissions();
+            permissions.set_readonly(unwritable);
+            std::fs::set_permissions(file, permissions).expect("set read-only");
+        }
     }
 }
 
@@ -40,18 +73,12 @@ fn a_change_that_cannot_be_written_fails_and_changes_nothing() {
     let (dir, store) = campaign("unwritable");
     let before = store.load_latest_runtime_state().expect("load");
     let files = ["ncgame.db", "ncgame.db-wal", "ncgame.db-shm"].map(|name| dir.0.join(name));
-    for file in &files {
-        set_mode(file, 0o444);
-    }
-    set_mode(&dir.0, 0o555);
+    set_unwritable(&dir.0, &files, true);
     let changed = store.change(3000, |state| {
         state.game_data.players[0].tax_rate = 7;
         Ok::<_, CampaignStoreError>(())
     });
-    set_mode(&dir.0, 0o755);
-    for file in &files {
-        set_mode(file, 0o644);
-    }
+    set_unwritable(&dir.0, &files, false);
     assert!(changed.is_err(), "a change to an unwritable file must fail");
     assert_eq!(store.load_latest_runtime_state().expect("load"), before);
 }
