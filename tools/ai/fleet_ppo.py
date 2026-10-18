@@ -27,8 +27,9 @@ as AlphaStar did): weight ``1 - min(1, 2s) + 0.1``, where ``s`` is the
 learner's running win share against it (0.25 even, 0.5 or more beaten).
 
 ``--free-heads join,unload`` (t191) lets fleet heads that imitation never
-saw used leave their start: they are left out of the KL penalty, and their
-entropy earns ``--free-entropy`` on top of ``--entropy-coef``.
+saw used leave their start: they are left out of the KL penalty, and the
+entropy of whether they act at all earns ``--free-entropy`` (see
+``act_entropy``).
 
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
@@ -333,6 +334,16 @@ def kl_to(new, old, handed, free=()):
     return total
 
 
+def act_entropy(dist):
+    """The entropy of whether a head acts at all: its first choice (none)
+    against all the others together. A bonus on the whole distribution
+    pushes a head with many targets toward a uniform choice among them, so
+    it nearly always acts: in the t191 pilot, joins rose to 97% of fleet
+    orders and the learner stopped winning."""
+    none = dist.probs[..., 0].clamp(1e-6, 1 - 1e-6)
+    return -(none * none.log() + (1 - none) * (1 - none).log())
+
+
 def update(model, ref, optimizer, steps, advs, kl_coef, args, dev):
     keys = steps[0]["batch"].keys()
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
@@ -369,7 +380,7 @@ def update(model, ref, optimizer, steps, advs, kl_coef, args, dev):
             kl_ref = kl_to((goal_dists, fleet_dists), (ref_goal_dists, ref_fleet_dists),
                            mb_handed, args.free_heads).mean()
             ent = (entropy * mb_handed).sum(-1).mean() + policy.joint_entropy(goal_dists).mean()
-            free_ent = sum(((fleet_dists[name].entropy() * mb_handed).sum(-1).mean()
+            free_ent = sum(((act_entropy(fleet_dists[name]) * mb_handed).sum(-1).mean()
                             for name in args.free_heads), torch.zeros((), device=dev))
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
                     - args.entropy_coef * ent - args.free_entropy * free_ent)
