@@ -44,7 +44,8 @@ details are in the plans' result sections.
 - **The agent.** It is the fleet-level agent (t157), with the strike
   family handed to the network, on t175's strategist with the allocation
   goal. Greedy, it wins 0.674 and 0.672 against three executors on two
-  blocks of 1,024 maps, and tops the league at 43.47.
+  blocks of 1,024 maps, and tops the greedy league
+  re-rated for t193 (2026-10-18) at 39.86, 9.8 above the executor.
   - Checkpoints: `~/.local/state/nostrian-conquest/ai/fleet-final.pt` and
     `fleet-final.onnx`.
   - The doctrine work after t164 kept only the blockader (t171). The

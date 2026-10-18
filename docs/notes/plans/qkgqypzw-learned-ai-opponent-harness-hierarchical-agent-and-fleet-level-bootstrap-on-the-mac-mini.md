@@ -1957,6 +1957,35 @@ re-rate.
 **Exit:** the league is re-rated with both greedy, evaluation maps are held
 out, and the report prints paired differences with their standard errors.
 
+**Re-rated (2026-10-18).** A fresh league, every agent greedy, at
+`8ca63bb9` on the Mac mini: the same twelve agents with today's
+checkpoints (`fleet-final.pt` is the t202 retrain, so the old league's
+fleet entry was stale anyway), 2,048 matches of 60 years from seed 1, in
+`~/.local/state/nostrian-conquest/ai/league-t193.db`. `verify` replayed all
+2,048 and rebuilt the table exactly.
+
+| Agent | Rating | Win share |
+| --- | ---: | ---: |
+| fleet | 39.86 | 0.717 |
+| executor | 30.10 | 0.393 |
+| final (strategist) | 29.75 | 0.391 |
+| allocation (strategist) | 28.76 | 0.367 |
+| t155 (strategist) | 25.80 | 0.342 |
+| final-imitation (strategist) | 25.75 | 0.252 |
+| turtle | 25.53 | 0.290 |
+| rusher | 22.93 | 0.208 |
+| classic | 11.35 | 0.022 |
+| baseline | 10.77 | 0.041 |
+| aggressor | -3.80 | 0.000 |
+| autopilot | -4.78 | 0.000 |
+
+The fleet agent still leads, by 9.8 points over the next agent. Greedy
+strategists no longer beat the tuned executor: in the old, sampled league
+they rated 5-8 points above it, but greedy they rate level with it or
+below. The old league was also played under earlier rules and the
+pre-t202 fleet agent, so the two tables are not a paired comparison.
+Closed on 2026-10-18.
+
 ### t194
 
 Save AI seat memory with the campaign, and check hazard intel.
