@@ -1791,6 +1791,39 @@ adds one to the die
 ([tdkitij6](../decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)).
 Adoption and the retune are t206 below.
 
+**Re-baseline under t206 (2026-10-18).** At `59930a31`. The agents, one
+network seat against three default executors, 1,024 maps from 100000
+(`behaviour_report`, Mac mini):
+
+| Agent | 60 years | 100 years |
+| --- | ---: | ---: |
+| `fleet-final` | 0.570 | 0.753 |
+| t191 pre-t206 run, snapshot 175 | 0.649 (+0.080 ± 0.019) | 0.845 (+0.092 ± 0.016) |
+| t191 pre-t206 run, snapshot 200 | 0.633 (+0.063 ± 0.019) | 0.813 (+0.060 ± 0.016) |
+
+`fleet-final` held up (0.547 and 0.739 under the old rules), and the
+retrain's lead carries over. The styles against three default seats
+(`style_stats`, 1,024 maps, bean-void), 60 / 100 years: land-grab 0.258 /
+0.245, raider 0.169 / 0.182, turtle 0.161 / 0.166, armada 0.192 / 0.139,
+rusher 0.138 / 0.126. The cruiser-led styles still spend 64-69% of their
+build points on cruisers.
+
+**Do mixed fleets lose because destroyers sail alone? No.** `style_stats`
+now counts destroyer-years spent in a fleet with a cruiser or battleship,
+and runs one style file (`--style`). With `mixed_hulls` and battleships
+zeroed, 512 maps against three default seats:
+
+| Destroyer share of the hull weight | Destroyers with a heavy, 60 / 100 yr | Win share, 60 / 100 yr |
+| --- | ---: | ---: |
+| default style (no switch) | 20% / 20% | 0.264 / 0.258 |
+| 10% | 74% / 82% | 0.264 / 0.234 |
+| 25% | 85% / 90% | 0.244 / 0.238 |
+| 40% | 88% / 92% | 0.232 / 0.242 |
+
+Most destroyers already fight under cover, so no commissioning change is
+needed. The next suspect is weights tuned for a cruiser fleet: both arms
+are retuned under t206 (below).
+
 ### t203
 
 Early warning: pickets on the approaches, threats tracked from what the
@@ -2005,6 +2038,20 @@ decides whether it trains on the league or the fixed mix. The league run
 lost (t184), so it trains on the fixed mix. Played greedy, no agent so far
 orders a Join or an Unload (behaviour report, 0/0/0 joins, transfers and
 unloads a game): the new heads start on "none".
+
+**A retrain under the old rules (2026-10-18, before t206).** A full run
+finished at 13:01, before the t206 merge, and was not recorded until now:
+PPO from `fleet-final` on the fixed mix, 100-year games, `--limit-credit
+0.5 --kl-floor 0.02 --free-heads join,unload --free-entropy 0.03`, 200
+iterations of 64 games (`~/.local/state/nostrian-conquest/ai/t191-full/`;
+the pilot that chose 0.03 is `t191-pilot2/`). Against three executors on
+1,024 maps at 100 years, under the old rules, snapshot 175 led
+`fleet-final` 0.841 to 0.739 (+0.102 ± 0.016). Under t206 it still leads
+(t189's re-baseline). Sampled play joined about half the time by the end,
+but greedy it orders no Join and a handful of unloads (0/0/3 a game), so
+the free heads did not teach the order set. It was not promoted: the
+retrain this task asks for comes after t189's executor work, on the new
+rules.
 
 ### t192
 
