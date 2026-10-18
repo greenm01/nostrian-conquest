@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Sysop Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 14),
+  date: datetime(year: 2026, month: 10, day: 18),
 )
 
 #set page(
@@ -63,7 +63,7 @@
   #v(2em)
   #text(size: 11pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
   #v(0.5em)
-  #text(size: 11pt, fill: luma(120))[Revision date: October 14, 2026]
+  #text(size: 11pt, fill: luma(120))[Revision date: October 18, 2026]
 ]
 
 #pagebreak()
@@ -510,6 +510,14 @@ player makes is applied to the latest saved state and saved in one database
 transaction, so no player's change undoes another's, and each session then
 shows the others' changes too. The same holds for `nc-game submit-turn` and
 for `nc-helm` with a campaign store.
+
+Keep the game directory on a local disk of the machine that runs the doors and
+maintenance. Sessions share `ncgame.db` through SQLite's write-ahead log,
+which works only between processes on one machine: a network share, mapped
+drive or synced folder can fail saves or damage the file. Beside `ncgame.db`
+you will see `ncgame.db-wal` and `ncgame.db-shm` while sessions are open.
+They belong to the database: never delete them, and copy the game only while
+no session or maintenance is running.
 
 A session that stays open across a maintenance run cannot save into the
 finished year. Its next save is refused, and the caller is told "Maintenance
