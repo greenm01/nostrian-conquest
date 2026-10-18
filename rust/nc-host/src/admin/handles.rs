@@ -39,29 +39,33 @@ pub(super) fn lock(root: &Path, game: &str, seat: u32, name: &str, force: bool) 
         |r| r.get(0),
     )?;
     let runtime = nc_data::CampaignStore::open_default_in_dir(&dir)?;
-    let mut snapshot = runtime
+    let snapshot = runtime
         .load_latest_runtime_state()?
         .ok_or("missing state")?;
     let player = snapshot
         .game_data
         .players
-        .get_mut(seat as usize - 1)
+        .get(seat as usize - 1)
         .ok_or("missing player")?;
     if locked && !force {
         return Ok(player.handle.clone());
     }
     let old = player.handle.clone();
-    nc_data::set_player_handle(player, &name);
-    let handle = player.handle.clone();
+    let mut renamed = player.clone();
+    nc_data::set_player_handle(&mut renamed, &name);
+    let handle = renamed.handle.clone();
     if handle != old {
-        runtime
-            .expecting_snapshot(snapshot.snapshot_id)
-            .save_runtime_state_structured(
-                snapshot.game_year,
-                &snapshot.game_data,
-                &snapshot.report_block_rows,
-                &snapshot.queued_mail,
-            )?;
+        runtime.change(snapshot.game_year, |state| {
+            let player = state
+                .game_data
+                .players
+                .get_mut(seat as usize - 1)
+                .ok_or_else(|| {
+                    nc_data::CampaignStoreError::InvalidState("missing player".into())
+                })?;
+            nc_data::set_player_handle(player, &name);
+            Ok::<_, nc_data::CampaignStoreError>(())
+        })?;
     }
     store.connection().execute(
         "INSERT OR IGNORE INTO web_handle_locks(seat) VALUES (?1)",

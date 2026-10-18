@@ -1,11 +1,9 @@
-use std::collections::BTreeMap;
 use std::path::Path;
 
 use crate::{
-    CampaignRuntimeState, CampaignStore, CampaignStoreError, CoreGameData,
-    DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot, PlayerAccessMode, PlayerActivityState,
-    PlayerLifecycleState, QueuedPlayerMail, TurnSubmission, TurnSubmissionError,
-    TurnSubmissionReport, WinnerState, merge_player_intel_from_runtime, player_access_mode,
+    CampaignRuntimeState, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, PlayerAccessMode,
+    PlayerActivityState, PlayerLifecycleState, QueuedPlayerMail, TurnSubmission,
+    TurnSubmissionError, TurnSubmissionReport, WinnerState, player_access_mode,
     record_submitted_turn_participation,
 };
 
@@ -74,34 +72,25 @@ pub(super) fn apply_to_runtime_state(
     Ok(report)
 }
 
-/// Apply `submission` to `state` and save it, refusing the save with
-/// [`CampaignStoreError::StaleSnapshot`] if a newer year has been written
-/// since `state` was loaded.
+/// Apply `submission` to the campaign's latest state and save it, in one
+/// store transaction (t204), so turns submitted at the same time are all
+/// kept. The save is refused with [`CampaignStoreError::StaleSnapshot`] if
+/// a newer year has been written since `state` was loaded.
 pub(super) fn submit_to_runtime_state(
     store: &CampaignStore,
-    mut state: CampaignRuntimeState,
+    state: CampaignRuntimeState,
     submission: &TurnSubmission,
 ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
-    let player_count = state.game_data.conquest.player_count;
-    let player_lifecycle_states = store.latest_player_lifecycle_states(player_count)?;
-    let mut player_activity_states = store.latest_player_activity_states(player_count)?;
-    let report = apply_to_runtime_state(
-        submission,
-        &mut state.game_data,
-        &mut state.queued_mail,
-        &player_lifecycle_states,
-        state.winner_state,
-        &mut player_activity_states,
-    )?;
-    let planet_intel_by_viewer = load_runtime_intel_by_viewer(store, &state.game_data)?;
-    store.save_runtime_state_structured_with_intel_and_activity(
-        state.game_year,
-        &state.game_data,
-        &state.report_block_rows,
-        &state.queued_mail,
-        &planet_intel_by_viewer,
-        &player_activity_states,
-    )?;
+    let (report, _) = store.change(state.game_year, |latest| {
+        apply_to_runtime_state(
+            submission,
+            &mut latest.game_data,
+            &mut latest.queued_mail,
+            &latest.player_lifecycle_states,
+            latest.winner_state,
+            &mut latest.player_activity_states,
+        )
+    })?;
     Ok(report)
 }
 
@@ -118,26 +107,4 @@ fn open_existing_store(dir: &Path) -> Result<CampaignStore, TurnSubmissionError>
         )));
     }
     Ok(CampaignStore::open(path)?)
-}
-
-fn load_runtime_intel_by_viewer(
-    campaign_store: &CampaignStore,
-    game_data: &CoreGameData,
-) -> Result<Vec<BTreeMap<usize, PlanetIntelSnapshot>>, CampaignStoreError> {
-    (1..=game_data.conquest.player_count)
-        .map(|viewer_empire_id| {
-            let previous = campaign_store
-                .latest_planet_intel_for_viewer(viewer_empire_id)?
-                .into_iter()
-                .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
-                .collect::<BTreeMap<_, _>>();
-            Ok(merge_player_intel_from_runtime(
-                game_data,
-                viewer_empire_id,
-                game_data.conquest.game_year,
-                Some(&previous),
-                None,
-            ))
-        })
-        .collect()
 }

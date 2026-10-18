@@ -36,6 +36,7 @@ impl CampaignStore {
     /// change fails with [`CampaignStoreError::StaleSnapshot`]; a paused
     /// campaign fails with [`CampaignStoreError::HostingPaused`]. When
     /// `apply` fails, nothing is written. `apply` must not change the year.
+    /// Planet intel is kept, with each empire's own worlds brought up to date.
     pub fn change<T, E>(
         &self,
         loaded_year: u16,
@@ -80,8 +81,6 @@ impl CampaignStore {
             winner_state: super::metadata::load_winner_state(&tx)?,
             game_data,
         };
-        let planet_intel_by_viewer =
-            super::intel::load_planet_intel_by_viewer(&tx, snapshot_id, player_count)?;
         let value = apply(&mut state)?;
         if state.game_data.conquest.game_year != year {
             return Err(CampaignStoreError::InvalidState(
@@ -95,7 +94,7 @@ impl CampaignStore {
             year,
             &state.report_block_rows,
             &state.queued_mail,
-            Some(&planet_intel_by_viewer),
+            None,
             None,
             Some(&state.player_activity_states),
             Some(&state.player_lifecycle_states),
