@@ -155,14 +155,12 @@ impl Read for RawStdin {
 #[cfg(windows)]
 struct RawStdin;
 
+// Unbuffered for a pipe as for the console: Rust's `Stdin` would pull a
+// whole burst of keys into its own buffer, where `stdin_ready`, which peeks
+// the pipe, cannot see them, and the door would wait on keys already sent.
 #[cfg(windows)]
 impl Read for RawStdin {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let mut stdin = io::stdin();
-        if !stdin.is_terminal() {
-            return stdin.read(buf);
-        }
-
         use std::os::windows::io::AsRawHandle;
 
         unsafe extern "system" {
@@ -188,7 +186,12 @@ impl Read for RawStdin {
             )
         };
         if rc == 0 {
-            Err(io::Error::last_os_error())
+            let err = io::Error::last_os_error();
+            // A closed pipe is the end of the caller's input.
+            if err.kind() == io::ErrorKind::BrokenPipe {
+                return Ok(0);
+            }
+            Err(err)
         } else {
             Ok(bytes_read as usize)
         }
