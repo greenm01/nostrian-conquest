@@ -34,6 +34,7 @@ doctrine {
     watch #true
     forward-muster #true
     pickets #false
+    stage #false
 }
 // Tuning keeps the style: early war, low odds to attack, little expansion.
 bounds {

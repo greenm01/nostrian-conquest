@@ -158,6 +158,13 @@ pub struct Doctrine {
     /// year (t203). Off, only the starting destroyers and scouts the weights
     /// buy stand watch.
     pub pickets: bool,
+    /// A strike force bound for a world more than [`STAGE_GAP`] sectors
+    /// away stops one sector short of it in deep space, by Rendezvous, and
+    /// strikes from there once it is `attack_ratio` times the target's
+    /// defence. Warships at home reinforce a staged force that waits (t189,
+    /// the owner's doctrine for a planned assault). Off, a force sails
+    /// straight from the muster world to its target.
+    pub stage: bool,
 }
 
 impl Doctrine {
@@ -180,6 +187,7 @@ impl Doctrine {
             "watch" => &mut self.watch,
             "forward_muster" => &mut self.forward_muster,
             "pickets" => &mut self.pickets,
+            "stage" => &mut self.stage,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -203,6 +211,7 @@ impl Doctrine {
         watch: true,
         forward_muster: true,
         pickets: false,
+        stage: false,
     };
 }
 
@@ -281,6 +290,7 @@ impl Weights {
             watch: false,
             forward_muster: false,
             pickets: false,
+            stage: false,
         },
     };
 
@@ -1236,6 +1246,19 @@ fn plan_fleets(
         })
         .map(strength)
         .sum();
+    // A staged force waiting in deep space for reinforcement
+    // (`Doctrine::stage`): where it waits.
+    let waiting_stage = game_data
+        .fleets
+        .iter()
+        .find(|fleet| {
+            weights.doctrine.stage
+                && fleet.owner.0 == empire
+                && has_combat_ships(fleet)
+                && staged(game_data, fleet)
+                && fleet.sector == fleet.target
+        })
+        .map(|fleet| fleet.target.to_array());
     // Sectors where a fleet of the seat already stands watch.
     let mut watched: Vec<[u8; 2]> = game_data
         .fleets
@@ -1464,6 +1487,28 @@ fn plan_fleets(
                     };
                 }
             }
+            if weights.doctrine.stage && has_combat_ships(fleet) && staged(game_data, fleet) {
+                if fleet.sector != fleet.target {
+                    return keep;
+                }
+                if let Some(choice) =
+                    strike_target(game_data, memory, fleet, strength(fleet), weights)
+                        .and_then(|target| strike(memory, mask, fleet, weights, target, keep))
+                {
+                    sailed = true;
+                    return choice;
+                }
+                // Wait while reinforcements are on their way, else go home.
+                let coming = game_data.fleets.iter().any(|other| {
+                    other.owner.0 == empire
+                        && other.order == Order::RendezvousSector
+                        && other.target == fleet.target
+                        && other.sector != fleet.target
+                });
+                if coming {
+                    return keep;
+                }
+            }
             if !at_home {
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
@@ -1490,6 +1535,30 @@ fn plan_fleets(
                     }
                 }
             };
+            if weights.doctrine.stage
+                && let Some(target) = target
+                && let Some(station) = stage_sector(game_data, fleet, target)
+                && let Some(choice) = order(Order::RendezvousSector, target)
+            {
+                sailed = true;
+                return FleetChoice {
+                    load,
+                    station: Some(station),
+                    ..choice
+                };
+            }
+            if weights.doctrine.stage
+                && target.is_none()
+                && has_combat_ships(fleet)
+                && let Some(station) = waiting_stage
+                && let Some(choice) = order(Order::RendezvousSector, home_idx)
+            {
+                return FleetChoice {
+                    load,
+                    station: Some(station),
+                    ..choice
+                };
+            }
             if let Some(choice) =
                 target.and_then(|target| strike(memory, mask, fleet, weights, target, keep))
             {
@@ -1807,6 +1876,33 @@ fn threatened(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) ->
             && year.saturating_sub(contact.year) < THREAT_YEARS
             && distance(contact.coords, sector) <= THREAT_RANGE
     })
+}
+
+/// A target farther than this many sectors is staged for
+/// (`Doctrine::stage`).
+const STAGE_GAP: f32 = 2.0;
+
+/// Whether `fleet` is a staged force: on Rendezvous at a deep-space sector
+/// (`Doctrine::stage`).
+fn staged(game_data: &CoreGameData, fleet: &Fleet) -> bool {
+    fleet.order == Order::RendezvousSector && world_at(game_data, fleet.target.to_array()).is_none()
+}
+
+/// The deep-space sector one step short of world `target` on the way from
+/// `fleet`, when the target is more than [`STAGE_GAP`] sectors away.
+fn stage_sector(game_data: &CoreGameData, fleet: &Fleet, target: usize) -> Option<[u8; 2]> {
+    let from = fleet.sector.to_array();
+    let to = game_data.planets[target].sector.to_array();
+    let gap = distance(from, to);
+    if gap <= STAGE_GAP {
+        return None;
+    }
+    let share = (gap - 1.0) / gap;
+    let sector: [u8; 2] = std::array::from_fn(|axis| {
+        let step = (f32::from(to[axis]) - f32::from(from[axis])) * share;
+        (f32::from(from[axis]) + step).round() as u8
+    });
+    (world_at(game_data, sector).is_none() && sector != to).then_some(sector)
 }
 
 /// Strike world `target`: Invade with enough armies aboard, otherwise

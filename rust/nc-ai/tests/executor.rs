@@ -104,6 +104,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
         watch: false,
         forward_muster: false,
         pickets: false,
+        stage: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
@@ -217,5 +218,61 @@ fn suppress_first_invades_only_after_bombarding() {
     assert!(
         invasions > 0,
         "some bombarding force should go on to invade"
+    );
+}
+
+/// With `stage`, a force bound for a distant world waits one sector short of
+/// it in deep space, and the game accepts every staged order (t189).
+#[test]
+fn a_staged_force_waits_in_deep_space_short_of_its_target() {
+    let weights = Weights {
+        doctrine: Doctrine {
+            stage: true,
+            ..Doctrine::CURRENT
+        },
+        ..Weights::TUNED
+    };
+    let mut staged_years = 0;
+    for map_seed in 0..4 {
+        let mut game = seated_game(PLAYERS, map_seed);
+        let start_year = game.play.built.game_data.conquest.game_year;
+        for _ in 0..60 {
+            for empire in 1..=PLAYERS {
+                if let Some(commission) = commission_submission(&game.play.built.game_data, empire)
+                {
+                    game.submit_turn(&commission).expect("commissioning");
+                }
+                let game_data = &game.play.built.game_data;
+                let memory = &game.seats[usize::from(empire) - 1];
+                let masks = seat_masks(game_data, empire);
+                let action = plan_turn(game_data, memory, &masks, &weights, start_year);
+                let decoded = decode_action(game_data, empire, &action);
+                assert!(decoded.dropped_fleet_orders.is_empty());
+                game.submit_turn(&decoded.submission)
+                    .expect("a staged turn should submit");
+            }
+            game.run_maintenance().expect("maintenance should run");
+            let game_data = &game.play.built.game_data;
+            staged_years += game_data
+                .fleets
+                .iter()
+                .filter(|fleet| {
+                    fleet.order == nc_data::Order::RendezvousSector
+                        && fleet.sector == fleet.target
+                        && nc_data::has_combat_ships(fleet)
+                        && !game_data
+                            .planets
+                            .iter()
+                            .any(|planet| planet.sector == fleet.sector)
+                })
+                .count();
+            if game.play.winner_state.winner_empire.is_some() {
+                break;
+            }
+        }
+    }
+    assert!(
+        staged_years > 0,
+        "some strike force should wait at a deep-space staging sector"
     );
 }
