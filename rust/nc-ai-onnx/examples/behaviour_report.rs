@@ -4,11 +4,14 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai-onnx --example behaviour_report -- A.onnx [B.onnx ...] \
-//!     [--games 256] [--years 100] [--first-map 100000] [--threads 4] [--style land-grab|FILE.kdl]
+//!     [--games 256] [--years 100] [--first-map 100000] [--threads 4] [--style land-grab|FILE.kdl] \
+//!     [--opponents TARGET.onnx]
 //! ```
 //!
 //! Each model plays one seat against three tuned executors on the same
 //! maps, the seat rotated game by game, greedy. One column per model.
+//! `--opponents` fills the other three seats with that model instead (the
+//! land-grab style), so an exploiter can be read against its target (t192).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -92,6 +95,7 @@ fn main() {
         |n| n.parse().expect("--threads"),
     );
     let style = arg("--style").unwrap_or_else(|| "land-grab".to_string());
+    let opponents = arg("--opponents").map(PathBuf::from);
 
     let rows: Vec<Row> = vec![
         ("win share", |g| {
@@ -213,9 +217,22 @@ fn main() {
 
     let results: Vec<Vec<Game>> = models
         .iter()
-        .map(|model| run(model, &style, games, years, first, threads))
+        .map(|model| {
+            run(
+                model,
+                opponents.as_ref(),
+                &style,
+                games,
+                years,
+                first,
+                threads,
+            )
+        })
         .collect();
-    println!("{games} games, {years} years, one network seat ({style}) against three executors\n");
+    let against = opponents
+        .as_ref()
+        .map_or_else(|| "executors".to_string(), |path| short(path));
+    println!("{games} games, {years} years, one network seat ({style}) against three {against}\n");
     print!("{:<36}", "");
     for model in &models {
         print!("{:>16}", short(model));
@@ -294,6 +311,7 @@ fn mean(games: &[Game], value: impl Fn(&Game) -> f64) -> f64 {
 
 fn run(
     model: &PathBuf,
+    opponents: Option<&PathBuf>,
     style: &str,
     games: u64,
     years: u16,
@@ -315,10 +333,21 @@ fn run(
                         style,
                     )
                     .expect("the model loads");
+                    let opponent = opponents.map(|path| {
+                        NetworkSeat::load(
+                            path,
+                            Families {
+                                strike: true,
+                                ..Families::NONE
+                            },
+                            personality_or_file("land-grab").expect("land-grab is a style"),
+                        )
+                        .expect("the opponent model loads")
+                    });
                     (first..first + games)
                         .skip(worker as usize)
                         .step_by(threads as usize)
-                        .map(|map| play(&seat, map, years))
+                        .map(|map| play(&seat, opponent.as_ref(), map, years))
                         .collect::<Vec<_>>()
                 })
             })
@@ -330,7 +359,7 @@ fn run(
     })
 }
 
-fn play(network: &NetworkSeat, map: u64, years: u16) -> Game {
+fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: u16) -> Game {
     let mut game = match_game(map, map, &[false; PLAYERS as usize], years);
     let start = game.play.built.game_data.conquest.game_year;
     let seat = (map % u64::from(PLAYERS)) as u8 + 1;
@@ -344,15 +373,34 @@ fn play(network: &NetworkSeat, map: u64, years: u16) -> Game {
     .map(production_item_kind_code);
     let transport = production_item_kind_code(ProductionItemKind::Transport);
     for _ in 0..years {
-        // The network seat commissions at the start of the year and the
+        // Network seats commission at the start of the year and the
         // executors at their own turns, as the batch environment has them.
-        if let Some(commission) = commission_submission(&game.play.built.game_data, seat) {
-            game.submit_turn(&commission)
-                .expect("commissioning submits");
+        for empire in 1..=PLAYERS {
+            if empire == seat || opponent.is_some() {
+                if let Some(commission) = commission_submission(&game.play.built.game_data, empire)
+                {
+                    game.submit_turn(&commission)
+                        .expect("commissioning submits");
+                }
+            }
         }
         for empire in 1..=PLAYERS {
             if empire != seat {
-                executor_turn(&mut game, empire, &Weights::TUNED, start);
+                match opponent {
+                    Some(opponent) => {
+                        let turn = opponent
+                            .turn(
+                                &game.play.built.game_data,
+                                &game.seats[usize::from(empire) - 1],
+                                0.0,
+                                0,
+                            )
+                            .expect("the opponent network runs");
+                        game.submit_turn(&turn)
+                            .expect("the opponent's turn submits");
+                    }
+                    None => executor_turn(&mut game, empire, &Weights::TUNED, start),
+                }
                 continue;
             }
             let game_data = &game.play.built.game_data;

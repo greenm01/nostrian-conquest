@@ -1929,6 +1929,40 @@ RX 7900).
 **Exit:** the weakness is named and shown to be fixed or absent in the
 agent to be promoted, or fixed by training against the exploiter (t184).
 
+**Result (2026-10-18): named, and absent from the deployed agent.**
+`behaviour_report` gained `--opponents MODEL.onnx`, which fills the other
+three seats with that model (land-grab style) instead of executors. The
+exploiter (iteration 80 of t183's crunch run, copied to the mini as
+`~/.local/state/nostrian-conquest/ai/t192/exploit-0080.pt` and exported
+with 0 mismatches) and a control each played one seat against three copies
+of the target, on the same 512 maps of 60 years from 100000, greedy:
+
+| Against three pre-sweep agents | Control (pre-sweep) | Exploiter |
+| --- | ---: | ---: |
+| win share | 0.239 | 0.319 |
+| invasions, years 1-30 | 4.81 | 5.01 |
+| invasions, after year 30 | 10.11 | 12.69 |
+| Guard/Blockade World orders | 2.7 | 6.3 |
+| Invade World orders | 18.4 | 22.9 |
+| worlds lost | 12.6 | 14.6 |
+| mean armies on a world when lost | 2.2 | 1.3 |
+| worlds at end | 5.1 | 5.6 |
+
+Paired: win share +0.080 ± 0.025, worlds at end +0.57 ± 0.13, worlds lost
++1.99 ± 0.19. **The weakness:** the opening is the same (early invasions
+level), but after year 30 the exploiter blockades the target's worlds more
+than twice as often and invades a quarter more. The pre-sweep agent did not
+hold off this late pressure. The exploiter traded thin garrisons for tempo, losing more worlds
+itself but ending with more. This is a reading of the measurements; no
+ablation isolated the blockades as the cause.
+
+Against today's `fleet-final` (the t202 retrain), on the same maps:
+control 0.263, exploiter 0.151 (paired −0.111 ± 0.023). The exploiter
+loses outright, and the fresh 80-iteration exploiter trained against that
+agent on bean-void (t189's t202 section) found no hole either. The weakness
+is absent from the deployed agent; no fix is needed. Reports are in
+`~/.local/state/nostrian-conquest/ai/t192/`.
+
 ### t193
 
 Correct the evaluation flaws the Muse review found.
