@@ -58,6 +58,9 @@ impl App {
 
     pub fn enter_unbound_bbs_first_time_mode(&mut self) {
         self.startup_state.unbound_bbs_caller = true;
+        // The caller has no seat yet, so no reservation is theirs: the seat
+        // the session provisionally loaded may be reserved for someone else.
+        self.startup_state.reserved_seat_alias = None;
         self.startup_state.fixed_player_launch = false;
         self.startup_state.first_time_onboarding_mode = FirstTimeOnboardingMode::Generic;
         self.startup_state.first_time_status = None;

@@ -348,13 +348,9 @@ fn piped_dropfile_launch_stays_interactive_without_tty_stdout() {
     seen = wait_for_stdout(&mut child, &stdout, "EMPIRE NAME", seen, deadline);
     stdin.write_all(&[0x1b]).expect("write escape key");
     stdin.flush().expect("flush escape key");
-    wait_for_stdout(
-        &mut child,
-        &stdout,
-        "Continue with reserved setup?",
-        seen,
-        deadline,
-    );
+    // Seat 1 is reserved for SYSOP; RIVAL holds no reservation, so Esc goes
+    // back to the first-time menu rather than to a reserved setup.
+    wait_for_stdout(&mut child, &stdout, "FIRST TIME COMMAND", seen, deadline);
     stdin.write_all(b"q").expect("write quit key");
     stdin.flush().expect("flush quit key");
     // Closing stdin ends the session.
@@ -383,6 +379,10 @@ fn piped_dropfile_launch_stays_interactive_without_tty_stdout() {
     let stdout = String::from_utf8(stdout).expect("stdout should be utf-8");
     assert!(stdout.contains("FIRST TIME MENU:"));
     assert!(stdout.contains("EMPIRE NAME"));
+    assert!(
+        !stdout.contains("RESERVED PLAYER") && !stdout.contains("reserved setup"),
+        "an unreserved caller is never shown another caller's reservation"
+    );
 }
 
 #[test]
