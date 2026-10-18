@@ -195,6 +195,35 @@ The owner uploaded them and the signed manifest to `release-artifacts` and
 refreshed its note; a fresh download of all six assets passed GPG and
 checksum verification.
 
+## Database and door refresh, 2026-10-18
+
+All four archives were rebuilt from `d16e43de`. It carries t204/t205
+(concurrent play, maintenance that pauses players and recovers, consistent
+backups), two Windows door input fixes (keys arriving together were lost;
+stdin from a file or NUL hung), the reserved-seat screen no longer shown to
+unreserved callers, and the rebuilt player and sysop manuals (with the
+local-disk requirement). It also ships the AI tuning since `6c381989`
+(t189 weights and styles, t203 pickets).
+
+Linux was built on bean-void (Rust 1.98), Windows x64 on bean (stable 1.99)
+and both x86 targets on bean (nightly 1.101, source-built std). Each archive
+passed a smoke run: a fresh game from its sample config, an unreserved door
+join, two maintenance passes and a returning login, ending at year 3002 with
+`quick_check` ok. The Windows archives passed explicit Defender scans. All
+twelve bundled PDFs match the committed ones; no model files are bundled. A
+campaign made with the published beta.3 build opens and plays under the new
+code (t205 release checks). The manifest is signed with the release subkey
+`57184BB62A800062` on the Mac mini and verifies.
+
+| Archive suffix | SHA-256 |
+| --- | --- |
+| `linux-x64.tar.gz` | `1fe0f5bd0ba35cc45eabcfa84f2feff19eef8dcf857eaafb5907f167e0cf3509` |
+| `windows-x64.zip` | `d436fd568ac5d6cf90e7d818413f3906afceb6aa8774c0c6a1960bf9563cffe4` |
+| `windows-x86.zip` | `76472804ab65f64fa197d27e4669f820202848bc6a8ff04219e10d51819c9522` |
+| `windows7-x86.zip` | `27306f92c2e1fb5f17206f6bbd65f3f73ff4c622b8904e0ccb975a5ebc5edb1d` |
+
+Staged under `releases/refresh-d16e43de/`; not yet uploaded.
+
 ## Connections
 
 Ships the work recorded in the
