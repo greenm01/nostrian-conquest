@@ -2018,6 +2018,13 @@ small entropy leave the new heads near their start. t191 needs either a
 teacher rule that uses them or PPO that exempts these heads from the KL
 penalty and raises their entropy.
 
+**Closed (2026-10-18).** The exit is met: random masked play
+(`tests/action.rs`) submits joins, joins with a detach, and unloads with
+none rejected; `a_join_and_a_station_decode_into_legal_orders` covers the
+decoder; and `nc-ai-onnx`'s `a_seat_with_join_heads_makes_the_recorded_turns`
+replays an exported graph that joins. Transfer is covered by Join with
+Detach. Teaching the agent to use the orders is t191's.
+
 ### t191
 
 Retrain the agent on the new executor.
