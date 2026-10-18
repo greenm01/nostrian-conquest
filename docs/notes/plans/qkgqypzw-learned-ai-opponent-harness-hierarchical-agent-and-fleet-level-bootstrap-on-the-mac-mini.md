@@ -1841,6 +1841,22 @@ removed, with `SeatMemory::attackers`, which only `track` read; the threat
 rule is t181's again. `pickets` stays as a switch, off: even at one post,
 and early warning the network may yet use.
 
+**The other styles (2026-10-18), closing t203.** `pickets` paired against
+three default seats, maps from 1500000 (`executor_matches --with pickets
+--paired`, on the Mac mini at `94c3acb8`):
+
+| Style | 60 years | 100 years |
+| --- | ---: | ---: |
+| land grab (1,024 maps) | +0.003 ± 0.002 | +0.001 ± 0.002 |
+| rusher (1,024 maps) | +0.001 ± 0.001 | +0.000 ± 0.000 |
+| armada, raider (128 maps) | +0.000 ± 0.000 | |
+
+The switch barely fires outside the turtle: the land grab, armada and
+raider already keep a watcher (scouts, or the raider's destroyers), so the
+one-post rule has nothing to add, and the rusher triggers it in a handful
+of games. It loses nowhere, so it stays, off, as decided above. Nothing
+else is left to remove.
+
 ### t190
 
 Give the network the whole order set.
