@@ -42,16 +42,192 @@ pub(super) fn write_snapshot_core_rows(
     snapshot_id: i64,
     game_data: &CoreGameData,
 ) -> Result<(), CampaignStoreError> {
-    players::write(tx, snapshot_id, &game_data.players)?;
-    planets::write(tx, snapshot_id, &game_data.planets)?;
-    fleets::write(tx, snapshot_id, &game_data.fleets)?;
-    bases::write(tx, snapshot_id, &game_data.bases)?;
-    crippled::write_fleets(tx, snapshot_id, &game_data.fleets)?;
-    crippled::write_bases(tx, snapshot_id, &game_data.bases)?;
-    ipbms::write(tx, snapshot_id, &game_data.ipbms)?;
+    players::write(tx, snapshot_id, game_data.players.iter().enumerate())?;
+    planets::write(tx, snapshot_id, game_data.planets.iter().enumerate())?;
+    fleets::write(tx, snapshot_id, game_data.fleets.iter().enumerate())?;
+    bases::write(tx, snapshot_id, game_data.bases.iter().enumerate())?;
+    crippled::write_fleets(tx, snapshot_id, game_data.fleets.iter().enumerate())?;
+    crippled::write_bases(tx, snapshot_id, game_data.bases.iter().enumerate())?;
+    ipbms::write(tx, snapshot_id, game_data.ipbms.iter().enumerate())?;
     setup::write(tx, snapshot_id, &game_data.setup)?;
     conquest::write(tx, snapshot_id, &game_data.conquest)?;
     sightings::write(tx, snapshot_id, &game_data.sightings)?;
+    Ok(())
+}
+
+/// Rewrite, in snapshot `snapshot_id`, only the records that differ between
+/// `before` (what the snapshot holds) and `after` (t204): a record's rows in
+/// its table and its child tables are replaced, appended records added and
+/// dropped ones deleted. The setup, conquest and sighting tables are each
+/// rewritten whole when they changed.
+pub(super) fn write_changed_core_rows(
+    tx: &Transaction<'_>,
+    snapshot_id: i64,
+    before: &CoreGameData,
+    after: &CoreGameData,
+) -> Result<(), CampaignStoreError> {
+    // A player's 25 diplomacy rows change only with its diplomacy.
+    let without_diplomacy = |players: &[crate::Player]| -> Vec<crate::Player> {
+        players
+            .iter()
+            .map(|player| crate::Player {
+                diplomacy: Default::default(),
+                ..player.clone()
+            })
+            .collect()
+    };
+    let changed = replace_records(
+        tx,
+        snapshot_id,
+        &["snapshot_players"],
+        &without_diplomacy(&before.players),
+        &without_diplomacy(&after.players),
+    )?;
+    players::write_rows(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.players[i])),
+    )?;
+    let diplomacy = |players: &[crate::Player]| -> Vec<_> {
+        players.iter().map(|player| player.diplomacy).collect()
+    };
+    let changed = replace_records(
+        tx,
+        snapshot_id,
+        &["snapshot_player_diplomacy"],
+        &diplomacy(&before.players),
+        &diplomacy(&after.players),
+    )?;
+    players::write_diplomacy(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.players[i])),
+    )?;
+    let changed = replace_records(
+        tx,
+        snapshot_id,
+        &["snapshot_planets", "snapshot_planet_build_slots"],
+        &before.planets,
+        &after.planets,
+    )?;
+    planets::write(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.planets[i])),
+    )?;
+    let changed = replace_records(
+        tx,
+        snapshot_id,
+        &["snapshot_fleets", "snapshot_fleet_crippled"],
+        &before.fleets,
+        &after.fleets,
+    )?;
+    fleets::write(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.fleets[i])),
+    )?;
+    crippled::write_fleets(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.fleets[i])),
+    )?;
+    let changed = replace_records(
+        tx,
+        snapshot_id,
+        &["snapshot_bases", "snapshot_base_crippled"],
+        &before.bases,
+        &after.bases,
+    )?;
+    bases::write(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.bases[i])),
+    )?;
+    crippled::write_bases(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.bases[i])),
+    )?;
+    let changed = replace_records(
+        tx,
+        snapshot_id,
+        &["snapshot_ipbms"],
+        &before.ipbms,
+        &after.ipbms,
+    )?;
+    ipbms::write(
+        tx,
+        snapshot_id,
+        changed.iter().map(|&i| (i, &after.ipbms[i])),
+    )?;
+    if before.setup != after.setup {
+        clear_tables(
+            tx,
+            snapshot_id,
+            &["snapshot_setup", "snapshot_setup_com_ports"],
+        )?;
+        setup::write(tx, snapshot_id, &after.setup)?;
+    }
+    if before.conquest != after.conquest {
+        clear_tables(
+            tx,
+            snapshot_id,
+            &[
+                "snapshot_conquest",
+                "snapshot_conquest_maintenance_days",
+                "snapshot_conquest_previous_rankings",
+            ],
+        )?;
+        conquest::write(tx, snapshot_id, &after.conquest)?;
+    }
+    if before.sightings != after.sightings {
+        clear_tables(tx, snapshot_id, &["snapshot_sightings"])?;
+        sightings::write(tx, snapshot_id, &after.sightings)?;
+    }
+    Ok(())
+}
+
+/// Delete the rows, in `tables`, of every record that differs between
+/// `before` and `after` or that `after` no longer holds, and return the
+/// 0-based indexes in `after` to write again.
+fn replace_records<T: PartialEq>(
+    tx: &Transaction<'_>,
+    snapshot_id: i64,
+    tables: &[&str],
+    before: &[T],
+    after: &[T],
+) -> Result<Vec<usize>, CampaignStoreError> {
+    let changed: Vec<usize> = (0..after.len())
+        .filter(|&i| before.get(i) != Some(&after[i]))
+        .collect();
+    let stale = changed
+        .iter()
+        .copied()
+        .filter(|&i| i < before.len())
+        .chain(after.len()..before.len());
+    for index in stale {
+        for table in tables {
+            tx.execute(
+                &format!("DELETE FROM {table} WHERE snapshot_id = ?1 AND record_index = ?2"),
+                rusqlite::params![snapshot_id, index + 1],
+            )?;
+        }
+    }
+    Ok(changed)
+}
+
+fn clear_tables(
+    tx: &Transaction<'_>,
+    snapshot_id: i64,
+    tables: &[&str],
+) -> Result<(), CampaignStoreError> {
+    for table in tables {
+        tx.execute(
+            &format!("DELETE FROM {table} WHERE snapshot_id = ?1"),
+            [snapshot_id],
+        )?;
+    }
     Ok(())
 }
 

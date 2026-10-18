@@ -41,12 +41,12 @@ pub(super) const SCHEMA: &str = "
         PRIMARY KEY(snapshot_id, record_index, slot)
     );";
 
-pub(super) fn write(
+pub(super) fn write<'a>(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    planets: &[Planet],
+    records: impl IntoIterator<Item = (usize, &'a Planet)>,
 ) -> Result<(), CampaignStoreError> {
-    for (index, planet) in planets.iter().enumerate() {
+    for (index, planet) in records {
         let record_index = index + 1;
         let dock = &planet.stardock;
         insert_row(

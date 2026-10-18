@@ -34,7 +34,7 @@ pub(super) fn render(root: &Path, game: &str, id: &AccountIdentity, format: &str
                 );
                 if matches!(format, "map-zip" | "map-ods" | "map-xlsx") {
                     let bytes = crate::map_archive::render(&projection, format)?;
-                    if runtime.latest_snapshot_metadata()? != Some((snapshot.snapshot_id, snapshot.game_year)) {
+                    if runtime.latest_revision()? != snapshot.revision {
                         continue;
                     }
                     let (extension, content_type) = match format {
@@ -72,7 +72,7 @@ pub(super) fn render(root: &Path, game: &str, id: &AccountIdentity, format: &str
             }
             _ => return Err("format must be reports, map-txt, map-csv, map-details, map-zip, map-ods or map-xlsx".into()),
         };
-        if runtime.latest_snapshot_metadata()? != Some((snapshot.snapshot_id, snapshot.game_year)) {
+        if runtime.latest_revision()? != snapshot.revision {
             continue;
         }
         return Ok(json!({"game":game,"seat":seat,"year":snapshot.game_year,

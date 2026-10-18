@@ -13,10 +13,10 @@ impl CampaignStore {
     }
 }
 
-pub(super) fn write_queued_mail_rows(
+pub(super) fn write_queued_mail_rows<'a>(
     tx: &rusqlite::Transaction<'_>,
     snapshot_id: i64,
-    queued_mail: &[QueuedPlayerMail],
+    queued_mail: impl IntoIterator<Item = (usize, &'a QueuedPlayerMail)>,
 ) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO queued_mail(
@@ -24,7 +24,7 @@ pub(super) fn write_queued_mail_rows(
              recipient_deleted
          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
     )?;
-    for (idx, mail) in queued_mail.iter().enumerate() {
+    for (idx, mail) in queued_mail {
         stmt.execute(params![
             snapshot_id,
             idx as i64,
@@ -69,4 +69,32 @@ pub(super) fn load_queued_mail_rows(
         })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+/// Rewrite, in snapshot `snapshot_id`, only the queued messages that differ
+/// between `before` (what the snapshot holds) and `after`, each named by its
+/// place in the queue (t204).
+pub(super) fn write_changed_queued_mail_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    before: &[QueuedPlayerMail],
+    after: &[QueuedPlayerMail],
+) -> Result<(), CampaignStoreError> {
+    let changed: Vec<usize> = (0..after.len())
+        .filter(|&i| before.get(i) != Some(&after[i]))
+        .collect();
+    let stale = changed
+        .iter()
+        .copied()
+        .filter(|&i| i < before.len())
+        .chain(after.len()..before.len());
+    for idx in stale {
+        for table in ["queued_mail", "mail_sender_state"] {
+            tx.execute(
+                &format!("DELETE FROM {table} WHERE snapshot_id = ?1 AND queue_index = ?2"),
+                params![snapshot_id, idx as i64],
+            )?;
+        }
+    }
+    write_queued_mail_rows(tx, snapshot_id, changed.iter().map(|&i| (i, &after[i])))
 }

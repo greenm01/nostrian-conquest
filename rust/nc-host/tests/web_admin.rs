@@ -97,7 +97,7 @@ fn independent_games_atomic_seats_and_lifecycle() {
     let state = store.load_latest_runtime_state().unwrap().unwrap();
     assert!(
         store
-            .expecting_snapshot(state.snapshot_id)
+            .expecting_revision(state.revision)
             .save_runtime_state_structured(state.game_year, &state.game_data, &[], &[])
             .is_err()
     );
@@ -285,7 +285,7 @@ fn simultaneous_snapshot_writers_get_one_winner_and_one_conflict() {
                     !state.game_data.players[player].autopilot;
                 barrier.wait();
                 store
-                    .expecting_snapshot(state.snapshot_id)
+                    .expecting_revision(state.revision)
                     .save_runtime_state_structured(
                         state.game_year,
                         &state.game_data,
@@ -303,10 +303,7 @@ fn simultaneous_snapshot_writers_get_one_winner_and_one_conflict() {
     assert_eq!(
         results
             .iter()
-            .filter(|r| matches!(
-                r,
-                Err(nc_data::CampaignStoreError::ConcurrentSnapshot { .. })
-            ))
+            .filter(|r| matches!(r, Err(nc_data::CampaignStoreError::ConcurrentChange { .. })))
             .count(),
         1
     );
@@ -359,7 +356,7 @@ fn maintenance_cannot_overwrite_a_newer_player_snapshot() {
     let mut player = store.load_latest_runtime_state().unwrap().unwrap();
     player.game_data.players[0].autopilot = !player.game_data.players[0].autopilot;
     store
-        .expecting_snapshot(player.snapshot_id)
+        .expecting_revision(player.revision)
         .save_runtime_state_structured(
             player.game_year,
             &player.game_data,

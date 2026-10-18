@@ -32,7 +32,7 @@ pub struct CampaignMaintenance {
     pub player_lifecycle_states: Vec<PlayerLifecycleState>,
     pub winner_state: WinnerState,
     start_year: u16,
-    start_snapshot: i64,
+    start_revision: i64,
     campaign_seed: u64,
     previous_report_block_rows: Vec<ReportBlockRow>,
     planet_intel_by_viewer: Vec<BTreeMap<usize, PlanetIntelSnapshot>>,
@@ -54,7 +54,7 @@ impl CampaignMaintenance {
         let player_count = runtime_state.game_data.conquest.player_count;
         Ok(Self {
             start_year: runtime_state.game_data.conquest.game_year,
-            start_snapshot: runtime_state.snapshot_id,
+            start_revision: runtime_state.revision,
             campaign_seed: runtime_state.campaign_seed,
             planet_intel_by_viewer: store
                 .load_snapshot_planet_intel_by_viewer(runtime_state.snapshot_id, player_count)?,
@@ -143,7 +143,7 @@ impl CampaignMaintenance {
         apply_results_reviewable_flags(&mut self.game_data, &report_block_rows);
         apply_maintenance_events_to_player_war_stats(&mut self.player_war_stats, &self.events);
         store
-            .expecting_snapshot(self.start_snapshot)
+            .expecting_revision(self.start_revision)
             .save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
                 self.start_year,
                 &self.game_data,

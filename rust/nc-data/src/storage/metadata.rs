@@ -166,3 +166,26 @@ pub(super) fn persist_campaign_seed_tx(
     )?;
     Ok(())
 }
+
+/// The campaign's revision: every save raises it, so a reader can tell
+/// whether the campaign changed since it loaded (t204).
+pub(super) fn load_revision(conn: &Connection) -> Result<i64, CampaignStoreError> {
+    Ok(conn
+        .query_row(
+            "SELECT int_value FROM campaign_metadata WHERE key = 'revision'",
+            [],
+            |row| row.get::<_, i64>(0),
+        )
+        .optional()?
+        .unwrap_or(0))
+}
+
+pub(super) fn bump_revision_tx(tx: &rusqlite::Transaction<'_>) -> Result<i64, CampaignStoreError> {
+    Ok(tx.query_row(
+        "INSERT INTO campaign_metadata(key, int_value) VALUES ('revision', 1)
+         ON CONFLICT(key) DO UPDATE SET int_value = int_value + 1
+         RETURNING int_value",
+        [],
+        |row| row.get(0),
+    )?)
+}

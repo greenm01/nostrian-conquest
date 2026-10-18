@@ -43,6 +43,37 @@ pub(super) fn write_owned_planet_year_rows(
     year: u16,
     previous_snapshot_id: Option<i64>,
 ) -> Result<(), CampaignStoreError> {
+    let rows = owned_planet_years(tx, game_data, year, previous_snapshot_id)?;
+    insert_owned_planet_year_rows(tx, snapshot_id, &rows)
+}
+
+/// Rewrite snapshot `snapshot_id`'s owned-since rows if a save of
+/// `game_data` over it would change them (t204).
+pub(super) fn write_changed_owned_planet_year_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    game_data: &CoreGameData,
+    year: u16,
+) -> Result<(), CampaignStoreError> {
+    let rows = owned_planet_years(tx, game_data, year, Some(snapshot_id))?;
+    if rows == load_owned_planet_year_rows(tx, snapshot_id, None)? {
+        return Ok(());
+    }
+    tx.execute(
+        "DELETE FROM planet_owned_since WHERE snapshot_id = ?1",
+        [snapshot_id],
+    )?;
+    insert_owned_planet_year_rows(tx, snapshot_id, &rows)
+}
+
+/// The year each owned world of `game_data` was acquired: as the previous
+/// snapshot records it, or `year` for a world acquired since.
+fn owned_planet_years(
+    tx: &rusqlite::Transaction<'_>,
+    game_data: &CoreGameData,
+    year: u16,
+    previous_snapshot_id: Option<i64>,
+) -> Result<BTreeMap<(u8, usize), u16>, CampaignStoreError> {
     let previous_rows = if let Some(previous_snapshot_id) = previous_snapshot_id {
         let rows = load_owned_planet_year_rows(tx, previous_snapshot_id, None)?;
         if rows.is_empty() {
@@ -53,22 +84,29 @@ pub(super) fn write_owned_planet_year_rows(
     } else {
         BTreeMap::new()
     };
+    Ok(game_data
+        .planets
+        .iter()
+        .enumerate()
+        .filter(|(_, planet)| planet.owner.0 != 0)
+        .map(|(planet_idx, planet)| {
+            let key = (planet.owner.0, planet_idx + 1);
+            (key, previous_rows.get(&key).copied().unwrap_or(year))
+        })
+        .collect())
+}
 
+fn insert_owned_planet_year_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    rows: &BTreeMap<(u8, usize), u16>,
+) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO planet_owned_since(
              snapshot_id, owner_empire_id, planet_record_index, acquired_year
          ) VALUES (?1, ?2, ?3, ?4)",
     )?;
-    for (planet_idx, planet) in game_data.planets.iter().enumerate() {
-        let owner_empire_id = planet.owner.0;
-        if owner_empire_id == 0 {
-            continue;
-        }
-        let planet_record_index = planet_idx + 1;
-        let acquired_year = previous_rows
-            .get(&(owner_empire_id, planet_record_index))
-            .copied()
-            .unwrap_or(year);
+    for (&(owner_empire_id, planet_record_index), &acquired_year) in rows {
         stmt.execute(params![
             snapshot_id,
             i64::from(owner_empire_id),

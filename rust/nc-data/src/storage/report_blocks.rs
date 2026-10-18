@@ -38,10 +38,10 @@ impl CampaignStore {
     }
 }
 
-pub(super) fn write_report_block_rows(
+pub(super) fn write_report_block_rows<'a>(
     tx: &rusqlite::Transaction<'_>,
     snapshot_id: i64,
-    rows: &[ReportBlockRow],
+    rows: impl IntoIterator<Item = &'a ReportBlockRow>,
 ) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO report_blocks(snapshot_id, viewer_empire_id, block_index, decoded_text, raw_hex, recipient_deleted)
@@ -102,4 +102,41 @@ pub(super) fn load_report_block_rows_filtered(
         })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+/// Rewrite, in snapshot `snapshot_id`, only the report rows that differ
+/// between `before` (what the snapshot holds) and `after`, each row named by
+/// its viewer and block index (t204).
+pub(super) fn write_changed_report_block_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    before: &[ReportBlockRow],
+    after: &[ReportBlockRow],
+) -> Result<(), CampaignStoreError> {
+    let key = |row: &ReportBlockRow| (row.viewer_empire_id, row.block_index);
+    let before: std::collections::BTreeMap<_, _> =
+        before.iter().map(|row| (key(row), row)).collect();
+    let after_keys: std::collections::BTreeSet<_> = after.iter().map(key).collect();
+    let changed: Vec<&ReportBlockRow> = after
+        .iter()
+        .filter(|row| before.get(&key(row)) != Some(row))
+        .collect();
+    let stale = before
+        .keys()
+        .filter(|row_key| !after_keys.contains(*row_key))
+        .copied()
+        .chain(
+            changed
+                .iter()
+                .map(|row| key(row))
+                .filter(|row_key| before.contains_key(row_key)),
+        );
+    for (viewer_empire_id, block_index) in stale.collect::<Vec<_>>() {
+        tx.execute(
+            "DELETE FROM report_blocks
+             WHERE snapshot_id = ?1 AND viewer_empire_id = ?2 AND block_index = ?3",
+            params![snapshot_id, i64::from(viewer_empire_id), block_index as i64],
+        )?;
+    }
+    write_report_block_rows(tx, snapshot_id, changed)
 }

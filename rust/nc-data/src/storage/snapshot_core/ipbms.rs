@@ -24,12 +24,12 @@ pub(super) const SCHEMA: &str = "
         PRIMARY KEY(snapshot_id, record_index)
     );";
 
-pub(super) fn write(
+pub(super) fn write<'a>(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    ipbms: &[Ipbm],
+    records: impl IntoIterator<Item = (usize, &'a Ipbm)>,
 ) -> Result<(), CampaignStoreError> {
-    for (index, ipbm) in ipbms.iter().enumerate() {
+    for (index, ipbm) in records {
         insert_row(
             tx,
             "snapshot_ipbms",

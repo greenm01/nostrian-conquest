@@ -70,9 +70,11 @@ pub enum CampaignStoreError {
         loaded_year: u16,
         latest_year: u16,
     },
-    ConcurrentSnapshot {
+    /// A whole-state save computed from one revision of the campaign was
+    /// refused because a change has been saved since (t204).
+    ConcurrentChange {
         expected: i64,
-        actual: Option<i64>,
+        actual: i64,
     },
 }
 
@@ -155,13 +157,16 @@ pub struct PlanetIntelSnapshot {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CampaignStore {
     path: PathBuf,
-    expected_snapshot: Option<i64>,
+    expected_revision: Option<i64>,
     maintenance_receipt: Option<(String, u16)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CampaignRuntimeState {
     pub snapshot_id: i64,
+    /// The campaign's revision when this state was loaded; every save
+    /// raises it (t204).
+    pub revision: i64,
     pub game_year: u16,
     pub campaign_seed: u64,
     pub winner_state: WinnerState,
@@ -194,7 +199,7 @@ impl std::fmt::Display for CampaignStoreError {
                 ),
             },
             Self::StaleSnapshot { .. } => f.write_str(STALE_SESSION_MESSAGE),
-            Self::ConcurrentSnapshot { .. } => {
+            Self::ConcurrentChange { .. } => {
                 f.write_str("Another session saved changes; refresh before trying again.")
             }
         }
@@ -210,7 +215,7 @@ impl std::error::Error for CampaignStoreError {
             Self::InvalidState(_) => None,
             Self::SchemaVersionMismatch { .. }
             | Self::StaleSnapshot { .. }
-            | Self::ConcurrentSnapshot { .. }
+            | Self::ConcurrentChange { .. }
             | Self::HostingPaused => None,
         }
     }
@@ -252,7 +257,7 @@ impl CampaignStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, CampaignStoreError> {
         let store = Self {
             path: path.as_ref().to_path_buf(),
-            expected_snapshot: None,
+            expected_revision: None,
             maintenance_receipt: None,
         };
         store.initialize()?;
@@ -267,12 +272,19 @@ impl CampaignStore {
         &self.path
     }
 
-    /// Bind a write to the snapshot it was computed from. The check and save
-    /// share one SQLite transaction, including maintenance writes.
-    pub fn expecting_snapshot(&self, snapshot_id: i64) -> Self {
+    /// Bind a whole-state save to the revision it was computed from: it is
+    /// refused with [`CampaignStoreError::ConcurrentChange`] when any save
+    /// has come since. The check and save share one SQLite transaction,
+    /// including maintenance writes.
+    pub fn expecting_revision(&self, revision: i64) -> Self {
         let mut store = self.clone();
-        store.expected_snapshot = Some(snapshot_id);
+        store.expected_revision = Some(revision);
         store
+    }
+
+    /// The campaign's revision, raised by every save (t204).
+    pub fn latest_revision(&self) -> Result<i64, CampaignStoreError> {
+        metadata::load_revision(&self.connection()?)
     }
 
     pub fn has_snapshots(&self) -> Result<bool, CampaignStoreError> {

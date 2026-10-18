@@ -44,12 +44,12 @@ pub(super) const SCHEMA: &str = "
         PRIMARY KEY(snapshot_id, record_index)
     );";
 
-pub(super) fn write(
+pub(super) fn write<'a>(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    fleets: &[Fleet],
+    records: impl IntoIterator<Item = (usize, &'a Fleet)>,
 ) -> Result<(), CampaignStoreError> {
-    for (index, fleet) in fleets.iter().enumerate() {
+    for (index, fleet) in records {
         let ships = &fleet.ships;
         insert_row(
             tx,

@@ -39,7 +39,46 @@ pub(super) fn write_player_activity_rows(
         default_player_activity_states(game_data.conquest.player_count)
     };
 
-    for state in &mut states {
+    raise_to_last_year_on(&mut states, game_data);
+    insert_player_activity_rows(tx, snapshot_id, &states)
+}
+
+/// Rewrite snapshot `snapshot_id`'s activity rows if a save of `states`
+/// over it would change them (t204).
+pub(super) fn write_changed_player_activity_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    game_data: &CoreGameData,
+    states: &[PlayerActivityState],
+) -> Result<(), CampaignStoreError> {
+    let mut states = normalize_activity_states(states, game_data);
+    raise_to_last_year_on(&mut states, game_data);
+    let stored = tx
+        .prepare(
+            "SELECT player_record_index, last_participation_year, inactivity_autopilot_pending_clear
+             FROM player_activity WHERE snapshot_id = ?1 ORDER BY player_record_index",
+        )?
+        .query_map(params![snapshot_id], |row| {
+            Ok(PlayerActivityState {
+                player_record_index_1_based: row.get::<_, i64>(0)? as usize,
+                last_participation_year: row.get::<_, i64>(1)? as u16,
+                inactivity_autopilot_pending_clear: row.get::<_, i64>(2)? != 0,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    if stored == states {
+        return Ok(());
+    }
+    tx.execute(
+        "DELETE FROM player_activity WHERE snapshot_id = ?1",
+        [snapshot_id],
+    )?;
+    insert_player_activity_rows(tx, snapshot_id, &states)
+}
+
+/// A player's participation year is at least the last year they ran a turn.
+fn raise_to_last_year_on(states: &mut [PlayerActivityState], game_data: &CoreGameData) {
+    for state in states {
         let current_last_run_year = game_data
             .players
             .get(state.player_record_index_1_based.saturating_sub(1))
@@ -49,7 +88,13 @@ pub(super) fn write_player_activity_rows(
             state.last_participation_year = current_last_run_year;
         }
     }
+}
 
+fn insert_player_activity_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    states: &[PlayerActivityState],
+) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO player_activity(
              snapshot_id,

@@ -39,12 +39,21 @@ pub(super) const SCHEMA: &str = "
         PRIMARY KEY(snapshot_id, record_index, toward_empire)
     );";
 
-pub(super) fn write(
+pub(super) fn write<'a>(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    players: &[Player],
+    records: impl IntoIterator<Item = (usize, &'a Player)> + Clone,
 ) -> Result<(), CampaignStoreError> {
-    for (index, player) in players.iter().enumerate() {
+    write_rows(tx, snapshot_id, records.clone())?;
+    write_diplomacy(tx, snapshot_id, records)
+}
+
+pub(super) fn write_rows<'a>(
+    tx: &Transaction<'_>,
+    snapshot_id: i64,
+    records: impl IntoIterator<Item = (usize, &'a Player)>,
+) -> Result<(), CampaignStoreError> {
+    for (index, player) in records {
         let record_index = index + 1;
         insert_row(
             tx,
@@ -74,6 +83,17 @@ pub(super) fn write(
                 ":autopilot": player.autopilot,
             },
         )?;
+    }
+    Ok(())
+}
+
+pub(super) fn write_diplomacy<'a>(
+    tx: &Transaction<'_>,
+    snapshot_id: i64,
+    records: impl IntoIterator<Item = (usize, &'a Player)>,
+) -> Result<(), CampaignStoreError> {
+    for (index, player) in records {
+        let record_index = index + 1;
         for (slot, relation) in player.diplomacy.iter().enumerate() {
             insert_row(
                 tx,

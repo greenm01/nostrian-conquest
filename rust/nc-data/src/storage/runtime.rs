@@ -46,6 +46,7 @@ impl CampaignStore {
             super::report_blocks::load_report_block_rows_filtered(&mut conn, snapshot_id, true)?;
         let queued_mail = super::mail::load_queued_mail_rows(&mut conn, snapshot_id)?;
         let winner_state = super::metadata::load_winner_state(&mut conn)?;
+        let revision = super::metadata::load_revision(&conn)?;
         let stored_campaign_seed = super::metadata::load_campaign_seed(&mut conn)?;
         let campaign_seed = stored_campaign_seed.unwrap_or_else(|| {
             derive_campaign_seed_from_runtime(&game_data, &report_block_rows, &queued_mail)
@@ -56,6 +57,7 @@ impl CampaignStore {
         conn.execute_batch("COMMIT")?;
         Ok(Some(CampaignRuntimeState {
             snapshot_id,
+            revision,
             game_year,
             campaign_seed,
             winner_state,
@@ -252,16 +254,10 @@ impl CampaignStore {
         if self.maintenance_receipt.is_none() && super::hosting::writes_blocked(&tx)? {
             return Err(CampaignStoreError::HostingPaused);
         }
-        if let Some(expected) = self.expected_snapshot {
-            let actual = tx
-                .query_row(
-                    "SELECT id FROM snapshots ORDER BY game_year DESC LIMIT 1",
-                    [],
-                    |row| row.get::<_, i64>(0),
-                )
-                .optional()?;
-            if actual != Some(expected) {
-                return Err(CampaignStoreError::ConcurrentSnapshot { expected, actual });
+        if let Some(expected) = self.expected_revision {
+            let actual = super::metadata::load_revision(&tx)?;
+            if actual != expected {
+                return Err(CampaignStoreError::ConcurrentChange { expected, actual });
             }
         }
         if let Some((_, expected_year)) = &self.maintenance_receipt {
@@ -367,7 +363,7 @@ pub(super) fn save_runtime_state_internal_tx(
     )?;
     super::snapshot_core::write_snapshot_core_rows(&tx, snapshot_id, game_data)?;
     super::report_blocks::write_report_block_rows(&tx, snapshot_id, report_block_rows)?;
-    super::mail::write_queued_mail_rows(&tx, snapshot_id, queued_mail)?;
+    super::mail::write_queued_mail_rows(&tx, snapshot_id, queued_mail.iter().enumerate())?;
     super::intel::write_planet_intel_rows(
         &tx,
         snapshot_id,
@@ -406,5 +402,6 @@ pub(super) fn save_runtime_state_internal_tx(
     )?;
     let winner_state = winner_state_override.unwrap_or(super::metadata::load_winner_state_tx(&tx)?);
     super::metadata::persist_winner_state_tx(&tx, winner_state)?;
+    super::metadata::bump_revision_tx(tx)?;
     Ok(snapshot_id)
 }

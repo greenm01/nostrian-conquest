@@ -49,7 +49,7 @@ fn bundle_is_authorized_and_all_formats_share_the_player_snapshot() {
         .into();
     }
     store
-        .expecting_snapshot(snapshot.snapshot_id)
+        .expecting_revision(snapshot.revision)
         .save_runtime_state_structured(
             snapshot.game_year,
             &snapshot.game_data,

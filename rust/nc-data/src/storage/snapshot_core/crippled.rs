@@ -46,12 +46,12 @@ fn set(hulls: &mut CrippledHulls, turns_left: usize, count: u32) -> Result<(), C
     Ok(())
 }
 
-pub(super) fn write_fleets(
+pub(super) fn write_fleets<'a>(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    fleets: &[Fleet],
+    records: impl IntoIterator<Item = (usize, &'a Fleet)>,
 ) -> Result<(), CampaignStoreError> {
-    for (index, fleet) in fleets.iter().enumerate() {
+    for (index, fleet) in records {
         for class in HullClass::ALL {
             for (turns_left, hulls) in rows(fleet.crippled.get(class)) {
                 insert_row(
@@ -71,12 +71,12 @@ pub(super) fn write_fleets(
     Ok(())
 }
 
-pub(super) fn write_bases(
+pub(super) fn write_bases<'a>(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    bases: &[Starbase],
+    records: impl IntoIterator<Item = (usize, &'a Starbase)>,
 ) -> Result<(), CampaignStoreError> {
-    for (index, base) in bases.iter().enumerate() {
+    for (index, base) in records {
         for (turns_left, hulls) in rows(&base.crippled) {
             insert_row(
                 tx,

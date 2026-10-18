@@ -93,7 +93,48 @@ pub(super) fn write_player_lifecycle_rows(
     } else {
         default_player_lifecycle_states(player_count)
     };
+    insert_player_lifecycle_rows(tx, snapshot_id, &states)
+}
 
+/// Rewrite snapshot `snapshot_id`'s lifecycle rows if a save of `states`
+/// over it would change them (t204).
+pub(super) fn write_changed_player_lifecycle_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    player_count: u8,
+    states: &[PlayerLifecycleState],
+) -> Result<(), CampaignStoreError> {
+    let states = normalize_player_lifecycle_states(states, player_count);
+    let stored = tx
+        .prepare(
+            "SELECT player_record_index, recovery_window_turns_remaining, terminal_outcome,
+                    terminal_review_consumed
+             FROM player_lifecycle WHERE snapshot_id = ?1 ORDER BY player_record_index",
+        )?
+        .query_map(params![snapshot_id], |row| {
+            Ok(PlayerLifecycleState {
+                player_record_index_1_based: row.get::<_, i64>(0)? as usize,
+                recovery_window_turns_remaining: row.get::<_, i64>(1)? as u8,
+                terminal_outcome: TerminalOutcome::from_str(&row.get::<_, String>(2)?),
+                terminal_review_consumed: row.get::<_, i64>(3)? != 0,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    if stored == states {
+        return Ok(());
+    }
+    tx.execute(
+        "DELETE FROM player_lifecycle WHERE snapshot_id = ?1",
+        [snapshot_id],
+    )?;
+    insert_player_lifecycle_rows(tx, snapshot_id, &states)
+}
+
+fn insert_player_lifecycle_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    states: &[PlayerLifecycleState],
+) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO player_lifecycle(
              snapshot_id,

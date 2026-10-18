@@ -145,7 +145,94 @@ pub(super) fn write_planet_intel_rows(
     current_rows_override: Option<&[BTreeMap<usize, PlanetIntelSnapshot>]>,
     previous: &BTreeMap<(u8, usize), PlanetIntelSnapshot>,
 ) -> Result<(), CampaignStoreError> {
-    let player_count = game_data.conquest.player_count;
+    for viewer_empire_id in 1..=game_data.conquest.player_count {
+        let merged_rows = current_rows_override
+            .and_then(|rows| rows.get(viewer_empire_id.saturating_sub(1) as usize))
+            .cloned()
+            .unwrap_or_else(|| merged_intel_rows(game_data, year, viewer_empire_id, previous));
+        insert_planet_intel_rows(
+            tx,
+            snapshot_id,
+            merged_rows
+                .iter()
+                .map(|(&planet, snapshot)| (viewer_empire_id, planet, snapshot)),
+        )?;
+    }
+    Ok(())
+}
+
+/// Rewrite, in snapshot `snapshot_id`, only the intel rows that change when
+/// every empire's intel is merged with `game_data` as a save merges it
+/// (t204): each empire's own worlds are brought up to date.
+pub(super) fn write_changed_planet_intel_rows(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    game_data: &CoreGameData,
+    year: u16,
+) -> Result<(), CampaignStoreError> {
+    let current = load_intel_rows(tx, snapshot_id)?;
+    for viewer_empire_id in 1..=game_data.conquest.player_count {
+        let merged = merged_intel_rows(game_data, year, viewer_empire_id, &current);
+        let changed: Vec<(usize, &PlanetIntelSnapshot)> = merged
+            .iter()
+            .filter(|(planet, snapshot)| {
+                current.get(&(viewer_empire_id, **planet)) != Some(*snapshot)
+            })
+            .map(|(&planet, snapshot)| (planet, snapshot))
+            .collect();
+        let stale = current
+            .keys()
+            .filter(|(viewer, planet)| {
+                *viewer == viewer_empire_id
+                    && merged.get(planet) != current.get(&(*viewer, *planet))
+            })
+            .map(|&(_, planet)| planet);
+        for planet in stale.collect::<Vec<_>>() {
+            tx.execute(
+                "DELETE FROM planet_intel
+                 WHERE snapshot_id = ?1 AND viewer_empire_id = ?2 AND planet_record_index = ?3",
+                params![snapshot_id, i64::from(viewer_empire_id), planet as i64],
+            )?;
+        }
+        insert_planet_intel_rows(
+            tx,
+            snapshot_id,
+            changed
+                .into_iter()
+                .map(|(planet, snapshot)| (viewer_empire_id, planet, snapshot)),
+        )?;
+    }
+    Ok(())
+}
+
+/// One empire's intel after a save: its rows in `previous`, with its own
+/// worlds brought up to date from `game_data`.
+fn merged_intel_rows(
+    game_data: &CoreGameData,
+    year: u16,
+    viewer_empire_id: u8,
+    previous: &BTreeMap<(u8, usize), PlanetIntelSnapshot>,
+) -> BTreeMap<usize, PlanetIntelSnapshot> {
+    let previous_rows = previous
+        .iter()
+        .filter_map(|((empire_id, planet_record_index), snapshot)| {
+            (*empire_id == viewer_empire_id).then_some((*planet_record_index, snapshot.clone()))
+        })
+        .collect::<BTreeMap<_, _>>();
+    merge_player_intel_from_runtime(
+        game_data,
+        viewer_empire_id,
+        year,
+        Some(&previous_rows),
+        None,
+    )
+}
+
+fn insert_planet_intel_rows<'a>(
+    tx: &rusqlite::Transaction<'_>,
+    snapshot_id: i64,
+    rows: impl IntoIterator<Item = (u8, usize, &'a PlanetIntelSnapshot)>,
+) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO planet_intel(
              snapshot_id, viewer_empire_id, planet_record_index, intel_tier, last_intel_year,
@@ -156,48 +243,28 @@ pub(super) fn write_planet_intel_rows(
              known_docked_summary, known_orbit_summary, compat_word_1e
          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
     )?;
-    for viewer_empire_id in 1..=player_count {
-        let previous_rows = previous
-            .iter()
-            .filter_map(|((empire_id, planet_record_index), snapshot)| {
-                (*empire_id == viewer_empire_id).then_some((*planet_record_index, snapshot.clone()))
-            })
-            .collect::<BTreeMap<_, _>>();
-        let merged_rows = current_rows_override
-            .and_then(|rows| rows.get(viewer_empire_id.saturating_sub(1) as usize))
-            .cloned()
-            .unwrap_or_else(|| {
-                merge_player_intel_from_runtime(
-                    game_data,
-                    viewer_empire_id,
-                    year,
-                    Some(&previous_rows),
-                    None,
-                )
-            });
-        for (planet_record_index_1_based, snapshot) in merged_rows {
-            stmt.execute(params![
-                snapshot_id,
-                i64::from(viewer_empire_id),
-                planet_record_index_1_based as i64,
-                snapshot.intel_tier.as_str(),
-                snapshot.last_intel_year.map(i64::from),
-                i64::from(u8::from(snapshot.compat_is_orbit_seed)),
-                snapshot.seen_year.map(i64::from),
-                snapshot.scout_year.map(i64::from),
-                snapshot.known_name,
-                snapshot.known_owner_empire_id.map(i64::from),
-                snapshot.known_potential_production.map(i64::from),
-                snapshot.known_armies.map(i64::from),
-                snapshot.known_ground_batteries.map(i64::from),
-                snapshot.known_starbase_count.map(i64::from),
-                snapshot.known_current_production.map(i64::from),
-                snapshot.known_stored_points.map(i64::from),
-                snapshot.known_docked_summary,
-                snapshot.known_orbit_summary,
-                snapshot.compat_word_1e.map(i64::from),
-            ])?;
-        }
+    for (viewer_empire_id, planet_record_index_1_based, snapshot) in rows {
+        stmt.execute(params![
+            snapshot_id,
+            i64::from(viewer_empire_id),
+            planet_record_index_1_based as i64,
+            snapshot.intel_tier.as_str(),
+            snapshot.last_intel_year.map(i64::from),
+            i64::from(u8::from(snapshot.compat_is_orbit_seed)),
+            snapshot.seen_year.map(i64::from),
+            snapshot.scout_year.map(i64::from),
+            snapshot.known_name,
+            snapshot.known_owner_empire_id.map(i64::from),
+            snapshot.known_potential_production.map(i64::from),
+            snapshot.known_armies.map(i64::from),
+            snapshot.known_ground_batteries.map(i64::from),
+            snapshot.known_starbase_count.map(i64::from),
+            snapshot.known_current_production.map(i64::from),
+            snapshot.known_stored_points.map(i64::from),
+            snapshot.known_docked_summary,
+            snapshot.known_orbit_summary,
+            snapshot.compat_word_1e.map(i64::from),
+        ])?;
     }
     Ok(())
 }
