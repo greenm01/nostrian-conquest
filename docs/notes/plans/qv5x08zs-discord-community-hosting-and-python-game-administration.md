@@ -131,6 +131,52 @@ full rewrite and the row-level path leave identical tables; maintenance
 refuses a save when a change committed during its run; the classic oracle
 tests stay green.
 
+### t205
+
+Make every database behind the community stack and BBS doors production
+ready for concurrent players, admin and bots.
+
+t204 hardened `ncgame.db`. A survey (2026-10-17) found the rest unhardened:
+`hosted.db`, `roster.db` and `.web-sessions.db` open plain connections (no
+WAL, 5 s busy wait, no foreign keys), rerun migrations on every open and
+ignore their errors, and write multi-statement changes in DEFERRED
+transactions. Seat claims ignore a lost race, the turn queue's supersede and
+enqueue are separate statements, `update_settings` rewrites a whole row
+read earlier, and roster handles have no UNIQUE constraint. A crashed admin
+maintenance run leaves the write block, status and `web_runs` set with no
+recovery; `.admin.lock` is held through the whole run, so terminal sign-in
+waits on a turn; `nc-sysop maint` does not block writes, so steady play can
+keep refusing its save. Backups copy the two databases one after the other,
+and a restore leaves a `running` `web_runs` row. The tests use threads, not
+processes, and have no crash or soak run. `nc-host serve` is
+development-only and is documented, not hardened.
+
+Approach (owner-approved plan, 2026-10-17):
+
+1. One connection policy for every SQLite file (`nc-data/src/sqlite.rs`):
+   foreign keys; writers add WAL, a 30 s busy timeout and
+   `synchronous=NORMAL`. Migrations run once in `BEGIN IMMEDIATE`, keyed by
+   a stored schema version, with errors surfaced.
+2. Every read-modify-write in `hosted.db` in one IMMEDIATE transaction;
+   seat claims report a lost race; targeted settings updates; a UNIQUE
+   roster handle.
+3. One maintenance routine for every driver (block writes, run, save with a
+   receipt, unblock), recovery of a crashed run, and `.admin.lock` held only
+   around `hosted.db` bookkeeping.
+4. Backups of both databases under one lock, copies out of WAL mode,
+   restores that clear stale runs.
+5. Multi-process stress, `kill -9` crash, maintenance-mid-play,
+   `hosted.db` concurrency and broadened equivalence tests, and a 60-minute
+   soak on bean-void.
+6. Integrity checks at open and in the daily backup, logged lock waits and
+   failed saves, disk-full handling, whole-state saves renamed for
+   maintenance, import and game creation only, and the runbook.
+
+**Exit:** the workspace is green; the stress, crash, maintenance and
+`hosted.db` tests pass ten times running; the soak loses no change and
+reports latency; a backup taken during writes restores into a playable game;
+two browser terminals keep their orders through a turn.
+
 ### t121
 
 Package services, back up and restore campaigns, and exercise a private two-game
