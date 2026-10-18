@@ -123,8 +123,9 @@ pub struct Doctrine {
     /// every colony aims for the same batteries, armies first.
     pub defend: bool,
     /// Build every hull toward its weight's share of the empire's warships
-    /// by cost (t189), so a personality's hull weights set its fleet mix.
-    /// Off, the affordable hull with the largest weight, every time.
+    /// by cost (t189, accepted under t206's cover rules), so a
+    /// personality's hull weights set its fleet mix. Off, the affordable
+    /// hull with the largest weight, every time.
     pub mixed_hulls: bool,
     /// New and rear warships Join a strike force already under way, to
     /// replenish it as it moves (t189), instead of gathering at home for a
@@ -195,7 +196,7 @@ impl Doctrine {
         allocate: false,
         supply: true,
         defend: true,
-        mixed_hulls: false,
+        mixed_hulls: true,
         reinforce: false,
         combined_gate: false,
         keep_scouts: true,
@@ -230,20 +231,20 @@ impl Weights {
     /// Weights tuned by evolution against the executor itself, with the
     /// current doctrine; see the `tune_executor` example.
     pub const TUNED: Weights = Weights {
-        tax: 65.0,
-        home_armies: 18.272446,
-        colony_armies: 9.787356,
-        batteries: 10.0,
-        etacs: 5.739257,
-        scouts: 1.3849299,
-        starbases: 1.9544523,
-        transports: 15.680258,
-        battleship: 0.36343873,
-        cruiser: 0.8007311,
-        destroyer: 0.0036436752,
-        attack_ratio: 3.801882,
-        roe: 6.3801665,
-        war_year: 17.86982,
+        tax: 62.702686,
+        home_armies: 20.0,
+        colony_armies: 9.745128,
+        batteries: 9.870895,
+        etacs: 6.282104,
+        scouts: 0.21374373,
+        starbases: 0.44496453,
+        transports: 13.457997,
+        battleship: 0.0,
+        cruiser: 0.26427263,
+        destroyer: 0.3204773,
+        attack_ratio: 3.742486,
+        roe: 4.784798,
+        war_year: 24.076294,
         doctrine: Doctrine::CURRENT,
     };
 

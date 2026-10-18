@@ -1,22 +1,24 @@
 // The default style (t167): ETACs with escorts and scouts before garrisons,
-// war late, and strikes at nearly four times a target's estimated defence
-// (retuned under t202's planetary rules). These are `Weights::TUNED`.
+// war late, and strikes at nearly four times a target's estimated defence.
+// Retuned under t206's cover rules with mixed hulls: cruisers and destroyers
+// in about equal weight, no battleships in the line. These are
+// `Weights::TUNED`.
 personality "land-grab"
 weights {
-    tax 65.0
-    home-armies 18.272446
-    colony-armies 9.787356
-    batteries 10.0
-    etacs 5.739257
-    scouts 1.3849299
-    starbases 1.9544523
-    transports 15.680258
-    battleship 0.36343873
-    cruiser 0.8007311
-    destroyer 0.0036436752
-    attack-ratio 3.801882
-    roe 6.3801665
-    war-year 17.86982
+    tax 62.702686
+    home-armies 20.0
+    colony-armies 9.745128
+    batteries 9.870895
+    etacs 6.282104
+    scouts 0.21374373
+    starbases 0.44496453
+    transports 13.457997
+    battleship 0.0
+    cruiser 0.26427263
+    destroyer 0.3204773
+    attack-ratio 3.742486
+    roe 4.784798
+    war-year 24.076294
 }
 doctrine {
     land-grab #true
@@ -27,7 +29,7 @@ doctrine {
     allocate #false
     supply #true
     defend #true
-    mixed-hulls #false
+    mixed-hulls #true
     reinforce #false
     combined-gate #false
     keep-scouts #true
@@ -39,4 +41,6 @@ doctrine {
 bounds {
     etacs 2.5 8.0
     war-year 12.0 30.0
+    battleship 0.0 0.0
+    destroyer 0.1 1.0
 }
