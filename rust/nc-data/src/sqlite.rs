@@ -41,9 +41,25 @@ pub fn open(path: &Path) -> rusqlite::Result<Connection> {
 /// which WAL keeps safe against corruption.
 pub fn open_for_writes(path: &Path) -> rusqlite::Result<Connection> {
     let conn = open(path)?;
-    conn.query_row("PRAGMA journal_mode = WAL", [], |row| {
-        row.get::<_, String>(0)
-    })?;
+    // SQLite can refuse the switch to WAL as busy without calling the busy
+    // handler, as when several processes open a new file at once (seen on
+    // Windows), so wait for it here the same way.
+    let mut attempts = 0;
+    loop {
+        match conn.query_row("PRAGMA journal_mode = WAL", [], |row| {
+            row.get::<_, String>(0)
+        }) {
+            Err(rusqlite::Error::SqliteFailure(err, _))
+                if err.code == rusqlite::ErrorCode::DatabaseBusy && wait_for_lock(attempts) =>
+            {
+                attempts += 1;
+            }
+            result => {
+                result?;
+                break;
+            }
+        }
+    }
     conn.execute_batch("PRAGMA synchronous = NORMAL;")?;
     Ok(conn)
 }
