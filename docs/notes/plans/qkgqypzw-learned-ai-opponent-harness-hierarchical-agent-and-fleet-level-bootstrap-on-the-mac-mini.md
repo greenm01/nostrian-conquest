@@ -979,6 +979,10 @@ in `nc-game`, and run `NC_AI_MODEL=fleet-final.onnx nc-sysop maint`. The
 model is on the mini at `~/.local/state/nostrian-conquest/ai/fleet-final.onnx`;
 `export_onnx.py` rebuilds it from `fleet-final.pt`.
 
+**Signed off (owner, 2026-10-18).** The owner signed off the readiness gate
+without the recorded playtests. t191 and t193 stay open as improvements to
+the seated agent, not blockers.
+
 ### t180
 
 Let games run past year 3100.
@@ -1341,7 +1345,7 @@ win.
   stored with each AI seat. `CampaignAi` loads one network seat per
   personality in use, and seats can mix styles.
 
-**Remaining:** the owner approves the styles in playtests.
+**Signed off (owner, 2026-10-18).** The owner approved the three styles.
 
 ### t166
 

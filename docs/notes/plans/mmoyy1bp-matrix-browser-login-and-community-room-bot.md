@@ -194,6 +194,9 @@ with the pointer to the button and rejects a malformed ID. Delivery to a real
 account on another homeserver has not been tried; the owner's only Matrix
 account is on matrix.org.
 
+Closed by the owner on 2026-10-18 without that check; a delivery fault on
+another homeserver will be handled if a player reports one.
+
 ### t144
 
 Approved on 2026-10-14. Player handles come from each provider's public name

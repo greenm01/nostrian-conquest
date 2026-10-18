@@ -56,11 +56,9 @@ details are in the plans' result sections.
 - **Personalities (t167).** Land grab, rusher and turtle are profiles in
   `nc-ai/personalities/*.kdl`.
 
-**Waiting on the owner:**
-- t165: playtest full games against AI seats and sign off the readiness
-  gate. The plan's t165 progress section has the steps.
-- t167: approve the styles in those playtests.
-- t166: then needs real human games, played with the players' consent.
+The owner signed off t165 and t167 on 2026-10-18 without recorded
+playtests. t166 now needs real human games, played with the players'
+consent.
 
 Plans:
 [doctrine follow-ups](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md),
