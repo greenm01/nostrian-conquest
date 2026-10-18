@@ -127,6 +127,17 @@ struct HostedDraftSaveRequest {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SessionBackend {
     Wayland,
+    // Detected only on the Unix desktops.
+    #[cfg_attr(
+        not(any(
+            target_os = "linux",
+            target_os = "dragonfly",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        )),
+        allow(dead_code)
+    )]
     X11,
     Unknown,
 }
@@ -1704,6 +1715,17 @@ fn apply_backend_preference(
         NativeBackendPreference::X11 => {
             builder.with_x11();
         }
+    }
+    #[cfg(not(any(
+        target_os = "linux",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    )))]
+    {
+        let _ = builder;
+        let _ = backend_preference;
     }
 }
 
