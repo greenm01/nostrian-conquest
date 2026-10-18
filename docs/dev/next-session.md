@@ -57,6 +57,15 @@ details are in the plans' result sections.
 - **Personalities (t167).** Land grab, rusher and turtle are profiles in
   `nc-ai/personalities/*.kdl`.
 
+- **Combat rules (t206, 2026-10-18).** Heavies cover the destroyers,
+  execution finishes cripples at half price, a heavy line adds +1
+  ([tdkitij6](../notes/decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)).
+  Mixes now beat pure cruisers 70/30 at equal cost, but the executor's
+  `mixed_hulls` still loses in campaigns; the owner calls that an AI
+  problem. t189's retune and t191's retrain must run on the new rules
+  (rebuild the Python binding first). The combat model's `engine-t206`
+  preset matches the engine.
+
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'
 consent.

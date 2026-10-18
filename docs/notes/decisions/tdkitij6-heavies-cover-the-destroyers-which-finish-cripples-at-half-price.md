@@ -89,11 +89,18 @@ starbase 42.1% / 13.6% (unchanged). The participation model agrees: two
   automatic smoothing; a measured exploit pauses adoption.
 - The AI executor's `mixed_hulls` doctrine and the tuned weights (t189,
   t191) were fitted under the old rules and need retuning.
-- Open work (t206): the engine, model and docs are on branch
-  `t206-destroyer-rules`; adoption is gated on a paired executor campaign
+- The engine, model and docs landed from branch
+  `t206-destroyer-rules` (t206); adoption was gated on a paired executor campaign
   (old and new rules x `mixed_hulls` on and off, 1,024 held-out maps, 60
   and 100 years): the rules merge only if mixed-on beats mixed-off with a
-  confidence interval above zero at both horizons.
+  confidence interval above zero at both horizons. The first gate run
+  (2026-10-18) failed: mixed fleets still lose -0.02 to -0.04 at 60 years
+  under both rule sets, though under the new rules more destroyers lose
+  less rather than more. The results are in the
+  [plan](../plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t206);
+  the owner merged the rules regardless on 2026-10-18, judging the
+  executor's failure to profit from them an AI problem (t189, t191), not
+  a game-incentive problem.
 
 ## Acceptance and connections
 

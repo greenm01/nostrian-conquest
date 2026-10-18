@@ -1905,6 +1905,35 @@ one-post rule has nothing to add, and the rusher triggers it in a handful
 of games. It loses nowhere, so it stays, off, as decided above. Nothing
 else is left to remove.
 
+### t206
+
+Adopt the destroyer cover rules
+([tdkitij6](../decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)):
+heavies in front, execution finishes cripples at half price, a heavy line
+adds one to the die. The engine, model, tests and docs are on branch
+`t206-destroyer-rules` (`bf3ffde5`), merged to main.
+
+**Gate campaign (2026-10-18, Mac mini): fails.** Paired `mixed_hulls`
+against three tuned seats, 1,024 maps from 1500000, battleships zeroed,
+the t189 share files, main at `6702e1ce` against the branch:
+
+| Build, destroyer share | 60 years | 100 years |
+| --- | ---: | ---: |
+| main, 25% | -0.025 ± 0.016 | -0.008 ± 0.017 |
+| t206, 10% | -0.038 ± 0.016 | -0.021 ± 0.017 |
+| t206, 25% | -0.025 ± 0.016 | -0.018 ± 0.017 |
+| t206, 40% | -0.020 ± 0.017 | -0.002 ± 0.018 |
+
+The rules win the equal-cost battles (mixes 70% against pure cruisers,
+36% before) and reverse the campaign trend (under the old rules more
+destroyers lost more: -0.029, -0.046, -0.052 at 60 years), but no mix
+beats the pure cruiser executor, so the gate's condition (mixed-on ahead
+with the interval above zero at both horizons) is not met. The owner
+merged the rules anyway on 2026-10-18: the incentive now exists in the
+game, and the executor's failure to use it is an AI problem (its weights
+and the `mixed_hulls` doctrine were fitted under the old rules), carried
+by t189 and the retrain in t191. t206 closed with the merge.
+
 ### t190
 
 Give the network the whole order set.
