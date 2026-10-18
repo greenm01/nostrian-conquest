@@ -245,11 +245,15 @@ Release checks, 2026-10-18 (before a beta.3 refresh):
   reserved-seat screen; they join the first open unreserved seat, with no
   invite code (codes belong to the web hosting).
 
+Closed by the owner on 2026-10-18. The attended two-terminal check moved to
+t121's pilot.
+
 ### t121
 
 Package services, back up and restore campaigns, and exercise a private two-game
-pilot. Verify concurrency, login, reconnect, schedules, failure recovery and
-80x25 rendering. Public launch needs configured Discord credentials and attended
+pilot. Verify concurrency (two browser terminals in one campaign keep their
+orders through a turn, carried over from t205), login, reconnect, schedules,
+failure recovery and 80x25 rendering. Public launch needs configured Discord credentials and attended
 acceptance. Keep 30 daily backups and pre-upgrade snapshots, plus off-server
 copies. Document operator commands and the server-independent installation.
 
