@@ -54,25 +54,3 @@ pub fn open_for_writes(path: &Path) -> rusqlite::Result<Connection> {
 pub fn write_transaction(conn: &Connection) -> rusqlite::Result<Transaction<'_>> {
     Transaction::new_unchecked(conn, TransactionBehavior::Immediate)
 }
-
-/// Add `column` to `table` with `definition` unless it is already there.
-/// Run inside the caller's write transaction, so two processes upgrading the
-/// same file cannot both add it.
-pub fn ensure_column(
-    conn: &Connection,
-    table: &str,
-    column: &str,
-    definition: &str,
-) -> rusqlite::Result<()> {
-    let present: bool = conn.query_row(
-        "SELECT EXISTS(SELECT 1 FROM pragma_table_info(?1) WHERE name = ?2)",
-        [table, column],
-        |row| row.get(0),
-    )?;
-    if !present {
-        conn.execute_batch(&format!(
-            "ALTER TABLE {table} ADD COLUMN {column} {definition}"
-        ))?;
-    }
-    Ok(())
-}

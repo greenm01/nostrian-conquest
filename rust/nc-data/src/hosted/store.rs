@@ -3,21 +3,6 @@ use std::path::Path;
 
 use super::schema::INIT_SQL;
 
-/// Columns added after a table was first created: table, column, definition.
-const ADDED_COLUMNS: &[(&str, &str, &str)] = &[
-    (
-        "game_metadata",
-        "game_tier",
-        "TEXT NOT NULL DEFAULT 'league'",
-    ),
-    (
-        "game_metadata",
-        "catalog_state",
-        "TEXT NOT NULL DEFAULT 'listed'",
-    ),
-    ("seats", "claimed_year", "INTEGER"),
-];
-
 pub struct HostedStore {
     conn: Connection,
 }
@@ -48,14 +33,11 @@ impl HostedStore {
     }
 }
 
-/// Create or upgrade the schema in one write transaction (t205), so
-/// processes opening the file at once cannot race on an upgrade, and an
-/// upgrade that fails is reported rather than mistaken for one already done.
+/// Create the schema in one write transaction (t205), so processes opening
+/// the file at once cannot race, and a failure is reported rather than
+/// mistaken for a schema already there.
 fn initialize(conn: &mut Connection) -> SqliteResult<()> {
     let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
     tx.execute_batch(INIT_SQL)?;
-    for (table, column, definition) in ADDED_COLUMNS {
-        crate::sqlite::ensure_column(&tx, table, column, definition)?;
-    }
     tx.commit()
 }

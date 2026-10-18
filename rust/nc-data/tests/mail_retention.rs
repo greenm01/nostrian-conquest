@@ -114,16 +114,15 @@ fn hidden_and_cancelled_mail_survives_database_reload_and_year_advance() {
 }
 
 #[test]
-fn sender_flags_round_trip_in_queue_file_and_legacy_mail_stays_visible() {
+fn sender_flags_round_trip_in_queue_file() {
     let dir = directory();
-    std::fs::write(dir.join("RUSTMAIL.QUE"), "1\t2\t3000\tLegacy\tBody\t0\n").unwrap();
+    let kept = mail("Kept", 3000);
+    append_mail_queue(&dir, &kept).unwrap();
     let mut cancelled = mail("Cancelled", 3001);
     cancelled.cancel();
     append_mail_queue(&dir, &cancelled).unwrap();
     let loaded = load_mail_queue(&dir).unwrap();
-    assert_eq!(loaded.len(), 2);
-    assert!(!loaded[0].sender_deleted && !loaded[0].cancelled);
-    assert_eq!(loaded[1], cancelled);
+    assert_eq!(loaded, vec![kept, cancelled]);
     std::fs::remove_dir_all(dir).unwrap();
 }
 

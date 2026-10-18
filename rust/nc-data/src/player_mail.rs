@@ -149,30 +149,18 @@ pub fn load_mail_queue(dir: &Path) -> Result<Vec<QueuedPlayerMail>, Box<dyn std:
     let mut out = Vec::new();
     for line in text.lines().filter(|line| !line.trim().is_empty()) {
         let parts = line.split('\t').collect::<Vec<_>>();
-        let (sender_deleted, cancelled) = if parts.len() == 8 {
-            (parse_deleted_flag(parts[6]), parse_deleted_flag(parts[7]))
-        } else {
-            (false, false)
-        };
-        let legacy = if parts.len() == 8 {
-            &parts[..6]
-        } else {
-            parts.as_slice()
-        };
-        let (sender, recipient, year, subject, body, recipient_deleted) = match legacy {
-            [sender, recipient, year, body] => (*sender, *recipient, *year, "", *body, false),
-            [sender, recipient, year, subject, body] => {
-                (*sender, *recipient, *year, *subject, *body, false)
-            }
-            [sender, recipient, year, subject, body, recipient_deleted] => (
-                *sender,
-                *recipient,
-                *year,
-                *subject,
-                *body,
-                parse_deleted_flag(recipient_deleted),
-            ),
-            _ => continue,
+        let [
+            sender,
+            recipient,
+            year,
+            subject,
+            body,
+            recipient_deleted,
+            sender_deleted,
+            cancelled,
+        ] = parts.as_slice()
+        else {
+            continue;
         };
         out.push(QueuedPlayerMail {
             sender_empire_id: sender.parse()?,
@@ -180,9 +168,9 @@ pub fn load_mail_queue(dir: &Path) -> Result<Vec<QueuedPlayerMail>, Box<dyn std:
             year: year.parse()?,
             subject: unescape_field(subject),
             body: unescape_field(body),
-            recipient_deleted,
-            sender_deleted,
-            cancelled,
+            recipient_deleted: parse_deleted_flag(recipient_deleted),
+            sender_deleted: parse_deleted_flag(sender_deleted),
+            cancelled: parse_deleted_flag(cancelled),
         });
     }
     Ok(out)

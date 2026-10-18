@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use rusqlite::{Connection, OptionalExtension};
+use rusqlite::Connection;
 
 use crate::{CoreGameData, QueuedPlayerMail, ReportBlockRow};
 
@@ -39,15 +39,6 @@ pub const DEFAULT_CAMPAIGN_DB_NAME: &str = "ncgame.db";
 pub const STALE_SESSION_MESSAGE: &str =
     "Maintenance has run; your last change was not saved. Log in again.";
 const RUNTIME_SCHEMA_VERSION: i64 = 17;
-const LEGACY_RECORD_TABLES: [&str; 7] = [
-    "player_record_fields",
-    "planet_record_fields",
-    "fleet_record_fields",
-    "base_record_fields",
-    "ipbm_record_fields",
-    "setup_record_fields",
-    "conquest_record_fields",
-];
 
 #[derive(Debug)]
 pub enum CampaignStoreError {
@@ -347,8 +338,8 @@ impl CampaignStore {
         Ok(())
     }
 
-    /// Create or upgrade the schema in one write transaction (t205), so
-    /// sessions opening the same file at once cannot race on an upgrade.
+    /// Create the schema in one write transaction (t205), so sessions
+    /// opening the same file at once cannot race on it.
     fn initialize(&self) -> Result<(), CampaignStoreError> {
         let mut conn = self.connection()?;
         let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
@@ -507,21 +498,6 @@ impl CampaignStore {
              );",
         )?;
         snapshot_core::create_tables(conn)?;
-        ensure_column(conn, "planet_intel", "known_docked_summary", "TEXT")?;
-        ensure_column(conn, "planet_intel", "known_orbit_summary", "TEXT")?;
-        ensure_column(conn, "planet_intel", "known_starbase_count", "INTEGER")?;
-        ensure_column(
-            conn,
-            "snapshot_planets",
-            "crippled_batteries",
-            "INTEGER NOT NULL DEFAULT 0",
-        )?;
-        ensure_column(
-            conn,
-            "ai_seats",
-            "personality",
-            "TEXT NOT NULL DEFAULT 'land-grab'",
-        )?;
         let schema_version = metadata::load_runtime_schema_version(conn)?;
         match schema_version {
             Some(found) if found == RUNTIME_SCHEMA_VERSION => {}
@@ -532,12 +508,6 @@ impl CampaignStore {
                 });
             }
             None => {
-                if legacy_record_schema_present(conn)? {
-                    return Err(CampaignStoreError::SchemaVersionMismatch {
-                        expected: RUNTIME_SCHEMA_VERSION,
-                        found: None,
-                    });
-                }
                 metadata::persist_runtime_schema_version(conn, RUNTIME_SCHEMA_VERSION)?;
             }
         }
@@ -554,29 +524,4 @@ impl CampaignStore {
     fn write_connection(&self) -> Result<Connection, CampaignStoreError> {
         crate::sqlite::open_for_writes(&self.path).map_err(CampaignStoreError::Sql)
     }
-}
-
-fn ensure_column(
-    conn: &Connection,
-    table: &str,
-    column: &str,
-    sql_type: &str,
-) -> Result<(), CampaignStoreError> {
-    Ok(crate::sqlite::ensure_column(conn, table, column, sql_type)?)
-}
-
-fn legacy_record_schema_present(conn: &Connection) -> Result<bool, CampaignStoreError> {
-    for table in LEGACY_RECORD_TABLES {
-        let exists: Option<i64> = conn
-            .query_row(
-                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1 LIMIT 1",
-                [table],
-                |row| row.get(0),
-            )
-            .optional()?;
-        if exists.is_some() {
-            return Ok(true);
-        }
-    }
-    Ok(false)
 }

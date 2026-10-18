@@ -648,47 +648,6 @@ fn sqlite_store_seat_bind_sources_default_to_real_name_on_existing_databases() {
 }
 
 #[test]
-fn sqlite_store_rejects_legacy_byte_table_schema() {
-    let imported = temp_dir("nc-data-storage-legacy-schema");
-    fs::create_dir_all(&imported).expect("create temp dir");
-    let store_path = imported.join(DEFAULT_CAMPAIGN_DB_NAME);
-    let conn = Connection::open(&store_path).expect("open sqlite db");
-    conn.execute_batch(
-        "PRAGMA foreign_keys = ON;
-         CREATE TABLE snapshots (
-             id INTEGER PRIMARY KEY,
-             game_year INTEGER NOT NULL UNIQUE
-         );
-         CREATE TABLE campaign_metadata (
-             key TEXT PRIMARY KEY,
-             int_value INTEGER NOT NULL
-         );
-         CREATE TABLE player_record_fields (
-             snapshot_id INTEGER NOT NULL,
-             record_index INTEGER NOT NULL,
-             byte_offset INTEGER NOT NULL,
-             byte_value INTEGER NOT NULL,
-             PRIMARY KEY(snapshot_id, record_index, byte_offset)
-         );
-         INSERT INTO snapshots(id, game_year) VALUES (1, 3000);",
-    )
-    .expect("seed legacy schema");
-    drop(conn);
-
-    let err = CampaignStore::open(&store_path).expect_err("legacy schema should be rejected");
-    assert!(
-        matches!(
-            err,
-            CampaignStoreError::SchemaVersionMismatch {
-                expected: 17,
-                found: None
-            }
-        ),
-        "unexpected error: {err}"
-    );
-}
-
-#[test]
 fn sqlite_store_rejects_prior_runtime_schema_version() {
     let imported = temp_dir("nc-data-storage-prior-runtime-schema");
     fs::create_dir_all(&imported).expect("create temp dir");

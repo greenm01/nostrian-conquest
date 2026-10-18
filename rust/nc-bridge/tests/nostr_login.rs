@@ -162,21 +162,3 @@ async fn browser_claims_invite_with_verified_key_and_cannot_link_accounts() {
     assert_eq!(game["year"], 3000);
     assert!(game["next_due"].is_null());
 }
-
-#[test]
-fn old_session_database_requires_explicit_offline_conversion() {
-    let root = tempfile::tempdir().unwrap();
-    let db = rusqlite::Connection::open(root.path().join(".web-sessions.db")).unwrap();
-    db.execute_batch("CREATE TABLE web_sessions(token TEXT PRIMARY KEY,discord_id TEXT,expires INTEGER); INSERT INTO web_sessions VALUES ('old','123',9999999999);").unwrap();
-    let error = match router(config(root.path())) {
-        Ok(_) => panic!("accepted legacy schema"),
-        Err(error) => error,
-    };
-    assert!(error.contains("offline"));
-    assert_eq!(
-        db.query_row("SELECT discord_id FROM web_sessions", [], |r| r
-            .get::<_, String>(0))
-            .unwrap(),
-        "123"
-    );
-}
