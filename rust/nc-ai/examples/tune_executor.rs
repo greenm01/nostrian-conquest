@@ -13,8 +13,8 @@
 //!     [--personality rusher] [--against-default] [--with combined_gate,mixed_hulls] [--out tuned.kdl]
 //! ```
 //!
-//! `--personality` tunes a style (t167) from its profile, within its
-//! bounds. `--against-default` scores candidates against three seats of the
+//! `--personality` tunes a style (t167), built in or a `.kdl` file, from
+//! its profile, within its bounds. `--against-default` scores candidates against three seats of the
 //! default style instead of the champion, and the generation's best becomes
 //! the champion: a style is tuned to hold its own in a mixed game, not to
 //! beat its own kind.
@@ -25,7 +25,9 @@
 
 use std::thread;
 
-use nc_ai::{Personality, SeatPolicy, Weights, personality, personality_kdl, play_match};
+use nc_ai::{
+    Personality, SeatPolicy, Weights, personality, personality_kdl, personality_or_file, play_match,
+};
 
 const PLAYERS: usize = 4;
 
@@ -117,7 +119,7 @@ fn main() {
             .map(|idx| args[idx + 1].clone())
     };
     let style = named("--personality")
-        .map(|name| personality(&name).unwrap_or_else(|| panic!("unknown personality {name}")));
+        .map(|name| personality_or_file(&name).unwrap_or_else(|err| panic!("{err}")));
     let against_default = args.iter().any(|arg| arg == "--against-default");
     let default = personality("land-grab").expect("the default style is built in");
 
