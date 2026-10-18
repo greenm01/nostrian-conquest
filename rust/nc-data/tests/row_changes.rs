@@ -5,11 +5,12 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use nc_data::{
-    CampaignStore, CampaignStoreError, CommittedChange, FleetDetachSelection, QueuedPlayerMail,
-    ReportBlockRow, RuntimeChange, delete_report_block_for_viewer,
-};
-use nc_engine::build_seeded_initialized_game;
+use nc_data::{CampaignStore, CampaignStoreError, CommittedChange, RuntimeChange};
+
+#[allow(dead_code)]
+mod random_play;
+
+use random_play::{Rng, Step, apply, seed_campaign};
 
 static TEMP_DIR_SEQ: AtomicU64 = AtomicU64::new(0);
 
@@ -31,46 +32,11 @@ fn temp_dir() -> TempDir {
     TempDir(dir)
 }
 
-/// A year-3000 four-player game with stocked stardocks, a broadcast report,
-/// one report per empire and some mail.
+/// A year-3000 four-player game with stocked stardocks, reports and mail.
 fn campaign(dir: &Path) -> CampaignStore {
     let store = CampaignStore::open_default_in_dir(dir).expect("open store");
-    let mut data = build_seeded_initialized_game(4, 3000, 1515).expect("seeded game");
-    for empire in 1..=4 {
-        let home = data
-            .planets
-            .iter()
-            .position(|planet| planet.owner.0 == empire)
-            .expect("home world");
-        data.planets[home].stardock.destroyers = 30;
-        data.planets[home].stardock.starbases = 2;
-    }
-    let reports: Vec<ReportBlockRow> = (0..=4)
-        .map(|viewer| ReportBlockRow {
-            viewer_empire_id: viewer,
-            block_index: usize::from(viewer),
-            decoded_text: format!("report for {viewer}"),
-            raw_bytes: None,
-            recipient_deleted: false,
-        })
-        .collect();
+    seed_campaign(&store, 4);
     store
-        .save_runtime_state_structured(3000, &data, &reports, &[mail(1, 2), mail(3, 4)])
-        .expect("seed store");
-    store
-}
-
-fn mail(sender_empire_id: u8, recipient_empire_id: u8) -> QueuedPlayerMail {
-    QueuedPlayerMail {
-        sender_empire_id,
-        recipient_empire_id,
-        year: 3000,
-        subject: format!("from {sender_empire_id}"),
-        body: "hello".to_string(),
-        recipient_deleted: false,
-        sender_deleted: false,
-        cancelled: false,
-    }
 }
 
 /// A copy of `store`'s campaign in `dir`, taken through SQLite so the WAL is
@@ -82,127 +48,6 @@ fn copy(store: &CampaignStore, dir: &Path) -> CampaignStore {
         .execute("VACUUM INTO ?1", [target.to_str().expect("utf-8 path")])
         .expect("copy campaign");
     CampaignStore::open(target).expect("open copy")
-}
-
-/// One random player change, as plain data, so the same change can run
-/// against two stores.
-#[derive(Clone, Copy, Debug)]
-enum Step {
-    Commission(u8),
-    Detach(u8, usize),
-    Roe(u8, usize, u8),
-    Tax(u8, u8),
-    Mail(u8, u8),
-    DeleteReport(u8),
-    CancelMail(usize),
-    Handle(u8, usize),
-    Participate(u8),
-}
-
-fn apply(step: Step, state: &mut RuntimeChange) -> Result<(), Box<dyn std::error::Error>> {
-    let own = |state: &RuntimeChange, empire: u8| -> Vec<usize> {
-        state
-            .game_data
-            .fleets
-            .iter()
-            .enumerate()
-            .filter(|(_, fleet)| fleet.owner.0 == empire)
-            .map(|(idx, _)| idx + 1)
-            .collect()
-    };
-    match step {
-        Step::Commission(empire) => {
-            state
-                .game_data
-                .auto_commission_all_stardock_units(usize::from(empire))?;
-        }
-        Step::Detach(empire, at) => {
-            let donors: Vec<usize> = own(state, empire)
-                .into_iter()
-                .filter(|&record| state.game_data.fleets[record - 1].ships.destroyers > 1)
-                .collect();
-            if let Some(&donor) = donors.get(at % donors.len().max(1)) {
-                state.game_data.detach_ships_to_new_fleet(
-                    usize::from(empire),
-                    donor,
-                    FleetDetachSelection {
-                        destroyers: 1,
-                        ..FleetDetachSelection::default()
-                    },
-                    None,
-                    0,
-                )?;
-            }
-        }
-        Step::Roe(empire, at, roe) => {
-            let fleets = own(state, empire);
-            if let Some(&record) = fleets.get(at % fleets.len().max(1)) {
-                let _ =
-                    state
-                        .game_data
-                        .set_fleet_rules_of_engagement(usize::from(empire), record, roe);
-            }
-        }
-        Step::Tax(empire, rate) => {
-            state
-                .game_data
-                .set_player_tax_rate(usize::from(empire), rate)?;
-        }
-        Step::Mail(sender, recipient) => state.queued_mail.push(mail(sender, recipient)),
-        Step::DeleteReport(viewer) => {
-            let players = state.game_data.players.clone();
-            if let Some(idx) = state
-                .report_block_rows
-                .iter()
-                .position(|row| row.is_visible_to_viewer(viewer) && !row.recipient_deleted)
-            {
-                delete_report_block_for_viewer(&mut state.report_block_rows, &players, idx, viewer);
-            }
-        }
-        Step::CancelMail(at) => {
-            let count = state.queued_mail.len();
-            if count > 0 {
-                state.queued_mail[at % count].cancel();
-            }
-        }
-        Step::Handle(empire, k) => nc_data::set_player_handle(
-            &mut state.game_data.players[usize::from(empire) - 1],
-            &format!("h{empire}-{k}"),
-        ),
-        Step::Participate(empire) => nc_data::record_interactive_participation(
-            &mut state.game_data,
-            usize::from(empire),
-            &mut state.player_activity_states,
-        ),
-    }
-    Ok(())
-}
-
-struct Rng(u64);
-
-impl Rng {
-    fn below(&mut self, n: usize) -> usize {
-        self.0 ^= self.0 << 13;
-        self.0 ^= self.0 >> 7;
-        self.0 ^= self.0 << 17;
-        (self.0 % n as u64) as usize
-    }
-
-    fn step(&mut self) -> Step {
-        let empire = self.below(4) as u8 + 1;
-        let at = self.below(1000);
-        match self.below(9) {
-            0 => Step::Commission(empire),
-            1 => Step::Detach(empire, at),
-            2 => Step::Roe(empire, at, self.below(11) as u8),
-            3 => Step::Tax(empire, self.below(101) as u8),
-            4 => Step::Mail(empire, empire % 4 + 1),
-            5 => Step::DeleteReport(empire),
-            6 => Step::CancelMail(at),
-            7 => Step::Handle(empire, at),
-            _ => Step::Participate(empire),
-        }
-    }
 }
 
 /// Every stored row, table by table, with snapshot IDs left out (a rewrite
@@ -272,6 +117,26 @@ fn assert_same_rows(rows: &CampaignStore, year: &CampaignStore, context: &str) {
     }
 }
 
+/// One change through each path, which must agree on whether it commits.
+fn change_both(by_rows: &CampaignStore, by_year: &CampaignStore, year: u16, step: Step) -> bool {
+    let rows: Result<((), CommittedChange), Box<dyn std::error::Error>> =
+        by_rows.change(year, |state| apply(step, state));
+    let rewrite: Result<((), CommittedChange), Box<dyn std::error::Error>> =
+        by_year.change_rewriting_the_year(year, |state| apply(step, state));
+    assert_eq!(rows.is_ok(), rewrite.is_ok(), "{step:?}");
+    rows.is_ok()
+}
+
+/// A year of maintenance on a copy, as `nc-sysop maint` runs it.
+fn close_year(store: &CampaignStore) {
+    let run = store.begin_maintenance().expect("begin");
+    let mut year = nc_engine::CampaignMaintenance::load(store).expect("load the year");
+    year.run_turn().expect("run the year");
+    year.save(run.store()).expect("save the year");
+}
+
+/// Changes of every kind, over three years with maintenance between them:
+/// row-level writes leave exactly what rewriting the year leaves.
 #[test]
 fn row_changes_store_exactly_what_rewriting_the_year_stores() {
     for seed in 1..=4u64 {
@@ -280,23 +145,71 @@ fn row_changes_store_exactly_what_rewriting_the_year_stores() {
         let by_year = copy(&by_rows, &year_dir.0);
         assert_same_rows(&by_rows, &by_year, "the copy");
         let mut rng = Rng(0x2545_f491_4f6c_dd1d ^ seed);
-        for n in 0..60 {
-            let step = rng.step();
-            let rows: Result<((), CommittedChange), Box<dyn std::error::Error>> =
-                by_rows.change(3000, |state| apply(step, state));
-            let year: Result<((), CommittedChange), Box<dyn std::error::Error>> =
-                by_year.change_rewriting_the_year(3000, |state| apply(step, state));
-            assert_eq!(rows.is_ok(), year.is_ok(), "seed {seed} step {n} {step:?}");
-            if n % 10 == 9 {
-                assert_same_rows(
-                    &by_rows,
-                    &by_year,
-                    &format!("seed {seed} after step {n} {step:?}"),
-                );
+        let mut committed = 0;
+        for year in 3000..3003u16 {
+            for n in 0..50 {
+                let step = rng.step(None, 4);
+                committed += usize::from(change_both(&by_rows, &by_year, year, step));
+                if n % 10 == 9 {
+                    assert_same_rows(
+                        &by_rows,
+                        &by_year,
+                        &format!("seed {seed} year {year} after step {n} {step:?}"),
+                    );
+                }
             }
+            close_year(&by_rows);
+            close_year(&by_year);
+            assert_same_rows(
+                &by_rows,
+                &by_year,
+                &format!("seed {seed} after closing {year}"),
+            );
         }
-        assert_same_rows(&by_rows, &by_year, &format!("seed {seed} at the end"));
+        assert!(
+            committed > 60,
+            "seed {seed}: only {committed} changes committed"
+        );
     }
+}
+
+/// Four sessions change one campaign at once; replaying their changes in
+/// commit order through the year rewrite leaves the same tables.
+#[test]
+fn concurrent_row_changes_match_their_replay_in_commit_order() {
+    let (rows_dir, year_dir) = (temp_dir(), temp_dir());
+    let by_rows = campaign(&rows_dir.0);
+    let by_year = copy(&by_rows, &year_dir.0);
+    let path = by_rows.path().to_path_buf();
+    let sessions: Vec<_> = (1..=4u8)
+        .map(|empire| {
+            let path = path.clone();
+            std::thread::spawn(move || {
+                let store = CampaignStore::open(&path).expect("session");
+                let mut rng = Rng(0x9e37_79b9 ^ u64::from(empire));
+                let mut committed = Vec::new();
+                for _ in 0..60 {
+                    let step = rng.step(Some(empire), 4);
+                    if let Ok(((), done)) = store.change(3000, |state| apply(step, state)) {
+                        committed.push((done.revision, step));
+                    }
+                }
+                committed
+            })
+        })
+        .collect();
+    let mut log: Vec<(i64, Step)> = sessions
+        .into_iter()
+        .flat_map(|session| session.join().expect("session"))
+        .collect();
+    log.sort_by_key(|(revision, _)| *revision);
+    assert!(log.len() > 40, "only {} changes committed", log.len());
+    for (_, step) in log {
+        by_year
+            .change_rewriting_the_year(3000, |state| apply(step, state))
+            .unwrap_or_else(|err: Box<dyn std::error::Error>| panic!("replay {step:?}: {err}"));
+    }
+    assert_same_rows(&by_rows, &by_year, "after the replay");
 }
 
 /// Count every row written, through triggers on each table.

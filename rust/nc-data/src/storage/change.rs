@@ -22,6 +22,9 @@ pub struct RuntimeChange {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CommittedChange {
     pub snapshot_id: i64,
+    /// The campaign's revision after this change; changes commit in its
+    /// order.
+    pub revision: i64,
     pub campaign_seed: u64,
     pub state: RuntimeChange,
 }
@@ -147,11 +150,13 @@ impl CampaignStore {
         };
         let campaign_seed = super::metadata::load_campaign_seed_tx(&tx)?
             .ok_or_else(|| CampaignStoreError::InvalidState("campaign seed missing".into()))?;
+        let revision = super::metadata::load_revision(&tx)?;
         tx.commit().map_err(CampaignStoreError::Sql)?;
         Ok((
             value,
             CommittedChange {
                 snapshot_id,
+                revision,
                 campaign_seed,
                 state,
             },
