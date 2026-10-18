@@ -532,7 +532,8 @@ fn maintenance_cannot_overwrite_a_newer_player_snapshot() {
 #[test]
 fn daily_retention_keeps_thirty_copies_without_pruning_manual_backup() {
     let temp = tempfile::tempdir().unwrap();
-    let root = temp.path();
+    // The paths recorded below must match the canonical root `execute` uses.
+    let root = &temp.path().canonicalize().unwrap();
     create(root, "one");
     let manual = execute(root, Request::Backup { game: "one".into() }).unwrap();
     let conn = rusqlite::Connection::open(root.join("one/hosted.db")).unwrap();

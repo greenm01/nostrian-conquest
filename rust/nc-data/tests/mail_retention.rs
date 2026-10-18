@@ -110,6 +110,9 @@ fn hidden_and_cancelled_mail_survives_database_reload_and_year_advance() {
         )
         .unwrap();
     assert_eq!(archived, 1, "hidden report stays in its year's snapshot");
+    // Windows cannot remove a file that is still open.
+    drop(db);
+    drop(store);
     std::fs::remove_dir_all(dir).unwrap();
 }
 
