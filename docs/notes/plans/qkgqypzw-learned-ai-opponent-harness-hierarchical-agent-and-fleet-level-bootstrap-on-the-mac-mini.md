@@ -1785,6 +1785,12 @@ destroyers' execution fire counting for more, so the pairing pays) or
 roles that keep slow battleships out of the cruiser force entirely (a
 separate siege group with its own rendezvous, not yet tried).
 
+The owner took the combat-rule route on 2026-10-18: heavies cover the
+destroyers, execution finishes cripples at half price, and a heavy line
+adds one to the die
+([tdkitij6](../decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)).
+Adoption and the retune are t206 below.
+
 ### t203
 
 Early warning: pickets on the approaches, threats tracked from what the

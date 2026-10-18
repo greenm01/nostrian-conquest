@@ -16,8 +16,9 @@ use nc_data::{
 };
 
 use super::exchange::{
-    BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_PURSUIT, apply_hits_to_fleet,
-    fleet_die_modifier, fleet_volley,
+    BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_PURSUIT, apply_battery_hits_to_fleet,
+    apply_hits_to_fleet, apply_landing_fire_to_fleet, fleet_die_modifier, fleet_volley,
+    heavy_line_outweighs,
 };
 use super::fleet_battle::{BattleSide, FleetBattle, apply_pending_hits, fight_encounter_with_dice};
 use super::state::{FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, new_task_force};
@@ -204,8 +205,9 @@ fn fleet_volley_reads_the_flat_table() {
     assert!(!fleet_volley(9, 0, 0).critical);
 }
 
-/// The punch ladder (6vqrcldx): a destroyer's DS is 7, so each of its
-/// damage steps costs 7 and execution fire pays 14 to destroy a nominal one.
+/// The punch ladder (6vqrcldx): a destroyer's DS is 7, so crippling one
+/// costs 7 and execution fire pays 14 to destroy a nominal one. Finishing a
+/// cripple with execution fire costs half, rounded up to 4 (t206).
 #[test]
 fn a_destroyer_costs_seven_hits_a_step() {
     let mut state = FleetCombatState::default();
@@ -221,15 +223,146 @@ fn a_destroyer_costs_seven_hits_a_step() {
     assert_eq!(
         (state.counts[IDX_DD], state.crippled_count(IDX_DD)),
         (1, 0),
-        "execution fire finishes the crippled one for 7 and cannot afford the nominal one"
+        "execution fire finishes the crippled one for 4 and cannot afford the nominal one"
     );
-    assert_eq!(carried.execution, 7);
+    assert_eq!(carried.execution, 10);
     let carried = apply_hits_to_fleet(&mut state, 0, 14, 0);
     assert_eq!(
         state.counts[IDX_DD], 0,
         "14 execution hits destroy a nominal destroyer"
     );
     assert_eq!(carried.execution, 0);
+}
+
+/// Cover (t206): ordinary fire works through the heaviest hulls first, so
+/// the destroyers fight from behind the battleships and cruisers.
+#[test]
+fn heavies_cover_the_destroyers() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_BB] = 1;
+    state.counts[IDX_CA] = 1;
+    state.counts[IDX_DD] = 3;
+    let carried = apply_hits_to_fleet(&mut state, 140, 0, 0);
+    assert_eq!(
+        state.crippled_count(IDX_BB),
+        1,
+        "the battleship takes the first 110"
+    );
+    assert_eq!(state.crippled_count(IDX_CA), 1, "then the cruiser takes 30");
+    assert_eq!(
+        state.crippled_count(IDX_DD),
+        0,
+        "the destroyers are untouched"
+    );
+    assert_eq!(carried.suppression, 0);
+    // Execution fire follows the same cover: it finishes the crippled
+    // battleship for half its DS before it can reach a destroyer.
+    let carried = apply_hits_to_fleet(&mut state, 0, 60, 0);
+    assert_eq!(state.counts[IDX_BB], 0, "55 finish the crippled battleship");
+    assert_eq!(state.counts[IDX_DD], 3);
+    assert_eq!(carried.execution, 5);
+}
+
+/// Cover (t206): suppression too weak for the cruiser in front cannot
+/// reach the destroyers behind it, and carries; a class with nothing left
+/// to hit is simply skipped.
+#[test]
+fn a_cruiser_too_dear_to_hit_shields_the_destroyers() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_CA] = 1;
+    state.counts[IDX_DD] = 2;
+    let carried = apply_hits_to_fleet(&mut state, 20, 0, 0);
+    assert_eq!(state.crippled_count(IDX_DD), 0);
+    assert_eq!(carried.suppression, 20);
+    state.cripple(IDX_CA, 1);
+    let carried = apply_hits_to_fleet(&mut state, 20, 0, 0);
+    assert_eq!(
+        state.crippled_count(IDX_DD),
+        2,
+        "with the cruiser crippled, 14 of the 20 cripple both destroyers"
+    );
+    assert_eq!(carried.suppression, 6);
+}
+
+/// Battery return fire and landing fire keep the pre-t206 prices and
+/// order: cripples finish at full DS, destroyers in front.
+#[test]
+fn battery_and_landing_fire_keep_todays_prices() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_CA] = 1;
+    state.counts[IDX_DD] = 1;
+    state.cripple(IDX_CA, 1);
+    state.cripple(IDX_DD, 1);
+    let mut ships = state.clone();
+    apply_hits_to_fleet(&mut ships, 0, 30, 0);
+    assert_eq!(
+        (ships.counts[IDX_CA], ships.counts[IDX_DD]),
+        (0, 0),
+        "ship fire finishes the cruiser for 15 and the destroyer for 4"
+    );
+    apply_battery_hits_to_fleet(&mut state, 30, 0);
+    assert_eq!(
+        (state.counts[IDX_CA], state.counts[IDX_DD]),
+        (1, 0),
+        "battery fire finishes the destroyer for 7 and cannot afford the cruiser's 30"
+    );
+    let mut landing = FleetCombatState::default();
+    landing.counts[IDX_TT] = 1;
+    landing.cripple(IDX_TT, 1);
+    apply_landing_fire_to_fleet(&mut landing, 9, false);
+    assert_eq!(
+        landing.counts[IDX_TT], 1,
+        "a crippled transport still costs 10"
+    );
+    apply_landing_fire_to_fleet(&mut landing, 10, false);
+    assert_eq!(landing.counts[IDX_TT], 0);
+}
+
+/// Criticals keep their own order, cheapest hull first, cripples before
+/// nominal: cover does not move them.
+#[test]
+fn a_critical_still_takes_the_cheapest_hull_first() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_BB] = 1;
+    state.counts[IDX_DD] = 2;
+    state.cripple(IDX_BB, 1);
+    apply_hits_to_fleet(&mut state, 0, 0, 1);
+    assert_eq!(
+        state.counts[IDX_BB], 0,
+        "the crippled battleship goes first"
+    );
+    apply_hits_to_fleet(&mut state, 0, 0, 1);
+    assert_eq!(
+        state.counts[IDX_DD], 1,
+        "then a nominal destroyer, not a heavier hull"
+    );
+}
+
+/// The heavy-line bonus (t206): +1 on the die for a side whose cruisers,
+/// battleships and starbases cost at least twice the enemy's. Destroyers
+/// never count, and no heavies on either side earns nothing.
+#[test]
+fn a_heavy_line_adds_one_to_the_die() {
+    assert!(heavy_line_outweighs(450, 225));
+    assert!(!heavy_line_outweighs(449, 225));
+    assert!(heavy_line_outweighs(15, 0), "any heavy line outweighs none");
+    assert!(!heavy_line_outweighs(0, 0));
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_CA] = 2;
+    state.counts[IDX_BB] = 1;
+    state.counts[IDX_SB] = 1;
+    state.counts[IDX_DD] = 40;
+    state.cripple(IDX_BB, 1);
+    assert_eq!(
+        state.heavy_cost(),
+        30 + 45 + 50,
+        "crippled hulls at full price"
+    );
+    assert_eq!(
+        fleet_die_modifier(&state, false, true),
+        2,
+        "a starbase and the heavy line"
+    );
 }
 
 #[test]
@@ -239,7 +372,7 @@ fn starbases_add_one_to_the_die_and_mixed_fleets_add_nothing() {
         for &idx in classes {
             state.counts[idx] = 1;
         }
-        fleet_die_modifier(&state, false)
+        fleet_die_modifier(&state, false, false)
     };
     assert_eq!(modifier(&[IDX_CA]), 0);
     assert_eq!(modifier(&[IDX_DD, IDX_CA]), 0);
@@ -812,10 +945,14 @@ fn a_surprise_adds_one_and_leaves_criticals_alone() {
         for &idx in classes {
             state.counts[idx] = 1;
         }
-        fleet_die_modifier(&state, surprise)
+        fleet_die_modifier(&state, surprise, false)
     };
     assert_eq!(modifier(&[IDX_CA], true), 1);
-    assert_eq!(modifier(&[IDX_DD, IDX_CA], true), 1, "a mixed fleet adds nothing");
+    assert_eq!(
+        modifier(&[IDX_DD, IDX_CA], true),
+        1,
+        "a mixed fleet adds nothing"
+    );
     assert_eq!(
         modifier(&[IDX_CA, IDX_SB], true),
         2,
@@ -838,16 +975,21 @@ fn a_surprise_adds_one_and_leaves_criticals_alone() {
 }
 
 /// A pursuit exchange never gets the surprise. A pair of cruisers that
-/// strikes by surprise breaks a lone cruiser (30 hits cripple it) and the
-/// cruiser's ROE 6 sends it off; the caught cruiser stands for one pursuit
-/// exchange at an ordinary 2, 15 hits, which cannot finish it. Were the
-/// surprise there, 30 hits would.
+/// strikes by surprise breaks a pair with one cruiser already crippled (33
+/// hits cripple the other) and its ROE 6 sends it off; the caught pair
+/// stands for one pursuit exchange at an ordinary 2, 17 hits and the 3
+/// carried, which cannot finish a cruiser. Were the surprise there, 36
+/// would. Equal heavy lines, so no heavy-line bonus moves the die.
 #[test]
 fn a_pursuit_exchange_never_gets_the_surprise() {
     let run = |first: u8, surprise: bool| {
         let mut game_data = board();
         place(&mut game_data, 0, 1, Ships { ca: 2, ..NONE }, 10);
-        place(&mut game_data, 4, 2, Ships { ca: 1, ..NONE }, 6);
+        place(&mut game_data, 4, 2, Ships { ca: 2, ..NONE }, 6);
+        game_data.fleets[4].crippled.cruisers = nc_data::CrippledHulls {
+            turns: [1, 0],
+            fresh: 0,
+        };
         let script = move |kind: u64, round: u32, acting: u8, _: u8| {
             if kind == 1 && acting == 1 && round == 1 {
                 first
@@ -874,10 +1016,10 @@ fn a_pursuit_exchange_never_gets_the_surprise() {
     assert_eq!(
         departure(&battle, 4),
         Some((EncounterDispositionReason::RoeWithdrawal, true)),
-        "the cruiser broke off and was caught"
+        "the pair broke off and was caught"
     );
-    assert_eq!(surprised.fleets[4].ships.cruisers, 1);
-    assert_eq!(surprised.fleets[4].crippled.cruisers.total(), 1);
+    assert_eq!(surprised.fleets[4].ships.cruisers, 2);
+    assert_eq!(surprised.fleets[4].crippled.cruisers.total(), 2);
     // Same as an ordinary 3 in the first exchange and an ordinary 2 after.
     let (by_roll, _) = run(3, false);
     assert_eq!(surprised.fleets[4], by_roll.fleets[4]);

@@ -1,7 +1,7 @@
 use crate::{CoreGameData, EncounterDispositionReason, Order, ShipLosses};
 use nc_data::{
-    CrippledHulls, CrippledShips, Fleet, HullClass, ShipCounts, Starbase, hull_count,
-    slowest_speed, troop_transports,
+    CrippledHulls, CrippledShips, Fleet, HullClass, ProductionItemKind, ShipCounts, Starbase,
+    hull_count, slowest_speed, troop_transports,
 };
 
 pub(super) const IDX_DD: usize = 0;
@@ -223,6 +223,20 @@ impl FleetCombatState {
         self.counts.iter().any(|&c| c > 0)
     }
 
+    /// The build cost of the side's heavy line, cruisers, battleships and
+    /// starbases, crippled hulls at full price. Destroyers do not count.
+    /// Sides compare these for the heavy-line die bonus (t206).
+    pub(super) fn heavy_cost(&self) -> u32 {
+        [
+            (IDX_CA, ProductionItemKind::Cruiser),
+            (IDX_BB, ProductionItemKind::Battleship),
+            (IDX_SB, ProductionItemKind::Starbase),
+        ]
+        .into_iter()
+        .map(|(idx, kind)| self.counts[idx] * u32::from(kind.build_cost().unwrap_or(0)))
+        .sum()
+    }
+
     pub(super) fn crippled_count(&self, idx: usize) -> u32 {
         self.crippled[idx].total()
     }
@@ -379,7 +393,16 @@ pub(super) fn fleet_target_order() -> [usize; 7] {
     [IDX_DD, IDX_SC, IDX_TT, IDX_ET, IDX_CA, IDX_BB, IDX_SB]
 }
 
+/// The order ordinary fire works through the combat line: the heaviest
+/// hulls cover the lighter ones, so destroyers fight from behind the
+/// battleships and cruisers (t206). Starbases, which never move, last.
 pub(super) fn fleet_combat_line_order() -> [usize; 4] {
+    [IDX_BB, IDX_CA, IDX_DD, IDX_SB]
+}
+
+/// The order battery return fire works through the combat line: the
+/// cheapest hulls first, as every fire did before t206.
+pub(super) fn fleet_battery_line_order() -> [usize; 4] {
     [IDX_DD, IDX_CA, IDX_BB, IDX_SB]
 }
 

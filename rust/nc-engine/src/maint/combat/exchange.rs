@@ -3,7 +3,8 @@ use crate::{GameRng, RNG_TAG_COMBAT};
 
 use super::state::{
     CarriedHits, FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, fleet_auxiliary_order,
-    fleet_class_ds, fleet_combat_line_order, fleet_combat_line_present, fleet_target_order,
+    fleet_battery_line_order, fleet_class_ds, fleet_combat_line_order, fleet_combat_line_present,
+    fleet_target_order,
 };
 
 pub(super) const GROUND_AS_BATTERY: u32 = 90;
@@ -69,13 +70,16 @@ fn apply_nominal_hits_to_fleet_classes(
     let mut progress = false;
     for &idx in target_order {
         let ds = fleet_class_ds(idx);
-        if ds == 0 || *hits < ds {
+        // A class with nothing left to cripple is skipped; a class that
+        // stands but cannot be afforded covers the ones behind it, and the
+        // hits carry (t206).
+        if ds == 0 || state.nominal_count(idx) == 0 {
+            continue;
+        }
+        if *hits < ds {
             break;
         }
         let reducible = state.nominal_count(idx).min(*hits / ds);
-        if reducible == 0 {
-            continue;
-        }
         state.cripple(idx, reducible);
         *hits -= reducible * ds;
         progress = true;
@@ -91,13 +95,13 @@ fn apply_destroyed_hits_to_fleet_classes(
     let mut progress = false;
     for &idx in target_order {
         let ds = fleet_class_ds(idx);
-        if ds == 0 || *hits < ds {
+        if ds == 0 || state.crippled_count(idx) == 0 {
+            continue;
+        }
+        if *hits < ds {
             break;
         }
         let destroyed = state.crippled_count(idx).min(*hits / ds);
-        if destroyed == 0 {
-            continue;
-        }
         state.finish_crippled(idx, destroyed);
         *hits -= destroyed * ds;
         progress = true;
@@ -266,10 +270,17 @@ pub(super) fn fleet_volley(roll: u8, die_modifier: u8, as_total: u32) -> Exchang
     }
 }
 
-/// A fleet battle side's die modifier: +1 for a starbase and +1 for a
-/// surprise first exchange.
-pub(super) fn fleet_die_modifier(state: &FleetCombatState, surprise: bool) -> u8 {
-    u8::from(state.counts[IDX_SB] > 0) + u8::from(surprise)
+/// A fleet battle side's die modifier: +1 for a starbase, +1 for a
+/// surprise first exchange, and +1 for a heavy line (t206).
+pub(super) fn fleet_die_modifier(state: &FleetCombatState, surprise: bool, heavy_line: bool) -> u8 {
+    u8::from(state.counts[IDX_SB] > 0) + u8::from(surprise) + u8::from(heavy_line)
+}
+
+/// The heavy-line bonus (t206): a side whose cruisers, battleships and
+/// starbases cost at least twice the enemy's fights with +1 on the die.
+/// Neither side gets it with no heavies at all.
+pub(super) fn heavy_line_outweighs(own_heavy_cost: u32, enemy_heavy_cost: u32) -> bool {
+    own_heavy_cost > 0 && own_heavy_cost >= 2 * enemy_heavy_cost
 }
 
 /// One side's volley in the landing battle: its armies fire on the shared
@@ -411,24 +422,30 @@ fn apply_critical_hit_to_fleet(state: &mut FleetCombatState) -> bool {
     false
 }
 
+/// Focus fire finishes cripples and destroys nominal hulls at 2x DS. Ship
+/// and starbase fire (`half_finish`) finishes a cripple at half DS rounded
+/// up (t206), the finisher's price for what heavier fire crippled; battery
+/// fire pays full DS.
 fn apply_focus_fire_hits_to_fleet_classes(
     state: &mut FleetCombatState,
     hits: &mut u32,
     target_order: &[usize],
+    half_finish: bool,
 ) -> bool {
     let mut progress = false;
     for &idx in target_order {
         let ds = fleet_class_ds(idx);
-        if ds == 0 || *hits < ds {
+        if ds == 0 {
             continue;
         }
 
-        // First, finish off any already crippled ships (cost 1x DS)
-        if state.crippled_count(idx) > 0 {
-            let finished = state.crippled_count(idx).min(*hits / ds);
+        // First, finish off any already crippled ships
+        let finish = if half_finish { ds.div_ceil(2) } else { ds };
+        if state.crippled_count(idx) > 0 && *hits >= finish {
+            let finished = state.crippled_count(idx).min(*hits / finish);
             if finished > 0 {
                 state.finish_crippled(idx, finished);
-                *hits -= finished * ds;
+                *hits -= finished * finish;
                 progress = true;
             }
         }
@@ -495,7 +512,7 @@ pub(super) fn apply_hits_to_fleet(
             &auxiliary_order
         };
 
-        if !apply_focus_fire_hits_to_fleet_classes(state, &mut execution_hits, target_order) {
+        if !apply_focus_fire_hits_to_fleet_classes(state, &mut execution_hits, target_order, true) {
             break;
         }
     }
@@ -513,6 +530,34 @@ pub(super) fn apply_hits_to_fleet(
     }
 }
 
+/// Battery return fire on a fleet in orbit: execution fire that keeps the
+/// pre-t206 rules, landing DD, CA, BB, SB and finishing a cripple at full
+/// DS. What it cannot spend expires.
+pub(super) fn apply_battery_hits_to_fleet(
+    state: &mut FleetCombatState,
+    mut hits: u32,
+    critical_hits: u32,
+) {
+    while hits > 0 {
+        let (battery_line_order, auxiliary_order);
+        let target_order: &[usize] = if fleet_combat_line_present(state) {
+            battery_line_order = fleet_battery_line_order();
+            &battery_line_order
+        } else {
+            auxiliary_order = fleet_auxiliary_order();
+            &auxiliary_order
+        };
+        if !apply_focus_fire_hits_to_fleet_classes(state, &mut hits, target_order, false) {
+            break;
+        }
+    }
+    for _ in 0..critical_hits {
+        if !apply_critical_hit_to_fleet(state) {
+            break;
+        }
+    }
+}
+
 /// Battery fire on a blitz landing. It is focus fire aimed at the descending
 /// transports first, then their escorts; a critical sinks one more ship.
 pub(super) fn apply_landing_fire_to_fleet(
@@ -521,7 +566,9 @@ pub(super) fn apply_landing_fire_to_fleet(
     critical: bool,
 ) {
     let target_order = [IDX_TT, IDX_DD, IDX_CA, IDX_BB];
-    while hits > 0 && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order) {}
+    while hits > 0 && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order, false)
+    {
+    }
 
     if !critical {
         return;

@@ -571,10 +571,14 @@ Cruisers and battleships spread their fire across the enemy line. They cripple t
 away recovers on its own two turns later. A fleet of heavy ships alone can
 win a battle and still face the same enemy fleet again.
 
-Destroyers and starbases pick out ships and destroy them outright. A healthy ship costs them twice the hits of a cripple, a crippled one no more than crippling it cost, and what they destroy stays destroyed. Destroyers are also your fastest and most fragile warships; on their own they tend to lose to heavier fleets of the same cost.
+Destroyers and starbases pick out ships and destroy them outright. A healthy ship costs them twice the hits of a cripple, a crippled one only half of what crippling it cost, and what they destroy stays destroyed. Destroyers are also your fastest and most fragile warships; on their own they tend to lose to heavier fleets of the same cost.
 
 Together they do what neither does alone: the heavy ships break the enemy
-line, and the destroyers turn that damage into lost ships. Lean on cruisers
+line, and the destroyers turn that damage into lost ships at half price. The
+heavy ships also stand in front: enemy fire lands on battleships, then
+cruisers, then destroyers, so destroyers behind a heavy line live to finish
+what it cripples, and a fleet whose cruisers and battleships are worth
+twice the enemy's adds +1 to its die. Lean on cruisers
 and battleships to hold a system or win a skirmish; add destroyers when you
 mean to wipe out an enemy fleet. Ground batteries fire the way destroyers do,
 which is why ships attacking a fortified world are destroyed, not crippled.
@@ -1313,13 +1317,16 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
-Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Under suppression fire, all nominal ships in the current target group (the combat line first, auxiliaries afterward) must be crippled before any crippled ship in it is destroyed; execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Ordinary fleet fire targets the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected from it as long as any combat-line ships remain, so your non-combat vessels survive as long as your warships hold the line, except against a critical hit.
+Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Under suppression fire, all nominal ships in the current target group (the combat line first, auxiliaries afterward) must be crippled before any crippled ship in it is destroyed; execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Ordinary fleet fire targets the combat line first, heaviest hull first --- battleships, cruisers, destroyers, and starbases --- so the heavy ships cover the destroyers behind them, and fire too weak for the ship in front cannot reach those behind it. Scouts, transports, and ETACs are protected from it as long as any combat-line ships remain, so your non-combat vessels survive as long as your warships hold the line, except against a critical hit.
 
-Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
+Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Execution fire from destroyers and starbases finishes a crippled ship for half its DS, rounded up. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
-Two bonuses add to your die roll. A starbase fighting on your side adds +1.
+Three bonuses add to your die roll. A starbase fighting on your side adds +1.
 An attack that catches the enemy unprepared adds +1 to the attacker's first
-round (see *Surprise* under Who Fights Whom). A roll pushed past 9 counts
+round (see *Surprise* under Who Fights Whom). A heavy line adds +1: your
+cruisers, battleships, and starbases in the battle cost at least twice the
+enemy's, crippled ones at full price, judged again every round. Destroyers
+count for neither side, and a side with no heavies never gets it. A roll pushed past 9 counts
 as 9. An unmodified 9 is a critical hit that destroys one more enemy
 ship outright. In a draw, the defender wins. The exact ROE thresholds, combat values,
 effectiveness table, and assault formulas follow later in this appendix.
@@ -1456,13 +1463,13 @@ fleet takes to climb out of orbit.
 Combat is more than just a numbers game. Different ship classes perform specific tactical roles based on how they deliver fire. Hits generated by a task force are split into two pools:
 
 - *Suppression Fire (Cruisers and Battleships):* These heavy vessels provide volume and suppression. Their hits are dispersed across the enemy fleet, reducing nominal ships to a *crippled* state. This effectively knocks enemy guns offline and wins the immediate field, but it does not always result in permanent kills.
-- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying 2x DS for a healthy ship and 1x DS for a crippled one to blow ships up one by one.
+- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying 2x DS for a healthy ship and half DS, rounded up, for a crippled one to blow ships up one by one.
 
-This creates a deadly pair. Heavy ships soften the line. Destroyers and
-starbases finish it. Each pool carries its own leftover hits: suppression hits
+This creates a deadly pair. Heavy ships soften the line and stand in front
+of it. Destroyers finish it from behind them. Each pool carries its own leftover hits: suppression hits
 never pay for an execution kill, and execution hits never pay for a cripple.
 
-#admonition("NOTE")[All planetary return fire from ground batteries is treated as *Execution Fire*. Fortified worlds do not "soften" an attacker; they destroy him.]
+#admonition("NOTE")[All planetary return fire from ground batteries is treated as *Execution Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one, destroyers first. Fortified worlds do not "soften" an attacker; they destroy him.]
 
 == Fleet Limits
 
@@ -1673,6 +1680,9 @@ attack strength, a starbase counting 100.
 - Starbase on your side: `+1`
 - Surprise (the defending empire had not spotted the attacker in that sector
   and layer): `+1` to the attacker, in the first exchange only
+- Heavy line (your cruisers, battleships, and starbases cost at least twice
+  the enemy's, crippled hulls at full price; destroyers do not count):
+  `+1`, judged every exchange
 - A modified roll above `9` counts as `9`
 - Pursuit exchange: the same modifiers, except surprise, which it never gets
 
@@ -1690,8 +1700,14 @@ outright, a crippled ship first.
 == Damage Steps and Carried Hits
 
 - Crippling a nominal ship costs its full DS.
-- Finishing a crippled ship costs its full DS again.
+- Finishing a crippled ship costs its full DS again under suppression fire
+  and battery fire; execution fire from destroyers and starbases finishes it
+  for half DS, rounded up (DD 4, CA 15, BB 55, SB 65).
 - Execution fire that destroys a nominal ship pays both: `2x DS`.
+- Ship and starbase fire lands on the combat line heaviest hull first:
+  battleships, cruisers, destroyers, starbases. A class that stands but
+  cannot be afforded shields those behind it. Battery return fire lands
+  destroyers first.
 - Hits a pool cannot spend carry over, in that pool, to the side's next
   exchange in the same battle, including the pursuit exchange.
 - Suppression and execution hits carry separately.

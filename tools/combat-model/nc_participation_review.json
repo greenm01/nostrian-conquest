@@ -1,15 +1,15 @@
 {
-  "method": "Seeded battle controls, Python RNG; DD 10/8/5, other hulls unchanged; no tick simulation or engine execution; all-ROE10 attrition rows, no catch, surprise only exchange1 and combined die cap2, natural9 unchanged. Wilson 95% intervals. Sequential contacts reset carry and preserve completed damage; no recovery between contacts.",
+  "method": "Seeded battle controls, Python RNG; t200 hulls under the engine-t206 fleet rules; no tick simulation or engine execution; all-ROE10 attrition rows, no catch, surprise only exchange1 and combined die cap2, natural9 unchanged. Wilson 95% intervals. Sequential contacts reset carry and preserve completed damage; no recovery between contacts.",
   "units": {
     "DD": {
-      "AS": 10,
-      "DS": 8,
+      "AS": 12,
+      "DS": 7,
       "cost": 5,
       "fire": "execution",
       "line": true
     },
     "CA": {
-      "AS": 30,
+      "AS": 33,
       "DS": 30,
       "cost": 15,
       "fire": "suppression",
@@ -17,14 +17,14 @@
     },
     "BB": {
       "AS": 90,
-      "DS": 100,
+      "DS": 110,
       "cost": 45,
       "fire": "suppression",
       "line": true
     },
     "SB": {
       "AS": 100,
-      "DS": 120,
+      "DS": 130,
       "cost": 50,
       "fire": "execution",
       "line": true
@@ -52,7 +52,7 @@
     }
   },
   "rules": {
-    "name": "decisions1-3",
+    "name": "decisions1-3-t206",
     "effect": {
       "kind": "flat",
       "rows": [
@@ -69,7 +69,7 @@
       ],
       "unit": 4
     },
-    "mixed_shift": 1,
+    "mixed_shift": 0,
     "base_shift": 1,
     "base_condition": "present",
     "shift_cap": 2,
@@ -94,52 +94,70 @@
       "BB",
       "SB"
     ],
-    "unarmed_escape": true
+    "unarmed_escape": true,
+    "base_cannot_withdraw": true,
+    "default_units": "t200",
+    "ship_speeds": {
+      "DD": 6,
+      "CA": 5,
+      "BB": 4,
+      "SC": 6,
+      "TT": 5,
+      "ET": 3
+    },
+    "line_order": [
+      "BB",
+      "CA",
+      "DD",
+      "SB"
+    ],
+    "execution_finish": "half-up",
+    "heavy_line_shift": 1
   },
   "rows": [
     {
       "case": "split-CA-even",
       "joined": false,
       "trials": 20000,
-      "capture_field": 0.1001,
+      "capture_field": 0.0766,
       "win_ci95": [
-        0.09601692700948389,
-        0.10433666342818858
+        0.07299487485532898,
+        0.08036774127698043
       ],
-      "loss_cost": 144.43725
+      "loss_cost": 145.77525
     },
     {
       "case": "split-CA-even",
       "joined": true,
       "trials": 20000,
-      "capture_field": 0.49655,
+      "capture_field": 0.49745,
       "win_ci95": [
-        0.48962197370500377,
-        0.5034793513437833
+        0.4905217260539265,
+        0.5043792533299596
       ],
-      "loss_cost": 93.92625
+      "loss_cost": 92.96475
     },
     {
       "case": "split-CA-advantage",
       "joined": false,
       "trials": 20000,
-      "capture_field": 0.36785,
+      "capture_field": 0.3842,
       "win_ci95": [
-        0.36119286210604035,
-        0.37455789302358816
+        0.377481735259503,
+        0.3909627402910908
       ],
-      "loss_cost": 152.58075
+      "loss_cost": 150.8925
     },
     {
       "case": "split-CA-advantage",
       "joined": true,
       "trials": 20000,
-      "capture_field": 0.7815,
+      "capture_field": 0.7661,
       "win_ci95": [
-        0.7757192877535408,
-        0.7871725959468723
+        0.7601825797551616,
+        0.7719152186557796
       ],
-      "loss_cost": 62.6685
+      "loss_cost": 64.73325
     },
     {
       "case": "assault-fixture-two-4BB",
@@ -150,7 +168,7 @@
         0.9998079639438954,
         1.0
       ],
-      "loss_cost": 11.6145
+      "loss_cost": 7.43625
     },
     {
       "case": "assault-fixture-two-4BB",
@@ -161,29 +179,29 @@
         0.9998079639438954,
         1.0
       ],
-      "loss_cost": 5.8275
+      "loss_cost": 5.391
     },
     {
       "case": "split-DD-CA",
       "joined": false,
       "trials": 20000,
-      "capture_field": 0.2295,
+      "capture_field": 0.3767,
       "win_ci95": [
-        0.22372439170767489,
-        0.2353794997986777
+        0.37000876392571486,
+        0.38343859216572046
       ],
-      "loss_cost": 182.086
+      "loss_cost": 168.30625
     },
     {
       "case": "split-DD-CA",
       "joined": true,
       "trials": 20000,
-      "capture_field": 0.7062,
+      "capture_field": 0.7601,
       "win_ci95": [
-        0.6998480722874957,
-        0.7124727320429668
+        0.7541322913980592,
+        0.7659678114455551
       ],
-      "loss_cost": 88.2275
+      "loss_cost": 73.3965
     }
   ],
   "surprise": [
@@ -196,10 +214,10 @@
       },
       "first_exchange_bonus": false,
       "trials": 20000,
-      "win": 0.4891,
+      "win": 0.49015,
       "win_ci95": [
-        0.48217488577560386,
-        0.4960293006104192
+        0.48322438220576275,
+        0.49707940090454245
       ]
     },
     {
@@ -211,10 +229,10 @@
       },
       "first_exchange_bonus": true,
       "trials": 20000,
-      "win": 0.5439,
+      "win": 0.5459,
       "win_ci95": [
-        0.5369894691187506,
-        0.5507936701155235
+        0.5389915835103122,
+        0.5527907875797375
       ]
     },
     {
@@ -226,10 +244,10 @@
       },
       "first_exchange_bonus": false,
       "trials": 20000,
-      "win": 0.1685,
+      "win": 0.17995,
       "win_ci95": [
-        0.16337619502941533,
-        0.17375112487578204
+        0.17468772619905368,
+        0.18533519608045884
       ]
     },
     {
@@ -241,10 +259,10 @@
       },
       "first_exchange_bonus": true,
       "trials": 20000,
-      "win": 0.1965,
+      "win": 0.2107,
       "win_ci95": [
-        0.1910516017539011,
-        0.20206496413215438
+        0.20510403050941722,
+        0.21640708155264485
       ]
     },
     {
@@ -256,10 +274,10 @@
       },
       "first_exchange_bonus": false,
       "trials": 20000,
-      "win": 0.64945,
+      "win": 0.6508,
       "win_ci95": [
-        0.6428091406322748,
-        0.6560334597905554
+        0.6441647689555405,
+        0.6573773129699384
       ]
     },
     {
@@ -271,10 +289,10 @@
       },
       "first_exchange_bonus": true,
       "trials": 20000,
-      "win": 0.71065,
+      "win": 0.7123,
       "win_ci95": [
-        0.7043254921173061,
-        0.716893603092257
+        0.7059858454244963,
+        0.7185326160660818
       ]
     },
     {
@@ -287,10 +305,10 @@
       },
       "first_exchange_bonus": false,
       "trials": 20000,
-      "win": 0.404,
+      "win": 0.5124,
       "win_ci95": [
-        0.3972184685791629,
-        0.4108184023436093
+        0.5054708957013808,
+        0.5193243418044278
       ]
     },
     {
@@ -303,10 +321,10 @@
       },
       "first_exchange_bonus": true,
       "trials": 20000,
-      "win": 0.4487,
+      "win": 0.57165,
       "win_ci95": [
-        0.44181755635234465,
-        0.45560214654701164
+        0.5647788837260025,
+        0.5784935975071577
       ]
     }
   ],

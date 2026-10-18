@@ -8,7 +8,7 @@ use super::exchange::{
     COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND, COMBAT_KIND_BLITZ_LANDING,
     COMBAT_KIND_BOMBARD, COMBAT_KIND_CAPTURE, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
     COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_ARMY, GROUND_AS_BATTERY,
-    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, apply_landing_fire_to_fleet,
+    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_battery_hits_to_fleet, apply_landing_fire_to_fleet,
     landing_volley, resolve_battery_exchange, resolve_ground_exchange, resolve_landing_exchange,
     resolve_orbital_exchange, scalar_hits_with_critical, seeded_combat_roll,
 };
@@ -708,9 +708,8 @@ pub(crate) fn resolve_strike(
                         attack_as.max(1),
                     );
                     let mut next_state = fleet_state.clone();
-                    apply_hits_to_fleet(
+                    apply_battery_hits_to_fleet(
                         &mut next_state,
-                        0,
                         defender_exchange.hits,
                         u32::from(defender_exchange.critical),
                     );
@@ -828,9 +827,8 @@ pub(crate) fn resolve_strike(
                     battery_as,
                     bombard_as,
                 );
-                apply_hits_to_fleet(
+                apply_battery_hits_to_fleet(
                     &mut after,
-                    0,
                     return_exchange.hits,
                     u32::from(return_exchange.critical),
                 );

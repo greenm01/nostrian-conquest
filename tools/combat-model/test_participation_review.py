@@ -7,10 +7,13 @@ from participation_review import MODEL, apportion, bonus_shot, transport_losses,
 
 
 class ParticipationTests(unittest.TestCase):
-    def test_approved_destroyer_ds(self):
-        from rules import load_units
-        self.assertEqual(load_units('dd-10-8-5')['DD']['DS'], 8)
-        self.assertEqual(MODEL.DS[0], 8)
+    def test_t200_hulls_under_t206_rules(self):
+        self.assertEqual((MODEL.AS[0], MODEL.DS[0]), (12, 7))
+        self.assertEqual(MODEL.EXE_FIN[:3], [4, 15, 55])
+        self.assertEqual(MODEL.line[:3], [2, 1, 0])
+        self.assertTrue(MODEL.heavy_line(force(CA=10)[0], force(CA=5)[0]))
+        self.assertFalse(MODEL.heavy_line(force(CA=9)[0], force(CA=5)[0]))
+        self.assertFalse(MODEL.heavy_line(force(DD=90)[0], force(DD=1)[0]))
 
     def test_admission_uses_assembled_power_and_excludes_roe_zero(self):
         self.assertEqual(willing([180,180],[6,6],300,True), [0,1])
@@ -64,15 +67,19 @@ class ParticipationTests(unittest.TestCase):
         self.assertEqual(split,dict(loaded=[4,0],empty=[0,0]))
 
     def test_surprise_preserves_natural_nine_and_caps_total_shift(self):
-        side = force(CA=5, DD=5, SB=1)
+        side, enemy = force(CA=5, DD=5, SB=1), force(CA=3)
+        plain, swarm = force(CA=10), force(DD=10)
         for roll in range(10):
-            self.assertEqual(bonus_shot(MODEL,side,300,roll,1),MODEL.volley(side,300,roll))
-            self.assertEqual(bonus_shot(MODEL,force(CA=10),300,roll,1)[2],roll==9)
+            # starbase and heavy line already fill the cap
+            self.assertEqual(bonus_shot(MODEL,side,enemy,roll,1),MODEL.volley(side,99,roll,enemy=enemy))
+            self.assertEqual(bonus_shot(MODEL,plain,swarm,roll,1)[:2],MODEL.volley(plain,120,min(9,roll+1),enemy=swarm)[:2])
+            self.assertEqual(bonus_shot(MODEL,plain,swarm,roll,1)[2],roll==9)
 
     def test_no_surprise_volley_matches_model(self):
+        enemy = force(CA=10)
         for side in (force(CA=10),force(DD=5,CA=5),force(SB=1)):
             for roll in range(10):
-                self.assertEqual(bonus_shot(MODEL,side,300,roll,0),MODEL.volley(side,300,roll))
+                self.assertEqual(bonus_shot(MODEL,side,enemy,roll,0),MODEL.volley(side,330,roll,enemy=enemy))
 
 
 if __name__ == '__main__':

@@ -496,3 +496,15 @@ The hull comparisons of the
 [hull balance investigation](../../docs/notes/investigations/yqg056tf-nc-hull-balance-against-vbam-and-empire-of-the-sun.md)
 use `hull_mix.py`, `hull_breakeven.py`, and `hull_speed.py`, with results in
 the `nc_hull_*.json` files and `nc_engine_odds_roe6_mix.json`.
+
+## t206: heavies cover the destroyers
+
+`engine-t206` is `engine-t198` with three rule fields: `line_order`
+(ordinary fire lands BB, CA, DD, SB, and a standing class too dear to hit
+shields those behind it), `execution_finish='half-up'` (execution finishes
+a cripple at half DS rounded up; its healthy kill still costs 2xDS) and
+`heavy_line_shift=1` (+1 on the die when the side's CA/BB/SB build cost is
+at least twice the enemy's, crippled hulls at full price). `volley` takes
+the enemy side as `enemy` for that shift. `participation_review.py` now
+runs on this preset with the t200 hulls; the t073 numbers above were taken
+with `engine-t060` and DD 10/8/5.

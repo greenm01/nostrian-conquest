@@ -14,20 +14,22 @@ from fleet_model import Model,force,roe_satisfied
 from rules import RULESETS,load_units,variant
 from confidence import wilson_interval
 
-RULES=variant(RULESETS['engine-t060'],'decisions1-3',roe='after1',withdrawal='none',
-              mutual_withdrawal_exchange=False,unarmed_escape=True)
-MODEL=Model(RULES,load_units('dd-10-8-5'))
+# t206: the engine's current fleet rules and hulls; the t073 run used
+# engine-t060 with DS 8 destroyers.
+RULES=variant(RULESETS['engine-t206'],'decisions1-3-t206',withdrawal='none')
+UNITS=load_units('t200')
+MODEL=Model(RULES,UNITS)
 
 
 def plus(a,b):
     return tuple(tuple(x+y for x,y in zip(a[k],b[k])) for k in range(2))+((0,0),)
 
 
-def bonus_shot(model,side,enemy_as,roll,bonus):
+def bonus_shot(model,side,enemy,roll,bonus):
     n,c,_=side
-    shift=int(sum(n[i]>0 for i in model.mixed)>=2)+int(n[model.sb]>0)
+    shift=int(bool(model.rules['mixed_shift']) and sum(n[i]>0 for i in model.mixed)>=2)+int(n[model.sb]>0)+int(model.heavy_line(n,enemy[0]))
     extra=min(model.rules['shift_cap'],shift+bonus)-shift
-    sup,exe,_=model.volley(side,enemy_as,min(9,roll+extra))
+    sup,exe,_=model.volley(side,model.side_as(enemy),min(9,roll+extra),enemy=enemy)
     return sup,exe,bool(model.side_as(side) and roll==9)
 
 
@@ -37,8 +39,8 @@ def fight(a,b,rng,surprise=False,roe=(10,10)):
     def exchange(a,b,**kw):
         nonlocal exchanges
         ra,rb=rng.randrange(10),rng.randrange(10)
-        sa=bonus_shot(MODEL,a,MODEL.side_as(b),ra,int(surprise and exchanges==0))
-        sb=MODEL.volley(b,MODEL.side_as(a),rb)
+        sa=bonus_shot(MODEL,a,b,ra,int(surprise and exchanges==0))
+        sb=MODEL.volley(b,MODEL.side_as(a),rb,enemy=a)
         exchanges+=1
         a2=MODEL.apply(a,*sb)[0][1]
         b2=MODEL.apply(b,*sa)[0][1]
@@ -141,8 +143,8 @@ def sample(trials):
                 wins+=not any(b[0]) and any(a[0])
             surprise.append(dict(a=counts_a,b=counts_b,first_exchange_bonus=enabled,trials=trials,win=wins/trials,win_ci95=wilson_interval(wins,trials)))
     eligibility=[dict(strengths=s,roes=r,enemy=e,own_AS=willing(s,r,e,False),assembled_AS=willing(s,r,e,True)) for s,r,e in [([180,180],[6,6],300),([180,180],[6,8],300),([300,30],[6,0],300),([180,180],[6,6],390)]]
-    return dict(method='Seeded battle controls, Python RNG; DD 10/8/5, other hulls unchanged; no tick simulation or engine execution; all-ROE10 attrition rows, no catch, surprise only exchange1 and combined die cap2, natural9 unchanged. Wilson 95% intervals. Sequential contacts reset carry and preserve completed damage; no recovery between contacts.',
-                units=load_units('dd-10-8-5'),
+    return dict(method='Seeded battle controls, Python RNG; t200 hulls under the engine-t206 fleet rules; no tick simulation or engine execution; all-ROE10 attrition rows, no catch, surprise only exchange1 and combined die cap2, natural9 unchanged. Wilson 95% intervals. Sequential contacts reset carry and preserve completed damage; no recovery between contacts.',
+                units=UNITS,
                 rules=RULES,rows=rows,surprise=surprise,eligibility=eligibility,
                 withdrawal_controls=[withdrawals(([300],[300]),([5],[5])),
                                      withdrawals(([180,180],[300]),([6,10],[10])),

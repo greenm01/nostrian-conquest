@@ -150,6 +150,14 @@ RULESETS['engine-t065'] = variant(
 RULESETS['engine-t198'] = variant(RULESETS['engine-t065'], 'engine-t198', mixed_shift=0,
                                   default_units='t200')
 
+# t206: heavies cover the line (hits land BB, CA, DD, SB and a standing
+# class too dear to hit shields those behind it), execution finishes a
+# cripple at half DS rounded up, and a side whose CA/BB/SB build cost is at
+# least twice the enemy's adds one to its die.
+RULESETS['engine-t206'] = variant(RULESETS['engine-t198'], 'engine-t206',
+                                  line_order=['BB', 'CA', 'DD', 'SB'],
+                                  execution_finish='half-up', heavy_line_shift=1)
+
 # Hull variants: unit-table overrides by name.
 UNIT_VARIANTS = {
     'baseline': {},

@@ -69,6 +69,11 @@ class Model:
         self.COST = [units[c]['cost'] for c in CLASSES]
         k = range(len(CLASSES))
         self.line = [i for i in k if units[CLASSES[i]]['line']]
+        # t206 cover: ordinary fire works through the line in this order,
+        # and a standing class it cannot afford shields those behind it.
+        self.cover = 'line_order' in rules
+        if self.cover:
+            self.line = [CLASSES.index(c) for c in rules['line_order']]
         self.aux = [i for i in k if not units[CLASSES[i]]['line']]
         self.exposed = self.aux + self.line
         self.execution = [i for i in k if CLASSES[i] in rules['execution_classes']]
@@ -84,6 +89,10 @@ class Model:
         # crippled_ds='half'.
         self.FIN = [max(1, d // 2) if rules['crippled_ds'] == 'half' else d for d in self.DS]
         self.KILL = [d + f for d, f in zip(self.DS, self.FIN)]
+        # t206: execution finishes a cripple at half DS rounded up; its
+        # healthy kill still costs KILL.
+        self.EXE_FIN = [-(-d // 2) for d in self.DS] if rules.get('execution_finish') == 'half-up' else self.FIN
+        self.heavy = [CLASSES.index(c) for c in ('CA', 'BB', 'SB') if c in CLASSES]
 
     # ----- strengths -------------------------------------------------
     def class_as(self, n, c, i):
@@ -106,9 +115,19 @@ class Model:
     def cost_of(self, n):
         return sum(n[i] * self.COST[i] for i in range(len(n)))
 
+    def heavy_cost(self, n):
+        return sum(n[i] * self.COST[i] for i in self.heavy)
+
+    def heavy_line(self, n, enemy_n):
+        """t206: the side's cruisers, battleships and starbases cost at
+        least twice the enemy's (crippled hulls at full price)."""
+        own = self.heavy_cost(n)
+        return own > 0 and own >= 2 * self.heavy_cost(enemy_n)
+
     # ----- one side's volley ----------------------------------------
-    def volley(self, side, enemy_as, roll, pressed=False):
-        """(suppression hits, execution hits, critical) for one d10 roll."""
+    def volley(self, side, enemy_as, roll, pressed=False, enemy=None):
+        """(suppression hits, execution hits, critical) for one d10 roll.
+        `enemy` (the other side) is needed only for the heavy-line shift."""
         total = self.side_as(side)
         if total == 0:
             return (0, 0, False)
@@ -118,6 +137,8 @@ class Model:
         if not pressed:
             if rules['mixed_shift'] and sum(n[i] > 0 for i in self.mixed) >= 2:
                 shift += rules['mixed_shift']
+            if rules.get('heavy_line_shift') and enemy is not None and self.heavy_line(n, enemy[0]):
+                shift += rules['heavy_line_shift']
             condition = rules['base_condition']
             if condition == 'present' and n[self.sb] > 0:
                 shift += rules['base_shift']
@@ -144,7 +165,11 @@ class Model:
             progress = False
             for i in order:
                 d = self.DS[i]
-                if d == 0 or hits < d:
+                if d == 0 or n[i] - c[i] == 0:
+                    continue
+                if hits < d:
+                    if self.cover:
+                        break
                     continue
                 k = min(n[i] - c[i], hits // d)
                 if k:
@@ -154,7 +179,11 @@ class Model:
             if all(n[i] == c[i] for i in order):
                 for i in order:
                     d = self.FIN[i]
+                    if c[i] == 0:
+                        continue
                     if hits < d:
+                        if self.cover:
+                            break
                         continue
                     k = min(c[i], hits // d)
                     if k:
@@ -173,7 +202,7 @@ class Model:
             order = order_fn(n)
             progress = False
             for i in order:
-                d, kill = self.FIN[i], self.KILL[i]
+                d, kill = self.EXE_FIN[i], self.KILL[i]
                 if d == 0 or hits < d:
                     continue
                 k = min(c[i], hits // d)
@@ -300,9 +329,9 @@ class Model:
         as_a, as_b = self.side_as(a), self.side_as(b)
         shots_a, shots_b = {}, {}
         for roll in range(10):
-            s = self.volley(a, as_b, roll, pressed)
+            s = self.volley(a, as_b, roll, pressed, enemy=b)
             shots_a[s] = shots_a.get(s, 0.0) + 0.1
-            s = self.volley(b, as_a, roll, pressed)
+            s = self.volley(b, as_a, roll, pressed, enemy=a)
             shots_b[s] = shots_b.get(s, 0.0) + 0.1
         hits_on_b = {s: self.apply(b, *s, exposed=expose_b) for s in shots_a}
         hits_on_a = {s: self.apply(a, *s, exposed=expose_a) for s in shots_b}
@@ -320,8 +349,8 @@ class Model:
         b's roll, then any residual rolls for a's fire, then b's."""
         as_a, as_b = self.side_as(a), self.side_as(b)
         roll_a, roll_b = rng.randrange(10), rng.randrange(10)
-        shots_a = self.volley(a, as_b, roll_a, pressed)
-        shots_b = self.volley(b, as_a, roll_b, pressed)
+        shots_a = self.volley(a, as_b, roll_a, pressed, enemy=b)
+        shots_b = self.volley(b, as_a, roll_b, pressed, enemy=a)
         b2 = _draw(rng, self.apply(b, *shots_a, exposed=expose_b))
         a2 = _draw(rng, self.apply(a, *shots_b, exposed=expose_a))
         return [(1.0, (a2, b2))]
