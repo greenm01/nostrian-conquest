@@ -1331,6 +1331,90 @@ as 9. An unmodified 9 is a critical hit that destroys one more enemy
 ship outright. In a draw, the defender wins. The exact ROE thresholds, combat values,
 effectiveness table, and assault formulas follow later in this appendix.
 
+== How a Fleet Battle Is Fought <fleet-battle-sequence>
+
+This is the whole procedure, in order, with every price and rounding. The
+sections that follow say who takes part and when a fleet leaves; the tables
+at the end of this appendix give the numbers.
+
+1. *Sides.* Every fleet and starbase of one empire in the sector and layer
+   fights as one side, and its roster is fixed when the battle starts. When
+   more than two empires are present, each side fires at one enemy side per
+   exchange, chosen in this order: an enemy guarding the world (its holder's
+   fleets and starbase, or a fleet on Guard a Starbase), then, at your own
+   world, an enemy attacking it, then the enemy with the most attack
+   strength, then the lowest empire number.
+
+2. *Strength.* A side's attack strength is the sum of its ships' AS from
+   the Unit Combat Values table; a crippled hull counts half, rounded down
+   (destroyer 6, cruiser 16, battleship 45, starbase 50). Scouts, transports,
+   and ETACs add nothing. The cruisers' and battleships' share is the side's
+   suppression strength; the destroyers' and starbases' share is its
+   execution strength.
+
+3. *The exchange.* Both sides fire at the same instant. Each side rolls one
+   d10, adds its modifiers (see Fleet Battle Die Modifiers), reads any result
+   above 9 as 9, and takes the effectiveness from the table: a quarter on
+   0--2, half on 3--5, all on 6--9. Its hits are `ceil(AS x effectiveness)`.
+   The hits divide into two pools: suppression hits are
+   `round(hits x suppression AS / total AS)`, halves rounding up, and the
+   rest are execution hits. An unmodified 9 adds one critical hit. The side's
+   carried hits from earlier exchanges of this battle join their pools.
+
+4. *Where the hits land.* The target group is the enemy's combat line while
+   any of it stands --- battleships, cruisers, destroyers, starbases, in that
+   order --- and otherwise its auxiliaries: scouts, transports, ETACs, in that
+   order. Both sides' hits are applied after both have fired, so a ship
+   destroyed this exchange still fired in it.
+   - *Suppression.* Walk the target group in order. A class with no healthy
+     hull is skipped. If the hits cannot afford the next class's DS, stop:
+     that class shields the classes behind it. Otherwise cripple as many of
+     its healthy hulls as the hits afford, one DS each, and go on. Repeat
+     the walk while it still buys something. Once no healthy hull remains in
+     the group, the same walk finishes crippled hulls at their full DS, with
+     the same shielding. When the group is wiped out, the walk moves to the
+     next group.
+   - *Execution.* Walk the target group in order. In each class, first
+     finish crippled hulls at half DS rounded up (destroyer 4, cruiser 15,
+     battleship 55, starbase 65), then destroy healthy hulls at twice DS, as
+     many of each as the hits afford. A class the hits cannot afford is
+     passed over; it shields nothing. Repeat while the walk buys something.
+   - *Criticals.* Each critical destroys one hull outright, ignoring the
+     screen: the first crippled hull in the order destroyer, scout,
+     transport, ETAC, cruiser, battleship, starbase; if none is crippled,
+     the first healthy hull in that order.
+   - *Carry.* Hits a pool could not spend stay in that pool for the side's
+     next exchange of this battle, and are lost when the battle ends.
+
+5. *Sharing the losses.* Each side's losses are shared among its fleets in
+   proportion to each fleet's hulls of the class and state hit, loaded
+   transports before empty ones, ties drawn at random (see Withdrawal and
+   Retreat).
+
+6. *Who stays.* After every exchange, the first included, each fleet checks
+   its ROE against the odds as they now stand, its side's attack strength
+   against the enemy's. Every fleet whose ROE fails leaves at once, on both
+   sides together; the fleets that stay re-check without them until none
+   fails. A fleet with no armed ship left leaves at once, whatever its ROE;
+   a starbase never leaves. A fleet that has left is out of the battle for
+   good.
+
+7. *Pursuit.* When one whole side has broken off and the other still has
+   armed ships, the other may pursue each fleeing fleet, once: a pursuer
+   whose slowest surviving ship class is faster than the fleeing fleet's
+   catches it; otherwise it catches it with probability
+   `sin(pi x u) x pursuer speed / fleeing speed`, `u` drawn uniformly from
+   0 to 1, decided by a second uniform draw. A fleet caught stands for one
+   more exchange, fought exactly as above with both sides' modifiers (never
+   surprise) and carried hits, and the battle ends. When both sides break
+   off, nobody pursues.
+
+8. *End.* The battle ends when a side has no ship left, when a side has
+   broken off and any pursuit is done, or, unresolved, after 64 exchanges.
+   Carried hits are discarded. Every surviving fleet's speed is recomputed
+   from the ships it has left, and a fleet that did not hold the field seeks
+   home (see Withdrawal and Retreat).
+
 == Who Fights Whom
 
 Fleets meet only when they share a sector *and* a depth. Each sector has two
@@ -1392,7 +1476,7 @@ time it identifies a target as on every later week (see Rules of Engagement
 Thresholds below).
 Identifying an enemy first commits nothing: a cautious fleet does not attack
 a stronger enemy just because it saw it first. For these odds each warship
-counts its attack strength --- a destroyer 10, a cruiser 30, a battleship 90
+counts its attack strength --- a destroyer 12, a cruiser 33, a battleship 90
 --- and a starbase 100, the same values the battle fires with. Scouts,
 transports, and ETACs count nothing, and a fleet without warships never
 attacks, whatever its ROE.
