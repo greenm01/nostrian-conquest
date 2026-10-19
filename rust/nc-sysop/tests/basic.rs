@@ -278,6 +278,7 @@ fn nc_sysop_help_lists_only_local_and_bbs_public_subcommands() {
     assert!(stdout.contains("new-game <target_dir>"));
     assert!(stdout.contains("maint <dir> [turns]"));
     assert!(stdout.contains("settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat>"));
+    assert!(stdout.contains("map-export --dir <game_dir> --player <N>"));
     assert!(!stdout.contains("maint-all"));
     assert!(!stdout.contains("host "));
     assert!(!stdout.contains("nostr "));
@@ -315,4 +316,41 @@ fn nc_sysop_removed_hosted_subcommands_fail_cleanly() {
             "stderr={stderr:?}"
         );
     }
+}
+
+#[test]
+fn nc_sysop_map_export_writes_the_players_star_map() {
+    let target = unique_temp_dir("nc-sysop-map-export");
+    let dir = target.to_str().expect("utf-8 path");
+    run_nc_sysop(&["new-game", dir, "--players", "4", "--seed", "7"]);
+
+    let stdout = run_nc_sysop(&["map-export", "--dir", dir, "--player", "2"]);
+    assert!(stdout.contains("Exported player 2 star map"));
+    let exports = target.join("exports");
+    let text = fs::read_to_string(exports.join("ECMAP-P2-Y3000.TXT")).expect("text map");
+    assert_eq!(
+        text,
+        nc_data::build_player_map_export_data(&target, 2)
+            .expect("export data")
+            .ascii_export
+    );
+    assert!(exports.join("ECMAP-P2-Y3000.CSV").exists());
+    assert!(exports.join("ECMAP-P2-Y3000-DETAILS.CSV").exists());
+
+    let out = target.join("maps");
+    run_nc_sysop(&[
+        "map-export",
+        "--dir",
+        dir,
+        "--player",
+        "1",
+        "--out-dir",
+        out.to_str().expect("utf-8 path"),
+    ]);
+    assert!(out.join("ECMAP-P1-Y3000.TXT").exists());
+
+    let stderr = run_nc_sysop_failure(&["map-export", "--dir", dir, "--player", "5"]);
+    assert!(stderr.contains("--player must be 1-4"));
+
+    let _ = fs::remove_dir_all(&target);
 }

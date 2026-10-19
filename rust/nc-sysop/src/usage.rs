@@ -12,6 +12,9 @@ pub fn print_usage() {
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat> ..."
     );
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> --player <N> [--out-dir <path>]"
+    );
 }
 
 pub fn print_new_game_usage() {
@@ -52,4 +55,13 @@ pub fn print_settings_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings remove-ai-seat --dir <game_dir> --player <N>"
     );
     println!("  maint plays AI seats with the agent named by NC_AI_MODEL (an .onnx file).");
+}
+
+pub fn print_map_export_usage() {
+    println!("Usage:");
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> --player <N> [--out-dir <path>]"
+    );
+    println!("  Writes the player's star map as ECMAP-P<N>-Y<year> .TXT, .CSV and -DETAILS.CSV.");
+    println!("  --out-dir defaults to <game_dir>/exports, where the in-game export writes.");
 }

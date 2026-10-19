@@ -1,4 +1,5 @@
 mod ai_seats;
+mod map_export;
 mod usage;
 
 use std::env;
@@ -65,6 +66,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             tracing::info!("running nc-sysop settings");
             run_settings(&rest)
+        }
+        "map-export" => {
+            init_logging(&parsed, false)?;
+            if rest.iter().any(|arg| arg == "--help" || arg == "-h") {
+                usage::print_map_export_usage();
+                return Ok(());
+            }
+            tracing::info!("running nc-sysop map-export");
+            let dir = parse_required_dir_flag(&rest)?;
+            let player = parse_required_usize_flag(&rest, "--player")?;
+            let out_dir = parse_optional_path_flag_anywhere(&rest, "--out-dir")?
+                .unwrap_or_else(|| dir.join("exports"));
+            map_export::export_player_map(&dir, player, &out_dir)
         }
         _ => {
             usage::print_usage();

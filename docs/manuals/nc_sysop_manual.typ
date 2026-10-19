@@ -790,6 +790,19 @@ caller alias for later dropfile logins.
 For localhost and direct console play, use `nc-game` and follow the Localhost
 Session Setup section earlier in this manual instead of the BBS dropfile path.
 
+== Exporting a Player's Star Map
+
+Players can export their own star maps from the game. To export one for a
+player, for a board's file area or a game report, use:
+
+```sh
+nc-sysop map-export --dir /path/to/mygame --player 2
+```
+
+It writes what that player knows of the galaxy this year, just as the
+in-game export does: `ECMAP-P2-Y<year>.TXT`, `.CSV`, and `-DETAILS.CSV` in
+`<game_dir>/exports`. Use `--out-dir <path>` to write them somewhere else.
+
 // ─── 11. Terminology ──────────────────────────────────────────────────────────
 
 = Terminology
@@ -840,6 +853,9 @@ Logging flags come before the subcommand:
   policy in `ncgame.db`, or edit BBS seat reservations in per-game
   `config.kdl`.
 - *`maint`:* Run one or more maintenance turns against `ncgame.db`.
+- *`map-export --dir <game_dir> --player <N> [--out-dir <path>]`:* Write
+  one player's star map as `ECMAP-P<N>-Y<year>` `.TXT`, `.CSV`, and
+  `-DETAILS.CSV` files. Default folder: `<game_dir>/exports`.
 
 == nc-game and nc-door
 
