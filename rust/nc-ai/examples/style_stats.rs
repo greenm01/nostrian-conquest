@@ -8,7 +8,9 @@
 //!
 //! For each style it prints the win share, the share of build points spent
 //! on each kind, the mean year of its first declaration of war and of its
-//! first attack, and its mean worlds at years 10, 20 and 40.
+//! first attack, its mean worlds at years 10, 20 and 40, and how much it
+//! ferries armies: fleet-years of transports without warships, and armies
+//! unloaded at its own worlds.
 
 use std::thread;
 
@@ -16,7 +18,7 @@ use nc_ai::{
     PERSONALITIES, Weights, commission_submission, decode_action, executor_turn, match_game,
     personality, personality_or_file, plan_turn, seat_masks,
 };
-use nc_data::{DiplomaticRelation, PlanetTurnAction};
+use nc_data::{DiplomaticRelation, FleetTurnAction, PlanetTurnAction};
 use nc_engine::BUILD_UNITS;
 
 const PLAYERS: u8 = 4;
@@ -35,6 +37,10 @@ struct Stats {
     /// to cover them (t206).
     destroyers: u64,
     covered: u64,
+    /// Fleet-years of transports sailing without warships, and armies
+    /// unloaded at the seat's own worlds (t191's ferry).
+    convoys: u64,
+    unloaded: u64,
 }
 
 impl Stats {
@@ -52,6 +58,8 @@ impl Stats {
         }
         self.destroyers += other.destroyers;
         self.covered += other.covered;
+        self.convoys += other.convoys;
+        self.unloaded += other.unloaded;
     }
 }
 
@@ -107,7 +115,8 @@ fn main() {
         println!(
             "{name}: win share {:.3}; builds {}; first war year {}; first attack year {}; \
              worlds at years 10/20/40 {:.1}/{:.1}/{:.1}; destroyers with a heavy {:.0}% \
-             of {:.1} destroyer-years a game",
+             of {:.1} destroyer-years a game; {:.1} convoy fleet-years and {:.1} armies \
+             unloaded a game",
             stats.wins / stats.games as f32,
             mix.join(", "),
             mean(&stats.war_years),
@@ -117,6 +126,8 @@ fn main() {
             f64::from(stats.worlds[2]) / n,
             100.0 * stats.covered as f64 / stats.destroyers.max(1) as f64,
             stats.destroyers as f64 / n,
+            stats.convoys as f64 / n,
+            stats.unloaded as f64 / n,
         );
     }
 }
@@ -185,6 +196,13 @@ fn play(style: Weights, default: Weights, map: u64, years: u16) -> Stats {
                     }
                 }
             }
+            for block in &turn.fleets {
+                for action in &block.actions {
+                    if let FleetTurnAction::UnloadArmies { qty, .. } = action {
+                        stats.unloaded += u64::from(*qty);
+                    }
+                }
+            }
             if war.is_none()
                 && turn
                     .diplomacy
@@ -198,6 +216,13 @@ fn play(style: Weights, default: Weights, map: u64, years: u16) -> Stats {
         let events = game.run_maintenance().expect("maintenance runs");
         let year = game.play.built.game_data.conquest.game_year - start;
         for fleet in &game.play.built.game_data.fleets {
+            let ships = &fleet.ships;
+            if fleet.owner.0 == seat
+                && ships.empty_transports + ships.loaded_transports > 0
+                && ships.battleships + ships.cruisers + ships.destroyers == 0
+            {
+                stats.convoys += 1;
+            }
             if fleet.owner.0 == seat && fleet.ships.destroyers > 0 {
                 let destroyers = u64::from(fleet.ships.destroyers);
                 stats.destroyers += destroyers;

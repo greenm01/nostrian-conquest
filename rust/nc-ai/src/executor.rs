@@ -149,6 +149,12 @@ pub struct Doctrine {
     /// year (t203). Off, only the starting destroyers and scouts the weights
     /// buy stand watch.
     pub pickets: bool,
+    /// Ferry armies between the seat's own worlds (t191): transports with no
+    /// warships load a world's armies beyond its garrison target, sail
+    /// (Move Only) to the colony furthest short of its own, weighted by
+    /// exposure, and unload there. Off, a colony's armies are only those it
+    /// builds, and transports carry armies only to invasions.
+    pub ferry: bool,
 }
 
 impl Doctrine {
@@ -169,6 +175,7 @@ impl Doctrine {
             "watch" => &mut self.watch,
             "forward_muster" => &mut self.forward_muster,
             "pickets" => &mut self.pickets,
+            "ferry" => &mut self.ferry,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -190,6 +197,7 @@ impl Doctrine {
         watch: true,
         forward_muster: true,
         pickets: false,
+        ferry: false,
     };
 }
 
@@ -266,6 +274,7 @@ impl Weights {
             watch: false,
             forward_muster: false,
             pickets: false,
+            ferry: false,
         },
     };
 
@@ -683,8 +692,7 @@ fn choose_builds(
     };
     if weights.doctrine.defend && !is_home {
         let exposure = exposure(game_data, memory, planet.sector.to_array());
-        let production = f32::from(nc_data::present_production_points(planet));
-        let armies = (weights.colony_armies * production / 25.0).max(1.0) * (1.0 + exposure);
+        let armies = army_target(game_data, memory, weights, record, false);
         return defended_builds(
             game_data,
             record,
@@ -703,14 +711,7 @@ fn choose_builds(
             ProductionItemKind::Army,
             short(
                 planet.armies.into(),
-                if is_home {
-                    weights.home_armies
-                } else if weights.doctrine.scaled_garrisons {
-                    let production = f32::from(nc_data::present_production_points(planet));
-                    (weights.colony_armies * production / 25.0).max(1.0)
-                } else {
-                    weights.colony_armies
-                },
+                army_target(game_data, memory, weights, record, is_home),
             ),
         ),
         Need::Units(
@@ -809,6 +810,32 @@ fn choose_builds(
         stock.bought(kind, bought);
     }
     (builds, amounts)
+}
+
+/// The armies the seat wants on world `record`: the home garrison, or a
+/// colony's, scaled by its production and, under `defend`, by its
+/// exposure.
+fn army_target(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    weights: &Weights,
+    record: usize,
+    is_home: bool,
+) -> f32 {
+    let planet = &game_data.planets[record - 1];
+    if is_home {
+        return weights.home_armies;
+    }
+    if !weights.doctrine.scaled_garrisons && !weights.doctrine.defend {
+        return weights.colony_armies;
+    }
+    let production = f32::from(nc_data::present_production_points(planet));
+    let armies = (weights.colony_armies * production / 25.0).max(1.0);
+    if weights.doctrine.defend {
+        armies * (1.0 + exposure(game_data, memory, planet.sector.to_array()))
+    } else {
+        armies
+    }
 }
 
 /// A colony's builds under `Doctrine::defend`: its guard when threatened,
@@ -1177,6 +1204,7 @@ fn plan_fleets(
     goals: Option<&Goals>,
 ) -> (Vec<FleetChoice>, Labels) {
     let empire = memory.empire;
+    let capital = home;
     // Here "home" is where warships and transports gather.
     let home = if weights.doctrine.forward_muster {
         muster_world(game_data, memory, home)
@@ -1221,6 +1249,18 @@ fn plan_fleets(
         .collect();
     // Sectors given a guard this year, and whether a strike force is out.
     let mut posted: Vec<[u8; 2]> = Vec::new();
+    // Worlds a ferry already sails to with armies aboard.
+    let mut ferried: Vec<usize> = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| {
+            fleet.owner.0 == empire
+                && fleet.order == Order::MoveOnly
+                && fleet.ships.loaded_transports > 0
+                && !has_combat_ships(fleet)
+        })
+        .filter_map(|fleet| world_at(game_data, fleet.target.to_array()))
+        .collect();
     let mut sailed = game_data.fleets.iter().any(|fleet| {
         fleet.owner.0 == empire
             && has_combat_ships(fleet)
@@ -1359,6 +1399,66 @@ fn plan_fleets(
             }
             let sector = fleet.sector.to_array();
             let own_world = |idx: usize| game_data.planets[idx].owner.0 == empire;
+            if weights.doctrine.ferry && !has_combat_ships(fleet) && troops(fleet) > 0 {
+                let here = world_at(game_data, sector).filter(|&idx| own_world(idx));
+                // Armies a world lacks for its garrison target; negative
+                // when it has more.
+                let short = |idx: usize| {
+                    army_target(
+                        game_data,
+                        memory,
+                        weights,
+                        idx + 1,
+                        Some(idx + 1) == capital,
+                    ) - f32::from(game_data.planets[idx].armies)
+                };
+                let loaded = fleet.ships.loaded_transports > 0;
+                if loaded
+                    && mask.unload
+                    && let Some(idx) = here
+                    && Some(idx + 1) != capital
+                    && short(idx) >= 1.0
+                {
+                    return FleetChoice {
+                        unload: true,
+                        ..keep
+                    };
+                }
+                if loaded && fleet.order == Order::MoveOnly && fleet.sector != fleet.target {
+                    return keep;
+                }
+                // Load only armies the world can spare: every empty
+                // transport fills, so the world keeps its own target.
+                let spare = here.is_some_and(|idx| {
+                    mask.load && short(idx) + f32::from(fleet.ships.empty_transports) <= 0.0
+                });
+                if loaded || spare {
+                    let needy = (0..game_data.planets.len())
+                        .filter(|&idx| {
+                            own_world(idx)
+                                && Some(idx + 1) != capital
+                                && Some(idx) != here
+                                && !ferried.contains(&idx)
+                                && short(idx) >= 1.0
+                        })
+                        .filter_map(|idx| Some((idx, order(Order::MoveOnly, idx)?)))
+                        .max_by(|(a, _), (b, _)| {
+                            let away = |idx: usize| {
+                                distance(sector, game_data.planets[idx].sector.to_array())
+                            };
+                            short(*a)
+                                .total_cmp(&short(*b))
+                                .then(away(*b).total_cmp(&away(*a)))
+                        });
+                    if let Some((idx, choice)) = needy {
+                        ferried.push(idx);
+                        return FleetChoice {
+                            load: !loaded,
+                            ..choice
+                        };
+                    }
+                }
+            }
             // Guards keep station while the allocation holds a share back.
             if allocation >= 1
                 && has_combat_ships(fleet)

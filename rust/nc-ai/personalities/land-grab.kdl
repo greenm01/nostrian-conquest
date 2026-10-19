@@ -34,6 +34,7 @@ doctrine {
     watch #true
     forward-muster #true
     pickets #false
+    ferry #false
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

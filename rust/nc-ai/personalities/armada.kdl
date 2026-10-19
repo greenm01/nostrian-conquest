@@ -32,6 +32,7 @@ doctrine {
     watch #true
     forward-muster #true
     pickets #false
+    ferry #false
 }
 // Tuning keeps the style: battleships preferred, expansion unchanged.
 bounds {
