@@ -12,3 +12,5 @@
 2026-10-16 Stretch goal: AI empires send in-character dispatches. +deferred +ai @development id:t187 order:500 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t187)
 2026-10-16 Stretch goal: AI empires that can be negotiated with. +deferred +ai @development id:t188 order:510 depends:t187 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t188)
 2026-10-16 Update the development-only Nostr VPS installer and gate guides to nc-host. +deferred +hosting @development id:t201 order:520 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t201)
+
+(A) 2026-10-19 Release v1.0.0-beta.4, tested on the live Beta 1 game first. +critical +release @development id:t210 order:365 [details](docs/notes/plans/02cjqug4-release-v1-0-0-beta-4.md#t210)

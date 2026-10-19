@@ -5,7 +5,7 @@ BBS game Esterian Conquest. Build fleets, settle worlds, and outmaneuver rival
 empires. Issue orders when it suits you; return after the next turn to see the
 results.
 
-**Version:** `v1.0.0-beta.3` — playable beta, with active testing and bug fixes.
+**Version:** `v1.0.0-beta.4` — playable beta, with active testing and bug fixes.
 
 ![Nostrian Conquest title screen](docs/assets/nc-hero.png)
 
