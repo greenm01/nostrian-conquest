@@ -2220,6 +2220,19 @@ Snapshot 200 leads by +0.067 ± 0.019 at 60 years and +0.066 ± 0.017 at
 100, ends with 1.6 more worlds, and rendezvouses less (772 orders a game
 against 838). Both export with 0 mismatches.
 
+**A ferry to teach Unload loses as written (2026-10-19).** The owner
+pointed out that transports moving armies between the seat's own worlds is
+how a player reinforces. The executor never did it, so imitation taught the
+agent never to unload. A `ferry` switch (`e7cea4c2`, off) has transports
+without warships load a world's armies beyond its garrison target and carry
+them (Move Only) to the colony furthest short of its own, which `defend`
+raises with exposure, and unload there; `style_stats` now counts it (18.5
+armies unloaded a game, against none). Paired, one land-grab seat with it
+against three default seats, 1,024 maps from 1500000 (Mac mini, owner's
+leave): -0.032 +/- 0.016 at 60 years and -0.033 +/- 0.017 at 100. It stays
+off. A likely cost: it takes the idle transports a strike force would load
+at home.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.
