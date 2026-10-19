@@ -36,6 +36,13 @@ these orders "none" until a head almost never acts, where the bonus has no
 gradient; ``--reset-new-heads`` puts the join and unload heads back at their
 start (see ``FleetAgent.reset_new_heads``).
 
+``--teach-ferry W`` (t191) adds a teacher term: on the learner's transport
+fleets without warships, the log-likelihood of the executor's mission,
+target, load and unload (``Env.fleet_labels``), weighted ``W`` and faded to
+nothing by iteration ``--teach-until``. The executor ferries spare armies
+to threatened colonies; the term shows the learner the orders, and PPO
+keeps them only if they pay.
+
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
 ``--resume``, with the run's other options unchanged, continues a run that
@@ -86,6 +93,33 @@ def handed_rows(obs, select, families, rows):
     family = fleet_families(obs["fleets"][select])
     handed = np.isin(family, [FAMILIES.index(f) for f in families]) & obs["fleets_valid"][select]
     return np.pad(handed, ((0, 0), (0, rows - handed.shape[1])))
+
+
+# The fleet heads `--teach-ferry` teaches.
+TAUGHT = ("mission", "target", "load", "unload")
+
+
+def convoy_rows(obs, select, rows):
+    """``[N, rows]`` bools: the selected seats' real fleet rows of
+    transports without warships, padded to ``rows``."""
+    fleets = obs["fleets"][select]
+    count = lambda column: fleets[..., column]
+    convoy = ((count(TT) + count(TTL) > 0) & (count(BB) + count(CA) + count(DD) == 0)
+              & obs["fleets_valid"][select])
+    return np.pad(convoy, ((0, 0), (0, rows - convoy.shape[1])))
+
+
+def teacher_loss(dists, choices, labels, convoy):
+    """Mean negative log-likelihood of the executor's orders on convoy rows.
+    The target counts only where the taken mission is the label's, since the
+    target head is conditioned on the taken mission."""
+    total = torch.zeros((), device=convoy.device)
+    for name in TAUGHT:
+        rows = convoy if name != "target" else convoy & (choices["mission"] == labels["mission"])
+        lp = dists[name].log_prob(labels[name])
+        lp = torch.where(torch.isfinite(lp), lp, torch.zeros_like(lp))
+        total = total - (lp * rows).sum()
+    return total / convoy.sum().clamp(min=1)
 
 
 class League:
@@ -203,7 +237,7 @@ def choose_lineups(rng, games, learner, target=None, league=None):
 
 
 def play_year(env, model, strategist, roles, done, families, dev, greedy=False, target=None,
-              frozen=None):
+              frozen=None, teach=False):
     """Choose every learner's and strategist's goals and the learners'
     fleet orders, and the frozen agents' (greedy, as deployed) for their
     seats, and step the batch: ``frozen[k]`` plays role ``3 + k``, and
@@ -260,6 +294,12 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
             for name in FLEET_HEADS:
                 fleet_actions[name][seats] = placed[name][seats]
     started = time.perf_counter()
+    if teach and sample is not None:
+        rows = sample["handed"].shape[1]
+        labels = env.fleet_labels(env_goals)
+        sample["labels"] = {name: torch.from_numpy(np.pad(
+            labels[name][learner], ((0, 0), (0, rows - env.fleets)))) for name in TAUGHT}
+        sample["convoy"] = torch.from_numpy(convoy_rows(obs, learner, rows))
     step = env.step(actions_for(env, fleet_actions), env_goals)
     return step, sample, env_s + time.perf_counter() - started
 
@@ -349,7 +389,7 @@ def act_entropy(dist):
     return -(none * none.log() + (1 - none) * (1 - none).log())
 
 
-def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, args, dev):
+def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, args, dev):
     keys = steps[0]["batch"].keys()
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
     rows = batch["fleets"].shape[1]
@@ -358,6 +398,11 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, args, dev):
     fleets = {k: torch.cat([pad_rows(s["fleets"][k][:, :rows]) for s in steps])
               for k in FLEET_HEADS}
     handed = torch.cat([pad_rows(s["handed"][:, :rows]) for s in steps])
+    teach = teach_coef > 0 and "labels" in steps[0]
+    if teach:
+        labels = {k: torch.cat([pad_rows(s["labels"][k][:, :rows]) for s in steps])
+                  for k in TAUGHT}
+        convoy = torch.cat([pad_rows(s["convoy"][:, :rows]) for s in steps])
     old_logp = torch.cat([s["logp"] for s in steps])
     old_value = torch.cat([s["value"] for s in steps])
     adv = torch.from_numpy(np.concatenate(advs))
@@ -389,6 +434,13 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, args, dev):
                             for name in args.free_heads), torch.zeros((), device=dev))
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
                     - args.entropy_coef * ent - free_coef * free_ent)
+            if teach:
+                width = mb["fleets"].shape[1] - rows
+                mb_labels = {k: torch.nn.functional.pad(v[idx], (0, width)).to(dev)
+                             for k, v in labels.items()}
+                mb_convoy = torch.nn.functional.pad(convoy[idx], (0, width)).to(dev)
+                loss = loss + teach_coef * teacher_loss(fleet_dists, mb_fleets, mb_labels,
+                                                        mb_convoy & mb_handed.bool())
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
@@ -435,6 +487,10 @@ def main():
                         help="extra entropy weight for the free heads")
     parser.add_argument("--free-entropy-until", type=int, default=0,
                         help="fade --free-entropy to 0 by this iteration; 0 never fades it")
+    parser.add_argument("--teach-ferry", type=float, default=0.0,
+                        help="weight of the executor's orders on transport fleets (t191)")
+    parser.add_argument("--teach-until", type=int, default=0,
+                        help="fade --teach-ferry to 0 by this iteration; 0 never fades it")
     parser.add_argument("--reset-new-heads", action="store_true",
                         help="start the join and unload heads at none again (t191)")
     parser.add_argument("--league", action="store_true",
@@ -499,6 +555,8 @@ def main():
         kl_coef = max(args.kl_floor, args.kl * max(0.0, 1 - (it - 1) / args.kl_iterations))
         free_coef = args.free_entropy * (max(0.0, 1 - (it - 1) / args.free_entropy_until)
                                          if args.free_entropy_until else 1.0)
+        teach_coef = args.teach_ferry * (max(0.0, 1 - (it - 1) / args.teach_until)
+                                         if args.teach_until else 1.0)
         drawn = choose_lineups(rng, args.games, learner,
                                learner_name(families) if target else None, league)
         names, roles = drawn[:2]
@@ -510,6 +568,7 @@ def main():
         game_reward = np.zeros(args.games)
         while not done.all():
             step, sample, seconds = play_year(env, model, strategist, roles, done, families, dev,
+                                              teach=teach_coef > 0,
                                               target=target,
                                               frozen=league.agents if league else None)
             env_s += seconds
@@ -522,7 +581,7 @@ def main():
         played = time.perf_counter() - started
         (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
                                       advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
-                                      args, dev)
+                                      teach_coef, args, dev)
         wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an
@@ -531,10 +590,15 @@ def main():
                                                           :s["handed"].shape[1]] > 0)
                                        * s["handed"]).sum()) for s in steps) / handed_rows_n
         row = dict(iteration=it, samples=n, win=float(wins), kl_coef=kl_coef,
-                   free_coef=free_coef, policy_loss=pl,
+                   free_coef=free_coef, teach_coef=teach_coef, policy_loss=pl,
                    value_loss=vl, kl_ref=kl, entropy=ent, join=rate("join"),
                    unload=rate("unload"), play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)
+        if teach_coef > 0:
+            # Convoy rows the teacher saw, and those it said to unload.
+            row["convoys"] = int(sum(int(s["convoy"].sum()) for s in steps))
+            row["taught_unloads"] = int(sum(int((s["convoy"] & (s["labels"]["unload"] > 0)).sum())
+                                            for s in steps))
         if league:
             league.update(drawn[2], game_reward)
             row["league"] = league.summary()

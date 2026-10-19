@@ -2251,6 +2251,17 @@ imitation from the current agent would also relabel its joins "none", since
 the executor never joins; teaching Unload this way needs imitation limited
 to the transport heads, or the ferry as a PPO teacher term.
 
+**The ferry adopted; the agent taught by a teacher term (owner,
+2026-10-19).** The third version is on in `Doctrine::CURRENT` and the
+land-grab style (the other styles keep it off, untried). `fleet_ppo.py
+--teach-ferry W --teach-until N` adds the executor's mission, target, load
+and unload on the learner's convoy rows (transports without warships) as a
+log-likelihood term, fading to 0 by iteration `N`, so joins are left as
+PPO made them. A 64-game iteration at 100 years has about 3,100 convoy rows
+and 120 taught unloads. Run: from t191-orders snapshot 200, `--teach-ferry
+1.0 --teach-until 120`, the free-head bonus fading on the same schedule,
+200 iterations (`~/.local/state/nostrian-conquest/ai/t191-ferry/`).
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.

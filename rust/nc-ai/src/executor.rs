@@ -154,8 +154,9 @@ pub struct Doctrine {
     /// Only) to the threatened colony furthest short of its own, and unload
     /// there. At the muster world they wait for strike forces; at home, one
     /// a year may go once the strike force there carries the transports the
-    /// weights want. Off, a colony's armies are only those it builds, and
-    /// transports carry armies only to invasions.
+    /// weights want (accepted: neutral at 60 and 100 years). Off, a
+    /// colony's armies are only those it builds, and transports carry
+    /// armies only to invasions.
     pub ferry: bool,
 }
 
@@ -199,7 +200,7 @@ impl Doctrine {
         watch: true,
         forward_muster: true,
         pickets: false,
-        ferry: false,
+        ferry: true,
     };
 }
 
