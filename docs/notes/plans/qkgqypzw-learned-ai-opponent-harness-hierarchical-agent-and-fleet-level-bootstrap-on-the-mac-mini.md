@@ -2177,6 +2177,27 @@ is not met; the mixed fleet is.
 (`.pt` 574ad237…, `.onnx` 077d9284…); the previous agent is kept as
 `fleet-final-pre-t206`. t191 stays open for the order set.
 
+**Why the agent never joins (2026-10-19).** On handed-over rows where a
+join is legal (128 greedy games against executors at 100 years):
+
+| Agent | P(join), mean | rows with P(join) > ½ | greedy argmax joins |
+| --- | ---: | ---: | ---: |
+| `fleet-final` (t191-mixed 175) | 0.0000 | 0% | 0% |
+| t191-full snapshot 200 | 0.44 | 38% | 0.01% |
+
+Three causes. (1) Greedy play split the join choice: one categorical over
+none and about 17 hosts, so none wins the argmax while joining at all is
+likelier. (2) The free-head bonus peaks at acting half the time, and t191-full's
+0.44 sits at that optimum, so it shows the bonus, not that joins win. (3)
+Imitation labels joins "none" until the head never acts, where the bonus
+has no gradient, so t191-mixed sampled no joins at all. Unload is binary;
+t191-full's greedy unloads on 3.7% of legal rows. Fixes (`8c591439`):
+greedy play joins when P(none) < ½, then picks the likeliest host
+(`greedy_join`, in the model and the exported graph at zero noise; noise
+still samples the trained distribution); `--free-entropy-until N` fades the
+bonus to 0; `--reset-new-heads` puts the join and unload heads back at
+their start.
+
 ### t192
 
 Name the weakness the exploiter found.
