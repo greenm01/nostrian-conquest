@@ -2236,6 +2236,35 @@ set greedily: every mission whose use the manuals and the measurement
 justify, each ordered at least once a game on average, with the exploit
 check clean.
 
+
+**Step 1, measured (2026-10-19).** The promoted agent, greedy, on its
+handed-over strike rows (256 games against executors at 100 years, maps
+from 100000, bean-void; it won 0.727):
+
+| Mission | legal on | P where legal | greedy picks |
+| --- | ---: | ---: | ---: |
+| keep orders | 100% | 0.253 | 28.0% |
+| Rendezvous | 100% | 0.615 | 63.8% |
+| Bombard | 93.0% | 0.066 | 4.1% |
+| Invade | 7.8% | 0.341 | 2.6% |
+| Guard/Blockade | 93.7% | 0.046 | 1.5% |
+| Blitz | 7.9% | 0.00006 | 0 |
+| Patrol | 100% | 0.0008 | 0 |
+| View | 100% | 0.0003 | 0 |
+| Hold, Move Only, Seek Home, Salvage | 100% | 0.00002-0.00004 | 0 |
+| Scout Sector, Scout System | 1.2% | 0.001-0.004 | 0 |
+| Guard Starbase, Colonize | 0% | - | - |
+
+The executor issues Rendezvous, Guard/Blockade, Invade, Bombard, Guard
+Starbase, Colonize, Patrol, Scout and View, and never Hold, Move Only,
+Seek Home, Blitz, Salvage or Join; the network's near-zero choices match
+that list. Blitz is the plainest case: legal exactly where Invade is, and
+given a two-thousandth of Invade's weight, though the manual makes it the
+way to take a lightly defended world intact. Guard Starbase is never legal
+on a strike fleet because the seat seldom has a starbase where its fleets
+are; that is a build question, for step 4. Hold and Move Only overlap
+Rendezvous, which merges on arrival.
+
 ### t192
 
 Name the weakness the exploiter found.
