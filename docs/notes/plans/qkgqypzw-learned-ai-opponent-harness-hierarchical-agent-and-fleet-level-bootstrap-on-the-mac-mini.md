@@ -2198,6 +2198,28 @@ still samples the trained distribution); `--free-entropy-until N` fades the
 bonus to 0; `--reset-new-heads` puts the join and unload heads back at
 their start.
 
+**The retrain that joins (2026-10-19).** PPO from the promoted agent with
+the join and unload heads reset, the free-head bonus 0.03 fading to 0 by
+iteration 120, otherwise t191-mixed's flags, 200 iterations
+(`~/.local/state/nostrian-conquest/ai/t191-orders/`, `run.sh`). Sampled
+joins rose to 0.41 of handed-over fleet orders by iteration 100 and held
+at 0.37-0.41 through the 80 iterations with no bonus, so PPO keeps them
+for the reward. Unloads stayed at 0. Greedy checks against executors:
+0.254, 0.250, 0.207, 0.215, 0.230, 0.305, 0.348, 0.402. Paired behaviour
+report against the promoted agent (bean-void, 1,024 maps from 100000, at
+`0f629cd7`; the baseline exported with `greedy_join`, which changes
+nothing for a head that never joins):
+
+| Agent | 60 years | 100 years | joins a game, 60 / 100 |
+| --- | ---: | ---: | ---: |
+| promoted (t191-mixed 175) | 0.508 | 0.725 | 0 / 0 |
+| t191-orders snapshot 175 | 0.542 | 0.762 | 57 / 113 |
+| t191-orders snapshot 200 | 0.575 | 0.791 | 76 / 344 |
+
+Snapshot 200 leads by +0.067 ± 0.019 at 60 years and +0.066 ± 0.017 at
+100, ends with 1.6 more worlds, and rendezvouses less (772 orders a game
+against 838). Both export with 0 mismatches.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.
