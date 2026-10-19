@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Sysop Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 18),
+  date: datetime(year: 2026, month: 10, day: 19),
 )
 
 #set page(
@@ -63,7 +63,7 @@
   #v(2em)
   #text(size: 11pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
   #v(0.5em)
-  #text(size: 11pt, fill: luma(120))[Revision date: October 18, 2026]
+  #text(size: 11pt, fill: luma(120))[Revision date: October 19, 2026]
 ]
 
 #pagebreak()
