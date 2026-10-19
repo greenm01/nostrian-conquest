@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::load_classic_core_files;
@@ -21,10 +22,15 @@ fn mail(subject: &str, year: u16) -> QueuedPlayerMail {
     }
 }
 
+/// Tests run in parallel and the clock can repeat, so each directory also
+/// takes a sequence number.
+static DIRECTORY_SEQ: AtomicU64 = AtomicU64::new(0);
+
 fn directory() -> PathBuf {
     let path = std::env::temp_dir().join(format!(
-        "nc-mail-retention-{}-{}",
+        "nc-mail-retention-{}-{}-{}",
         std::process::id(),
+        DIRECTORY_SEQ.fetch_add(1, Ordering::Relaxed),
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
