@@ -2198,6 +2198,44 @@ still samples the trained distribution); `--free-entropy-until N` fades the
 bonus to 0; `--reset-new-heads` puts the join and unload heads back at
 their start.
 
+### t207
+
+Teach the agent to use every order, and to find new uses for them.
+
+The owner's goal (2026-10-19): the AI must take advantage of every game
+option, above all the orders, and learn new ways to use them. The promoted
+agent uses 9 of the 16 missions (behaviour report, 1,024 maps, 100 years):
+never Hold Position, Move Only, Seek Home, Guard Starbase, Blitz World,
+Join Another Fleet or Salvage. The masks already offer all 15 missions
+wherever the game's validators allow them (`nc-ai/src/action.rs`,
+`MISSIONS`), plus Join and Unload (t190). The agent was taught them away:
+imitation copies an executor that never orders them, and PPO's KL penalty
+holds the agent near that copy, so an order it never plays never earns the
+reward that would show its use. t191 found the same three causes for Join.
+
+Plan:
+
+1. **Measure.** For each mission, how often it is legal on the agent's
+   handed-over rows and how much probability the agent gives it, for the
+   promoted agent and t191's result; and which orders the executors use.
+   Read the manuals on Blitz, Salvage, Seek Home, Move Only and Guard
+   Starbase, so each order's purpose is known before it is judged.
+2. **Lift the suppression.** Generalise t191's fixes to the mission head:
+   take the KL against a reference smoothed toward every legal mission
+   rather than the imitation copy, and give rarely chosen missions an
+   exploration bonus that fades over the run, so an order survives only if
+   it wins games.
+3. **Find new uses.** Self-play and exploiters reward play the scripted
+   bots never show. Retry league training (t184 lost) once step 2 is in.
+4. **Then the other options.** The same audit for builds, tax, diplomacy
+   and starbases.
+
+**Exit:** a retrained agent that does not lose the paired behaviour report
+against the promoted agent at 60 and 100 years, and uses more of the order
+set greedily: every mission whose use the manuals and the measurement
+justify, each ordered at least once a game on average, with the exploit
+check clean.
+
 ### t192
 
 Name the weakness the exploiter found.
