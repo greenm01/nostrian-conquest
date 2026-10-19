@@ -18,6 +18,9 @@ pub fn print_usage() {
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] economy-report --dir <game_dir> --player <N>"
     );
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] check --dir <game_dir>"
+    );
 }
 
 pub fn print_new_game_usage() {
@@ -78,4 +81,14 @@ pub fn print_economy_report_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] economy-report --dir <game_dir> --player <N>"
     );
     println!("  Prints one empire's production, tax, ranks, and planets for the current year.");
+}
+
+pub fn print_check_usage() {
+    println!("Usage:");
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] check --dir <game_dir>"
+    );
+    println!(
+        "  Checks that ncgame.db is intact, its latest year loads, and maintenance would accept it."
+    );
 }

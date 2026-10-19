@@ -1,4 +1,5 @@
 mod ai_seats;
+mod check;
 mod map_export;
 mod usage;
 
@@ -86,6 +87,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 map_export::export_galaxy_map(&dir, &out_dir)
             }
+        }
+        "check" => {
+            init_logging(&parsed, false)?;
+            if rest.iter().any(|arg| arg == "--help" || arg == "-h") {
+                usage::print_check_usage();
+                return Ok(());
+            }
+            tracing::info!("running nc-sysop check");
+            check::check_campaign(&parse_required_dir_flag(&rest)?)
         }
         "economy-report" => {
             init_logging(&parsed, false)?;

@@ -280,6 +280,7 @@ fn nc_sysop_help_lists_only_local_and_bbs_public_subcommands() {
     assert!(stdout.contains("settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat>"));
     assert!(stdout.contains("map-export --dir <game_dir> [--player <N>]"));
     assert!(stdout.contains("economy-report --dir <game_dir> --player <N>"));
+    assert!(stdout.contains("check --dir <game_dir>"));
     assert!(!stdout.contains("maint-all"));
     assert!(!stdout.contains("host "));
     assert!(!stdout.contains("nostr "));
@@ -408,4 +409,39 @@ fn nc_sysop_economy_report_prints_one_empires_economy() {
     assert!(stderr.contains("--player must be 1-4"));
 
     let _ = fs::remove_dir_all(&target);
+}
+
+#[test]
+fn nc_sysop_check_passes_a_played_campaign_and_reports_a_damaged_file() {
+    let target = unique_temp_dir("nc-sysop-check");
+    let dir = target.to_str().expect("utf-8 path");
+    run_nc_sysop(&["new-game", dir, "--players", "4", "--seed", "7"]);
+    run_nc_sysop(&["maint", dir, "2"]);
+
+    let stdout = run_nc_sysop(&["check", "--dir", dir]);
+    assert!(stdout.contains("File: intact"), "{stdout}");
+    assert!(stdout.contains("Year 3002: loads (4 players"), "{stdout}");
+    assert!(stdout.contains("Maintenance: ready"), "{stdout}");
+
+    // Overwrite part of a table page, as a failing disk might.
+    let db = target.join("ncgame.db");
+    let mut bytes = fs::read(&db).expect("read campaign");
+    let page = 4096;
+    for byte in &mut bytes[page * 3..page * 3 + 512] {
+        *byte = 0xA5;
+    }
+    fs::write(&db, bytes).expect("damage campaign");
+    let stderr = run_nc_sysop_failure(&["check", "--dir", dir]);
+    assert!(stderr.contains("damaged"), "{stderr}");
+
+    let empty = unique_temp_dir("nc-sysop-check-empty");
+    let stderr = run_nc_sysop_failure(&["check", "--dir", empty.to_str().expect("utf-8 path")]);
+    assert!(stderr.contains("has no campaign"), "{stderr}");
+    assert!(
+        !empty.join("ncgame.db").exists(),
+        "check must not create a campaign"
+    );
+
+    let _ = fs::remove_dir_all(&target);
+    let _ = fs::remove_dir_all(&empty);
 }

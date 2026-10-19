@@ -44,3 +44,8 @@ sysop manual has a section under Player Management and a CLI reference line.
 - `core-validate` was not moved: it checks a fresh classic ECUTIL baseline
   (for example, unowned planets named `Unowned`), so it rejects even a new
   nc-sysop game. It is an oracle tool, not a health check.
+- `nc-sysop check --dir <game_dir>` stands in for it: SQLite `quick_check`
+  (a file too damaged to open is reported the same way), the latest year
+  loads, and `ecmaint_structural_preflight_errors`, the checks `maint` makes
+  before each turn. `rust/nc-sysop/src/check.rs`; the test damages a played
+  campaign's file.

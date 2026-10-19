@@ -730,6 +730,25 @@ runs when your timer or you run `nc-sysop maint`.
 
 // ─── 10. Player Management ────────────────────────────────────────────────────
 
+== Checking a Campaign
+
+To check that a campaign is safe to play on, use:
+
+```sh
+nc-sysop check --dir /path/to/mygame
+```
+
+It checks three things and stops at the first failure:
+
+- *File:* `ncgame.db` is intact. A damaged file, from a bad disk or a copy
+  made while the game was running, is reported as damaged.
+- *Year:* the latest saved year loads.
+- *Maintenance:* the campaign passes the checks `nc-sysop maint` makes before
+  each turn. Any problem is listed.
+
+It changes nothing. It exits with an error when a check fails, so a script
+can run it before maintenance or after restoring a backup.
+
 = Player Management
 
 Non-BBS campaigns keep player reservations and the carried-forward
@@ -884,6 +903,8 @@ Logging flags come before the subcommand:
   folder: `<game_dir>/exports`.
 - *`economy-report --dir <game_dir> --player <N>`:* Print one empire's
   economy for the current year: totals, ranks, and each planet it owns.
+- *`check --dir <game_dir>`:* Check that `ncgame.db` is intact, its latest
+  year loads, and maintenance would accept it. Changes nothing.
 
 == nc-game and nc-door
 
