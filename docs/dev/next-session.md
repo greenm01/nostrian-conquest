@@ -60,11 +60,16 @@ details are in the plans' result sections.
 - **Combat rules (t206, 2026-10-18).** Heavies cover the destroyers,
   execution finishes cripples at half price, a heavy line adds +1
   ([tdkitij6](../notes/decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)).
-  Mixes now beat pure cruisers 70/30 at equal cost, but the executor's
-  `mixed_hulls` still loses in campaigns; the owner calls that an AI
-  problem. t189's retune and t191's retrain must run on the new rules
-  (rebuild the Python binding first). The combat model's `engine-t206`
-  preset matches the engine.
+  Mixes now beat pure cruisers 70/30 at equal cost. The combat model's
+  `engine-t206` preset matches the engine.
+- **Mixed hulls adopted, agent not yet retrained (t189/t191, 2026-10-18).**
+  Retuned under t206, mixed executors match cruiser ones, so the land-grab
+  style and rusher now build cruisers and destroyers (the turtle stays
+  cruisers). The executor builds for the network seat, and the agent,
+  trained on cruiser fleets, wins 0.19 with mixed fleets at 100 years
+  against 0.71 with cruisers. **Do not release main's AI until t191's
+  retrain passes its gate**; the live stack and beta.3 predate this. See
+  the AI plan's t189 and t191 sections.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'

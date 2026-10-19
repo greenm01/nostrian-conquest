@@ -1888,6 +1888,27 @@ trial that might have revived the combined gate lost, so both are gone
 with the code only they used (`da1d46e3`). Join stays available to the
 network (t190).
 
+**The agent cannot fight with mixed fleets (2026-10-18).** The executor
+builds for the network seat, so adopting mixed hulls changed the agent's
+own fleets as well as its opponents'. One network seat against three of the
+adopted executors, 1,024 maps from 100000 (`behaviour_report`, bean-void,
+at `492a55f8`):
+
+| Agent, its seat's builds | 60 years | 100 years |
+| --- | ---: | ---: |
+| `fleet-final`, mixed (the new default) | 0.172 | 0.192 |
+| t191 pre-t206 snapshot 175, mixed | 0.145 | 0.145 |
+| `fleet-final`, cruisers (the old land-grab file) | 0.525 | 0.709 |
+
+Against cruiser executors it scored 0.570 and 0.753, so mixed opponents
+cost it only about 0.04; its own mixed fleets cost it 0.5. With them it
+parks warships for 955 fleet-years a game against 186, and invades 13
+times against 30: a network trained on cruiser fleets seems never to judge
+a destroyer-heavy force ready to strike. **Until t191 retrains the agent on
+mixed fleets, main's AI seats are far weaker than the released ones; do not
+release main's AI.** The live community stack (`ea1a6b3b`) and the beta.3
+archives predate the adoption.
+
 ### t203
 
 Early warning: pickets on the approaches, threats tracked from what the
