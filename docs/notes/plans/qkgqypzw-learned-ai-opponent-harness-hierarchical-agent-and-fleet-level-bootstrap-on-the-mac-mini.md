@@ -2241,6 +2241,16 @@ rarely: 0.7 armies unloaded a game (256 games at 100 years), since
 transports are built at home and seldom wait near a threatened colony. Too
 rare to teach Unload by imitation; not adopted yet.
 
+A third version lets one ferry a year leave home once the strike force
+there carries the transports the weights want (`transports`, rounded); the
+muster world still holds its transports for strikes. Same trial: -0.002
++/- 0.010 at 60 years, -0.018 +/- 0.013 at 100, inside the bar; 2.6 armies
+unloaded a game. Transport-only fleets are strike family, so in a hybrid
+seat the network orders them and DAgger would label these unloads. But
+imitation from the current agent would also relabel its joins "none", since
+the executor never joins; teaching Unload this way needs imitation limited
+to the transport heads, or the ferry as a PPO teacher term.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.

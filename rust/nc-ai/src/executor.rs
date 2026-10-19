@@ -150,10 +150,11 @@ pub struct Doctrine {
     /// buy stand watch.
     pub pickets: bool,
     /// Ferry armies to threatened colonies (t191): transports with no
-    /// warships, away from the home and muster worlds where strike forces
-    /// load, take a world's armies beyond its garrison target, sail (Move
+    /// warships take a world's armies beyond its garrison target, sail (Move
     /// Only) to the threatened colony furthest short of its own, and unload
-    /// there. Off, a colony's armies are only those it builds, and
+    /// there. At the muster world they wait for strike forces; at home, one
+    /// a year may go once the strike force there carries the transports the
+    /// weights want. Off, a colony's armies are only those it builds, and
     /// transports carry armies only to invasions.
     pub ferry: bool,
 }
@@ -1262,6 +1263,21 @@ fn plan_fleets(
         })
         .filter_map(|fleet| world_at(game_data, fleet.target.to_array()))
         .collect();
+    // One ferry a year may leave home, once the strike force there carries
+    // the transports the weights want.
+    let mut home_ferry = home_sector.is_some_and(|sector| {
+        let carried: u16 = game_data
+            .fleets
+            .iter()
+            .filter(|fleet| {
+                fleet.owner.0 == empire
+                    && fleet.sector.to_array() == sector
+                    && has_combat_ships(fleet)
+            })
+            .map(troops)
+            .sum();
+        f32::from(carried) >= weights.transports.round()
+    });
     let mut sailed = game_data.fleets.iter().any(|fleet| {
         fleet.owner.0 == empire
             && has_combat_ships(fleet)
@@ -1400,12 +1416,12 @@ fn plan_fleets(
             }
             let sector = fleet.sector.to_array();
             let own_world = |idx: usize| game_data.planets[idx].owner.0 == empire;
-            // Transports at home or the muster world wait for strike forces.
+            let at_capital =
+                world_at(game_data, sector).is_some_and(|idx| Some(idx + 1) == capital);
             if weights.doctrine.ferry
                 && !has_combat_ships(fleet)
                 && troops(fleet) > 0
-                && !at_home
-                && world_at(game_data, sector).is_none_or(|idx| Some(idx + 1) != capital)
+                && (!(at_home || at_capital) || (at_capital && home_ferry))
             {
                 let here = world_at(game_data, sector).filter(|&idx| own_world(idx));
                 // Armies a world lacks for its garrison target; negative
@@ -1464,6 +1480,7 @@ fn plan_fleets(
                         });
                     if let Some((idx, choice)) = needy {
                         ferried.push(idx);
+                        home_ferry &= !at_capital;
                         return FleetChoice {
                             load: !loaded,
                             ..choice
