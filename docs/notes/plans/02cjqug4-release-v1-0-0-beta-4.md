@@ -33,3 +33,16 @@ Windows `nc-sysop` archives and a signed `SHA256SUMS.txt` replace beta.3 on
    browser terminal.
 4. Then the BBS archives as in t023/t024, the download page and the website
    PDFs.
+
+## Live test release (2026-10-19)
+
+Signed community release `19fb1f5d` (beta.4) built on bean-void (rust
+1.98.0), tarball SHA-256
+`39d5638c4d5a0280053a12fad181da3202ecba71587bda1fcd082379818938f5`, went live
+on archvps after an `nc-admin` backup of Beta 1
+(`.backups/beta-1-1792453771-a72197954e0cb14c`). Beta 1 stays recruiting at
+year 3000 with one seat claimed. All five units restarted on the new
+binaries; `ea1a6b3b` is kept for rollback. The deploy helper now renames the
+tarball's `nc-community-<commit>` folder to `releases/<commit>`; the first
+attempt stopped before any service was touched. Next: owner acceptance on
+Beta 1.
