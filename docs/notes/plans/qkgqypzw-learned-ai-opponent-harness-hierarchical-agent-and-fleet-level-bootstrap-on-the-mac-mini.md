@@ -1853,6 +1853,41 @@ the deployed agent's fleets mix too. The seat fixtures' games were
 re-recorded; `tiny.onnx` stays the pre-t190 graph that tests old inputs.
 The rusher and turtle are retuned next under the same doctrine.
 
+**The other styles under mixed hulls (2026-10-18).** Each retuned the same
+way (battleships pinned at 0, destroyers 0.1 or more) and judged paired
+against its current style, three default seats, 1,024 maps from 1500000:
+
+| Style | 60 years | 100 years | Verdict |
+| --- | ---: | ---: | --- |
+| rusher, retuned (bean-void) | +0.025 ± 0.013 | +0.021 ± 0.013 | adopted (`b16cb7e2`) |
+| turtle, retuned (Mac mini) | -0.090 ± 0.014 | -0.088 ± 0.015 | rejected |
+| turtle, own weights, destroyers a quarter | -0.037 ± 0.014 | -0.059 ± 0.015 | rejected |
+
+The rusher's retune puts destroyers at 0.45 against cruisers' 0.56. The
+turtle loses with destroyers either way, so it stays a cruiser fleet; its
+retune ended on rules of engagement of 2.2, a cautious last pick from a
+noisy generation. Why the turtle, which keeps warships home under the
+allocation goal, does worse with destroyers is open. The armada
+(battleship-led) and raider (destroyer-led) were not changed.
+
+**Deep-space staging, rejected (2026-10-18).** A `stage` switch sent a
+force bound for a world more than two sectors away to Rendezvous one sector
+short of it in deep space, struck from there once the merged force was
+`attack_ratio` times the target's defence, and sent warships at home to
+reinforce a force waiting there. Paired against the adopted land-grab
+executor, 1,024 maps: -0.048 ± 0.017 at 60 years, -0.001 ± 0.018 at 100.
+Under `forward_muster` the force already gathers by Rendezvous at the
+world nearest the enemy, so the stop adds a year without assembling more.
+The switch was removed (`6faca951`). Salvage was not tried: it scraps ships
+at half their price, and crippled ships mend on their own, faster beside a
+starbase, so a rule that salvaged damaged fleets could only lose strength.
+
+**Rejected switches removed (2026-10-18).** `reinforce` and
+`combined_gate` lost or stayed neutral in their trials, and the staging
+trial that might have revived the combined gate lost, so both are gone
+with the code only they used (`da1d46e3`). Join stays available to the
+network (t190).
+
 ### t203
 
 Early warning: pickets on the approaches, threats tracked from what the
