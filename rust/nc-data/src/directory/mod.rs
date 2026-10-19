@@ -1,6 +1,7 @@
 mod base_chain;
 mod current_known;
 mod economy;
+mod economy_report;
 mod mutators;
 mod preflight;
 mod types;

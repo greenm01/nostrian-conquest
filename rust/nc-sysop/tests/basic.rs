@@ -279,6 +279,7 @@ fn nc_sysop_help_lists_only_local_and_bbs_public_subcommands() {
     assert!(stdout.contains("maint <dir> [turns]"));
     assert!(stdout.contains("settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat>"));
     assert!(stdout.contains("map-export --dir <game_dir> [--player <N>]"));
+    assert!(stdout.contains("economy-report --dir <game_dir> --player <N>"));
     assert!(!stdout.contains("maint-all"));
     assert!(!stdout.contains("host "));
     assert!(!stdout.contains("nostr "));
@@ -382,6 +383,29 @@ fn nc_sysop_map_export_without_player_writes_the_galaxy_without_intel() {
     let csv = fs::read_to_string(exports.join("ECMAP-GALAXY-Y3000.CSV")).expect("galaxy csv");
     assert_eq!(csv.matches('*').count(), game.planets.len());
     assert!(!exports.join("ECMAP-GALAXY-Y3000-DETAILS.CSV").exists());
+
+    let _ = fs::remove_dir_all(&target);
+}
+
+#[test]
+fn nc_sysop_economy_report_prints_one_empires_economy() {
+    let target = unique_temp_dir("nc-sysop-economy-report");
+    let dir = target.to_str().expect("utf-8 path");
+    run_nc_sysop(&["new-game", dir, "--players", "4", "--seed", "7"]);
+    let game = CampaignStore::open_default_in_dir(&target)
+        .expect("open campaign store")
+        .load_latest_runtime_state()
+        .expect("load runtime")
+        .expect("runtime snapshot should exist")
+        .game_data;
+
+    let stdout = run_nc_sysop(&["economy-report", "--dir", dir, "--player", "3"]);
+    assert_eq!(stdout, game.economy_report_text(3).expect("player 3"));
+    assert!(stdout.starts_with("Economy report: player=3"));
+    assert!(stdout.contains(" homeworld"));
+
+    let stderr = run_nc_sysop_failure(&["economy-report", "--dir", dir, "--player", "0"]);
+    assert!(stderr.contains("--player must be 1-4"));
 
     let _ = fs::remove_dir_all(&target);
 }

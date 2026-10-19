@@ -32,3 +32,15 @@ campaign's current year. `nc_sysop_map_export_writes_the_players_star_map`
 in `rust/nc-sysop/tests/basic.rs` checks the default and `--out-dir`
 folders, that the text matches the shared export, and the seat range. The
 sysop manual has a section under Player Management and a CLI reference line.
+
+## Follow-up (2026-10-19)
+
+- Without `--player`, `map-export` writes the galaxy map with no empire's
+  intel (`ECMAP-GALAXY-Y<year>` `.TXT` and `.CSV`), built by
+  `nc_data::build_galaxy_map_export_data` with a viewer that owns no world.
+- `nc-sysop economy-report --dir <game_dir> --player <N>` prints one empire's
+  economy. The text moved from nc-cli into `CoreGameData::economy_report_text`
+  (`rust/nc-data/src/directory/economy_report.rs`) so both tools share it.
+- `core-validate` was not moved: it checks a fresh classic ECUTIL baseline
+  (for example, unowned planets named `Unowned`), so it rejects even a new
+  nc-sysop game. It is an oracle tool, not a health check.

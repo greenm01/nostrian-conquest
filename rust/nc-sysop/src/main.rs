@@ -87,6 +87,27 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 map_export::export_galaxy_map(&dir, &out_dir)
             }
         }
+        "economy-report" => {
+            init_logging(&parsed, false)?;
+            if rest.iter().any(|arg| arg == "--help" || arg == "-h") {
+                usage::print_economy_report_usage();
+                return Ok(());
+            }
+            tracing::info!("running nc-sysop economy-report");
+            let dir = parse_required_dir_flag(&rest)?;
+            let player = parse_required_usize_flag(&rest, "--player")?;
+            let Some(runtime) =
+                CampaignStore::open_default_in_dir(&dir)?.load_latest_runtime_state()?
+            else {
+                return Err(format!("{} has no campaign", dir.display()).into());
+            };
+            let report = runtime
+                .game_data
+                .economy_report_text(player)
+                .ok_or_else(|| format!("--player must be 1-{}", runtime.game_data.players.len()))?;
+            print!("{report}");
+            Ok(())
+        }
         _ => {
             usage::print_usage();
             Err(format!("unknown subcommand: {cmd}").into())

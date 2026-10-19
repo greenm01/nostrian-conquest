@@ -814,6 +814,19 @@ names, owners, or strengths. This is the map every player starts with, so
 it is safe to post for all players. It writes `ECMAP-GALAXY-Y<year>.TXT`
 and `.CSV`.
 
+== Checking a Player's Economy
+
+To see one empire's economy for the current year, use:
+
+```sh
+nc-sysop economy-report --dir /path/to/mygame --player 2
+```
+
+It prints the empire's tax rate, production, stored points, and ranks, then
+each planet it owns with its production, revenue, growth, build capacity,
+armies, and batteries. This is private to that player, so use it to settle
+questions, not to share.
+
 // ─── 11. Terminology ──────────────────────────────────────────────────────────
 
 = Terminology
@@ -869,6 +882,8 @@ Logging flags come before the subcommand:
   `-DETAILS.CSV` files. Without `--player`, write the galaxy map with no
   empire's intel as `ECMAP-GALAXY-Y<year>` `.TXT` and `.CSV`. Default
   folder: `<game_dir>/exports`.
+- *`economy-report --dir <game_dir> --player <N>`:* Print one empire's
+  economy for the current year: totals, ranks, and each planet it owns.
 
 == nc-game and nc-door
 

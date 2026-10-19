@@ -15,6 +15,9 @@ pub fn print_usage() {
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> [--player <N>] [--out-dir <path>]"
     );
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] economy-report --dir <game_dir> --player <N>"
+    );
 }
 
 pub fn print_new_game_usage() {
@@ -67,4 +70,12 @@ pub fn print_map_export_usage() {
         "  Without --player, writes the galaxy map with no empire's intel as ECMAP-GALAXY-Y<year> .TXT and .CSV."
     );
     println!("  --out-dir defaults to <game_dir>/exports, where the in-game export writes.");
+}
+
+pub fn print_economy_report_usage() {
+    println!("Usage:");
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] economy-report --dir <game_dir> --player <N>"
+    );
+    println!("  Prints one empire's production, tax, ranks, and planets for the current year.");
 }
