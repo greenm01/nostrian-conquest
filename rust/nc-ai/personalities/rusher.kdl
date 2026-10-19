@@ -1,22 +1,22 @@
 // The rusher (t167): war from the first years, few ETACs, and strikes below
-// a target's estimated defence. Starting weights are the rush t164's tuning
-// found.
+// a target's estimated defence. Retuned under t206's cover rules with mixed
+// hulls: cruisers and destroyers, no battleships in the line.
 personality "rusher"
 weights {
-    tax 65.0
-    home-armies 17.77
-    colony-armies 9.62
-    batteries 7.69
-    etacs 2.8
-    scouts 1.31
-    starbases 0.0
-    transports 15.03
-    battleship 0.81
-    cruiser 0.9
-    destroyer 0.64
-    attack-ratio 0.69
-    roe 6.4
-    war-year 1.51
+    tax 63.88718
+    home-armies 20.0
+    colony-armies 8.588767
+    batteries 9.667504
+    etacs 2.5013711
+    scouts 1.6963803
+    starbases 0.09892445
+    transports 12.222214
+    battleship 0.0
+    cruiser 0.56069237
+    destroyer 0.4539108
+    attack-ratio 0.7930259
+    roe 4.8970838
+    war-year 2.1730373
 }
 doctrine {
     land-grab #true
@@ -27,7 +27,7 @@ doctrine {
     allocate #false
     supply #true
     defend #true
-    mixed-hulls #false
+    mixed-hulls #true
     keep-scouts #true
     watch #true
     forward-muster #true
@@ -35,6 +35,8 @@ doctrine {
 }
 // Tuning keeps the style: early war, low odds to attack, little expansion.
 bounds {
+    battleship 0.0 0.0
+    destroyer 0.1 1.0
     etacs 0.0 3.0
     attack-ratio 0.5 1.0
     war-year 0.0 3.0
