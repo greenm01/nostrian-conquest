@@ -32,6 +32,16 @@ SEAT_BUCKET = 128
 ROW_BUCKET = 16
 
 
+def greedy_join(logits):
+    """The join head's greedy choice from its ``[..., 1 + F]`` logits: join
+    when joining at all is likelier than none, then the likeliest host. A
+    plain argmax splits joining among the hosts, so none wins at 0.4 against
+    six hosts at 0.1 each (t191)."""
+    hosts = logits[..., 1:]
+    join = hosts.logsumexp(-1) > logits[..., 0]
+    return torch.where(join, hosts.argmax(-1) + 1, torch.zeros_like(hosts[..., 0], dtype=torch.long))
+
+
 def fleet_batch(obs, masks, goal_masks, select, dev):
     """Seat tensors as ``policy.seat_batch``, plus each fleet row's masks:
     ``fleet_mission`` ``[N, F, MISSIONS]``, ``fleet_target`` ``[N, F,
@@ -186,6 +196,8 @@ class FleetAgent(Strategist):
             fleet_choices = {"mission": mission}
             for name in FLEET_HEADS[1:]:
                 fleet_choices[name] = pick(dists[name])
+            if greedy:
+                fleet_choices["join"] = greedy_join(dists["join"].logits)
         goal_logp = 0
         for name, dist in goal_dists.items():
             lp = dist.log_prob(goals[name])

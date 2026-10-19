@@ -1,21 +1,21 @@
 
-pytorch2.14.1:¸‹
+pytorch2.14.1:º°
 ù
 fleet_unloadval_20node_Shape_20"Shape*
 
 end†*
 start†JÑ
-	namespacew_empty_nn_module_stack_from_metadata_hook: _empty_nn_module_stack_from_metadata_hook/sym_size_int_53: aten.sym_size.intJd
+	namespacew_empty_nn_module_stack_from_metadata_hook: _empty_nn_module_stack_from_metadata_hook/sym_size_int_54: aten.sym_size.intJd
 pkg.torch.onnx.class_hierarchyB['_empty_nn_module_stack_from_metadata_hook', 'aten.sym_size.int']Jí
-pkg.torch.onnx.fx_nodex%sym_size_int_53 : [num_users=35] = call_function[target=torch.ops.aten.sym_size.int](args = (%args_31, 1), kwargs = {})J^
-pkg.torch.onnx.name_scopes@['_empty_nn_module_stack_from_metadata_hook', 'sym_size_int_53']Js
+pkg.torch.onnx.fx_nodex%sym_size_int_54 : [num_users=35] = call_function[target=torch.ops.aten.sym_size.int](args = (%args_31, 1), kwargs = {})J^
+pkg.torch.onnx.name_scopes@['_empty_nn_module_stack_from_metadata_hook', 'sym_size_int_54']Js
 pkg.torch.onnx.stack_traceUFile "torch/fx/passes/runtime_assert.py", line 24, in insert_deferred_runtime_asserts
 è
-val_20sym_size_int_53node_sym_size_int_53"SqueezeJÑ
-	namespacew_empty_nn_module_stack_from_metadata_hook: _empty_nn_module_stack_from_metadata_hook/sym_size_int_53: aten.sym_size.intJd
+val_20sym_size_int_54node_sym_size_int_54"SqueezeJÑ
+	namespacew_empty_nn_module_stack_from_metadata_hook: _empty_nn_module_stack_from_metadata_hook/sym_size_int_54: aten.sym_size.intJd
 pkg.torch.onnx.class_hierarchyB['_empty_nn_module_stack_from_metadata_hook', 'aten.sym_size.int']Jí
-pkg.torch.onnx.fx_nodex%sym_size_int_53 : [num_users=35] = call_function[target=torch.ops.aten.sym_size.int](args = (%args_31, 1), kwargs = {})J^
-pkg.torch.onnx.name_scopes@['_empty_nn_module_stack_from_metadata_hook', 'sym_size_int_53']Js
+pkg.torch.onnx.fx_nodex%sym_size_int_54 : [num_users=35] = call_function[target=torch.ops.aten.sym_size.int](args = (%args_31, 1), kwargs = {})J^
+pkg.torch.onnx.name_scopes@['_empty_nn_module_stack_from_metadata_hook', 'sym_size_int_54']Js
 pkg.torch.onnx.stack_traceUFile "torch/fx/passes/runtime_assert.py", line 24, in insert_deferred_runtime_asserts
 ã
 global
@@ -651,10 +651,10 @@ layer_norm	transposenode_transpose"	Transpose*
     query = key = value = query.transpose(1, 0)
 â
 val_59
-sym_size_int_53add_87node_add_87"AddJû
+sym_size_int_54add_87node_add_87"AddJû
 	namespaceê: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/add_87: <built-in function add>J
 pkg.torch.onnx.class_hierarchyÕ['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', '<built-in function add>']JÇ
-pkg.torch.onnx.fx_nodeh%add_87 : [num_users=2] = call_function[target=operator.add](args = (21, %sym_size_int_53), kwargs = {})J{
+pkg.torch.onnx.fx_nodeh%add_87 : [num_users=2] = call_function[target=operator.add](args = (21, %sym_size_int_54), kwargs = {})J{
 pkg.torch.onnx.name_scopes]['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'add_87']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -696,12 +696,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 „
 linear_5
-val_505viewnode_Reshape_603"Reshape*
+val_517viewnode_Reshape_619"Reshape*
 	allowzero†Jñ
 	namespaceà: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jõ
-pkg.torch.onnx.fx_nodeÄ%view : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%linear_5, [%add_590, 1, 3, 32]), kwargs = {})Jy
+pkg.torch.onnx.fx_nodeÄ%view : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%linear_5, [%add_615, 1, 3, 32]), kwargs = {})Jy
 pkg.torch.onnx.name_scopes[['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -806,12 +806,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 Á
 select_5
-val_506view_1node_Reshape_605"Reshape*
+val_518view_1node_Reshape_621"Reshape*
 	allowzero†Jò
 	namespaceä: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_1: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jô
-pkg.torch.onnx.fx_node%view_1 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%select_5, [%add_590, 2, 16]), kwargs = {})J{
+pkg.torch.onnx.fx_node%view_1 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%select_5, [%add_615, 2, 16]), kwargs = {})J{
 pkg.torch.onnx.name_scopes]['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_1']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -838,12 +838,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 Á
 select_6
-val_506view_2node_Reshape_607"Reshape*
+val_518view_2node_Reshape_623"Reshape*
 	allowzero†Jò
 	namespaceä: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_2: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jô
-pkg.torch.onnx.fx_node%view_2 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%select_6, [%add_590, 2, 16]), kwargs = {})J{
+pkg.torch.onnx.fx_node%view_2 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%select_6, [%add_615, 2, 16]), kwargs = {})J{
 pkg.torch.onnx.name_scopes]['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_2']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -870,12 +870,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 Á
 select_7
-val_506view_3node_Reshape_609"Reshape*
+val_518view_3node_Reshape_625"Reshape*
 	allowzero†Jò
 	namespaceä: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_3: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jô
-pkg.torch.onnx.fx_node%view_3 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%select_7, [%add_590, 2, 16]), kwargs = {})J{
+pkg.torch.onnx.fx_node%view_3 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%select_7, [%add_615, 2, 16]), kwargs = {})J{
 pkg.torch.onnx.name_scopes]['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_3']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -902,12 +902,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 ı
 transpose_2
-val_509view_11node_Reshape_611"Reshape*
+val_521view_11node_Reshape_627"Reshape*
 	allowzero†Jô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_11: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']J°
-pkg.torch.onnx.fx_nodeÜ%view_11 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%transpose_2, [1, 2, %add_590, 16]), kwargs = {})J|
+pkg.torch.onnx.fx_nodeÜ%view_11 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%transpose_2, [1, 2, %add_615, 16]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_11']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -919,12 +919,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 ı
 transpose_3
-val_509view_12node_Reshape_613"Reshape*
+val_521view_12node_Reshape_629"Reshape*
 	allowzero†Jô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_12: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']J°
-pkg.torch.onnx.fx_nodeÜ%view_12 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%transpose_3, [1, 2, %add_590, 16]), kwargs = {})J|
+pkg.torch.onnx.fx_nodeÜ%view_12 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%transpose_3, [1, 2, %add_615, 16]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_12']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -936,12 +936,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 ı
 transpose_4
-val_509view_13node_Reshape_615"Reshape*
+val_521view_13node_Reshape_631"Reshape*
 	allowzero†Jô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_13: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']J°
-pkg.torch.onnx.fx_nodeÜ%view_13 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%transpose_4, [1, 2, %add_590, 16]), kwargs = {})J|
+pkg.torch.onnx.fx_nodeÜ%view_13 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%transpose_4, [1, 2, %add_615, 16]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_13']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -953,12 +953,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 Ù
 masked_fill
-val_512view_14node_Reshape_617"Reshape*
+val_524view_14node_Reshape_633"Reshape*
 	allowzero†Jô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_14: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']J†
-pkg.torch.onnx.fx_nodeÖ%view_14 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%masked_fill, [1, 1, 1, %add_590]), kwargs = {})J|
+pkg.torch.onnx.fx_nodeÖ%view_14 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%masked_fill, [1, 1, 1, %add_615]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_14']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -985,11 +985,11 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 ã
 expand_3
-view_16/shapeview_16node_Reshape_622"ReshapeJô
+view_16/shapeview_16node_Reshape_638"ReshapeJô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_16: aten.view.defaultJe
 !pkg.onnxscript.rewriter.rule_name@ReshapeReshape, MaterializeReshapeShape, MaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jù
-pkg.torch.onnx.fx_nodeÇ%view_16 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%view_15, [1, 2, -1, %add_590]), kwargs = {})J|
+pkg.torch.onnx.fx_nodeÇ%view_16 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%view_15, [1, 2, -1, %add_615]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_16']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -1017,7 +1017,7 @@ layer_norm	transposenode_transpose"	Transpose*
 ±
 val_142
 val_36
-val_143val_145node_Slice_143"SliceJ∆
+val_510val_145node_Slice_143"SliceJ∆
 	namespace∏: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/scaled_dot_product_attention: aten.scaled_dot_product_attention.defaultJÇ
 pkg.torch.onnx.class_hierarchyﬂ['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.scaled_dot_product_attention.default']J“
 pkg.torch.onnx.fx_node∑%scaled_dot_product_attention : [num_users=1] = call_function[target=torch.ops.aten.scaled_dot_product_attention.default](args = (%view_11, %view_12, %view_13, %view_16), kwargs = {})Jë
@@ -1250,12 +1250,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 Ê
 permute
-val_515view_17node_Reshape_624"Reshape*
+val_527view_17node_Reshape_640"Reshape*
 	allowzero†Jô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_17: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jñ
-pkg.torch.onnx.fx_node|%view_17 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%permute, [%add_590, 32]), kwargs = {})J|
+pkg.torch.onnx.fx_node|%view_17 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%permute, [%add_615, 32]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_17']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -1267,7 +1267,7 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 ú
 view_17
-0model.encoder.layers.0.self_attn.out_proj.weightlinear_6node_Gemm_625"Gemm*
+0model.encoder.layers.0.self_attn.out_proj.weightlinear_6node_Gemm_641"Gemm*
 beta  Ä?†*
 transB†*
 alpha  Ä?†*
@@ -1287,12 +1287,12 @@ layer_norm	transposenode_transpose"	Transpose*
     attn_output, attn_output_weights = F.multi_head_attention_forward(
 Ï
 linear_6
-val_516view_18node_Reshape_627"Reshape*
+val_528view_18node_Reshape_643"Reshape*
 	allowzero†Jô
 	namespaceã: __main__.Deployed/model.encoder: torch.nn.modules.transformer.TransformerEncoder/model.encoder.layers.0: torch.nn.modules.transformer.TransformerEncoderLayer/model.encoder.layers.0.self_attn: torch.nn.modules.activation.MultiheadAttention/view_18: aten.view.defaultJ<
 !pkg.onnxscript.rewriter.rule_nameMaterializeReshapeShapeJÍ
 pkg.torch.onnx.class_hierarchy«['__main__.Deployed', 'torch.nn.modules.transformer.TransformerEncoder', 'torch.nn.modules.transformer.TransformerEncoderLayer', 'torch.nn.modules.activation.MultiheadAttention', 'aten.view.default']Jõ
-pkg.torch.onnx.fx_nodeÄ%view_18 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%linear_6, [%add_590, 1, 32]), kwargs = {})J|
+pkg.torch.onnx.fx_nodeÄ%view_18 : [num_users=1] = call_function[target=torch.ops.aten.view.default](args = (%linear_6, [%add_615, 1, 32]), kwargs = {})J|
 pkg.torch.onnx.name_scopes^['', 'model.encoder', 'model.encoder.layers.0', 'model.encoder.layers.0.self_attn', 'view_18']JΩ
 pkg.torch.onnx.stack_traceûFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 83, in forward
     g, worlds, fleets = self.model.encode(batch)
@@ -1587,7 +1587,7 @@ stash_type†*
     return F.linear(input, self.weight, self.bias)
 –
 	linear_13
-val_204unsqueeze_2node_unsqueeze_2"	UnsqueezeJD
+val_513unsqueeze_2node_unsqueeze_2"	UnsqueezeJD
 	namespace7: __main__.Deployed/unsqueeze_2: aten.unsqueeze.defaultJQ
 pkg.torch.onnx.class_hierarchy/['__main__.Deployed', 'aten.unsqueeze.default']Jî
 pkg.torch.onnx.fx_nodez%unsqueeze_2 : [num_users=1] = call_function[target=torch.ops.aten.unsqueeze.default](args = (%linear_13, 2), kwargs = {})J1
@@ -1667,7 +1667,7 @@ $model.pointers.colonize.query.weight
     return F.linear(input, self.weight, self.bias)
 –
 	linear_15
-val_204unsqueeze_3node_unsqueeze_3"	UnsqueezeJD
+val_513unsqueeze_3node_unsqueeze_3"	UnsqueezeJD
 	namespace7: __main__.Deployed/unsqueeze_3: aten.unsqueeze.defaultJQ
 pkg.torch.onnx.class_hierarchy/['__main__.Deployed', 'aten.unsqueeze.default']Jî
 pkg.torch.onnx.fx_nodez%unsqueeze_3 : [num_users=1] = call_function[target=torch.ops.aten.unsqueeze.default](args = (%linear_15, 2), kwargs = {})J1
@@ -2282,7 +2282,7 @@ _to_copy_5
     logits = self.model.fleet_logits(batch, fleets, worlds, goals, mission)
 £
 mission
-val_517unsqueeze_17node_Unsqueeze_644"	UnsqueezeJE
+val_529unsqueeze_17node_Unsqueeze_660"	UnsqueezeJE
 	namespace8: __main__.Deployed/unsqueeze_17: aten.unsqueeze.defaultJ7
 !pkg.onnxscript.rewriter.rule_nameUnsqueezeUnsqueezeJQ
 pkg.torch.onnx.class_hierarchy/['__main__.Deployed', 'aten.unsqueeze.default']Jò
@@ -2599,7 +2599,7 @@ fleet_joinbitwise_not_19node_bitwise_not_19"NotJI
 cat_5masked_fill_16node_masked_fill_16"WhereJH
 	namespace;: __main__.Deployed/masked_fill_16: aten.masked_fill.ScalarJR
 pkg.torch.onnx.class_hierarchy0['__main__.Deployed', 'aten.masked_fill.Scalar']J©
-pkg.torch.onnx.fx_nodeé%masked_fill_16 : [num_users=1] = call_function[target=torch.ops.aten.masked_fill.Scalar](args = (%cat_5, %bitwise_not_19, -inf), kwargs = {})J4
+pkg.torch.onnx.fx_nodeé%masked_fill_16 : [num_users=3] = call_function[target=torch.ops.aten.masked_fill.Scalar](args = (%cat_5, %bitwise_not_19, -inf), kwargs = {})J4
 pkg.torch.onnx.name_scopes['', 'masked_fill_16']Jø
 pkg.torch.onnx.stack_trace†File "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 91, in forward
     logits = self.model.fleet_logits(batch, fleets, worlds, goals, mission)
@@ -2774,8 +2774,8 @@ noise_joinadd_570node_add_570"AddJ9
 pkg.torch.onnx.name_scopes['', 'add_570']JØ
 pkg.torch.onnx.stack_traceêFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 94, in forward
     choices[name] = (logits[name] + noise[name]).argmax(-1)
-Ì
-add_570joinnode_argmax_13"ArgMax*
+Ú
+add_570	argmax_13node_argmax_13"ArgMax*
 select_last_index †*
 keepdims †*
 axisˇˇˇˇˇˇˇˇˇ†J?
@@ -2804,7 +2804,148 @@ noise_joinadd_570node_add_570"AddJ9
 pkg.torch.onnx.fx_nodet%argmax_14 : [num_users=1] = call_function[target=torch.ops.aten.argmax.default](args = (%add_576, -1), kwargs = {})J/
 pkg.torch.onnx.name_scopes['', 'argmax_14']JØ
 pkg.torch.onnx.stack_traceêFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 94, in forward
-    choices[name] = (logits[name] + noise[name]).argmax(-1)
+    choices[name] = (logits[name] + noise[name]).argmax(-1)
+ó
+
+noise_joinabs_6
+node_abs_6"AbsJ8
+	namespace+: __main__.Deployed/abs_6: aten.abs.defaultJK
+pkg.torch.onnx.class_hierarchy)['__main__.Deployed', 'aten.abs.default']JÑ
+pkg.torch.onnx.fx_nodej%abs_6 : [num_users=1] = call_function[target=torch.ops.aten.abs.default](args = (%args_32,), kwargs = {})J+
+pkg.torch.onnx.name_scopes['', 'abs_6']Jµ
+pkg.torch.onnx.stack_traceñFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 96, in forward
+    choices["join"] = torch.where(noise["join"].abs().sum() == 0,
+ƒ
+abs_6sum_1
+node_sum_1"	ReduceSum*
+noop_with_empty_axes †*
+keepdims †J8
+	namespace+: __main__.Deployed/sum_1: aten.sum.defaultJK
+pkg.torch.onnx.class_hierarchy)['__main__.Deployed', 'aten.sum.default']JÇ
+pkg.torch.onnx.fx_nodeh%sum_1 : [num_users=1] = call_function[target=torch.ops.aten.sum.default](args = (%abs_6,), kwargs = {})J+
+pkg.torch.onnx.name_scopes['', 'sum_1']Jµ
+pkg.torch.onnx.stack_traceñFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 96, in forward
+    choices["join"] = torch.where(noise["join"].abs().sum() == 0,
+∞
+sum_1
+val_60eq_271node_eq_271"EqualJ7
+	namespace*: __main__.Deployed/eq_271: aten.eq.TensorJI
+pkg.torch.onnx.class_hierarchy'['__main__.Deployed', 'aten.eq.Tensor']Jò
+pkg.torch.onnx.fx_node~%eq_271 : [num_users=1] = call_function[target=torch.ops.aten.eq.Tensor](args = (%sum_1, %scalar_tensor_default), kwargs = {})J,
+pkg.torch.onnx.name_scopes['', 'eq_271']Jµ
+pkg.torch.onnx.stack_traceñFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 96, in forward
+    choices["join"] = torch.where(noise["join"].abs().sum() == 0,
+Â
+masked_fill_16
+val_181
+val_510
+val_513
+val_181slice_34node_slice_34"SliceJ<
+	namespace/: __main__.Deployed/slice_34: aten.slice.TensorJL
+pkg.torch.onnx.class_hierarchy*['__main__.Deployed', 'aten.slice.Tensor']J™
+pkg.torch.onnx.fx_nodeè%slice_34 : [num_users=3] = call_function[target=torch.ops.aten.slice.Tensor](args = (%masked_fill_16, 2, 1, 9223372036854775807), kwargs = {})J.
+pkg.torch.onnx.name_scopes['', 'slice_34']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+Û
+slice_34
+val_36	logsumexpnode_logsumexp"ReduceLogSumExp*
+noop_with_empty_axes †*
+keepdims †JB
+	namespace5: __main__.Deployed/logsumexp: aten.logsumexp.defaultJQ
+pkg.torch.onnx.class_hierarchy/['__main__.Deployed', 'aten.logsumexp.default']Jî
+pkg.torch.onnx.fx_nodez%logsumexp : [num_users=1] = call_function[target=torch.ops.aten.logsumexp.default](args = (%slice_34, [-1]), kwargs = {})J/
+pkg.torch.onnx.name_scopes['', 'logsumexp']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+¡
+masked_fill_16
+val_369	select_16node_select_16"Gather*
+axis†J;
+	namespace.: __main__.Deployed/select_16: aten.select.intJJ
+pkg.torch.onnx.class_hierarchy(['__main__.Deployed', 'aten.select.int']Jì
+pkg.torch.onnx.fx_nodey%select_16 : [num_users=1] = call_function[target=torch.ops.aten.select.int](args = (%masked_fill_16, 2, 0), kwargs = {})J/
+pkg.torch.onnx.name_scopes['', 'select_16']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+ó
+	logsumexp
+	select_16gt_5	node_gt_5"GreaterJ5
+	namespace(: __main__.Deployed/gt_5: aten.gt.TensorJI
+pkg.torch.onnx.class_hierarchy'['__main__.Deployed', 'aten.gt.Tensor']Jé
+pkg.torch.onnx.fx_nodet%gt_5 : [num_users=1] = call_function[target=torch.ops.aten.gt.Tensor](args = (%logsumexp, %select_16), kwargs = {})J*
+pkg.torch.onnx.name_scopes['', 'gt_5']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+Í
+slice_34	argmax_15node_argmax_15"ArgMax*
+select_last_index †*
+keepdims †*
+axisˇˇˇˇˇˇˇˇˇ†J?
+	namespace2: __main__.Deployed/argmax_15: aten.argmax.defaultJN
+pkg.torch.onnx.class_hierarchy,['__main__.Deployed', 'aten.argmax.default']Jè
+pkg.torch.onnx.fx_nodeu%argmax_15 : [num_users=1] = call_function[target=torch.ops.aten.argmax.default](args = (%slice_34, -1), kwargs = {})J/
+pkg.torch.onnx.name_scopes['', 'argmax_15']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+ô
+	argmax_15
+val_24add_596node_add_596"AddJ9
+	namespace,: __main__.Deployed/add_596: aten.add.TensorJJ
+pkg.torch.onnx.class_hierarchy(['__main__.Deployed', 'aten.add.Tensor']Jâ
+pkg.torch.onnx.fx_nodeo%add_596 : [num_users=1] = call_function[target=torch.ops.aten.add.Tensor](args = (%argmax_15, 1), kwargs = {})J-
+pkg.torch.onnx.name_scopes['', 'add_596']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+µ
+slice_34
+val_369	select_17node_select_17"Gather*
+axis†J;
+	namespace.: __main__.Deployed/select_17: aten.select.intJJ
+pkg.torch.onnx.class_hierarchy(['__main__.Deployed', 'aten.select.int']Jç
+pkg.torch.onnx.fx_nodes%select_17 : [num_users=1] = call_function[target=torch.ops.aten.select.int](args = (%slice_34, 2, 0), kwargs = {})J/
+pkg.torch.onnx.name_scopes['', 'select_17']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+Ó
+	select_17val_516node_Shape_510"Shape*
+start †JF
+	namespace9: __main__.Deployed/zeros_like_2: aten.zeros_like.defaultJR
+pkg.torch.onnx.class_hierarchy0['__main__.Deployed', 'aten.zeros_like.default']J∫
+pkg.torch.onnx.fx_nodeü%zeros_like_2 : [num_users=1] = call_function[target=torch.ops.aten.zeros_like.default](args = (%select_17,), kwargs = {dtype: torch.int64, pin_memory: False})J2
+pkg.torch.onnx.name_scopes['', 'zeros_like_2']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+
+val_369
+val_516zeros_like_2node_zeros_like_2"ExpandJF
+	namespace9: __main__.Deployed/zeros_like_2: aten.zeros_like.defaultJR
+pkg.torch.onnx.class_hierarchy0['__main__.Deployed', 'aten.zeros_like.default']J∫
+pkg.torch.onnx.fx_nodeü%zeros_like_2 : [num_users=1] = call_function[target=torch.ops.aten.zeros_like.default](args = (%select_17,), kwargs = {dtype: torch.int64, pin_memory: False})J2
+pkg.torch.onnx.name_scopes['', 'zeros_like_2']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+¨
+gt_5
+add_596
+zeros_like_2where
+node_where"WhereJ7
+	namespace*: __main__.Deployed/where: aten.where.selfJJ
+pkg.torch.onnx.class_hierarchy(['__main__.Deployed', 'aten.where.self']Jò
+pkg.torch.onnx.fx_node~%where : [num_users=1] = call_function[target=torch.ops.aten.where.self](args = (%gt_5, %add_596, %zeros_like_2), kwargs = {})J+
+pkg.torch.onnx.name_scopes['', 'where']J•
+pkg.torch.onnx.stack_traceÜFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 97, in forward
+    greedy_join(logits["join"]), choices["join"])
+Ω
+eq_271
+where
+	argmax_13joinnode_where_1"WhereJ9
+	namespace,: __main__.Deployed/where_1: aten.where.selfJJ
+pkg.torch.onnx.class_hierarchy(['__main__.Deployed', 'aten.where.self']Jó
+pkg.torch.onnx.fx_node}%where_1 : [num_users=1] = call_function[target=torch.ops.aten.where.self](args = (%eq_271, %where, %argmax_13), kwargs = {})J-
+pkg.torch.onnx.name_scopes['', 'where_1']Jµ
+pkg.torch.onnx.stack_traceñFile "/Users/mag/dev/nostrian-conquest/tools/ai/export_onnx.py", line 96, in forward
+    choices["join"] = torch.where(noise["join"].abs().sum() == 0,
 main_graph*§! !Bmodel.embed_global.weightJÄ!P4G<é¬÷Ω¸
 c=Éª_=åæΩCª’º©⁄–ΩÅ9=¨@ΩLv˙=˝=èEë<˝óΩòf—Ωëõúº™HΩÿ"ù=26æà'>‘æÄ>ö£˜º•b∑=;Óä=«Ó;™Û=e^>≠_7=`%Ω="‰	æèÀ˝=tfu=¸õ4=X ≈<n…≠=>∑#>¨®Ωfù∆Ω∂d3Ω•IŸΩπ´=ª3∞ΩEæΩƒÕ>#>Ï§<ˆº¶∏º]„®=Üs&æß≠æVd>$˚/>?|)º\Ÿæ€õ;€•ΩõuØπœÆ=É—ù=ù9ßºf ù<
 
@@ -3107,7 +3248,7 @@ M?S—?hë∏?l5løï~¿?Ìü?ßÓçø∞º/?d<w?¥ÖNøE¢?Ω@ø¢◊˝?¢πøVé€øåî,Ωó>~Œ>pE„<pÈáø.
 øUrìøsˆ{?H|ìøWÄø_¬C?ˆîΩª†f¿øWeN?ü«Ωø∂ìÕæÒCøN‘„æ¯√`>˝/?B¡=ü&J?¡”…=6û?2¡.æVRå>ó3(?ç˚å?Ê1w?	dø72„æÔﬁ@®I˛>ﬂ»óø§e<@V¯®Ω!Ñæ/ÔıΩ˜èåæŸÙø[Kiø÷®ZæzîZæŸ)±æ|÷øõ´∞?:?3¡Ω≈≈Y?ì?1sëæÌ_?6?ø@@@\ì?©¢∂>¸‰?‘5Kø!™¢=¥|?Îb>NzÎ;¸äÓøûh
 >‹˛¯>Ê¯¿… øRrO=&˜¶Ω™íÜ?d!˘=‘]éø¡4@?ZQR?(˘æZ>]‰>$∂T?È>D”3?ß¢ó>?≤≤>+≈ßøa
 œ>yÖ¿Vñ?]§?Á]4?[V?w˜Á<'Ìu=Ñá?∑Vï?^7™ΩÁ{ ?Î-ø”≠>ØﬁGøÒÚ„Ω;Íø>>∑?øŸ±I?]¥ä?ÿé˘>8;>˘£ø˘`úæjÓs?'?ÁOÂæFò°æÌ’øéù\?Ÿï6?ë∂y=Ò»–>ÌRæS4døïÙƒΩ•áøaD¥øÑ_?->êO?@4øÈ∑?∞@á>!·úøÿñ3øUﬁ>=áø~ª–>s^OΩêÉ†>€bø?ˆµæ*ÎÉøüS,?·Ù
-ΩÌjA?wó&ø¥øU—Ü?G#>πáÕø{•øîÎ1øtöêø«Èr;ørYè?IÌ?\Òc>Z˛>Ä°»ø=Åì>*í   Bval_478JÄ   Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?*í Bval_479JÄƒäøTn˜øÁ%Êæ& Å>Q†ä?s~˘ø∞§øóE∞?PŸF=´..øxYv?∏[ø€PS>-Åø|î´<¿?}}¯æ}GÊøFB?_1-øÆ€?D1¯æ!F¿hJ?»æ8@>ñû'æïV?ñã’æÉî&?æ«ï?øIÓæ*í Bval_492JÄ›ë>±Ç¡>i*Âæ°íô>ZWæ~-?‘hg?'Öó>(MΩaØ∏?w§ñ?·®ÿ=Y∂0øh±|øxA∑?2]pæc9?FáˆæS=¢”¶øêpOæTÓ∞?Ò.*>Ö?i´?¬–Çø'Vò?&: ø=π?|G.@ﬂW>*Âæ´'ÊΩ≈˚¿#!∞?Ï%?Á°*øƒCXæC8«>¡˘»æ=? ^<ø#¢æõd†?·⁄ø®xømîßΩ˛5∞?æúø)0?ÆË”æ3W	¿l-P?ªnßør≤fø÷æÂ	!?è<D{c>ˇdØøÁ>πæoæÓ∫$>80ò>*5Bview_16/shapeJ                      ˇˇˇˇˇˇˇˇ*Bval_24J       *Bval_26J Ä;E*Bval_36Jˇˇˇˇˇˇˇˇ*Bval_59J       */Bval_505J ˇˇˇˇˇˇˇˇ                      *Bval_74J        *Bval_75J˛ˇˇˇˇˇˇˇ*Bval_76J       *'Bval_506Jˇˇˇˇˇˇˇˇ              */Bval_509J               ˇˇˇˇˇˇˇˇ       */Bval_512J                      ˇˇˇˇˇˇˇˇ*Bval_143Jˇˇˇˇˇˇˇ*Bval_147J       Ä*Bval_515Jˇˇˇˇˇˇˇˇ        *'Bval_516Jˇˇˇˇˇˇˇˇ               *Bval_204J       *Bval_205JÛµ@*Bval_517J              Z√
+ΩÌjA?wó&ø¥øU—Ü?G#>πáÕø{•øîÎ1øtöêø«Èr;ørYè?IÌ?\Òc>Z˛>Ä°»ø=Åì>*í   Bval_478JÄ   Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?                                                                                                                                  Ä?*í Bval_479JÄƒäøTn˜øÁ%Êæ& Å>Q†ä?s~˘ø∞§øóE∞?PŸF=´..øxYv?∏[ø€PS>-Åø|î´<¿?}}¯æ}GÊøFB?_1-øÆ€?D1¯æ!F¿hJ?»æ8@>ñû'æïV?ñã’æÉî&?æ«ï?øIÓæ*í Bval_492JÄ›ë>±Ç¡>i*Âæ°íô>ZWæ~-?‘hg?'Öó>(MΩaØ∏?w§ñ?·®ÿ=Y∂0øh±|øxA∑?2]pæc9?FáˆæS=¢”¶øêpOæTÓ∞?Ò.*>Ö?i´?¬–Çø'Vò?&: ø=π?|G.@ﬂW>*Âæ´'ÊΩ≈˚¿#!∞?Ï%?Á°*øƒCXæC8«>¡˘»æ=? ^<ø#¢æõd†?·⁄ø®xømîßΩ˛5∞?æúø)0?ÆË”æ3W	¿l-P?ªnßør≤fø÷æÂ	!?è<D{c>ˇdØøÁ>πæoæÓ∫$>80ò>*Bval_510Jˇˇˇˇˇˇˇ*Bval_513J       *5Bview_16/shapeJ                      ˇˇˇˇˇˇˇˇ*Bval_24J       *Bval_26J Ä;E*Bval_36Jˇˇˇˇˇˇˇˇ*Bval_59J       */Bval_517J ˇˇˇˇˇˇˇˇ                      *Bval_74J        *Bval_75J˛ˇˇˇˇˇˇˇ*Bval_76J       *'Bval_518Jˇˇˇˇˇˇˇˇ              */Bval_521J               ˇˇˇˇˇˇˇˇ       */Bval_524J                      ˇˇˇˇˇˇˇˇ*Bval_147J       Ä*Bval_527Jˇˇˇˇˇˇˇˇ        *'Bval_528Jˇˇˇˇˇˇˇˇ               *Bval_205JÛµ@*Bval_529J              Z√
 global
 
 
@@ -3487,13 +3628,13 @@ allocation
 
 fleets"?
 0pkg.torch.export.graph_signature.OutputSpec.kindUSER_OUTPUT".
-!pkg.torch.onnx.original_node_name	argmax_12bç
+!pkg.torch.onnx.original_node_name	argmax_12bã
 join
 
 
 fleets"?
-0pkg.torch.export.graph_signature.OutputSpec.kindUSER_OUTPUT".
-!pkg.torch.onnx.original_node_name	argmax_13bè
+0pkg.torch.export.graph_signature.OutputSpec.kindUSER_OUTPUT",
+!pkg.torch.onnx.original_node_namewhere_1bè
 unload
 
 
@@ -3924,7 +4065,17 @@ $pkg.onnxscript.optimizer.folded_from['model.fleet_join.weight']j`
 
  
 "E
-$pkg.onnxscript.optimizer.folded_from['model.fleet_unload.weight']j
+$pkg.onnxscript.optimizer.folded_from['model.fleet_unload.weight']j`
+val_510
+
+
+"I
+$pkg.onnxscript.optimizer.folded_from!['val_407', 'val_508', 'val_509']j_
+val_513
+
+
+"H
+$pkg.onnxscript.optimizer.folded_from ['val_511', 'val_512', 'val_76']j
 view_16/shape
 
 
@@ -3939,7 +4090,7 @@ $pkg.onnxscript.optimizer.folded_from['model.fleet_unload.weight']j
 j
 val_59
  j
-val_505
+val_517
 
 
 j
@@ -3953,41 +4104,33 @@ $pkg.onnxscript.optimizer.folded_from['model.fleet_unload.weight']j
 j
 val_76
  j
-val_506
+val_518
 
 
 j
-val_509
+val_521
 
 
 j
-val_512
+val_524
 
 
 j
-val_143
-
-
-j
 val_147
 
 
 j
-val_515
+val_527
 
 
 j
-val_516
+val_528
 
 
-j
-val_204
-
-
-j
+j
 val_205
  j
-val_517
+val_529
 
 
 j
@@ -3995,7 +4138,7 @@ $pkg.onnxscript.optimizer.folded_from['model.fleet_unload.weight']j
 
 
 j
-sym_size_int_53
+sym_size_int_54
  j
 select
 
@@ -5110,13 +5253,68 @@ fleets + 1j#
 
 fleets
 
-fleets + 1j#
+fleets + 1j!
+	argmax_13
+
+
+fleetsj#
 add_576
 
 
 fleets
-Ç¡0
-0pkg.torch.export.ExportedProgram.graph_signatureå0
+j+
+abs_6"
+ 
+
+fleets
+
+fleets + 1j
+sum_1
+ j
+eq_271
+	 j*
+slice_34
+
+
+fleets
+fleetsj!
+	logsumexp
+
+
+fleetsj!
+	select_16
+
+
+fleetsj
+gt_5
+	
+
+fleetsj!
+	argmax_15
+
+
+fleetsj
+add_596
+
+
+fleetsj!
+	select_17
+
+
+fleetsj
+val_516
+
+
+j$
+zeros_like_2
+
+
+fleetsj
+where
+
+
+fleetsÇø0
+0pkg.torch.export.ExportedProgram.graph_signatureä0
 # inputs
 p_model_embed_global_weight: PARAMETER target='model.embed_global.weight'
 p_model_embed_global_bias: PARAMETER target='model.embed_global.bias'
@@ -5233,7 +5431,7 @@ argmax_9: USER_OUTPUT
 argmax_10: USER_OUTPUT
 argmax_11: USER_OUTPUT
 argmax_12: USER_OUTPUT
-argmax_13: USER_OUTPUT
+where_1: USER_OUTPUT
 argmax_14: USER_OUTPUT
 ÇÄ
 2pkg.torch.export.ExportedProgram.range_constraints…{s1: VR[1, int_oo], s11: VR[1, int_oo], s48: VR[1, int_oo], s1 + 1: VR[2, int_oo], s37: VR[0, int_oo], s10: VR[0, int_oo], s0: VR[0, int_oo], s77: VR[0, int_oo], s50: VR[0, int_oo], s83: VR[0, int_oo]}B

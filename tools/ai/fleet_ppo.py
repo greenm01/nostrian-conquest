@@ -29,7 +29,12 @@ learner's running win share against it (0.25 even, 0.5 or more beaten).
 ``--free-heads join,unload`` (t191) lets fleet heads that imitation never
 saw used leave their start: they are left out of the KL penalty, and the
 entropy of whether they act at all earns ``--free-entropy`` (see
-``act_entropy``).
+``act_entropy``). That bonus peaks at acting half the time whatever acting
+wins, so ``--free-entropy-until N`` fades it to nothing by iteration ``N``
+and the rest of the run keeps the orders only if they pay. Imitation labels
+these orders "none" until a head almost never acts, where the bonus has no
+gradient; ``--reset-new-heads`` puts the join and unload heads back at their
+start (see ``FleetAgent.reset_new_heads``).
 
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
@@ -344,7 +349,7 @@ def act_entropy(dist):
     return -(none * none.log() + (1 - none) * (1 - none).log())
 
 
-def update(model, ref, optimizer, steps, advs, kl_coef, args, dev):
+def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, args, dev):
     keys = steps[0]["batch"].keys()
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
     rows = batch["fleets"].shape[1]
@@ -383,7 +388,7 @@ def update(model, ref, optimizer, steps, advs, kl_coef, args, dev):
             free_ent = sum(((act_entropy(fleet_dists[name]) * mb_handed).sum(-1).mean()
                             for name in args.free_heads), torch.zeros((), device=dev))
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
-                    - args.entropy_coef * ent - args.free_entropy * free_ent)
+                    - args.entropy_coef * ent - free_coef * free_ent)
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
@@ -428,6 +433,10 @@ def main():
                         default=[], help="fleet heads left out of the KL penalty (t191)")
     parser.add_argument("--free-entropy", type=float, default=0.0,
                         help="extra entropy weight for the free heads")
+    parser.add_argument("--free-entropy-until", type=int, default=0,
+                        help="fade --free-entropy to 0 by this iteration; 0 never fades it")
+    parser.add_argument("--reset-new-heads", action="store_true",
+                        help="start the join and unload heads at none again (t191)")
     parser.add_argument("--league", action="store_true",
                         help="draw each game's opponent from a league (t184)")
     parser.add_argument("--league-styles",
@@ -457,6 +466,9 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     model = load_fleet_agent(args.init, dev)
     ref = load_fleet_agent(args.init, dev)
+    if args.reset_new_heads:
+        model.reset_new_heads()
+        ref.reset_new_heads()
     strategist = policy.load(args.strategist, dev)
     # An exploiter trains against a frozen agent only (main exploiter).
     target = load_fleet_agent(args.exploit, dev) if args.exploit else None
@@ -485,6 +497,8 @@ def main():
     for it in range(first, args.iterations + 1):
         started = time.perf_counter()
         kl_coef = max(args.kl_floor, args.kl * max(0.0, 1 - (it - 1) / args.kl_iterations))
+        free_coef = args.free_entropy * (max(0.0, 1 - (it - 1) / args.free_entropy_until)
+                                         if args.free_entropy_until else 1.0)
         drawn = choose_lineups(rng, args.games, learner,
                                learner_name(families) if target else None, league)
         names, roles = drawn[:2]
@@ -507,7 +521,8 @@ def main():
             done = step["done"].copy()
         played = time.perf_counter() - started
         (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
-                                      advantages(steps, args.gamma, args.lam), kl_coef, args, dev)
+                                      advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
+                                      args, dev)
         wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an
@@ -515,7 +530,8 @@ def main():
         rate = lambda name: sum(float(((s["fleets"][name][:len(s["handed"]),
                                                           :s["handed"].shape[1]] > 0)
                                        * s["handed"]).sum()) for s in steps) / handed_rows_n
-        row = dict(iteration=it, samples=n, win=float(wins), kl_coef=kl_coef, policy_loss=pl,
+        row = dict(iteration=it, samples=n, win=float(wins), kl_coef=kl_coef,
+                   free_coef=free_coef, policy_loss=pl,
                    value_loss=vl, kl_ref=kl, entropy=ent, join=rate("join"),
                    unload=rate("unload"), play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)

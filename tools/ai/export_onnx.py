@@ -7,9 +7,9 @@
 The graph plays one seat. It takes the seat's raw observation tables and
 masks, as ``nc_ai_env`` gives them for one seat, and one noise tensor per
 head, and returns each head's choice: the argmax of its masked logits plus
-the noise. Zero noise plays greedy. Noise of ``T`` times standard Gumbel
-samples draws from the softmax at temperature ``T`` (the Gumbel-max trick),
-so the caller sets the difficulty. The fleet target is chosen after the
+the noise. Zero noise plays greedy, and joins as ``greedy_join`` does.
+Noise of ``T`` times standard Gumbel samples draws from the softmax at
+temperature ``T`` (the Gumbel-max trick), so the caller sets the difficulty. The fleet target is chosen after the
 mission, conditioned on it, as in training.
 
 The join and unload heads (t190) take their masks and noise after all the
@@ -39,7 +39,7 @@ import torch
 from torch import nn
 
 import nc_ai_env
-from fleet_policy import FLEET_HEADS, FleetAgent, fleet_batch, load_fleet_agent
+from fleet_policy import FLEET_HEADS, FleetAgent, fleet_batch, greedy_join, load_fleet_agent
 from fleet_ppo import play_year
 from policy import HEADS, START_YEAR, TABLES, masked, symlog
 
@@ -92,6 +92,9 @@ class Deployed(nn.Module):
         choices = {"mission": mission}
         for name in FLEET_HEADS[1:]:
             choices[name] = (logits[name] + noise[name]).argmax(-1)
+        # Zero noise is greedy, which joins as the model's greedy play does.
+        choices["join"] = torch.where(noise["join"].abs().sum() == 0,
+                                      greedy_join(logits["join"]), choices["join"])
         return tuple(goals[name] for name in GOAL_HEADS) + tuple(
             choices[name] for name in FLEET_HEADS)
 
