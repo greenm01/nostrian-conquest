@@ -2145,6 +2145,34 @@ the free heads did not teach the order set. It was not promoted: the
 retrain this task asks for comes after t189's executor work, on the new
 rules.
 
+**The retrain on mixed fleets passes the strength gate (2026-10-19).**
+Imitation with DAgger from `fleet-final` and the alloc strategist (40
+rounds; mission 0.897, target 0.778 teacher-forced), then PPO on the fixed
+mix with the same flags as above, 200 iterations of 64 games
+(`~/.local/state/nostrian-conquest/ai/t191-mixed/`, `run.sh`). PPO's
+greedy checks against executors fell first, then climbed: 0.121, 0.090,
+0.160, 0.229, 0.312, 0.262, 0.330 and 0.348 at each 25 iterations. One
+network seat, building mixed fleets, against three adopted executors, 1,024
+maps from 100000 (`behaviour_report`, bean-void, at `970cdbc5`):
+
+| Agent | 60 years | 100 years |
+| --- | ---: | ---: |
+| `fleet-final` | 0.172 | 0.192 |
+| t191-mixed snapshot 175 | 0.508 | 0.725 |
+| t191-mixed snapshot 200 | 0.504 | 0.708 |
+
+Snapshot 175 leads `fleet-final` by +0.335 ± 0.018 at 60 years and +0.532
+± 0.018 at 100, back to what `fleet-final` scored with cruiser builds
+(0.525, 0.709). It parks warships for 198 fleet-years a game against 955,
+invades 27 times against 13, and ends with 11.4 worlds against 3.5.
+Exploit check (bean-void, 80 iterations of `--exploit` against snapshot
+175, scored greedy on 1,024 maps from 100000): the exploiter wins 0.217,
+0.252 and 0.250 at iterations 40, 60 and 80, against 0.253 ± 0.014 for
+snapshot 175 in its own seat, so it found no hole. ONNX export: 0
+mismatches on 64 recorded seats, for both snapshots. Greedy it still
+orders no Join, transfer or unload (0/0/0), so the exit's wider order set
+is not met; the mixed fleet is. Promotion waits for the owner.
+
 ### t192
 
 Name the weakness the exploiter found.

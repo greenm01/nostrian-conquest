@@ -68,8 +68,10 @@ details are in the plans' result sections.
   cruisers). The executor builds for the network seat, and the agent,
   trained on cruiser fleets, wins 0.19 with mixed fleets at 100 years
   against 0.71 with cruisers. **Do not release main's AI until t191's
-  retrain passes its gate**; the live stack and beta.3 predate this. See
-  the AI plan's t189 and t191 sections.
+  retrain is promoted**; the live stack and beta.3 predate this. The
+  t191-mixed snapshot 175 passes the gate (0.508/0.725, +0.335/+0.532 over
+  `fleet-final`; exploit check clean; 0 export mismatches) and awaits the
+  owner's promotion. See the AI plan's t189 and t191 sections.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'
