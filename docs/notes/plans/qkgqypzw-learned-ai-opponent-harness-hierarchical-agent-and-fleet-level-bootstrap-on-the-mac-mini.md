@@ -2233,6 +2233,14 @@ leave): -0.032 +/- 0.016 at 60 years and -0.033 +/- 0.017 at 100. It stays
 off. A likely cost: it takes the idle transports a strike force would load
 at home.
 
+A second version ferries only to a threatened colony (an enemy force seen
+within reach in the last two years) and never starts from the home or
+muster world, where strike forces load. Same trial: +0.006 +/- 0.008 at 60
+years, -0.013 +/- 0.009 at 100, inside the "doesn't lose" bar, but it fires
+rarely: 0.7 armies unloaded a game (256 games at 100 years), since
+transports are built at home and seldom wait near a threatened colony. Too
+rare to teach Unload by imitation; not adopted yet.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.

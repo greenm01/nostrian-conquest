@@ -149,11 +149,12 @@ pub struct Doctrine {
     /// year (t203). Off, only the starting destroyers and scouts the weights
     /// buy stand watch.
     pub pickets: bool,
-    /// Ferry armies between the seat's own worlds (t191): transports with no
-    /// warships load a world's armies beyond its garrison target, sail
-    /// (Move Only) to the colony furthest short of its own, weighted by
-    /// exposure, and unload there. Off, a colony's armies are only those it
-    /// builds, and transports carry armies only to invasions.
+    /// Ferry armies to threatened colonies (t191): transports with no
+    /// warships, away from the home and muster worlds where strike forces
+    /// load, take a world's armies beyond its garrison target, sail (Move
+    /// Only) to the threatened colony furthest short of its own, and unload
+    /// there. Off, a colony's armies are only those it builds, and
+    /// transports carry armies only to invasions.
     pub ferry: bool,
 }
 
@@ -1399,7 +1400,13 @@ fn plan_fleets(
             }
             let sector = fleet.sector.to_array();
             let own_world = |idx: usize| game_data.planets[idx].owner.0 == empire;
-            if weights.doctrine.ferry && !has_combat_ships(fleet) && troops(fleet) > 0 {
+            // Transports at home or the muster world wait for strike forces.
+            if weights.doctrine.ferry
+                && !has_combat_ships(fleet)
+                && troops(fleet) > 0
+                && !at_home
+                && world_at(game_data, sector).is_none_or(|idx| Some(idx + 1) != capital)
+            {
                 let here = world_at(game_data, sector).filter(|&idx| own_world(idx));
                 // Armies a world lacks for its garrison target; negative
                 // when it has more.
@@ -1440,6 +1447,11 @@ fn plan_fleets(
                                 && Some(idx) != here
                                 && !ferried.contains(&idx)
                                 && short(idx) >= 1.0
+                                && threatened(
+                                    game_data,
+                                    memory,
+                                    game_data.planets[idx].sector.to_array(),
+                                )
                         })
                         .filter_map(|idx| Some((idx, order(Order::MoveOnly, idx)?)))
                         .max_by(|(a, _), (b, _)| {
