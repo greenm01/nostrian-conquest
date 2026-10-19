@@ -2171,7 +2171,11 @@ Exploit check (bean-void, 80 iterations of `--exploit` against snapshot
 snapshot 175 in its own seat, so it found no hole. ONNX export: 0
 mismatches on 64 recorded seats, for both snapshots. Greedy it still
 orders no Join, transfer or unload (0/0/0), so the exit's wider order set
-is not met; the mixed fleet is. Promotion waits for the owner.
+is not met; the mixed fleet is.
+
+**Promoted (owner, 2026-10-19).** Snapshot 175 is now `fleet-final`
+(`.pt` 574ad237…, `.onnx` 077d9284…); the previous agent is kept as
+`fleet-final-pre-t206`. t191 stays open for the order set.
 
 ### t192
 

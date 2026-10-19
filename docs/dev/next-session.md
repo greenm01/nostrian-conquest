@@ -43,9 +43,10 @@ details are in the plans' result sections.
 
 - **The agent.** It is the fleet-level agent (t157), with the strike
   family handed to the network, on t175's strategist with the allocation
-  goal. Greedy, it wins 0.674 and 0.672 against three executors on two
-  blocks of 1,024 maps, and tops the greedy league
-  re-rated for t193 (2026-10-18) at 39.86, 9.8 above the executor.
+  goal, retrained on mixed fleets under t206 (t191, promoted 2026-10-19).
+  Greedy, building mixed fleets against three adopted executors on 1,024
+  maps, it wins 0.508 at 60 years and 0.725 at 100. The previous agent is
+  `fleet-final-pre-t206`.
   - Checkpoints: `~/.local/state/nostrian-conquest/ai/fleet-final.pt` and
     `fleet-final.onnx`.
   - The doctrine work after t164 kept only the blockader (t171). The
@@ -62,16 +63,15 @@ details are in the plans' result sections.
   ([tdkitij6](../notes/decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)).
   Mixes now beat pure cruisers 70/30 at equal cost. The combat model's
   `engine-t206` preset matches the engine.
-- **Mixed hulls adopted, agent not yet retrained (t189/t191, 2026-10-18).**
+- **Mixed hulls adopted, agent retrained (t189/t191, 2026-10-19).**
   Retuned under t206, mixed executors match cruiser ones, so the land-grab
-  style and rusher now build cruisers and destroyers (the turtle stays
-  cruisers). The executor builds for the network seat, and the agent,
-  trained on cruiser fleets, wins 0.19 with mixed fleets at 100 years
-  against 0.71 with cruisers. **Do not release main's AI until t191's
-  retrain is promoted**; the live stack and beta.3 predate this. The
-  t191-mixed snapshot 175 passes the gate (0.508/0.725, +0.335/+0.532 over
-  `fleet-final`; exploit check clean; 0 export mismatches) and awaits the
-  owner's promotion. See the AI plan's t189 and t191 sections.
+  style and rusher build cruisers and destroyers (the turtle stays
+  cruisers). The executor builds for the network seat, so the agent was
+  retrained on mixed fleets and promoted: 0.725 at 100 years against the
+  old agent's 0.192 with mixed builds. Main's AI may ship again; the live
+  stack and beta.3 still carry the pre-t206 rules and agent. Greedy, the
+  agent orders no Join, transfer or unload yet (t191 stays open). See the
+  AI plan's t189 and t191 sections.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'
