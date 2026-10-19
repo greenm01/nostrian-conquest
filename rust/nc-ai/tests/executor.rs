@@ -98,8 +98,6 @@ fn the_classic_doctrine_replays_t154_exactly() {
         supply: false,
         defend: false,
         mixed_hulls: false,
-        reinforce: false,
-        combined_gate: false,
         keep_scouts: false,
         watch: false,
         forward_muster: false,

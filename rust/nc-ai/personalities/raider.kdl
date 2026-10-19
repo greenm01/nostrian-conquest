@@ -27,8 +27,6 @@ doctrine {
     supply #true
     defend #true
     mixed-hulls #false
-    reinforce #false
-    combined-gate #false
     keep-scouts #true
     watch #true
     forward-muster #true

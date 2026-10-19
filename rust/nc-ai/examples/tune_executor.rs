@@ -10,7 +10,7 @@
 //! ```text
 //! cargo run --release -p nc-ai --example tune_executor -- \
 //!     [--generations 30] [--population 24] [--games 16] [--years 60] [--margin 0.1] \
-//!     [--personality rusher] [--against-default] [--with combined_gate,mixed_hulls] [--out tuned.kdl]
+//!     [--personality rusher] [--against-default] [--with pickets] [--out tuned.kdl]
 //! ```
 //!
 //! `--personality` tunes a style (t167), built in or a `.kdl` file, from

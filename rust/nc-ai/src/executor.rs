@@ -127,15 +127,6 @@ pub struct Doctrine {
     /// personality's hull weights set its fleet mix. Off, the affordable
     /// hull with the largest weight, every time.
     pub mixed_hulls: bool,
-    /// New and rear warships Join a strike force already under way, to
-    /// replenish it as it moves (t189), instead of gathering at home for a
-    /// second force. Off, they Rendezvous at home.
-    pub reinforce: bool,
-    /// Judge a strike by the warship strength of every fleet gathered at
-    /// home together, not by each fleet alone, so one force sails with
-    /// the lot (t189). Off, each fleet at home strikes when it alone is
-    /// `attack_ratio` times the target's defence.
-    pub combined_gate: bool,
     /// Round a positive scout target up, so a weight under one half still
     /// keeps a scout (t189, accepted). Off, it rounds like every other
     /// target and a small weight never replaces a lost scout.
@@ -161,7 +152,7 @@ pub struct Doctrine {
 }
 
 impl Doctrine {
-    /// Turn on the behaviour called `name` (`mixed_hulls`, `combined_gate`,
+    /// Turn on the behaviour called `name` (`mixed_hulls`, `watch`,
     /// and so on), for trials.
     pub fn enable(&mut self, name: &str) -> Result<(), String> {
         let switch = match name {
@@ -174,8 +165,6 @@ impl Doctrine {
             "supply" => &mut self.supply,
             "defend" => &mut self.defend,
             "mixed_hulls" => &mut self.mixed_hulls,
-            "reinforce" => &mut self.reinforce,
-            "combined_gate" => &mut self.combined_gate,
             "keep_scouts" => &mut self.keep_scouts,
             "watch" => &mut self.watch,
             "forward_muster" => &mut self.forward_muster,
@@ -197,8 +186,6 @@ impl Doctrine {
         supply: true,
         defend: true,
         mixed_hulls: true,
-        reinforce: false,
-        combined_gate: false,
         keep_scouts: true,
         watch: true,
         forward_muster: true,
@@ -275,8 +262,6 @@ impl Weights {
             supply: false,
             defend: false,
             mixed_hulls: false,
-            reinforce: false,
-            combined_gate: false,
             keep_scouts: false,
             watch: false,
             forward_muster: false,
@@ -1224,18 +1209,6 @@ fn plan_fleets(
     let mut blockaded = game_data.fleets.iter().any(blockading);
     let home_threatened = home_sector.is_some_and(|sector| threatened(game_data, memory, sector));
     let allocation = goals.map_or(0, |goals| goals.allocation);
-    // The warship strength gathered at home, waiting to sail.
-    let home_force: f32 = game_data
-        .fleets
-        .iter()
-        .filter(|fleet| {
-            fleet.owner.0 == empire
-                && Some(fleet.sector.to_array()) == home_sector
-                && has_combat_ships(fleet)
-                && matches!(fleet.order, Order::HoldPosition | Order::RendezvousSector)
-        })
-        .map(strength)
-        .sum();
     // Sectors where a fleet of the seat already stands watch.
     let mut watched: Vec<[u8; 2]> = game_data
         .fleets
@@ -1445,34 +1418,11 @@ fn plan_fleets(
                     return choice;
                 }
             }
-            if weights.doctrine.reinforce && has_combat_ships(fleet) {
-                if fleet.order == Order::JoinAnotherFleet
-                    && own_fleet_with_number(game_data, empire, fleet.mission_target).is_some()
-                {
-                    return keep;
-                }
-                if at_home
-                    && !hold
-                    && fleet.order != Order::GuardBlockadeWorld
-                    && let Some(host) = strike_host(game_data, memory, weights, empire, fleet)
-                    && !goals.is_some_and(|goals| goals.strike > 0)
-                {
-                    return FleetChoice {
-                        join: host,
-                        load: mask.load && fleet.ships.empty_transports > 0,
-                        ..keep
-                    };
-                }
-            }
             if !at_home {
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
             let load = mask.load && fleet.ships.empty_transports > 0;
-            let force = if weights.doctrine.combined_gate {
-                home_force
-            } else {
-                strength(fleet)
-            };
+            let force = strength(fleet);
             let target = if !has_combat_ships(fleet) {
                 None
             } else {
@@ -1539,50 +1489,6 @@ fn plan_fleets(
         })
         .collect();
     (fleets, labels)
-}
-
-/// The record of `empire`'s fleet numbered `number`.
-fn own_fleet_with_number(game_data: &CoreGameData, empire: u8, number: u16) -> Option<usize> {
-    game_data
-        .fleets
-        .iter()
-        .position(|fleet| fleet.owner.0 == empire && fleet.fleet_number.0 == number)
-        .map(|idx| idx + 1)
-}
-
-/// The nearest of the empire's strike forces under way that is short of
-/// what its target needs (`attack_ratio` times the target's defence), which
-/// `fleet` can join: warships on Bombard, Invade or Blitz.
-fn strike_host(
-    game_data: &CoreGameData,
-    memory: &SeatMemory,
-    weights: &Weights,
-    empire: u8,
-    fleet: &Fleet,
-) -> Option<usize> {
-    game_data
-        .fleets
-        .iter()
-        .enumerate()
-        .filter(|(_, host)| {
-            host.owner.0 == empire
-                && world_at(game_data, host.target.to_array())
-                    .and_then(|idx| memory.planet_intel.get(&(idx + 1)))
-                    .is_none_or(|intel| {
-                        (strength(host) as f32) < weights.attack_ratio * defense(intel)
-                    })
-                && host.fleet_number != fleet.fleet_number
-                && has_combat_ships(host)
-                && matches!(
-                    host.order,
-                    Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld
-                )
-        })
-        .min_by(|(_, a), (_, b)| {
-            let from = fleet.sector.to_array();
-            distance(a.sector.to_array(), from).total_cmp(&distance(b.sector.to_array(), from))
-        })
-        .map(|(idx, _)| idx + 1)
 }
 
 /// Loaded armies enough to invade a world with its known (or assumed)

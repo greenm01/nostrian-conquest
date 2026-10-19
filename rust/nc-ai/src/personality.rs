@@ -41,7 +41,7 @@ pub const WEIGHT_NAMES: [&str; Weights::COUNT] = [
     "war-year",
 ];
 
-const DOCTRINE_NAMES: [&str; 15] = [
+const DOCTRINE_NAMES: [&str; 13] = [
     "land-grab",
     "strike-weakest",
     "suppress-first",
@@ -51,8 +51,6 @@ const DOCTRINE_NAMES: [&str; 15] = [
     "supply",
     "defend",
     "mixed-hulls",
-    "reinforce",
-    "combined-gate",
     "keep-scouts",
     "watch",
     "forward-muster",
@@ -122,8 +120,6 @@ pub fn personality_kdl(name: &str, weights: &Weights) -> String {
         d.supply,
         d.defend,
         d.mixed_hulls,
-        d.reinforce,
-        d.combined_gate,
         d.keep_scouts,
         d.watch,
         d.forward_muster,
@@ -192,8 +188,6 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
         supply,
         defend,
         mixed_hulls,
-        reinforce,
-        combined_gate,
         keep_scouts,
         watch,
         forward_muster,
@@ -263,8 +257,6 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 supply,
                 defend,
                 mixed_hulls,
-                reinforce,
-                combined_gate,
                 keep_scouts,
                 watch,
                 forward_muster,
