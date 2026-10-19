@@ -1,5 +1,6 @@
 pub mod cp437;
 pub mod door;
+mod door_frame;
 mod door_telnet;
 pub(crate) mod door_transport;
 pub mod stdout;

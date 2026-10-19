@@ -15,6 +15,7 @@ use crate::terminal::cp437;
 use crate::terminal::{ColorMode, OutputEncoding, Terminal};
 use crate::theme::classic;
 
+use super::door_frame::{Pen, SentScreen, diff_frame};
 use super::door_telnet::TelnetFilter;
 pub use super::door_transport::DoorTransport;
 use super::door_transport::{DoorIo, build_door_io};
@@ -32,7 +33,7 @@ const MAX_ESCAPE_SEQUENCE_BYTES: usize = 16;
 const SESSION_WARNING_LEAD: Duration = Duration::from_secs(120);
 const SESSION_WARNING_TEXT: &str = "Two minutes remain in your time limit for this session.";
 const DEFAULT_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[0 q";
-const BLINKING_BLOCK_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[1 q";
+pub(super) const BLINKING_BLOCK_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[1 q";
 
 pub struct DoorTerminal {
     encoding: OutputEncoding,
@@ -42,6 +43,10 @@ pub struct DoorTerminal {
     frame_seq: u64,
     /// Whether the first frame has cleared what the BBS left on screen.
     screen_cleared: bool,
+    /// The screen the caller has, when the door knows it; renders send
+    /// only the changes from it (t208). Anything else written to the
+    /// screen forgets it, so the next render draws a full frame.
+    sent: Option<SentScreen>,
     decoder: DoorInputDecoder,
     io: Box<dyn DoorIo>,
     session_deadline: Option<Instant>,
@@ -91,6 +96,7 @@ impl DoorTerminal {
             trace_dir,
             frame_seq: 0,
             screen_cleared: false,
+            sent: None,
             decoder: DoorInputDecoder::new(transport),
             io: build_door_io(transport)?,
             session_deadline: None,
@@ -147,6 +153,7 @@ impl DoorTerminal {
             return Ok(());
         }
         self.session_warning_at = None;
+        self.sent = None;
         let notice = classic::notice_style();
         let mut bytes = b"\x1b[s".to_vec();
         bytes.extend_from_slice(cursor_to(last_body_row_for(self.geometry) as u16, 0).as_bytes());
@@ -172,8 +179,21 @@ impl DoorTerminal {
 
 impl Terminal for DoorTerminal {
     fn render(&mut self, playfield: &PlayfieldBuffer) -> Result<(), Box<dyn std::error::Error>> {
-        let frame =
-            serialize_playfield_frame(playfield, self.geometry, self.encoding, self.color_mode);
+        let mut next = SentScreen::capture(playfield, self.geometry, self.color_mode);
+        let frame = match self.sent.as_ref() {
+            Some(prev) => {
+                let (frame, pen) = diff_frame(prev, &next, self.encoding);
+                next.pen = pen;
+                frame
+            }
+            None => {
+                serialize_playfield_frame(playfield, self.geometry, self.encoding, self.color_mode)
+            }
+        };
+        self.sent = Some(next);
+        if frame.is_empty() {
+            return Ok(());
+        }
         if let Some(trace_dir) = self.trace_dir.as_deref() {
             trace_output_frame(trace_dir, self.frame_seq, &frame)?;
             self.frame_seq = self.frame_seq.saturating_add(1);
@@ -221,6 +241,7 @@ impl Terminal for DoorTerminal {
     }
 
     fn dump_text_capture(&mut self, text: &str) -> Result<(), Box<dyn std::error::Error>> {
+        self.sent = None;
         self.io
             .write_all(&reset_visible_screen_prefix(self.color_mode))?;
         self.io.write_all(text.as_bytes())?;
@@ -232,6 +253,7 @@ impl Terminal for DoorTerminal {
     }
 
     fn clear_and_restore(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.sent = None;
         self.io
             .write_all(&reset_visible_screen_prefix(self.color_mode))?;
         self.io.flush()?;
@@ -312,20 +334,32 @@ pub fn serialize_playfield_frame(
     bytes
 }
 
-fn push_text(bytes: &mut Vec<u8>, text: &str, encoding: OutputEncoding) {
+pub(super) fn push_text(bytes: &mut Vec<u8>, text: &str, encoding: OutputEncoding) {
     match encoding {
         OutputEncoding::Utf8 => bytes.extend_from_slice(text.as_bytes()),
         OutputEncoding::Cp437 => bytes.extend_from_slice(&cp437::str_to_cp437(text)),
     }
 }
 
-fn cursor_to(row_zero_based: u16, col_zero_based: u16) -> String {
+pub(super) fn cursor_to(row_zero_based: u16, col_zero_based: u16) -> String {
     format!("\x1b[{};{}H", row_zero_based + 1, col_zero_based + 1)
 }
 
+/// The ANSI codes the door sends for a cell's colours.
+pub(super) fn pen_codes(fg: GameColor, bg: GameColor, bold: bool, color_mode: ColorMode) -> Pen {
+    Pen {
+        fg: ansi_fg_code(resolve_color(fg, color_mode)),
+        bg: ansi_bg_code(resolve_color(bg, color_mode)),
+        bold,
+    }
+}
+
 fn style_sgr(fg: GameColor, bg: GameColor, bold: bool, color_mode: ColorMode) -> Vec<u8> {
-    let fg_code = ansi_fg_code(resolve_color(fg, color_mode));
-    let bg_code = ansi_bg_code(resolve_color(bg, color_mode));
+    let Pen {
+        fg: fg_code,
+        bg: bg_code,
+        ..
+    } = pen_codes(fg, bg, bold, color_mode);
     let mut seq = format!("\x1b[0;{fg_code};{bg_code}");
     if bold {
         seq.push_str(";1");
@@ -971,6 +1005,29 @@ pub fn read_scripted_door_keys_for_test(
     read_scripted_door_session_for_test(reads, transport, None, None).0
 }
 
+/// A CP437, 16-colour door terminal whose output is collected in the
+/// returned buffer, for tests of what renders send.
+#[doc(hidden)]
+pub fn capture_door_terminal_for_test() -> (DoorTerminal, Rc<RefCell<Vec<u8>>>) {
+    let output = Rc::new(RefCell::new(Vec::new()));
+    let terminal = DoorTerminal {
+        encoding: OutputEncoding::Cp437,
+        color_mode: ColorMode::Ansi16,
+        geometry: ScreenGeometry::local_default(),
+        trace_dir: None,
+        frame_seq: 0,
+        screen_cleared: false,
+        sent: None,
+        decoder: DoorInputDecoder::new(DoorTransport::Stdio),
+        io: Box::new(ScriptedDoorIo::new(&[], Rc::clone(&output))),
+        session_deadline: None,
+        session_warning_at: None,
+        idle_limit: None,
+        last_key_at: Instant::now(),
+    };
+    (terminal, output)
+}
+
 /// Like [`read_scripted_door_keys_for_test`], with session and idle limits.
 /// Also returns the timeout that ended the reads, if any.
 #[doc(hidden)]
@@ -1013,6 +1070,7 @@ fn read_scripted_door_session(
         trace_dir: None,
         frame_seq: 0,
         screen_cleared: false,
+        sent: None,
         decoder: DoorInputDecoder::new(transport),
         io: Box::new(ScriptedDoorIo::new(reads, Rc::clone(&output))),
         session_deadline: None,

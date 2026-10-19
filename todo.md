@@ -3,9 +3,7 @@
 (B) 2026-10-13 Post game announcements and answer commands in the Matrix community room. +parallel +hosting @development id:t141 order:380 depends:t140,t120 [details](docs/notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md#t141)
 (B) 2026-10-16 Use the full order set and a mixed fleet in the executor. +parallel +ai @development id:t189 order:477 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t189)
 (B) 2026-10-16 Retrain the agent on the new executor. +parallel +ai @development id:t191 order:479 depends:t189,t190 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t191)
-
 (B) 2026-10-19 Teach the agent to use every order and find new uses for them. +parallel +ai @development id:t207 order:480 depends:t191 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t207)
-
 (B) 2026-10-15 Choose training opponents from the league by difficulty. +parallel +ai @development id:t184 order:486 depends:t183 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t184)
 (B) 2026-10-15 Start some training games from saved mid-game positions. +parallel +ai @development id:t185 order:487 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t185)
 (B) 2026-10-15 Track the win-probability estimate through games. +parallel +ai @development id:t186 order:488 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t186)

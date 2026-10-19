@@ -5,6 +5,8 @@ mod support;
 mod broadcast_report_delete;
 #[path = "update/chrome_theme.rs"]
 mod chrome_theme;
+#[path = "update/door_frames.rs"]
+mod door_frames;
 #[path = "update/fleet_active_filter.rs"]
 mod fleet_active_filter;
 #[path = "update/fleet_crippled_ships.rs"]
