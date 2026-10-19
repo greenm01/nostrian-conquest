@@ -75,10 +75,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
             tracing::info!("running nc-sysop map-export");
             let dir = parse_required_dir_flag(&rest)?;
-            let player = parse_required_usize_flag(&rest, "--player")?;
             let out_dir = parse_optional_path_flag_anywhere(&rest, "--out-dir")?
                 .unwrap_or_else(|| dir.join("exports"));
-            map_export::export_player_map(&dir, player, &out_dir)
+            if rest
+                .iter()
+                .any(|arg| arg == "--player" || arg.starts_with("--player="))
+            {
+                let player = parse_required_usize_flag(&rest, "--player")?;
+                map_export::export_player_map(&dir, player, &out_dir)
+            } else {
+                map_export::export_galaxy_map(&dir, &out_dir)
+            }
         }
         _ => {
             usage::print_usage();

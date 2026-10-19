@@ -75,10 +75,17 @@ impl PlayerStarmapProjection {
 
     pub fn render_ascii_export(&self) -> String {
         let mut out = String::new();
-        out.push_str(&format!(
-            "NOSTRIAN CONQUEST STARMAP  YEAR {}  EMPIRE {}\n\n",
-            self.year, self.viewer_empire_id
-        ));
+        if self.viewer_empire_id == 0 {
+            out.push_str(&format!(
+                "NOSTRIAN CONQUEST STARMAP  YEAR {}  GALAXY\n\n",
+                self.year
+            ));
+        } else {
+            out.push_str(&format!(
+                "NOSTRIAN CONQUEST STARMAP  YEAR {}  EMPIRE {}\n\n",
+                self.year, self.viewer_empire_id
+            ));
+        }
         out.push_str(&self.render_ascii_map());
         let mut worlds = self.worlds.iter().collect::<Vec<_>>();
         worlds.sort_by_key(|world| (world.coords[1], world.coords[0]));

@@ -278,7 +278,7 @@ fn nc_sysop_help_lists_only_local_and_bbs_public_subcommands() {
     assert!(stdout.contains("new-game <target_dir>"));
     assert!(stdout.contains("maint <dir> [turns]"));
     assert!(stdout.contains("settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat>"));
-    assert!(stdout.contains("map-export --dir <game_dir> --player <N>"));
+    assert!(stdout.contains("map-export --dir <game_dir> [--player <N>]"));
     assert!(!stdout.contains("maint-all"));
     assert!(!stdout.contains("host "));
     assert!(!stdout.contains("nostr "));
@@ -351,6 +351,37 @@ fn nc_sysop_map_export_writes_the_players_star_map() {
 
     let stderr = run_nc_sysop_failure(&["map-export", "--dir", dir, "--player", "5"]);
     assert!(stderr.contains("--player must be 1-4"));
+
+    let _ = fs::remove_dir_all(&target);
+}
+
+#[test]
+fn nc_sysop_map_export_without_player_writes_the_galaxy_without_intel() {
+    let target = unique_temp_dir("nc-sysop-galaxy-export");
+    let dir = target.to_str().expect("utf-8 path");
+    run_nc_sysop(&["new-game", dir, "--players", "4", "--seed", "7"]);
+    let game = CampaignStore::open_default_in_dir(&target)
+        .expect("open campaign store")
+        .load_latest_runtime_state()
+        .expect("load runtime")
+        .expect("runtime snapshot should exist")
+        .game_data;
+
+    let stdout = run_nc_sysop(&["map-export", "--dir", dir]);
+    assert!(stdout.contains("Exported the galaxy map"));
+    let exports = target.join("exports");
+    let text = fs::read_to_string(exports.join("ECMAP-GALAXY-Y3000.TXT")).expect("galaxy map");
+    assert!(text.starts_with("NOSTRIAN CONQUEST STARMAP  YEAR 3000  GALAXY"));
+    assert!(!text.contains("KNOWN WORLD DETAILS"));
+    // Every world is marked, and no name is shown, owned or not.
+    assert_eq!(text.matches('*').count(), game.planets.len());
+    for planet in &game.planets {
+        let name = planet.name.trim();
+        assert!(name.is_empty() || !text.contains(name), "{name} leaked");
+    }
+    let csv = fs::read_to_string(exports.join("ECMAP-GALAXY-Y3000.CSV")).expect("galaxy csv");
+    assert_eq!(csv.matches('*').count(), game.planets.len());
+    assert!(!exports.join("ECMAP-GALAXY-Y3000-DETAILS.CSV").exists());
 
     let _ = fs::remove_dir_all(&target);
 }

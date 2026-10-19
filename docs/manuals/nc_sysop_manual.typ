@@ -803,6 +803,17 @@ It writes what that player knows of the galaxy this year, just as the
 in-game export does: `ECMAP-P2-Y<year>.TXT`, `.CSV`, and `-DETAILS.CSV` in
 `<game_dir>/exports`. Use `--out-dir <path>` to write them somewhere else.
 
+Leave out `--player` to export the galaxy map instead:
+
+```sh
+nc-sysop map-export --dir /path/to/mygame
+```
+
+It marks every world with `*` and shows nothing any empire has learned: no
+names, owners, or strengths. This is the map every player starts with, so
+it is safe to post for all players. It writes `ECMAP-GALAXY-Y<year>.TXT`
+and `.CSV`.
+
 // ─── 11. Terminology ──────────────────────────────────────────────────────────
 
 = Terminology
@@ -853,9 +864,11 @@ Logging flags come before the subcommand:
   policy in `ncgame.db`, or edit BBS seat reservations in per-game
   `config.kdl`.
 - *`maint`:* Run one or more maintenance turns against `ncgame.db`.
-- *`map-export --dir <game_dir> --player <N> [--out-dir <path>]`:* Write
+- *`map-export --dir <game_dir> [--player <N>] [--out-dir <path>]`:* Write
   one player's star map as `ECMAP-P<N>-Y<year>` `.TXT`, `.CSV`, and
-  `-DETAILS.CSV` files. Default folder: `<game_dir>/exports`.
+  `-DETAILS.CSV` files. Without `--player`, write the galaxy map with no
+  empire's intel as `ECMAP-GALAXY-Y<year>` `.TXT` and `.CSV`. Default
+  folder: `<game_dir>/exports`.
 
 == nc-game and nc-door
 

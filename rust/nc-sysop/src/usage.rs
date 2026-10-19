@@ -13,7 +13,7 @@ pub fn print_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat> ..."
     );
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> --player <N> [--out-dir <path>]"
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> [--player <N>] [--out-dir <path>]"
     );
 }
 
@@ -60,8 +60,11 @@ pub fn print_settings_usage() {
 pub fn print_map_export_usage() {
     println!("Usage:");
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> --player <N> [--out-dir <path>]"
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] map-export --dir <game_dir> [--player <N>] [--out-dir <path>]"
     );
     println!("  Writes the player's star map as ECMAP-P<N>-Y<year> .TXT, .CSV and -DETAILS.CSV.");
+    println!(
+        "  Without --player, writes the galaxy map with no empire's intel as ECMAP-GALAXY-Y<year> .TXT and .CSV."
+    );
     println!("  --out-dir defaults to <game_dir>/exports, where the in-game export writes.");
 }

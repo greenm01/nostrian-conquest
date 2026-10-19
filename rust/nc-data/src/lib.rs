@@ -106,7 +106,7 @@ pub use maintenance_types::{
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{
     PlayerMapExportData, PlayerMapExportFile, STARMAP_CSV_FILE_NAME, STARMAP_DETAILS_CSV_FILE_NAME,
-    STARMAP_TEXT_FILE_NAME, build_player_map_export_data,
+    STARMAP_TEXT_FILE_NAME, build_galaxy_map_export_data, build_player_map_export_data,
 };
 pub use model::{
     BuildSlot, Conquest, Coords, CrippledHulls, CrippledShips, DiplomaticRelation, EmpireId,
