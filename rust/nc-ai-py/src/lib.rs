@@ -48,7 +48,8 @@ impl Env {
     /// seeds. `seats` gives each game's lineup, one name per seat:
     /// `learned`, `strategist` (goals carried out by the tuned executor),
     /// `hybrid:FAMILIES` (a strategist whose network also orders the fleets
-    /// of the comma-separated families `colonize`, `scout` and `strike`),
+    /// of the comma-separated families `colonize`, `scout`, `strike` and
+    /// `convoy`),
     /// `executor` (tuned weights), `baseline` (the executor's hand-set
     /// weights), `classic` (t154's executor), `aggressor` or `autopilot`. Every seat is learned by
     /// default. A personality (t167) names its style's executor, and
@@ -124,7 +125,7 @@ impl Env {
     /// carried out `goals` this year: `mission`, `target`, `waypoint`,
     /// `speed`, `roe`,
     /// `load`, `detach`, `join`, `unload` and each row's `family` (0 colonize, 1
-    /// scout, 2 strike, -1 padding), all `[games, seats, F]` int64.
+    /// scout, 2 strike, 3 convoy, -1 padding), all `[games, seats, F]` int64.
     fn fleet_labels<'py>(
         &self,
         py: Python<'py>,
@@ -457,6 +458,7 @@ fn seat(name: &str) -> PyResult<Seat> {
                 "colonize" => handed.colonize = true,
                 "scout" => handed.scout = true,
                 "strike" => handed.strike = true,
+                "convoy" => handed.convoy = true,
                 other => {
                     return Err(PyValueError::new_err(format!("unknown family {other:?}")));
                 }

@@ -8,6 +8,9 @@
 //!     [--opponents TARGET.onnx]
 //! ```
 //!
+//! A model given as `A.onnx+convoy` also orders its convoys (transports
+//! without warships), which the executor's ferry orders otherwise (t191).
+//!
 //! Each model plays one seat against three tuned executors on the same
 //! maps, the seat rotated game by game, greedy. One column per model.
 //! `--opponents` fills the other three seats with that model instead (the
@@ -81,11 +84,14 @@ fn main() {
             .position(|arg| arg == name)
             .map(|idx| args[idx + 1].clone())
     };
-    let models: Vec<PathBuf> = args
+    let models: Vec<(PathBuf, bool)> = args
         .iter()
         .enumerate()
         .take_while(|(_, arg)| !arg.starts_with("--"))
-        .map(|(_, arg)| PathBuf::from(arg))
+        .map(|(_, arg)| match arg.strip_suffix("+convoy") {
+            Some(path) => (PathBuf::from(path), true),
+            None => (PathBuf::from(arg), false),
+        })
         .collect();
     let games: u64 = arg("--games").map_or(256, |n| n.parse().expect("--games"));
     let years: u16 = arg("--years").map_or(100, |n| n.parse().expect("--years"));
@@ -207,7 +213,7 @@ fn main() {
         }),
         ("joins, transfers, unloads", |g| {
             format!(
-                "{:.0}/{:.0}/{:.0}",
+                "{:.1}/{:.1}/{:.1}",
                 mean(g, |g| f64::from(g.joins)),
                 mean(g, |g| f64::from(g.transfers)),
                 mean(g, |g| f64::from(g.unloads))
@@ -217,9 +223,10 @@ fn main() {
 
     let results: Vec<Vec<Game>> = models
         .iter()
-        .map(|model| {
+        .map(|(model, convoy)| {
             run(
                 model,
+                *convoy,
                 opponents.as_ref(),
                 &style,
                 games,
@@ -234,8 +241,14 @@ fn main() {
         .map_or_else(|| "executors".to_string(), |path| short(path));
     println!("{games} games, {years} years, one network seat ({style}) against three {against}\n");
     print!("{:<36}", "");
-    for model in &models {
-        print!("{:>16}", short(model));
+    for (model, convoy) in &models {
+        let name = short(model);
+        let name = if *convoy {
+            format!("{name}+convoy")
+        } else {
+            name
+        };
+        print!("{:>16}", name);
     }
     println!();
     for (label, value) in rows {
@@ -248,7 +261,7 @@ fn main() {
     if results.len() > 1 {
         println!(
             "\npaired difference from {}, same maps and seats (± standard error)",
-            short(&models[0])
+            short(&models[0].0)
         );
         let measures: [(&str, fn(&Game) -> f64); 3] = [
             ("win share", |g| f64::from(g.win)),
@@ -311,6 +324,7 @@ fn mean(games: &[Game], value: impl Fn(&Game) -> f64) -> f64 {
 
 fn run(
     model: &PathBuf,
+    convoy: bool,
     opponents: Option<&PathBuf>,
     style: &str,
     games: u64,
@@ -328,6 +342,7 @@ fn run(
                         model,
                         Families {
                             strike: true,
+                            convoy,
                             ..Families::NONE
                         },
                         style,

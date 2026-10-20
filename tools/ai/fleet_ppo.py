@@ -68,7 +68,7 @@ from policy import HEADS, device, goals_for, save
 from ppo import advantages, pad_cat
 
 PLAYERS = 4
-FAMILIES = ("colonize", "scout", "strike")
+FAMILIES = ("colonize", "scout", "strike", "convoy")
 # Observation fleet-row columns: ship counts start at 10, in the order
 # battleships, cruisers, destroyers, empty and loaded transports, ETACs,
 # scouts.
@@ -77,14 +77,16 @@ BB, CA, DD, TT, TTL, ETAC, SC = range(10, 17)
 
 def fleet_families(fleets):
     """Each fleet row's family, as the Rust `fleet_family`: 0 colonize (has
-    ETACs), 1 scout (scouts only, or one or two lone destroyers), 2 strike."""
+    ETACs), 1 scout (scouts only, or one or two lone destroyers), 3 convoy
+    (transports without warships), 2 strike (the rest)."""
     count = lambda column: fleets[..., column]
     troops = count(TT) + count(TTL)
     combat = count(BB) + count(CA) + count(DD)
     picket = ((count(DD) >= 1) & (count(DD) <= 2) & (count(BB) == 0) & (count(CA) == 0)
               & (count(SC) == 0) & (count(ETAC) == 0) & (troops == 0))
     scout = (combat == 0) & (count(SC) > 0) & (troops == 0)
-    return np.where(count(ETAC) > 0, 0, np.where(picket | scout, 1, 2))
+    convoy = (troops > 0) & (combat == 0)
+    return np.where(count(ETAC) > 0, 0, np.where(picket | scout, 1, np.where(convoy, 3, 2)))
 
 
 def handed_rows(obs, select, families, rows):

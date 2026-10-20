@@ -1643,8 +1643,10 @@ pub enum Family {
     Colonize,
     /// Scouts, and one or two lone destroyers acting as pickets.
     Scout,
-    /// Every other fleet: warships and transports.
+    /// Every other fleet with warships.
     Strike,
+    /// Transports without warships, which the ferry carries between worlds.
+    Convoy,
 }
 
 /// The mission families a hybrid seat's network orders; the executor
@@ -1654,6 +1656,7 @@ pub struct Families {
     pub colonize: bool,
     pub scout: bool,
     pub strike: bool,
+    pub convoy: bool,
 }
 
 impl Families {
@@ -1661,11 +1664,13 @@ impl Families {
         colonize: false,
         scout: false,
         strike: false,
+        convoy: false,
     };
     pub const ALL: Families = Families {
         colonize: true,
         scout: true,
         strike: true,
+        convoy: true,
     };
 
     pub fn contains(&self, family: Family) -> bool {
@@ -1673,6 +1678,7 @@ impl Families {
             Family::Colonize => self.colonize,
             Family::Scout => self.scout,
             Family::Strike => self.strike,
+            Family::Convoy => self.convoy,
         }
     }
 }
@@ -1700,6 +1706,8 @@ pub fn fleet_family(fleet: &Fleet) -> Family {
         || (!has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0)
     {
         Family::Scout
+    } else if troops(fleet) > 0 && !has_combat_ships(fleet) {
+        Family::Convoy
     } else {
         Family::Strike
     }

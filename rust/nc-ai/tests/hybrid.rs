@@ -86,7 +86,7 @@ fn a_hybrid_given_the_executors_fleet_orders_plays_as_a_strategist() {
     );
     assert_eq!(hybrid.hybrid().data[..4], [true, false, false, false]);
     assert_eq!(hybrid.strategist().data[..4], [true, true, false, false]);
-    let mut families = [0usize; 3];
+    let mut families = [0usize; 4];
     loop {
         let goals = hybrid.goal_labels();
         let fleets = hybrid

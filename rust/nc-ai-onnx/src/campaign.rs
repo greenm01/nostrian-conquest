@@ -44,11 +44,12 @@ pub fn temperature(difficulty: AiDifficulty) -> f32 {
 }
 
 /// The families the shipped agent orders itself; the executor orders the
-/// rest (t157).
+/// rest (t157), convoys included, so its ferry moves armies (t191).
 pub const AGENT_FAMILIES: Families = Families {
     colonize: false,
     scout: false,
     strike: true,
+    convoy: false,
 };
 
 /// A campaign's AI seats during one maintenance run: each seat with the
