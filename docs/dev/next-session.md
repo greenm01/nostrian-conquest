@@ -191,37 +191,21 @@ On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
 inside the `#nostrian:matrix.org` space, and its display name became
 `ncbot`.
 
-Signed release `ea1a6b3b` went live on 2026-10-18 with t206's destroyer
-cover rules, the plain-prose manuals and the Planet `C` help line, replacing
-`63dc9594` from earlier that evening; an `nc-admin` backup of Beta 1 was
-taken before each switch, it stayed recruiting at year 3000, and `63dc9594`
-is kept for rollback. Before that, signed release `6c381989` (a fix for a joint-bombardment crash) followed `08f44280`, which had replaced it the same day, adding t202's
-planetary combat (two-step batteries, full-strength battery fire, classic
-capture damage); Beta 1 stayed recruiting at year 3000, a manual backup was
-taken first, and `1c1de2a7` is kept for rollback (`4456d589` removed). Before
-that, signed release `1c1de2a7` went live on 2026-10-16. It adds the t198/t200
-combat rules (no mixed-fleet bonus, punch-ladder hull stats) and t165's AI
-seats in hosted maintenance. It was built and tested on bean-void (3,354
-tests) and signed on the Mac mini. A manual pre-upgrade backup of Beta 1 was
-taken, and its database dumps were unchanged across the switch. Beta 1 stayed
-recruiting at year 3000. `4456d589` remains for rollback: the new AI-seat
-tables are additive. Older releases, the archived Browser Test game and the
-April Nostr-gate game were deleted at the owner's request. The Nostr gate
-(`nc-nostr.service`, `nc-maint-all.timer`) is disabled, because `nc-sysop`
-lost its `nostr` and `maint-all` commands in `cf664453`. Community Beta 1 is
-the only hosted game.
+Signed release `19fb1f5d` (v1.0.0-beta.4) went live on 2026-10-19 after an
+`nc-admin` backup of Beta 1; the owner accepted its door rendering and map
+downloads there. Beta 1 stays recruiting at year 3000 with one seat claimed;
+`ea1a6b3b` is kept for rollback. The Nostr gate stays disabled. Community
+Beta 1 is the only hosted game. Earlier release history is in the archive.
 
 ## Release context
 
-Beta.3 is published, refreshed on 2026-10-18 from `ea1a6b3b` (t206 fleet
-rules, plain-prose manuals with the review gaps filled, Planet `C` help line, on top of `d16e43de`'s t204/t205 databases and
-Windows door input fixes); see the release plan for hashes. t024
-is complete: all four BBS/sysop packages, their signed checksum manifest, and
-the matching download page are live. The
-quick-start PDF appears above the full manuals. All seven archive/manual links
-returned HTTP 200 with matching hashes; downloaded checksums and the GPG
-signature verified. See the [release plan](../notes/plans/fv6fg33o-release-v1-0-0-beta-3.md)
-for build commit `1b993652`, hashes, compiler versions and acceptance limits.
+Beta.4 is published (t210, 2026-10-19): four `nc-sysop` archives built from
+`4abc2140` and a signed `SHA256SUMS.txt` replaced beta.3 on
+`release-artifacts`; the website's three manual PDFs match. It adds door
+renders that send only screen changes (t208) and nc-sysop `map-export`,
+`economy-report` and `check` (t209). The save format is unchanged from
+beta.3. See the [release plan](../notes/plans/02cjqug4-release-v1-0-0-beta-4.md)
+for hashes and checks.
 
 The x86 Defender block was cleared by building the standard library from
 source, as the Win7+ target already did. Both x86 release targets now use that

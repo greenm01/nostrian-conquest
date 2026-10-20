@@ -50,3 +50,27 @@ Beta 1.
 Owner acceptance on Beta 1 (2026-10-19): door rendering in the browser
 terminal is correct, fast and responsive (t208); map downloads from the game
 card work.
+
+## Release (2026-10-19)
+
+The four `nc-sysop` archives were built from `4abc2140`: Linux x64 on
+bean-void (rust 1.98.0), the three Windows targets on bean with MSVC. Each
+passed `build_release_bundle.py --verify`, then by hand: new game, two
+maintenance years, `check`, `map-export` and a full door join through a
+DOOR32.SYS drop file (Windows doors with keys from a file). Windows Defender
+found no threats in the three zips. A campaign made with the published beta.3
+Linux archive opened, played two years and passed `check` under beta.4.
+
+| Archive suffix | SHA-256 |
+| --- | --- |
+| `linux-x64.tar.gz` | `c6af1f130ee12091d4629ae1710a3d9fe447d2b533d6b23090515af1e6973d9b` |
+| `windows-x64.zip` | `b4edd4c22a2abbdf4359f87c5a63b3149fb9830a1e31a19429b27d9d96461d98` |
+| `windows-x86.zip` | `775ce4d3a5eeb3b65905c15efb8b0e4420a5e995b151e8a2c8817fa91722fe61` |
+| `windows7-x86.zip` | `7ec6046a2f8c5606dfcdf54541b02e649411a8c7c3bc6b74f8d45c8a9ed29e09` |
+
+`SHA256SUMS.txt` is signed with release subkey `57184BB62A800062`. The beta.4
+archives and signed manifest replaced the beta.3 archives on
+`release-artifacts`, with new release notes; a fresh download of all six
+assets passed GPG and checksum verification. The website's three manual
+PDFs match the committed beta.4 builds. The download page names no version,
+so it needed no change. Not tested on Windows 7 itself.
