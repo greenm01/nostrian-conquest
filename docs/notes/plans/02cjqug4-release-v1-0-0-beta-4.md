@@ -46,3 +46,7 @@ binaries; `ea1a6b3b` is kept for rollback. The deploy helper now renames the
 tarball's `nc-community-<commit>` folder to `releases/<commit>`; the first
 attempt stopped before any service was touched. Next: owner acceptance on
 Beta 1.
+
+Owner acceptance on Beta 1 (2026-10-19): door rendering in the browser
+terminal is correct, fast and responsive (t208); map downloads from the game
+card work.
