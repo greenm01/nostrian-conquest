@@ -2302,6 +2302,18 @@ criterion (greedy joins plus unloads at least one a game) is met; Unload
 alone is under one a game. Remaining for t191: the exploit check on
 snapshot 200, then promotion with the owner's OK.
 
+**Exploit check clean; promoted; t191 closed (2026-10-20).** 80 iterations
+of `--exploit` against snapshot 200 (bean-void), scored greedy on 1,024
+maps from 100000 against three copies of the target, in four batches of
+256 (all 1,024 at once was killed for memory twice): the target itself
+0.245 +/- 0.013; exploiter snapshots 40, 60, 80: 0.177, 0.177, 0.174 (+/-
+0.012). No hole. The exploiter trained before convoys moved to the ferry;
+the ferry is the executor's scripted code, so the check was accepted
+rather than rerun. With the owner's OK, `fleet-final.pt`/`.onnx` are now
+t191-orders snapshot 200 (`.onnx` sha256 `a4db043e64baf590...`, export 0
+mismatches); the previous agent is kept as `fleet-final-pre-t191`. Models
+are backed up with restic to archvps and crunch.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.

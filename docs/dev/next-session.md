@@ -42,11 +42,14 @@ Done through t175, t157, t158 and the work toward t165 and t167. The
 details are in the plans' result sections.
 
 - **The agent.** It is the fleet-level agent (t157), with the strike
-  family handed to the network, on t175's strategist with the allocation
-  goal, retrained on mixed fleets under t206 (t191, promoted 2026-10-19).
-  Greedy, building mixed fleets against three adopted executors on 1,024
-  maps, it wins 0.508 at 60 years and 0.725 at 100. The previous agent is
-  `fleet-final-pre-t206`.
+  family handed to the network and convoys (transports without warships)
+  left to the executor's ferry, on t175's strategist with the allocation
+  goal. t191 retrained it to join fleets and promoted t191-orders snapshot
+  200 on 2026-10-20: greedy against three executors on 1,024 maps it wins
+  0.589 at 60 years and 0.786 at 100 (+0.083 / +0.051 paired against the
+  t206 agent), with about 49 / 299 joins and 0.4 / 0.6 unloads a game. The
+  previous agent is `fleet-final-pre-t191`. Models are backed up with
+  restic to archvps and crunch (`~/.local/bin/nc-ai-backup`).
   - Checkpoints: `~/.local/state/nostrian-conquest/ai/fleet-final.pt` and
     `fleet-final.onnx`.
   - The doctrine work after t164 kept only the blockader (t171). The
@@ -69,9 +72,12 @@ details are in the plans' result sections.
   cruisers). The executor builds for the network seat, so the agent was
   retrained on mixed fleets and promoted: 0.725 at 100 years against the
   old agent's 0.192 with mixed builds. Main's AI may ship again; the live
-  stack and beta.3 still carry the pre-t206 rules and agent. Greedy, the
-  agent orders no Join, transfer or unload yet (t191 stays open). See the
-  AI plan's t189 and t191 sections.
+  stack carries beta.4. See the AI plan's t189 and t191 sections.
+- **Next (t207, running 2026-10-20).** Open the mission head: a smoothed
+  mission KL reference and a capped coverage bonus fading by iteration 120
+  (`~/.local/state/nostrian-conquest/ai/t207-missions/`). Gate: strength
+  against the promoted agent, Blitz, Salvage and Patrol each greedily at
+  least once a game, exploit check, export.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'
@@ -91,7 +97,7 @@ Plans:
   repo `~/dev/nostrian-conquest`, Rust 1.95 stable.
 - bean-void (`ssh bean-void`) is spare CPU.
 - Crunch hosts another project's latency measurements, and AI work never
-  runs there.
+  runs there (it only holds the restic model backup).
 
 ## Current work: Discord community hosting
 
