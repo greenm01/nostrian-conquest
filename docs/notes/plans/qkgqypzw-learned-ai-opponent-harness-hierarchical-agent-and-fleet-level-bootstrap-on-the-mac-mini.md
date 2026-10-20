@@ -2369,6 +2369,67 @@ on a strike fleet because the seat seldom has a starbase where its fleets
 are; that is a build question, for step 4. Hold and Move Only overlap
 Rendezvous, which merges on arrival.
 
+**Step 2, design (2026-10-20; awaiting the owner's approval).** Why the
+mission head stays shut, from `fleet_ppo.py`: `kl_to` holds every fleet
+head, mission included, near the imitation reference, where Blitz has
+probability 0.00006. Raising it to 5% costs about log(0.05 / 0.00006) = 6.7
+nats of KL on each row where it is legal, far more than one invasion's
+reward can repay, so PPO never samples it often enough to learn its worth.
+t191's `--free-heads` (no KL, an act-or-not entropy bonus) fits Join and
+Unload, which are yes/no choices; on a 16-way mission head an entropy bonus
+spreads probability over every legal mission, as the t191 pilot did for
+joins (97% of orders).
+
+Which missions should earn a place, from the player manual:
+
+- *Blitz:* lands at once, the warships firing on the batteries first; the
+  world's factories and batteries are kept. For lightly defended worlds or
+  when speed matters. Legal wherever Invade is. Expected to earn use.
+- *Salvage:* scraps a fleet at an owned world for half its build cost,
+  paid into that world's treasury. A plausible late-game use for obsolete
+  or crippled hulls. Worth offering.
+- *Patrol a Sector:* the executor uses it; the network gives it 0.0008.
+  Worth offering.
+- *View World:* a quick look for warships; scouts do most of it. Offered,
+  not required.
+- *Hold Position, Move Only, Seek Home:* overlap Rendezvous and the ROE
+  retreat (a retreating fleet already seeks home). Offered, not required.
+- *Guard Starbase:* never legal on strike rows (step 4). *Join:* t191.
+
+Two changes to `fleet_ppo.py`, both for the mission head only:
+
+1. **Smoothed reference, `--mission-smooth E`.** The KL on the mission head
+   is taken against `(1 - E) * reference + E * uniform over the row's legal
+   missions`. With `E = 0.05` and ten legal missions, every legal mission
+   has at least 0.005 in the reference, so lifting Blitz to 5% costs about
+   2.3 nats rather than 6.7, and the reward can decide. Other heads keep the
+   plain reference and the KL floor.
+2. **Capped, fading coverage bonus, `--mission-bonus C --mission-floor F
+   --mission-until N`.** On handed rows, the loss gains `-C * sum over legal
+   missions of min(p(m), F)`. It pushes each legal mission up to share `F`
+   (0.03) and no further, so unlike an entropy bonus it cannot flatten the
+   head; its weight falls linearly to 0 by iteration `N` (120 of 200), so
+   the last 80 iterations are judged on reward and KL alone. A mission that
+   does not win games sinks back.
+
+Logged per iteration: each mission's sampled share on handed rows.
+Python tests: the smoothed reference gives every legal mission at least
+`E / legal` and none to illegal ones; the bonus's gradient is zero for a
+mission already above `F`.
+
+Run (Mac mini, about 3.5 hours): from the agent t191 promotes, with its
+flags plus `--mission-smooth 0.05 --mission-bonus 0.02 --mission-floor 0.03
+--mission-until 120`, 200 iterations, `--families strike` (convoys stay with
+the ferry).
+
+Gate, as t191: paired `behaviour_report` against the promoted agent (1,024
+maps from 100000, 60 and 100 years) inside the bar or better; Blitz,
+Salvage and Patrol each ordered greedily at least once a game on average
+(the others counted, not required); the exploit check clean; export 0
+mismatches. Stop rule: this run and one variant (`E = 0.1`, or the bonus
+until 160); if Blitz is still unused, bring the owner the evidence and the
+option of an executor rule for Blitz, as Unload went to the ferry.
+
 ### t192
 
 Name the weakness the exploiter found.
