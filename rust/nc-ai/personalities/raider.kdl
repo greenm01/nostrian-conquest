@@ -32,6 +32,7 @@ doctrine {
     forward-muster #true
     pickets #false
     ferry #false
+    blitz #false
 }
 // Tuning keeps the style: destroyers preferred, short odds, early-ish war.
 bounds {

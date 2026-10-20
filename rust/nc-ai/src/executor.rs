@@ -158,6 +158,11 @@ pub struct Doctrine {
     /// colony's armies are only those it builds, and transports carry
     /// armies only to invasions.
     pub ferry: bool,
+    /// Blitz rather than invade a world whose batteries are known to be gone
+    /// (t207): a blitz keeps 85-100% of its production in proportion to how
+    /// well the landing goes, where an invasion keeps 20-40%. The troops
+    /// needed are the same. Off, such worlds are invaded.
+    pub blitz: bool,
 }
 
 impl Doctrine {
@@ -179,6 +184,7 @@ impl Doctrine {
             "forward_muster" => &mut self.forward_muster,
             "pickets" => &mut self.pickets,
             "ferry" => &mut self.ferry,
+            "blitz" => &mut self.blitz,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -201,6 +207,7 @@ impl Doctrine {
         forward_muster: true,
         pickets: false,
         ferry: true,
+        blitz: false,
     };
 }
 
@@ -278,6 +285,7 @@ impl Weights {
             forward_muster: false,
             pickets: false,
             ferry: false,
+            blitz: false,
         },
     };
 
@@ -1543,7 +1551,7 @@ fn plan_fleets(
             {
                 // One year of bombardment softens the target; then land.
                 if enough_troops(fleet, intel)
-                    && let Some(choice) = order(Order::InvadeWorld, idx)
+                    && let Some(choice) = order(landing(weights, intel), idx)
                 {
                     return choice;
                 }
@@ -1626,6 +1634,16 @@ fn plan_fleets(
 fn enough_troops(fleet: &Fleet, intel: &PlanetIntelSnapshot) -> bool {
     let armies = intel.known_armies.map_or(UNKNOWN_ARMIES, f32::from);
     f32::from(fleet.ships.loaded_transports) >= 2.0 * armies + 1.0
+}
+
+/// How a strike force with enough troops lands: a blitz once the world's
+/// batteries are known to be gone, under the blitz doctrine; else invasion.
+fn landing(weights: &Weights, intel: &PlanetIntelSnapshot) -> Order {
+    if weights.doctrine.blitz && !batteries_standing(intel) {
+        Order::BlitzWorld
+    } else {
+        Order::InvadeWorld
+    }
 }
 
 /// The world's batteries are known to stand, or not known to be gone.
@@ -1867,7 +1885,7 @@ fn strike(
     let invade = enough_troops(fleet, intel)
         && !(weights.doctrine.suppress_first && batteries_standing(intel));
     let mission = mission_choice(if invade {
-        Order::InvadeWorld
+        landing(weights, intel)
     } else {
         Order::BombardWorld
     });

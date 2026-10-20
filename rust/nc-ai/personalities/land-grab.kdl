@@ -35,6 +35,7 @@ doctrine {
     forward-muster #true
     pickets #false
     ferry #true
+    blitz #false
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {
