@@ -2262,6 +2262,25 @@ and 120 taught unloads. Run: from t191-orders snapshot 200, `--teach-ferry
 1.0 --teach-until 120`, the free-head bonus fading on the same schedule,
 200 iterations (`~/.local/state/nostrian-conquest/ai/t191-ferry/`).
 
+**t191-ferry fails the gate (2026-10-19).** Sampled unloads held at about
+0.4% of eligible rows after the teacher term faded at iteration 120; the
+executor eval rose to 0.463 at iteration 200 (t191-orders: 0.402). Snapshot
+200 exports with 0 mismatches. Paired `behaviour_report`, 1,024 maps from
+100000, land-grab seat against three executors (ferry now on in CURRENT, so
+these numbers differ from the t191-orders gate above):
+
+| Agent | Win share 60 / 100 y | Paired vs promoted 60 / 100 y | Greedy joins / unloads a game, 60 / 100 y |
+| --- | --- | --- | --- |
+| promoted `fleet-final` | 0.506 / 0.735 | - | 0 / 0 |
+| t191-orders snapshot 200 | 0.544 / 0.763 | +0.038 +/- 0.019 / +0.027 +/- 0.018 | 71 / 319, 0 unloads |
+| t191-ferry snapshot 200 | 0.493 / 0.657 | -0.014 +/- 0.020 / -0.078 +/- 0.018 | 265 / 898, 0 unloads |
+
+It loses strength and makes no greedy unloads: the unload head's
+probability stays under one half, so greedy play never fires it. Joins
+roughly tripled. Under the stop rule this was the one variant; t191-orders
+snapshot 200 remains the candidate (exploit check pending on bean-void), and
+Unload is taken back to the owner.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.
