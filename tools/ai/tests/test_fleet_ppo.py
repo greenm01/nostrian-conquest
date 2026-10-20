@@ -9,7 +9,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fleet_ppo import act_entropy  # noqa: E402
+from fleet_ppo import act_entropy, categorical_kl, coverage, smoothed_kl  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -28,6 +28,55 @@ class ActEntropyTest(unittest.TestCase):
             logits=torch.tensor([0.0, float("-inf"), float("-inf")]))
         self.assertLess(float(act_entropy(only_none)), 1e-4)
 
+
+
+def masked(logits):
+    """A categorical over ``logits``, with ``None`` marking an illegal choice."""
+    return torch.distributions.Categorical(
+        logits=torch.tensor([float("-inf") if x is None else x for x in logits]))
+
+
+class MissionSmoothingTest(unittest.TestCase):
+    def test_every_legal_mission_keeps_a_share_of_the_reference(self):
+        # The copy gives the second legal mission almost nothing; blended
+        # with 0.05 spread over three legal choices, it keeps at least 0.05/3.
+        reference = masked([5.0, -12.0, 0.0, None])
+        new = masked([0.0, 0.0, 0.0, None])
+        smooth = 0.05
+        kl = float(smoothed_kl(new, reference, smooth))
+        blended = (1 - smooth) * reference.probs + smooth * torch.tensor([1, 1, 1, 0]) / 3
+        expected = float((new.probs[:3] * (new.probs[:3] / blended[:3]).log()).sum())
+        self.assertAlmostEqual(kl, expected, places=5)
+        self.assertGreater(float(blended[1]), smooth / 3 - 1e-6)
+        self.assertEqual(float(blended[3]), 0.0)
+
+    def test_smoothing_makes_a_rare_mission_cheaper_to_try(self):
+        reference = masked([4.0, -10.0, None])
+        tried = masked([0.0, math.log(0.05 / 0.95), None])
+        self.assertLess(float(smoothed_kl(tried, reference, 0.05)),
+                        float(categorical_kl(tried, reference)) / 2)
+
+    def test_no_smoothing_is_the_plain_kl(self):
+        reference = masked([1.0, -2.0, 0.5, None])
+        new = masked([0.0, 0.3, -1.0, None])
+        self.assertAlmostEqual(float(smoothed_kl(new, reference, 0.0)),
+                               float(categorical_kl(new, reference)), places=5)
+
+
+class CoverageTest(unittest.TestCase):
+    def test_lifts_rare_missions_and_leaves_common_ones(self):
+        logits = torch.tensor([3.0, -6.0, -6.0, float("-inf")], requires_grad=True)
+        dist = torch.distributions.Categorical(logits=logits)
+        coverage(dist, 0.03).backward()
+        # The rare legal missions are pushed up, the illegal one untouched.
+        self.assertGreater(float(logits.grad[1]), 0)
+        self.assertGreater(float(logits.grad[2]), 0)
+        self.assertEqual(float(logits.grad[3]), 0.0)
+
+    def test_no_gradient_once_every_legal_mission_is_above_the_floor(self):
+        logits = torch.tensor([0.0, 0.2, -0.3, float("-inf")], requires_grad=True)
+        coverage(torch.distributions.Categorical(logits=logits), 0.03).backward()
+        self.assertTrue(torch.allclose(logits.grad, torch.zeros(4)))
 
 if __name__ == "__main__":
     unittest.main()

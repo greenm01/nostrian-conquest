@@ -43,6 +43,16 @@ nothing by iteration ``--teach-until``. The executor ferries spare armies
 to threatened colonies; the term shows the learner the orders, and PPO
 keeps them only if they pay.
 
+``--mission-smooth E`` and ``--mission-bonus C`` (t207) open the mission
+head to orders imitation taught away (Blitz, Salvage, Patrol). The KL on
+the mission head is taken against the reference blended with ``E`` of an
+even spread over the row's legal missions (``smoothed_kl``), so trying a
+mission the copy never chose no longer costs more than the reward can
+repay. The coverage bonus ``C`` raises each legal mission toward
+``--mission-floor`` and no further (``coverage``), so it cannot flatten the
+head as an entropy bonus would; ``--mission-until N`` fades it to nothing,
+and a mission kept after that is kept because it wins.
+
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
 ``--resume``, with the run's other options unchanged, continues a run that
@@ -95,6 +105,25 @@ def handed_rows(obs, select, families, rows):
     family = fleet_families(obs["fleets"][select])
     handed = np.isin(family, [FAMILIES.index(f) for f in families]) & obs["fleets_valid"][select]
     return np.pad(handed, ((0, 0), (0, rows - handed.shape[1])))
+
+
+# The mission head's choices: 0 keeps the fleet's orders, then the Rust
+# `nc_ai::MISSIONS` in order.
+MISSION_NAMES = ("keep", "hold", "move", "seek_home", "patrol", "guard_blockade", "bombard",
+                 "invade", "blitz", "view", "scout_sector", "scout_system", "colonize",
+                 "rendezvous", "salvage", "guard_starbase")
+
+
+def mission_shares(steps, handed_rows_n):
+    """Each mission's share of the handed-over rows' sampled choices, to
+    three places; missions never sampled are left out (t207)."""
+    counts = np.zeros(len(MISSION_NAMES))
+    for s in steps:
+        handed = s["handed"].numpy().astype(bool)
+        chosen = s["fleets"]["mission"][:len(handed), :handed.shape[1]].numpy()[handed]
+        counts += np.bincount(chosen, minlength=len(MISSION_NAMES))[:len(MISSION_NAMES)]
+    return {name: round(float(n) / handed_rows_n, 3)
+            for name, n in zip(MISSION_NAMES, counts) if n}
 
 
 # The fleet heads `--teach-ferry` teaches.
@@ -367,9 +396,29 @@ def categorical_kl(p, q):
     return (p.probs * diff).sum(-1)
 
 
-def kl_to(new, old, handed, free=()):
+def smoothed_kl(p, q, smooth):
+    """KL(p || q'), where q' is ``q`` blended with ``smooth`` of an even
+    spread over the choices ``p`` can take (t207): every legal choice keeps
+    at least ``smooth / legal`` in the reference."""
+    can = p.probs > 0
+    legal = can.sum(-1, keepdim=True).clamp_min(1)
+    blended = (1 - smooth) * q.probs + smooth * can / legal
+    zero = torch.zeros_like(p.logits)
+    log_ratio = torch.where(can, p.logits - blended.clamp_min(1e-12).log(), zero)
+    return (p.probs * log_ratio).sum(-1)
+
+
+def coverage(dist, floor):
+    """Each legal choice's probability, counted up to ``floor`` (t207). Its
+    gradient is zero for a choice already above ``floor``."""
+    return (torch.minimum(dist.probs, torch.full_like(dist.probs, floor))
+            * (dist.probs > 0)).sum(-1)
+
+
+def kl_to(new, old, handed, free=(), mission_smooth=0.0):
     """KL(new || old) per seat: the goal heads, plus the fleet heads of the
-    handed-over rows, except the ``free`` ones."""
+    handed-over rows, except the ``free`` ones; the mission head against a
+    smoothed reference when ``mission_smooth`` is set."""
     total = 0
     for name in HEADS:
         kl = categorical_kl(new[0][name], old[0][name])
@@ -377,7 +426,11 @@ def kl_to(new, old, handed, free=()):
     for name in FLEET_HEADS:
         if name in free:
             continue
-        total = total + (categorical_kl(new[1][name], old[1][name]) * handed).sum(-1)
+        if name == "mission" and mission_smooth > 0:
+            kl = smoothed_kl(new[1][name], old[1][name], mission_smooth)
+        else:
+            kl = categorical_kl(new[1][name], old[1][name])
+        total = total + (kl * handed).sum(-1)
     return total
 
 
@@ -391,7 +444,8 @@ def act_entropy(dist):
     return -(none * none.log() + (1 - none) * (1 - none).log())
 
 
-def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, args, dev):
+def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, mission_coef,
+           args, dev):
     keys = steps[0]["batch"].keys()
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
     rows = batch["fleets"].shape[1]
@@ -430,12 +484,16 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, a
             policy_loss = -torch.min(ratio * a, ratio.clamp(1 - args.clip, 1 + args.clip) * a).mean()
             value_loss = (value - ret[idx].to(dev)).pow(2).mean()
             kl_ref = kl_to((goal_dists, fleet_dists), (ref_goal_dists, ref_fleet_dists),
-                           mb_handed, args.free_heads).mean()
+                           mb_handed, args.free_heads, args.mission_smooth).mean()
             ent = (entropy * mb_handed).sum(-1).mean() + policy.joint_entropy(goal_dists).mean()
             free_ent = sum(((act_entropy(fleet_dists[name]) * mb_handed).sum(-1).mean()
                             for name in args.free_heads), torch.zeros((), device=dev))
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
                     - args.entropy_coef * ent - free_coef * free_ent)
+            if mission_coef > 0:
+                covered = (coverage(fleet_dists["mission"], args.mission_floor)
+                           * mb_handed).sum(-1).mean()
+                loss = loss - mission_coef * covered
             if teach:
                 width = mb["fleets"].shape[1] - rows
                 mb_labels = {k: torch.nn.functional.pad(v[idx], (0, width)).to(dev)
@@ -493,6 +551,15 @@ def main():
                         help="weight of the executor's orders on transport fleets (t191)")
     parser.add_argument("--teach-until", type=int, default=0,
                         help="fade --teach-ferry to 0 by this iteration; 0 never fades it")
+    parser.add_argument("--mission-smooth", type=float, default=0.0,
+                        help="blend the mission head's KL reference with this much of an "
+                             "even spread over legal missions (t207)")
+    parser.add_argument("--mission-bonus", type=float, default=0.0,
+                        help="weight of the coverage bonus on legal missions (t207)")
+    parser.add_argument("--mission-floor", type=float, default=0.03,
+                        help="the coverage bonus lifts each legal mission to this share")
+    parser.add_argument("--mission-until", type=int, default=0,
+                        help="fade --mission-bonus to 0 by this iteration; 0 never fades it")
     parser.add_argument("--reset-new-heads", action="store_true",
                         help="start the join and unload heads at none again (t191)")
     parser.add_argument("--league", action="store_true",
@@ -559,6 +626,8 @@ def main():
                                          if args.free_entropy_until else 1.0)
         teach_coef = args.teach_ferry * (max(0.0, 1 - (it - 1) / args.teach_until)
                                          if args.teach_until else 1.0)
+        mission_coef = args.mission_bonus * (max(0.0, 1 - (it - 1) / args.mission_until)
+                                             if args.mission_until else 1.0)
         drawn = choose_lineups(rng, args.games, learner,
                                learner_name(families) if target else None, league)
         names, roles = drawn[:2]
@@ -583,7 +652,7 @@ def main():
         played = time.perf_counter() - started
         (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
                                       advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
-                                      teach_coef, args, dev)
+                                      teach_coef, mission_coef, args, dev)
         wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an
@@ -596,6 +665,9 @@ def main():
                    value_loss=vl, kl_ref=kl, entropy=ent, join=rate("join"),
                    unload=rate("unload"), play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)
+        if args.mission_smooth > 0 or args.mission_bonus > 0:
+            row["mission_coef"] = mission_coef
+            row["missions"] = mission_shares(steps, handed_rows_n)
         if teach_coef > 0:
             # Convoy rows the teacher saw, and those it said to unload.
             row["convoys"] = int(sum(int(s["convoy"].sum()) for s in steps))
