@@ -161,7 +161,8 @@ pub struct Doctrine {
     /// Blitz rather than invade a world whose batteries are known to be gone
     /// (t207): a blitz keeps 85-100% of its production in proportion to how
     /// well the landing goes, where an invasion keeps 20-40%. The troops
-    /// needed are the same. Off, such worlds are invaded.
+    /// needed are the same (accepted: neutral to slightly better at 60 and
+    /// 100 years). Off, such worlds are invaded.
     pub blitz: bool,
 }
 
@@ -207,7 +208,7 @@ impl Doctrine {
         forward_muster: true,
         pickets: false,
         ferry: true,
-        blitz: false,
+        blitz: true,
     };
 }
 
@@ -1712,6 +1713,33 @@ pub fn network_joins(game_data: &CoreGameData, masks: &mut SeatMasks, families: 
     for mask in &mut masks.fleets {
         for (host, &allowed) in ordered.iter().enumerate() {
             mask.join[host + 1] &= allowed;
+        }
+    }
+}
+
+/// Hand a hybrid seat's `families` fleets to its network: `network`'s
+/// choices replace the executor's in `action`. Under the blitz doctrine, the
+/// network's invasions of worlds whose batteries are known gone land as
+/// blitzes, as the executor's do (t207).
+pub fn hand_to_network(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    weights: &Weights,
+    families: Families,
+    action: &mut SeatAction,
+    network: &[FleetChoice],
+) {
+    for (choice, mine) in action.fleets.iter_mut().zip(network) {
+        if !families.contains(fleet_family(&game_data.fleets[choice.record - 1])) {
+            continue;
+        }
+        *choice = *mine;
+        if choice.mission > 0
+            && MISSIONS[choice.mission - 1] == Order::InvadeWorld
+            && let Some(intel) = memory.planet_intel.get(&(choice.target + 1))
+            && landing(weights, intel) == Order::BlitzWorld
+        {
+            choice.mission = mission_choice(Order::BlitzWorld);
         }
     }
 }

@@ -10,6 +10,9 @@
 //!
 //! A model given as `A.onnx+convoy` also orders its convoys (transports
 //! without warships), which the executor's ferry orders otherwise (t191).
+//! A model given as `A.onnx@STYLE` plays that style (a name or a `.kdl`
+//! file) in place of `--style`, so two styles can be paired on the same
+//! maps (t207).
 //!
 //! Each model plays one seat against three tuned executors on the same
 //! maps, the seat rotated game by game, greedy. One column per model.
@@ -84,13 +87,18 @@ fn main() {
             .position(|arg| arg == name)
             .map(|idx| args[idx + 1].clone())
     };
-    let models: Vec<(PathBuf, bool)> = args
+    let models: Vec<(PathBuf, bool, Option<String>)> = args
         .iter()
-        .enumerate()
-        .take_while(|(_, arg)| !arg.starts_with("--"))
-        .map(|(_, arg)| match arg.strip_suffix("+convoy") {
-            Some(path) => (PathBuf::from(path), true),
-            None => (PathBuf::from(arg), false),
+        .take_while(|arg| !arg.starts_with("--"))
+        .map(|arg| {
+            let (arg, style) = match arg.split_once('@') {
+                Some((model, style)) => (model, Some(style.to_string())),
+                None => (arg.as_str(), None),
+            };
+            match arg.strip_suffix("+convoy") {
+                Some(path) => (PathBuf::from(path), true, style),
+                None => (PathBuf::from(arg), false, style),
+            }
         })
         .collect();
     let games: u64 = arg("--games").map_or(256, |n| n.parse().expect("--games"));
@@ -223,12 +231,12 @@ fn main() {
 
     let results: Vec<Vec<Game>> = models
         .iter()
-        .map(|(model, convoy)| {
+        .map(|(model, convoy, own)| {
             run(
                 model,
                 *convoy,
                 opponents.as_ref(),
-                &style,
+                own.as_ref().unwrap_or(&style),
                 games,
                 years,
                 first,
@@ -241,13 +249,14 @@ fn main() {
         .map_or_else(|| "executors".to_string(), |path| short(path));
     println!("{games} games, {years} years, one network seat ({style}) against three {against}\n");
     print!("{:<36}", "");
-    for (model, convoy) in &models {
-        let name = short(model);
-        let name = if *convoy {
-            format!("{name}+convoy")
-        } else {
-            name
-        };
+    for (model, convoy, own) in &models {
+        let mut name = short(model);
+        if *convoy {
+            name.push_str("+convoy");
+        }
+        if let Some(own) = own {
+            name = format!("{name}@{}", short(&PathBuf::from(own)));
+        }
         print!("{:>16}", name);
     }
     println!();

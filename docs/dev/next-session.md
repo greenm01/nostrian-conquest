@@ -73,11 +73,13 @@ details are in the plans' result sections.
   retrained on mixed fleets and promoted: 0.725 at 100 years against the
   old agent's 0.192 with mixed builds. Main's AI may ship again; the live
   stack carries beta.4. See the AI plan's t189 and t191 sections.
-- **Next (t207, running 2026-10-20).** Open the mission head: a smoothed
-  mission KL reference and a capped coverage bonus fading by iteration 120
-  (`~/.local/state/nostrian-conquest/ai/t207-missions/`). Gate: strength
-  against the promoted agent, Blitz, Salvage and Patrol each greedily at
-  least once a game, exploit check, export.
+- **Next (t207, 2026-10-20).** Opening the mission head by RL failed
+  (rare missions never win the greedy argmax). The owner chose executor
+  rules first. Blitz is adopted: strikes blitz worlds whose batteries are
+  known gone, in executor seats and, by converting the network's Invade,
+  in agent seats (neutral in both). A Salvage rule (scrap spent ETACs)
+  lost slightly at 100 years and was dropped. The RL variant waits. See the
+  AI plan's t207 section.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'

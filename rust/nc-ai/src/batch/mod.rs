@@ -41,7 +41,9 @@ use crate::action::{
 use crate::arena::{
     MatchResult, SeatPolicy, SplitMix, aggressor_choices, executor_turn, match_result, seated_game,
 };
-use crate::executor::{Families, Weights, execute_goals, fleet_family, network_joins, plan_goals};
+use crate::executor::{
+    Families, Weights, execute_goals, fleet_family, hand_to_network, network_joins, plan_goals,
+};
 use crate::game::SeatedGame;
 use crate::goals::{GoalMasks, Goals, goal_masks};
 use crate::observe::{
@@ -883,12 +885,7 @@ impl Slot {
                 let memory = &self.game.seats[seat];
                 let mut action =
                     execute_goals(game_data, memory, &self.masks[seat], &weights, goals);
-                for (choice, mine) in action.fleets.iter_mut().zip(network) {
-                    let fleet = &game_data.fleets[choice.record - 1];
-                    if families.contains(fleet_family(fleet)) {
-                        *choice = *mine;
-                    }
-                }
+                hand_to_network(game_data, memory, &weights, families, &mut action, network);
                 decode_action(game_data, empire, &action).submission
             }
             (Seat::Scripted(SeatPolicy::Aggressor), _) => {

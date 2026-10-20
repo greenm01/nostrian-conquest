@@ -2478,6 +2478,36 @@ blitzes a game; with the switch, 9.3 blitzes and 1.2 invasions. The rule
 fires on most landings and does not lose; it does not reach agent seats,
 whose strike orders come from the network.
 
+**Blitz adopted (owner, 2026-10-20).** On in `Doctrine::CURRENT` and the
+land-grab style. Agent seats reach it through `hand_to_network`: when the
+network's chosen mission is Invade and the seat's doctrine would blitz the
+target, the seat orders Blitz; training (`nc-ai/src/batch`) and play
+(`nc-ai-onnx`) share it. Test: handing the executor's own blitz-off plan to
+the network under the blitz doctrine gives back the blitz-on plan.
+`behaviour_report` takes `A.onnx@STYLE` per column for the pairing.
+Promoted agent with land-grab against the same with blitz off, 1,024 maps
+from 100000: -0.009 +/- 0.018 at 60 years (0.527 against 0.536), +0.011
++/- 0.016 at 100 (0.737 against 0.727); invasions 15.9 / 33.7 a game
+become 15.3 / 32.6 blitzes. Neutral: the agent was trained to invade, and
+the landing order changes only what a capture keeps. The seat fixtures
+were re-recorded (their executors now blitz); the ferry test plays four
+maps, since its first two no longer ferry.
+
+**Salvage rule, rejected (2026-10-20).** Crippled hulls were left out:
+cripples mend on their own, so scrapping one trades a ship for half its
+cost. The rule tried instead: once no known world is colonizable (the land
+grab is over), an ETAC fleet without warships salvages at the nearest owned
+world, 10 points an ETAC. It fired on about 2.2 ETACs a game, and ETAC
+builds did not change (0.42% of build points either way), so there was no
+build-and-scrap loop. Paired `executor_matches`, land-grab against
+land-grab with `--with salvage`, 1,024 games each: maps from 1500000,
++0.025 +/- 0.009 at 60 years and -0.025 +/- 0.011 at 100; maps from
+2500000, -0.018 +/- 0.009 and -0.014 +/- 0.011. Pooled, +0.004 +/- 0.006
+at 60 and -0.020 +/- 0.008 at 100: a small loss in long games, likely
+because idle ETAC fleets still watch and soak up fire. It fails "doesn't
+lose", so the switch was not kept in `Doctrine`; the patch is in the
+private `t207-blitz/` run directory.
+
 ### t192
 
 Name the weakness the exploiter found.

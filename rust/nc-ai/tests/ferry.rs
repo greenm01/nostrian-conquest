@@ -20,7 +20,7 @@ fn ferries_unload_armies_at_the_seats_colonies() {
         ..Weights::TUNED
     };
     let mut unloads = 0;
-    for map_seed in 0..2 {
+    for map_seed in 0..4 {
         let mut game = seated_game(PLAYERS, map_seed);
         let start_year = game.play.built.game_data.conquest.game_year;
         for _ in 0..60 {

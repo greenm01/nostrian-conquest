@@ -25,7 +25,7 @@ use std::path::Path;
 use nc_ai::{
     DETACH_CHOICES, DIPLOMACY_CHOICES, Families, FleetChoice, GoalMasks, Goals, MISSION_CHOICES,
     Observation, Personality, ROE_CHOICES, SPEED_CHOICES, SeatMasks, SeatMemory, WAYPOINT_CHOICES,
-    decode_action, execute_goals, fleet_family, goal_masks, network_joins, observe, seat_masks,
+    decode_action, execute_goals, goal_masks, hand_to_network, network_joins, observe, seat_masks,
 };
 use nc_data::{CoreGameData, TurnSubmission};
 use tract_onnx::prelude::*;
@@ -103,12 +103,14 @@ impl NetworkSeat {
             &self.style.weights,
             &chosen.goals,
         );
-        for (choice, mine) in action.fleets.iter_mut().zip(&chosen.fleets) {
-            let fleet = &game_data.fleets[choice.record - 1];
-            if self.families.contains(fleet_family(fleet)) {
-                *choice = *mine;
-            }
-        }
+        hand_to_network(
+            game_data,
+            memory,
+            &self.style.weights,
+            self.families,
+            &mut action,
+            &chosen.fleets,
+        );
         Ok(decode_action(game_data, empire, &action).submission)
     }
 
