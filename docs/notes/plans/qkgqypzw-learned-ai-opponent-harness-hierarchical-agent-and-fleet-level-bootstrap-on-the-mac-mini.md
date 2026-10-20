@@ -2281,6 +2281,27 @@ roughly tripled. Under the stop rule this was the one variant; t191-orders
 snapshot 200 remains the candidate (exploit check pending on bean-void), and
 Unload is taken back to the owner.
 
+**Convoys go to the executor's ferry (owner, 2026-10-19).** `Family::Convoy`
+(transports without warships, no ETACs) is a fourth family; no agent seat
+hands it to the network (`AGENT_FAMILIES`, `behaviour_report`), so the
+ferry orders convoys and the network keeps warships and joins. Python's
+`fleet_families` mirrors it (3 convoy), so `--families strike` no longer
+hands convoy rows to the learner. The seat fixtures' games were re-recorded
+with their networks unchanged. `behaviour_report` takes `A.onnx+convoy` to
+hand a model its convoys as before, so both can be paired on the same maps:
+
+| Seat, 1,024 maps from 100000 | Paired vs `fleet-final+convoy` 60 / 100 y | Joins / unloads a game, 60 / 100 y |
+| --- | --- | --- |
+| `fleet-final` (baseline today: `fleet-final+convoy`, 0.506 / 0.735) | -0.010 +/- 0.019 / -0.031 +/- 0.018 | 0 / 0 |
+| t191-orders 200+convoy | +0.038 +/- 0.019 / +0.027 +/- 0.018 | 71 / 319, 0 unloads |
+| t191-orders 200, convoys to the ferry | +0.083 +/- 0.020 / +0.051 +/- 0.017 | 48.7 / 298.5, 0.4 / 0.6 unloads |
+
+Handing convoys to the ferry makes the candidate stronger (win share 0.589
+/ 0.786) and gives it unloads, about one game in two. The plan's use
+criterion (greedy joins plus unloads at least one a game) is met; Unload
+alone is under one a game. Remaining for t191: the exploit check on
+snapshot 200, then promotion with the owner's OK.
+
 ### t207
 
 Teach the agent to use every order, and to find new uses for them.
