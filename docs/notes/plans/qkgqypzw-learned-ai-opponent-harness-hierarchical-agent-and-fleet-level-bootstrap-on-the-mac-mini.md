@@ -2462,6 +2462,22 @@ the join head, free of the KL since t191, drifted: sampled joins rose from
 likely most of the strength lost. Not a pass; taken to the owner before
 the one allowed variant.
 
+**Owner's call: executor rules first (2026-10-20).** Script Blitz and
+Salvage in the executor, each behind its own `Doctrine` switch and
+paired-tested as the ferry was; the RL variant waits.
+
+**Blitz switch (2026-10-20).** `Doctrine.blitz`, off everywhere: a strike
+lands with Blitz instead of Invade when the target's batteries are known to
+be gone (`known_ground_batteries == Some(0)`). A blitz keeps 85-100% of
+production times f; an invasion keeps 20-40%. Test: `nc-ai/tests/blitz.rs`.
+Paired `executor_matches`, land-grab against land-grab, 1,024 games from
+map 1500000: +0.009 +/- 0.016 at 60 years (0.269 against 0.260), +0.015
++/- 0.017 at 100 (0.260 against 0.245). `style_stats` (256 games, 60
+years) now counts landings: land-grab orders 10.1 invasions and no
+blitzes a game; with the switch, 9.3 blitzes and 1.2 invasions. The rule
+fires on most landings and does not lose; it does not reach agent seats,
+whose strike orders come from the network.
+
 ### t192
 
 Name the weakness the exploiter found.

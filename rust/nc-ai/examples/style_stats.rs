@@ -10,7 +10,7 @@
 //! on each kind, the mean year of its first declaration of war and of its
 //! first attack, its mean worlds at years 10, 20 and 40, and how much it
 //! ferries armies: fleet-years of transports without warships, and armies
-//! unloaded at its own worlds.
+//! unloaded at its own worlds; and how many blitzes and invasions it orders.
 
 use std::thread;
 
@@ -18,7 +18,7 @@ use nc_ai::{
     PERSONALITIES, Weights, commission_submission, decode_action, executor_turn, match_game,
     personality, personality_or_file, plan_turn, seat_masks,
 };
-use nc_data::{DiplomaticRelation, FleetTurnAction, PlanetTurnAction};
+use nc_data::{DiplomaticRelation, FleetTurnAction, Order, PlanetTurnAction};
 use nc_engine::BUILD_UNITS;
 
 const PLAYERS: u8 = 4;
@@ -41,6 +41,9 @@ struct Stats {
     /// unloaded at the seat's own worlds (t191's ferry).
     convoys: u64,
     unloaded: u64,
+    /// Landing orders given: blitzes and invasions (t207).
+    blitzes: u64,
+    invasions: u64,
 }
 
 impl Stats {
@@ -60,6 +63,8 @@ impl Stats {
         self.covered += other.covered;
         self.convoys += other.convoys;
         self.unloaded += other.unloaded;
+        self.blitzes += other.blitzes;
+        self.invasions += other.invasions;
     }
 }
 
@@ -116,7 +121,7 @@ fn main() {
             "{name}: win share {:.3}; builds {}; first war year {}; first attack year {}; \
              worlds at years 10/20/40 {:.1}/{:.1}/{:.1}; destroyers with a heavy {:.0}% \
              of {:.1} destroyer-years a game; {:.1} convoy fleet-years and {:.1} armies \
-             unloaded a game",
+             unloaded a game; {:.1} blitzes and {:.1} invasions ordered a game",
             stats.wins / stats.games as f32,
             mix.join(", "),
             mean(&stats.war_years),
@@ -128,6 +133,8 @@ fn main() {
             stats.destroyers as f64 / n,
             stats.convoys as f64 / n,
             stats.unloaded as f64 / n,
+            stats.blitzes as f64 / n,
+            stats.invasions as f64 / n,
         );
     }
 }
@@ -198,8 +205,18 @@ fn play(style: Weights, default: Weights, map: u64, years: u16) -> Stats {
             }
             for block in &turn.fleets {
                 for action in &block.actions {
-                    if let FleetTurnAction::UnloadArmies { qty, .. } = action {
-                        stats.unloaded += u64::from(*qty);
+                    match action {
+                        FleetTurnAction::UnloadArmies { qty, .. } => {
+                            stats.unloaded += u64::from(*qty);
+                        }
+                        FleetTurnAction::Order { order_code, .. } => {
+                            match Order::from_code(*order_code) {
+                                Order::BlitzWorld => stats.blitzes += 1,
+                                Order::InvadeWorld => stats.invasions += 1,
+                                _ => {}
+                            }
+                        }
+                        _ => {}
                     }
                 }
             }
