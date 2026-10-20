@@ -2442,6 +2442,26 @@ mismatches. Stop rule: this run and one variant (`E = 0.1`, or the bonus
 until 160); if Blitz is still unused, bring the owner the evidence and the
 option of an executor rule for Blitz, as Unload went to the ferry.
 
+**Step 2, first run fails (2026-10-20).** From the promoted agent with the
+design's flags, 200 iterations (`~/.local/state/nostrian-conquest/ai/t207-missions/`).
+The MPS backend ran out of memory twice (iterations 108 and 123); the run
+resumed from its saves, the second time with `--minibatch 256`. Sampled
+shares of handed rows at iteration 120 (bonus gone) and 200: Patrol 0.5% /
+0.5%, View 0.5% / 0.5%, Salvage 0.1% / 0.3%, Hold 0.2% / 0.4%, Seek Home
+0.2% / 0.4%, Blitz 0 / 0. Executor eval 0.426 at 200. Snapshot 200 exports
+with 0 mismatches. Paired `behaviour_report` against the promoted agent,
+1,024 maps from 100000: win share 0.470 / 0.657 at 60 / 100 years, -0.119
++/- 0.019 / -0.129 +/- 0.018; joins 438 / 1,523 a game (promoted 49 /
+299); greedy Blitz and Salvage 0, the other missions as before.
+
+Two findings. Orders the agent samples at under 1% never win the greedy
+argmax, so greedy play (Hard difficulty) shows none of them; a rare,
+situational order like Blitz must dominate its own rows to appear. And
+the join head, free of the KL since t191, drifted: sampled joins rose from
+0.40 to 0.56-0.60 of rows, and greedy joins multiplied by five, which is
+likely most of the strength lost. Not a pass; taken to the owner before
+the one allowed variant.
+
 ### t192
 
 Name the weakness the exploiter found.
