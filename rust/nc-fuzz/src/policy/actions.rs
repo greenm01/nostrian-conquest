@@ -303,7 +303,7 @@ pub fn build(
     let world = pick_from(choices, &owned_planets(state, empire))?;
     let number = pick_from(choices, kinds)?;
     let unit = BUILD_UNITS.iter().find(|unit| unit.number == number)?;
-    let points_left = state.planet_build_points_left(world).ok()?;
+    let points_left = state.planet_build_points_left_for(world, unit.kind).ok()?;
     let most = points_left / unit.cost;
     if most == 0 {
         return None;

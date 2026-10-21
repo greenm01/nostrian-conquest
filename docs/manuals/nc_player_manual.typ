@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 19),
+  date: datetime(year: 2026, month: 10, day: 21),
 )
 
 #set page(
@@ -74,7 +74,7 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 19, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: October 21, 2026]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.4 — Beta]
 ]
@@ -1011,7 +1011,7 @@ Each planet keeps a build queue, and your *budget* is the only limit on it. You 
 
 Aborting the queue releases the points still unpaid. Points already spent on a part-built unit are not returned.
 
-A planet without a starbase can spend up to its Production, rounded to the nearest point, in one turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). The build screen shows *BUDGET*: your treasury capped by build capacity, minus what you have already committed this turn.
+A planet without a starbase can spend up to its Production, rounded to the nearest point, in one turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). There is one exception: a world with no starbase in orbit or in its stardock may pay for one starbase from its treasury beyond that limit, so a young world can save for its first base. The build screen shows *BUDGET*: your treasury capped by build capacity, minus what you have already committed this turn.
 
 #admonition("NOTE")[A world holds at most 255 armies and 255 ground batteries. An order that would pass either limit waits in the queue and spends nothing until there is room.]
 
@@ -1094,8 +1094,10 @@ intelligence, and the first wars.
 growth at modest tax rates and lets it spend five times its Production in one
 year from its savings. Both bonuses pay most on a world with a long way to
 grow and a treasury to draw on. A world already at its Potential gains only
-the build capacity and the defense. Build the base where you mean to keep it:
-it crawls one sector a year.
+the build capacity and the defense. A world can save for its first base and
+pay for it from its treasury, even when the base costs more than its
+Production. Build the base where you mean to keep it: it crawls one sector a
+year.
 
 *Raise taxes as worlds mature.* A world near its Potential has little growth
 left to lose. Move the rate toward 65% as most of your worlds get there. Held
@@ -1301,6 +1303,14 @@ their fractions. You can spend only its whole points:
 
 A negative treasury is a debt. It stays negative, and later revenue pays it
 down.
+
+*The first starbase.* A world with no starbase in orbit or in its stardock may
+pay for one starbase, 50 points, from its treasury outside its build capacity.
+Without this, a world of Production 30 could never buy the base that would
+raise its capacity. The base still needs the points: a world with 30 whole
+points in its treasury pays 30 this year and the rest later. Other orders
+keep the full build capacity but share what is left of the treasury. A second
+base at the same world follows the standard rules.
 
 The BUDGET field on the build screen shows how many points remain after the
 committed queue entries are subtracted. Maintenance deducts only the build

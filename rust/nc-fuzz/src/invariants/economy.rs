@@ -6,7 +6,9 @@
 
 use std::collections::BTreeSet;
 
-use nc_data::{CoreGameData, InvalidPlayerStateEvent, PlayerMode, stored_production_points};
+use nc_data::{
+    CoreGameData, InvalidPlayerStateEvent, PlayerMode, ProductionItemKind, stored_production_points,
+};
 
 use super::{TurnObservation, Violation};
 
@@ -109,6 +111,10 @@ fn committed_points(state: &CoreGameData, record: usize) -> u32 {
         .sum()
 }
 
+/// The most a world may spend in a turn: its treasury, up to its capacity
+/// plus the cost of a first starbase it may pay for outside the capacity.
 fn budget(state: &CoreGameData, record: usize) -> u32 {
-    state.planet_build_budget(record).unwrap_or(0)
+    state
+        .planet_spend_limits(record)
+        .map_or(0, |limits| limits.points_for(ProductionItemKind::Starbase))
 }

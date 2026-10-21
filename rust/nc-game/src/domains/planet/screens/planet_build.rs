@@ -212,7 +212,7 @@ impl PlanetBuildScreen {
             let restrictions_line = if view.row.has_friendly_starbase {
                 "Standard building restrictions do not apply.".to_string()
             } else {
-                "Standard building restrictions apply.".to_string()
+                "Standard building restrictions apply, except to a first starbase.".to_string()
             };
             buffer.write_text(
                 lower_block_row,

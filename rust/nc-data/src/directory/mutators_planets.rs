@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-    ProductionItemKind, present_production_points, stardock_slot_kind, stored_production_points,
+    Planet, ProductionItemKind, present_production_points, stardock_slot_kind,
+    stored_production_points,
 };
 
 impl CoreGameData {
@@ -188,17 +189,58 @@ impl CoreGameData {
     }
 
     /// Budget still free for new orders this turn: the build budget less the
-    /// points already queued (the build screen's BUDGET).
+    /// points already queued (the build screen's BUDGET). A first starbase
+    /// may go past it; see [`Self::planet_build_points_left_for`].
     pub fn planet_build_points_left(
         &self,
         record_index_1_based: usize,
     ) -> Result<u32, GameStateMutationError> {
-        let budget = self.planet_build_budget(record_index_1_based)?;
-        let record = &self.planets[record_index_1_based - 1];
-        let committed = (0..10)
-            .map(|slot| record.build_queue[slot].points_owed)
-            .sum::<u32>();
-        Ok(budget.saturating_sub(committed))
+        self.planet_build_points_left_for(record_index_1_based, ProductionItemKind::Army)
+    }
+
+    /// Points still free this turn for new orders of `kind`. A world with no
+    /// starbase in orbit or in its stardock may pay for one base from its
+    /// treasury outside its build capacity, so a starbase order may use up to
+    /// a base's cost more than other orders.
+    pub fn planet_build_points_left_for(
+        &self,
+        record_index_1_based: usize,
+        kind: ProductionItemKind,
+    ) -> Result<u32, GameStateMutationError> {
+        Ok(self
+            .planet_spend_left(record_index_1_based)?
+            .points_for(kind))
+    }
+
+    /// The world's spending limits left after the orders already queued.
+    pub fn planet_spend_left(
+        &self,
+        record_index_1_based: usize,
+    ) -> Result<PlanetSpendLimits, GameStateMutationError> {
+        Ok(self
+            .planet_spend_limits(record_index_1_based)?
+            .after_queue(&self.planets[record_index_1_based - 1]))
+    }
+
+    /// What a world may spend this turn: its treasury's whole points, its
+    /// build capacity, and the extra a first starbase may draw from the
+    /// treasury (a base's cost at a world with no base, otherwise 0).
+    pub fn planet_spend_limits(
+        &self,
+        record_index_1_based: usize,
+    ) -> Result<PlanetSpendLimits, GameStateMutationError> {
+        let record = self.planets.get(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
+                index_1_based: record_index_1_based,
+            },
+        )?;
+        let has_base = self.planet_has_friendly_starbase(record.owner.0, record.sector.to_array());
+        Ok(PlanetSpendLimits::new(
+            record,
+            stored_production_points(record),
+            crate::build_capacity(present_production_points(record), has_base),
+            has_base,
+        ))
     }
 
     pub fn append_planet_build_order(
@@ -280,5 +322,55 @@ impl CoreGameData {
             quantity.saturating_mul(cost),
             kind.code(),
         )
+    }
+}
+
+impl PlanetSpendLimits {
+    /// Limits for `planet` with its treasury's whole points, its build
+    /// capacity and whether a base of its owner rests in orbit. The
+    /// first-base allowance is a base's cost at a world with no base in
+    /// orbit or in its stardock.
+    pub fn new(planet: &Planet, treasury: u32, capacity: u16, has_base: bool) -> Self {
+        let first_base = if has_base || planet.stardock.starbases > 0 {
+            0
+        } else {
+            ProductionItemKind::Starbase.build_cost().unwrap_or(0)
+        };
+        Self {
+            treasury,
+            capacity: u32::from(capacity),
+            first_base,
+        }
+    }
+
+    /// The limits left once `planet`'s queued orders are paid.
+    pub fn after_queue(mut self, planet: &Planet) -> Self {
+        for slot in &planet.build_queue {
+            self.spend(slot.kind, slot.points_owed);
+        }
+        self
+    }
+
+    /// The most an order of `kind` may spend.
+    pub fn points_for(&self, kind: ProductionItemKind) -> u32 {
+        let first_base = if kind == ProductionItemKind::Starbase {
+            self.first_base
+        } else {
+            0
+        };
+        self.treasury.min(self.capacity + first_base)
+    }
+
+    /// Take `points` spent on `kind` off the limits; a starbase draws on the
+    /// first-base allowance before the capacity.
+    pub fn spend(&mut self, kind: ProductionItemKind, points: u32) {
+        let exempt = if kind == ProductionItemKind::Starbase {
+            points.min(self.first_base)
+        } else {
+            0
+        };
+        self.first_base -= exempt;
+        self.capacity = self.capacity.saturating_sub(points - exempt);
+        self.treasury = self.treasury.saturating_sub(points);
     }
 }

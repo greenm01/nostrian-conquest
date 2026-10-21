@@ -74,23 +74,16 @@ fn autopilot_keeps_partially_built_orders() {
 }
 
 #[test]
-fn autopilot_finishes_a_multi_turn_starbase_and_commissions_it() {
+fn autopilot_pays_a_first_starbase_past_capacity_and_commissions_it() {
     let mut planet = owned_planet_with_present_production(1, 45, 40, 500, 200, 200);
     planet.sector = Coords::new(7, 7);
     planet.build_queue[0].points_owed = 50;
     planet.build_queue[0].kind = ProductionItemKind::Starbase;
     let mut game = autopilot_game(planet);
 
-    run_maintenance_turn(&mut game).expect("first maintenance should succeed");
-    // 40 of 50 points paid: the starbase is not finished yet.
-    assert_eq!(
-        queued_points(&game.planets[0], ProductionItemKind::Starbase),
-        10
-    );
-    assert_eq!(stardock_starbases(&game.planets[0]), 0);
-    assert_eq!(active_bases_at(&game, 1, [7, 7]), 0);
-
-    run_maintenance_turn(&mut game).expect("second maintenance should succeed");
+    // A world with no base pays its first one from the treasury, past its
+    // capacity of 40.
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
     let planet = &game.planets[0];
     assert_eq!(queued_points(planet, ProductionItemKind::Starbase), 0);
     assert_eq!(stardock_starbases(planet), 0);

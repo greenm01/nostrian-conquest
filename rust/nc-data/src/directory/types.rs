@@ -67,6 +67,15 @@ pub struct CurrentKnownGuardStarbaseLinkageSummary {
     pub selected_base_owner_empire: Option<u8>,
 }
 
+/// A world's spending limits for one turn; see
+/// [`CoreGameData::planet_spend_limits`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlanetSpendLimits {
+    pub treasury: u32,
+    pub capacity: u32,
+    pub first_base: u32,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct EmpireUnitSummary {
     pub destroyers: u32,

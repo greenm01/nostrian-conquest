@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use nc_data::{
     CommissionFleetDraft, CoreGameData, EmpirePlanetEconomyRow, GameStateMutationError, Planet,
-    ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts, stardock_slot_kind,
+    PlanetSpendLimits, ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts,
+    stardock_slot_kind,
 };
 
 use crate::{BUILD_UNITS, build_quantity_from_points, build_unit_spec_by_kind, max_quantity};
@@ -122,10 +123,21 @@ pub fn planet_build_view(
         treasury_left: row
             .stored_production_points
             .saturating_sub(committed_points),
-        points_left: available_points.saturating_sub(committed_points),
+        points_left: row_spend_left(planet, row).points_for(ProductionItemKind::Army),
         building_count: planet_building_unit_count(planet),
         docked_count: planet_docked_unit_count(planet),
     })
+}
+
+/// The row's spending limits left after `planet`'s queued orders.
+fn row_spend_left(planet: &Planet, row: &EmpirePlanetEconomyRow) -> PlanetSpendLimits {
+    PlanetSpendLimits::new(
+        planet,
+        row.stored_production_points,
+        row.build_capacity,
+        row.has_friendly_starbase,
+    )
+    .after_queue(planet)
 }
 
 pub fn planet_build_max_quantity(
@@ -133,11 +145,17 @@ pub fn planet_build_max_quantity(
     row: &EmpirePlanetEconomyRow,
     kind: ProductionItemKind,
 ) -> Result<u32, GameStateMutationError> {
-    let view = planet_build_view(game_data, row)?;
     let Some(unit) = build_unit_spec_by_kind(kind) else {
         return Ok(0);
     };
-    let mut max_qty = max_quantity(view.points_left, unit.cost);
+    let planet = game_data
+        .planets
+        .get(row.planet_record_index_1_based - 1)
+        .ok_or(GameStateMutationError::MissingPlanetRecord {
+            index_1_based: row.planet_record_index_1_based,
+        })?;
+    let points_left = row_spend_left(planet, row).points_for(kind);
+    let mut max_qty = max_quantity(points_left, unit.cost);
     match kind {
         ProductionItemKind::Army => {
             let free = game_data.planet_free_army_capacity(row.planet_record_index_1_based)?;

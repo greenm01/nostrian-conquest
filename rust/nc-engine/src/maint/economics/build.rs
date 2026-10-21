@@ -8,8 +8,9 @@ pub(super) fn process_build_completion(
     let mut planets_with_builds = Vec::new();
 
     for planet_idx in 0..planet_count {
-        // Spending is capped by the planet budget: min(treasury, build capacity).
-        let mut remaining_spend_capacity = game_data.planet_build_budget(planet_idx + 1)?;
+        // Spending is capped by the treasury and the build capacity; a first
+        // starbase may draw its cost from the treasury outside the capacity.
+        let mut limits = game_data.planet_spend_limits(planet_idx + 1)?;
 
         let mut had_builds = false;
         for slot in 0..10 {
@@ -19,13 +20,13 @@ pub(super) fn process_build_completion(
                 continue;
             }
             had_builds = true;
-            if remaining_spend_capacity == 0 {
-                continue;
-            }
 
             let build_kind = game_data.planets[planet_idx].build_queue[slot].kind.code();
             let build_item_kind = ProductionItemKind::from_code(build_kind);
-            let decrement = owed.min(remaining_spend_capacity);
+            let decrement = owed.min(limits.points_for(build_item_kind));
+            if decrement == 0 {
+                continue;
+            }
             let new_owed = owed - decrement;
             let completed_qty = completed_unit_count(build_item_kind, owed, new_owed);
 
@@ -55,7 +56,7 @@ pub(super) fn process_build_completion(
             planet.stored_goods =
                 Real48::from_f64(planet.stored_goods.to_f64() - f64::from(decrement));
             game_data.planets[planet_idx].build_queue[slot].points_owed = new_owed;
-            remaining_spend_capacity = remaining_spend_capacity.saturating_sub(decrement);
+            limits.spend(build_item_kind, decrement);
 
             match build_item_kind {
                 ProductionItemKind::Army => {

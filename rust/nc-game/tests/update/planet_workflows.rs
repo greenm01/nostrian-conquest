@@ -1214,7 +1214,7 @@ fn planet_build_menu_matches_verified_v15_command_layout() {
     );
     assert_eq!(
         terminal.line(14).trim_end(),
-        " Standard building restrictions apply."
+        " Standard building restrictions apply, except to a first starbase."
     );
     assert_eq!(
         terminal.line(15).trim_end(),

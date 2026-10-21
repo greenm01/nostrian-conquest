@@ -48,7 +48,7 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
     );
     assert_eq!(
         buffer.plain_line(14),
-        " Standard building restrictions apply."
+        " Standard building restrictions apply, except to a first starbase."
     );
     assert_eq!(
         buffer.plain_line(15),

@@ -926,9 +926,13 @@ fn defended_builds(
     picket: &mut bool,
 ) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
     let planet = &game_data.planets[record - 1];
-    let mut points = game_data.planet_build_points_left(record).unwrap_or(0);
     let mut builds = [0; BUILD_SLOTS];
     let mut amounts = [0; BUILD_SLOTS];
+    let Ok(mut left) = game_data.planet_spend_left(record) else {
+        return (builds, amounts);
+    };
+    let mut points = left.points_for(ProductionItemKind::Army);
+    let start = points;
     let mut slot = 0;
     let mut order = |kind: ProductionItemKind, units: u32, points: &mut u32| {
         let choice = build_choice(kind);
@@ -966,10 +970,17 @@ fn defended_builds(
     if weights.doctrine.colony_starbases
         && planet.potential_production >= BASE_POTENTIAL
         && planet.stardock.starbases + home_starbases(game_data, planet) == 0
-        && order(ProductionItemKind::Starbase, 1, &mut points) == 0
     {
-        // Save toward the base.
-        return (builds, amounts);
+        // A first base may draw on the treasury past the capacity.
+        left.spend(ProductionItemKind::Army, start - points);
+        let mut base_points = left.points_for(ProductionItemKind::Starbase);
+        let before = base_points;
+        if order(ProductionItemKind::Starbase, 1, &mut base_points) == 0 {
+            // Save toward the base.
+            return (builds, amounts);
+        }
+        left.spend(ProductionItemKind::Starbase, before - base_points);
+        points = left.points_for(ProductionItemKind::Army);
     }
     if *picket && picket_fits(points) && order(ProductionItemKind::Destroyer, 1, &mut points) > 0 {
         *picket = false;

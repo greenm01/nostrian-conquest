@@ -63,6 +63,8 @@ An army can be ordered after pass2 on K10, and after pass1 on K20/50/100. Surfac
 
 A small world can accumulate more goods than its capacity allows it to spend in one order. Approved queue installments do not authorize an order that exceeds its admission budget. Thus a K10 world cannot locally start a15-point cruiser without an eligible base, however much it saves. A commissioned imported base increases capacity fivefold; small-world capital production depends on that deliberate infrastructure choice. It is not fixed by lowering every price. These restrictions and nearest-whole capacity need accurate documentation so a player does not mistake savings for an unrestricted build budget.
 
+**Amended 2026-10-21 (t207), owner decision:** one exception. A world with no starbase in orbit or in its stardock may pay for one starbase (50 points) from its treasury outside its build capacity. The rule above made a small world's first base impossible to build locally, and a base shipped from the homeworld crawls one sector a year. Other orders keep the full capacity but share the treasury that is left; a second base follows the standard rules. The cruiser example above still holds. Code: `CoreGameData::planet_spend_limits` and `planet_build_points_left_for` in `nc-data`, used by turn admission and maintenance; tests in `rust/nc-data/tests/first_starbase.rs`; the player manual's build-capacity sections say the same.
+
 Alternative BB prices expose how large the intervention would be:
 
 | Potential | Order BB30 | Order BB45 | Order BB60 |

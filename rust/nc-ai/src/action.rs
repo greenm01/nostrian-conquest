@@ -303,11 +303,11 @@ fn owned_records(owners: impl Iterator<Item = u8>, empire: u8) -> impl Iterator<
 }
 
 fn planet_mask(game_data: &CoreGameData, record: usize) -> PlanetMask {
-    let points_left = game_data.planet_build_points_left(record).unwrap_or(0);
+    let left = game_data.planet_spend_left(record).ok();
     let mut build = [false; BUILD_CHOICES];
     build[0] = true;
     for (idx, unit) in BUILD_UNITS.iter().enumerate() {
-        build[idx + 1] = points_left >= unit.cost;
+        build[idx + 1] = left.is_some_and(|left| left.points_for(unit.kind) >= unit.cost);
     }
     PlanetMask { record, build }
 }
@@ -496,19 +496,20 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
 
     for choice in &action.planets {
         let mut actions = Vec::new();
-        let mut points_left = game_data
-            .planet_build_points_left(choice.record)
-            .unwrap_or(0);
+        let Ok(mut left) = game_data.planet_spend_left(choice.record) else {
+            continue;
+        };
         for (&build, &amount) in choice.build.iter().zip(&choice.amount) {
             if build == 0 {
                 continue;
             }
             let unit = &BUILD_UNITS[build - 1];
+            let points_left = left.points_for(unit.kind);
             if points_left < unit.cost {
                 continue;
             }
             let points = build_units(points_left, unit.cost, amount) * unit.cost;
-            points_left -= points;
+            left.spend(unit.kind, points);
             actions.push(PlanetTurnAction::Build {
                 points_remaining: points,
                 kind: production_item_kind_code(unit.kind),

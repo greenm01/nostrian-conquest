@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Quick Start Guide",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 19),
+  date: datetime(year: 2026, month: 10, day: 21),
 )
 
 #set page(
@@ -66,7 +66,7 @@
   #text(font: "IBM Plex Sans", size: 13pt, style: "italic", fill: luma(60))[Quick Start Player's Guide] \
   #v(0.2em)
   #text(font: "IBM Plex Sans", size: 9pt, fill: luma(100))[
-    Version 1.0.0-beta.4 • Revision date: October 19, 2026
+    Version 1.0.0-beta.4 • Revision date: October 21, 2026
   ]
   #v(0.8em)
   #line(length: 100%, stroke: 0.5pt + luma(180))
@@ -155,7 +155,7 @@ Colonizing can take several turns. Once the colony is set up, its ETAC can move 
 
 A new colony starts at Production 3, or at its Potential if that is lower. It starts growing and earning revenue at the next maintenance. Your homeworld and every colony pay the same tax rate. A lower rate trades tax revenue now for colony growth across your whole empire. The rate does not change any world's Potential Production.
 
-A commissioned starbase at rest in orbit boosts growth when the tax rate is below 65%. It also lets the world spend up to five times its production from your saved treasury. Extra bases add defense, not more economic bonus. Armies cost 2 points and batteries cost 20. They reach the surface when their builds finish, not when you place the order.
+A commissioned starbase at rest in orbit boosts growth when the tax rate is below 65%. It also lets the world spend up to five times its production from your saved treasury. A world with no base may pay for its first base from its treasury, even when the base costs more than its production. Extra bases add defense, not more economic bonus. Armies cost 2 points and batteries cost 20. They reach the surface when their builds finish, not when you place the order.
 
 #pagebreak()
 

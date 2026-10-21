@@ -67,7 +67,7 @@ pub use directory::{
     EmpirePlanetEconomyRow, EmpireProductionRankingRow, EmpireProductionRankingSort,
     EmpireUnitSummary, FleetDetachResult, FleetDetachSelection, FleetOrderValidationError,
     FleetPlayerInputValidationError, FleetTransferResult, GameStateMutationError,
-    PLANET_BUILD_CURRENT_KNOWN_ORDERS, PlanetPlayerInputValidationError,
+    PLANET_BUILD_CURRENT_KNOWN_ORDERS, PlanetPlayerInputValidationError, PlanetSpendLimits,
     PlayerDiplomacyValidationError, SeekHomeTarget,
 };
 pub use economy::{
