@@ -1,5 +1,5 @@
 use nc_data::CampaignStore;
-use nc_host::admin::{Request, execute};
+use nc_host::admin::{Channel, Request, execute};
 use serde_json::Value;
 
 fn create(root: &std::path::Path, game: &str) -> Value {
@@ -326,15 +326,11 @@ fn announcements_follow_committed_turns_and_survive_retries() {
     let root = temp.path();
     create(root, "one");
     publish(root, "one");
+    let pending = |channel| execute(root, Request::Announcements { channel }).unwrap();
+    let recruiting = pending(Channel::Discord);
+    assert_eq!(recruiting.as_array().unwrap().len(), 1);
+    assert_eq!(recruiting[0]["current"], true);
     start(root, "one");
-    assert_eq!(
-        execute(root, Request::Announcements)
-            .unwrap()
-            .as_array()
-            .unwrap()
-            .len(),
-        1
-    );
     let request = Request::Maintain {
         game: "one".into(),
         expected_year: 3000,
@@ -342,22 +338,32 @@ fn announcements_follow_committed_turns_and_survive_retries() {
     };
     execute(root, request.clone()).unwrap();
     execute(root, request).unwrap();
-    let events = execute(root, Request::Announcements).unwrap();
+    let events = pending(Channel::Discord);
     assert_eq!(events.as_array().unwrap().len(), 2);
+    // Recruitment closed when the game started, so channels skip it.
+    assert_eq!(events[0]["current"], false);
     assert_eq!(events[1]["payload"]["year"], 3001);
+    assert_eq!(events[1]["current"], true);
     let ack = Request::AcknowledgeAnnouncement {
         game: "one".into(),
         id: "turn-1".into(),
+        channel: Channel::Discord,
     };
     execute(root, ack.clone()).unwrap();
     execute(root, ack).unwrap();
-    assert_eq!(
-        execute(root, Request::Announcements)
-            .unwrap()
-            .as_array()
-            .unwrap()
-            .len(),
-        1
+    assert_eq!(pending(Channel::Discord).as_array().unwrap().len(), 1);
+    // Discord's receipt does not hide the turn from Matrix.
+    assert_eq!(pending(Channel::Matrix).as_array().unwrap().len(), 2);
+    assert!(
+        execute(
+            root,
+            Request::AcknowledgeAnnouncement {
+                game: "one".into(),
+                id: "no-such".into(),
+                channel: Channel::Matrix,
+            }
+        )
+        .is_err()
     );
 }
 

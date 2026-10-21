@@ -79,7 +79,7 @@ pub(super) fn create(
                  result TEXT, started_at INTEGER NOT NULL);
              CREATE TABLE web_history(id INTEGER PRIMARY KEY, at INTEGER NOT NULL, operation TEXT NOT NULL, detail TEXT NOT NULL);
              CREATE TABLE web_backups(path TEXT PRIMARY KEY, at INTEGER NOT NULL, kind TEXT NOT NULL);
-             CREATE TABLE web_announcements(id TEXT PRIMARY KEY, payload TEXT NOT NULL, delivered_at INTEGER);"
+             CREATE TABLE web_announcements(id TEXT PRIMARY KEY, payload TEXT NOT NULL);"
         )?;
         store.connection().execute(
             "INSERT INTO game_metadata(id,name,status,created_at,updated_at,players,maintenance_enabled,lobby_visibility)

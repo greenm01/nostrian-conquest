@@ -18,6 +18,10 @@ pub enum Action {
     Reject(String),
     /// Leave a private room the user has left.
     Leave(String),
+    /// Post the game list in the community room.
+    Games,
+    /// Post the command list in the community room.
+    Help,
 }
 
 /// The first sync after start only rebuilds room state, so old messages and
@@ -50,16 +54,19 @@ pub fn plan(rooms: &mut Rooms, sync: &Value, initial: bool) -> Vec<Action> {
                     }
                 }
                 Some("m.room.message") if !initial && sender != rooms.bot => {
-                    let asked = if room == &rooms.community {
-                        event["content"]["body"]
-                            .as_str()
-                            .is_some_and(|body| body.trim().eq_ignore_ascii_case("!login"))
+                    let action = if room == &rooms.community {
+                        let body = event["content"]["body"].as_str().unwrap_or_default();
+                        match body.trim().to_ascii_lowercase().as_str() {
+                            "!login" => Some(Action::Request(sender.into())),
+                            "!games" => Some(Action::Games),
+                            "!help" => Some(Action::Help),
+                            _ => None,
+                        }
                     } else {
-                        rooms.direct.get(sender) == Some(room)
+                        (rooms.direct.get(sender) == Some(room))
+                            .then(|| Action::Request(sender.into()))
                     };
-                    if asked {
-                        actions.push(Action::Request(sender.into()));
-                    }
+                    actions.extend(action);
                 }
                 _ => (),
             }

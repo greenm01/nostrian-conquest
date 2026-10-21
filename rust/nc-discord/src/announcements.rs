@@ -1,5 +1,5 @@
 use crate::{BotData, host};
-use nc_host::admin::Request;
+use nc_host::admin::{Channel, Request};
 use serenity::all::{ChannelId, CreateAllowedMentions, CreateMessage, Http};
 use std::sync::Arc;
 
@@ -20,12 +20,28 @@ pub(crate) async fn run(data: BotData, http: Arc<Http>, channel: u64) {
         return;
     }
     loop {
-        if let Ok(events) = host(&data, Request::Announcements).await {
+        if let Ok(events) = host(
+            &data,
+            Request::Announcements {
+                channel: Channel::Discord,
+            },
+        )
+        .await
+        {
             for event in events.as_array().into_iter().flatten() {
                 let (Some(game), Some(id)) = (event["game"].as_str(), event["id"].as_str()) else {
                     continue;
                 };
                 let payload = &event["payload"];
+                let ack = Request::AcknowledgeAnnouncement {
+                    game: game.into(),
+                    id: id.into(),
+                    channel: Channel::Discord,
+                };
+                if event["current"] != true {
+                    let _ = host(&data, ack).await;
+                    continue;
+                }
                 let join = if payload["invite_required"] == true {
                     "Ask the host for a private code, then use /join with that code."
                 } else {
@@ -57,16 +73,7 @@ pub(crate) async fn run(data: BotData, http: Arc<Http>, channel: u64) {
                     tracing::warn!(game, "Announcement delivery failed; retained for retry");
                     break;
                 }
-                if host(
-                    &data,
-                    Request::AcknowledgeAnnouncement {
-                        game: game.into(),
-                        id: id.into(),
-                    },
-                )
-                .await
-                .is_err()
-                {
+                if host(&data, ack).await.is_err() {
                     tracing::warn!(
                         game,
                         "Announcement sent but receipt failed; retry may duplicate message"

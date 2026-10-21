@@ -3861,6 +3861,7 @@ dependencies = [
  "chrono",
  "clap",
  "nc-data",
+ "nc-host",
  "nc-log",
  "percent-encoding",
  "reqwest",

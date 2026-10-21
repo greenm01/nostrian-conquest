@@ -32,8 +32,9 @@ pending.
   Known Worlds sheets. Individual Text, Csv, Ods and Excel choices remain
   available. The website provides a single Download map ZIP button. Reports remain in the
   game inbox and `/report`; individual map formats remain available through the bot.
-- `nc-matrix run` is the Matrix sign-in bot. It sends one-time sign-in links and
-  codes and has no game commands.
+- `nc-matrix run` is the Matrix bot. It sends one-time sign-in links and
+  codes, answers `!games`, `!help` and `!login` in the community room, and
+  posts the host's announcements there (see [Matrix sign-in](#matrix-sign-in)).
 - `/help` lists commands; `/about` explains the game; `/manuals` links the
   quick-start and player-manual PDFs. `/guide` remains the quick-start shortcut.
   The [welcome post](discord-welcome.md) is pinned and explains private invite codes.
@@ -236,6 +237,16 @@ bot joins `#nostrian-play:matrix.org`, the *play* room inside the community
 space `#nostrian:matrix.org`. Give the bot account a game name, such as
 `ncbot`, never an operator's real name. The site links to the space, and the
 contact page lists the operator's Matrix ID.
+
+In the community room, `!games` lists the recruiting, running and paused games,
+and `!help` lists the commands. Once a minute the bot also posts the host's
+announcements there: a game opening recruitment, and each completed turn with
+the next deadline. Discord and Matrix keep separate delivery records in each
+game's `hosted.db`, so one channel's posts never hide an announcement from the
+other. A channel skips announcements that are no longer true, such as
+recruitment for a game that has started or a turn that a later turn replaced,
+so a bot that was down does not post a backlog. A failed post is retried on
+the next round.
 
 ## Services and browser behavior
 

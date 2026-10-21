@@ -47,6 +47,27 @@ fn login_command_in_community_room_requests_a_code_once() {
 }
 
 #[test]
+fn games_and_help_commands_in_community_room() {
+    let mut rooms = rooms();
+    let sync = joined(
+        LOBBY,
+        vec![],
+        vec![
+            message("@alice:matrix.org", " !GAMES "),
+            message("@bob:example.org", "!games"),
+            message("@bob:example.org", "!help"),
+            message("@carol:example.org", "!games please"),
+            message(BOT, "!help"),
+        ],
+    );
+    assert_eq!(
+        plan(&mut rooms, &sync, false),
+        vec![Action::Games, Action::Help]
+    );
+    assert_eq!(plan(&mut rooms, &sync, true), vec![]);
+}
+
+#[test]
 fn invitation_is_declined_and_its_sender_gets_a_code() {
     let mut rooms = rooms();
     assert_eq!(

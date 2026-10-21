@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "nc-matrix", about = "Matrix sign-in bot for managed NC games")]
+#[command(name = "nc-matrix", about = "Matrix community bot for managed NC games")]
 struct Cli {
     #[command(subcommand)]
     command: Command,

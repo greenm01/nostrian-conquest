@@ -10,6 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 nc-data = { path = "../nc-data" }
+nc-host = { path = "../nc-host" }
 nc-log = { path = "../nc-log" }
 rusqlite = { version = "0.31", features = ["bundled"] }
 chrono = "0.4"

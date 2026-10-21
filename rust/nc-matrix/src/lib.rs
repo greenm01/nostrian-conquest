@@ -1,10 +1,14 @@
-//! Matrix sign-in bot. Players message it, or send `!login` in the community
-//! room; it replies in a private room it creates with a one-time sign-in link
-//! and code. It reads only senders, so encrypted direct messages also work.
+//! Matrix bot. Players message it, or send `!login` in the community room; it
+//! replies in a private room it creates with a one-time sign-in link and code.
+//! It reads only senders, so encrypted direct messages also work. In the
+//! community room it also answers `!games` and `!help` and posts the host's
+//! announcements: recruitment and completed turns.
+pub mod community;
 pub mod sync;
 
 use nc_data::AccountIdentity;
 use nc_data::matrix_login::{self, Issue, Issued};
+use nc_host::admin::{Channel, Request};
 use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -185,6 +189,7 @@ pub async fn run(config: Config) -> Result<(), Error> {
     };
     let mut since: Option<String> = None;
     let mut delay = 1;
+    let mut announced: Option<tokio::time::Instant> = None;
     loop {
         let batch = match client.sync(since.as_deref()).await {
             Ok(batch) => {
@@ -199,7 +204,8 @@ pub async fn run(config: Config) -> Result<(), Error> {
             }
         };
         for action in sync::plan(&mut rooms, &batch, since.is_none()) {
-            if let Err(error) = act(&mut client, &mut rooms, &database, &origin, action).await {
+            let acted = act(&mut client, &mut rooms, &config.games_root, &origin, action).await;
+            if let Err(error) = acted {
                 tracing::warn!(%error, "Matrix action failed");
             }
         }
@@ -224,20 +230,80 @@ pub async fn run(config: Config) -> Result<(), Error> {
                 }
             }
         }
+        if announced.is_none_or(|at| at.elapsed() >= ANNOUNCE_EVERY) {
+            announced = Some(tokio::time::Instant::now());
+            announce(&mut client, &rooms, &config.games_root, &origin).await;
+        }
+    }
+}
+
+const ANNOUNCE_EVERY: Duration = Duration::from_secs(60);
+
+async fn host(root: &Path, request: Request) -> Result<Value, Error> {
+    let root = root.to_owned();
+    tokio::task::spawn_blocking(move || nc_host::admin::execute(&root, request)).await?
+}
+
+/// Posts the host's queued announcements in the community room. Stale ones are
+/// acknowledged unposted; a failed post is kept for the next round.
+async fn announce(client: &mut Client, rooms: &Rooms, root: &Path, origin: &str) {
+    let events = match host(
+        root,
+        Request::Announcements {
+            channel: Channel::Matrix,
+        },
+    )
+    .await
+    {
+        Ok(events) => events,
+        Err(error) => {
+            tracing::warn!(%error, "Matrix announcements unavailable");
+            return;
+        }
+    };
+    for event in events.as_array().into_iter().flatten() {
+        let (Some(game), Some(id)) = (event["game"].as_str(), event["id"].as_str()) else {
+            continue;
+        };
+        let message = community::announcement(event, origin).filter(|_| event["current"] == true);
+        if let Some((body, html)) = message
+            && let Err(error) = client.send(&rooms.community, body, html).await
+        {
+            tracing::warn!(game, %error, "Announcement delivery failed; retained for retry");
+            return;
+        }
+        let ack = Request::AcknowledgeAnnouncement {
+            game: game.into(),
+            id: id.into(),
+            channel: Channel::Matrix,
+        };
+        if let Err(error) = host(root, ack).await {
+            tracing::warn!(game, %error, "Announcement sent but receipt failed; retry may duplicate it");
+            return;
+        }
     }
 }
 
 async fn act(
     client: &mut Client,
     rooms: &mut Rooms,
-    database: &Path,
+    root: &Path,
     origin: &str,
     action: Action,
 ) -> Result<(), Error> {
-    match action {
-        Action::Reject(room) | Action::Leave(room) => client.leave(&room).await,
-        Action::Request(user) => send_code(client, rooms, database, origin, user, false).await,
-    }
+    let database = root.join(".web-sessions.db");
+    let (body, html) = match action {
+        Action::Reject(room) | Action::Leave(room) => return client.leave(&room).await,
+        Action::Request(user) => {
+            return send_code(client, rooms, &database, origin, user, false).await;
+        }
+        Action::Help => community::help(origin),
+        Action::Games => {
+            let catalog = host(root, Request::Catalog).await?;
+            community::games(catalog.as_array().ok_or("invalid catalog")?, origin)
+        }
+    };
+    client.send(&rooms.community, body, html).await
 }
 
 /// Sends a sign-in link and code. A request typed on the games page may name

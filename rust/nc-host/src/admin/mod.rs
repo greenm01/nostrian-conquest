@@ -18,6 +18,14 @@ use serde_json::{Value, json};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
+/// A place the host's announcements are posted; each keeps its own receipts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Channel {
+    Discord,
+    Matrix,
+}
+
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -63,10 +71,13 @@ pub enum Request {
     },
     List,
     Catalog,
-    Announcements,
+    Announcements {
+        channel: Channel,
+    },
     AcknowledgeAnnouncement {
         game: String,
         id: String,
+        channel: Channel,
     },
     Export {
         game: String,
@@ -248,9 +259,9 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
         Request::Membership { game, account } => seats::membership(&root, &game, &account),
         Request::List => campaign::list(&root),
         Request::Catalog => campaign::catalog(&root),
-        Request::Announcements => announcements::pending(&root),
-        Request::AcknowledgeAnnouncement { game, id } => {
-            announcements::acknowledge(&root, &game, &id)
+        Request::Announcements { channel } => announcements::pending(&root, channel),
+        Request::AcknowledgeAnnouncement { game, id, channel } => {
+            announcements::acknowledge(&root, &game, &id, channel)
         }
         Request::Export {
             game,

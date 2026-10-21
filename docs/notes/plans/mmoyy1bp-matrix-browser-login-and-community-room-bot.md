@@ -243,6 +243,31 @@ turns, next deadline) to the community room and answer simple commands such
 as `!games`, mirroring `nc-discord`. Depends on t140 and the Discord
 announcement work in t120.
 
+Done 2026-10-20. In the community room the bot answers `!games` (the host's
+public catalog, one line a game) and `!help`, next to `!login`. Once a minute
+it fetches the host's queued announcements and posts recruitment and completed
+turns, with the next deadline in UTC. Game names are HTML-escaped in the
+formatted body.
+
+The announcement queue used one `delivered_at` per announcement, so a second
+consumer would have missed whatever the first one acknowledged. Deliveries now
+live in `web_announcement_deliveries(id, channel, delivered_at)`, one row per
+channel. The `announcements` and `acknowledge_announcement` admin requests take
+`channel` (`discord` or `matrix`). The table is created on use, so Beta 1's
+existing stores gain it without a migration; new games no longer have the
+`delivered_at` column. Each pending announcement carries `current`: whether it
+still describes the game (recruitment still open, or the announced year is the
+current year). Both bots acknowledge stale ones without posting, so starting
+the Matrix bot on a server with old turns, or restarting a bot after an outage,
+does not post a backlog. Discord's announcements remain off until t211.
+
+Tests: `nc-host/tests/web_admin.rs`
+(`announcements_follow_committed_turns_and_survive_retries`: Discord's receipt
+does not hide a turn from Matrix; stale recruitment is flagged),
+`nc-matrix/tests/sync_plan.rs` (`games_and_help_commands_in_community_room`)
+and `nc-matrix/tests/community_room.rs` (the bot posts a current announcement,
+skips a stale one, answers `!games` and `!help` against a mock homeserver).
+
 ## Connections
 
 - [Discord and Nostr browser identities](8vi3s0k3-discord-and-nostr-browser-identities-with-shared-invite-seats.md)

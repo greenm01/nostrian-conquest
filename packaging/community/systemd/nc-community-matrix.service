@@ -1,5 +1,5 @@
 [Unit]
-Description=Nostrian Conquest Matrix sign-in bot
+Description=Nostrian Conquest Matrix community bot
 After=network-online.target
 Wants=network-online.target
 
