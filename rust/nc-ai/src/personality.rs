@@ -274,6 +274,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 blitz,
                 reinforce,
                 keep_starbase: false,
+                mend_at_base: false,
             },
             ..Weights::from_array(weights)
         },

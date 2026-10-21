@@ -173,6 +173,11 @@ pub struct Doctrine {
     /// scouts, so a weight under one half still keeps a starbase at home
     /// (t207, trial). Off, it rounds and the default style builds none.
     pub keep_starbase: bool,
+    /// Warships at home with crippled ships Guard a Starbase there until
+    /// they mend, so their older cripples recover a turn sooner (t207,
+    /// trial). Off, they gather on Rendezvous in deep space and mend at
+    /// the normal rate.
+    pub mend_at_base: bool,
 }
 
 impl Doctrine {
@@ -197,6 +202,7 @@ impl Doctrine {
             "blitz" => &mut self.blitz,
             "reinforce" => &mut self.reinforce,
             "keep_starbase" => &mut self.keep_starbase,
+            "mend_at_base" => &mut self.mend_at_base,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -222,6 +228,7 @@ impl Doctrine {
         blitz: true,
         reinforce: true,
         keep_starbase: false,
+        mend_at_base: false,
     };
 }
 
@@ -302,6 +309,7 @@ impl Weights {
             blitz: false,
             reinforce: false,
             keep_starbase: false,
+            mend_at_base: false,
         },
     };
 
@@ -1574,6 +1582,15 @@ fn plan_fleets(
                 if enough_troops(fleet, intel)
                     && let Some(choice) = order(landing(weights, intel), idx)
                 {
+                    return choice;
+                }
+            }
+            let damaged = has_combat_ships(fleet) && fleet.crippled.total() > 0;
+            if weights.doctrine.mend_at_base && damaged {
+                if fleet.order == Order::GuardStarbase && fleet.target == fleet.sector {
+                    return keep;
+                }
+                if at_home && let Some(choice) = order(Order::GuardStarbase, home_idx) {
                     return choice;
                 }
             }
