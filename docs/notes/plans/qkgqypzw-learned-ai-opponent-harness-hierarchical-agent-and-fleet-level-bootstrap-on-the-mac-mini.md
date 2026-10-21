@@ -2766,6 +2766,29 @@ fade). If greedy play still uses no new orders or loses strength, bring the
 evidence to the owner before the crunch run rather than tuning further.
 Models stay private; promotion only with the owner's OK.
 
+**Step 2, first results (2026-10-21).** The build head is exported to
+ONNX, and the Rust seat builds when its families hand builds over
+(`tiny-builds` fixture; 0 export mismatches). `build_imitate.py` taught
+promoted `fleet-final`'s build head the executor's builds:
+
+| Build head | Accuracy | Greedy, 60 y | Greedy, 100 y |
+| --- | ---: | ---: | ---: |
+| Linear on the world token | 0.50 | -0.222 +/- 0.020 | -0.369 +/- 0.019 |
+| + global token, goals, hidden layer; factored greedy | 0.53 | -0.143 +/- 0.020 | -0.247 +/- 0.020 |
+
+These come from `behaviour_report`, 1,024 maps from 100000, against
+promoted `fleet-final` without builds. Factored greedy is `greedy_join`'s
+rule: build when building at all is likelier than "none". A plain argmax
+built about 15% too little. Accuracy stays near half because the executor
+fills worlds in turn from one empire-wide stock (ETACs, scouts,
+transports), which a per-world head cannot see. The learner ends with
+fewer worlds: 7.3 at 100 years against 11.9.
+
+Handing over every fleet family at once fell to 0.03 sampled wins at
+iteration 1, against 0.22 for strike only and 0.13 for strike and
+builds. So the Mac mini run (`t207-builds/run.sh`) hands over strike and
+builds only, from the second head.
+
 ### t192
 
 Name the weakness the exploiter found.
