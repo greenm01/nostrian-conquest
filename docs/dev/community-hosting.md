@@ -310,6 +310,18 @@ A synthetic session test does not replace real Discord OAuth or nos2x extension
 acceptance. Validate signed login, signing rejection, switching keys, single-use
 invites across providers, and operator unlink revocation as well.
 
+`tools/community-pilot/pilot.py` automates most of this: real Nostr (and
+Matrix) sign-ins, real doors, the live turn timer, killed turns, backup and
+restore, and a headless-browser pass. It changes only games named
+`pilot-*`, backs up the others first, and archives its own at the end:
+
+```
+uv run tools/community-pilot/pilot.py --local
+uv run tools/community-pilot/pilot.py --remote archvps
+```
+
+It does not cover Discord OAuth or an attended look at the game.
+
 ## Website PDF viewing
 
 The public Manuals page links to `/manuals/nc_quick_start.pdf`,

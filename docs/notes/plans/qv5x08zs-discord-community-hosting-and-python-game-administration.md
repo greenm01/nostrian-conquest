@@ -297,6 +297,58 @@ Attended OAuth/browser/Discord acceptance, server installation and a verified
 off-server backup destination are still
 required before public launch.
 
+## Automated pilot (2026-10-20)
+
+`tools/community-pilot/pilot.py` runs the private two-game pilot end to end,
+against a loopback stack (`--local`) or the live server (`--remote
+archvps`). Players sign in with real NIP-98 Nostr logins from throwaway
+keys (and a spare Matrix account read from the Keychain item
+`nc-pilot-matrix`, when present). Terminals are real doors read through an
+80x25 terminal emulator; a headless browser with an injected NIP-07 signer
+covers the web page. Operator steps send `nc-admin`'s JSON requests to
+`nc-host admin` over SSH as `nccommunity`, and the pilot refuses to change
+any game not named `pilot-*`. It backs up every listed game first, lets the
+live turn timer run the turns, archives its two games, and checks that
+the other games are unchanged.
+
+Live run on archvps, release `7444c586`: 47 passed, 0 failed, Matrix
+skipped (no Keychain item yet). Beta 1 was backed up first
+(`beta-1-1792546044-c0179f24116f99da`) and stayed recruiting at year 3000
+with one seat claimed. Checks:
+
+- Sign-in: three Nostr keys; signed-out map download refused (401).
+- Seats: three players join a 4-seat game; joining again keeps the same
+  seat; a race for the last seat of a 2-seat game has exactly one winner
+  (200/409); a map ZIP is refused without a seat (409).
+- Play: two terminals in one game give orders at the same time (tax 37 and
+  41) and both are saved; screens are 80x25 with no undecodable bytes.
+- Reconnect: access reports the open terminal; a second terminal is
+  refused (409); Reconnect closes the old one; play resumes with orders
+  intact; closed terminals release their seats.
+- Turns: game A's deadline (2 minutes) runs its turn on the live turn timer
+  while B stays at 3000; B's turn runs on its own deadline (4 minutes);
+  both players' orders survive the turn.
+- Pause and resume: a paused game refuses play (terminal 409); resumed, it
+  allows it.
+- Killed turns: `maintain` killed with SIGKILL after 0 to 100 ms, seven
+  times; each turn ran exactly once after a same-ID retry, with no
+  unfinished runs left. Kills landed both before the year was saved and,
+  in the first live run, after it was saved but before the process
+  finished.
+- Backup: created, verified, and restored into an isolated root at the
+  same year.
+- Browser: sign-in through the page, the card shows the seat, the map ZIP
+  downloads, Play reaches the main menu, keys reach the door, the terminal
+  is drawn, and Games returns to the list.
+- Sign-out closes the open terminal; `/api/me` and the terminal then
+  refuse (401). No door processes are left running.
+
+Still needed for t121: Matrix sign-in with the spare account; attended
+Discord OAuth and one play-through by the owner; the announcement channel
+(`NC_DISCORD_CHANNEL_ID`) and a check of its posts; automated off-server
+copies. The throwaway pilot accounts and archived pilot games stay on the
+server.
+
 ## Map downloads and bot onboarding
 
 ### t122
