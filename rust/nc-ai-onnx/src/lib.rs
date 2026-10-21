@@ -11,7 +11,9 @@
 //!
 //! A model exported since t190 also chooses a fleet to join and whether to
 //! unload armies, from four inputs after the others; an older model has
-//! neither, and its fleets never join or unload.
+//! neither, and its fleets never join or unload. A model exported since
+//! t207 also chooses each world's builds, from three inputs after those;
+//! the seat uses them only when its [`Families`] hand builds over.
 //!
 //! Each head chooses the argmax of its masked logits plus noise. Zero noise
 //! plays greedy, the agent's strongest play. Gumbel noise times a
@@ -23,9 +25,10 @@
 use std::path::Path;
 
 use nc_ai::{
-    DETACH_CHOICES, DIPLOMACY_CHOICES, Families, FleetChoice, GoalMasks, Goals, MISSION_CHOICES,
-    Observation, Personality, ROE_CHOICES, SPEED_CHOICES, SeatMasks, SeatMemory, WAYPOINT_CHOICES,
-    decode_action, execute_goals, goal_masks, hand_to_network, network_joins, observe, seat_masks,
+    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DETACH_CHOICES, DIPLOMACY_CHOICES, Families,
+    FleetChoice, GoalMasks, Goals, MISSION_CHOICES, Observation, Personality, PlanetChoice,
+    ROE_CHOICES, SPEED_CHOICES, SeatMasks, SeatMemory, WAYPOINT_CHOICES, decode_action,
+    execute_goals, goal_masks, hand_to_network, network_joins, observe, seat_masks,
 };
 use nc_data::{CoreGameData, TurnSubmission};
 use tract_onnx::prelude::*;
@@ -45,6 +48,8 @@ const ALLOCATIONS: usize = nc_ai::ALLOCATIONS;
 /// Inputs of a graph exported before t190, which has no join or unload
 /// heads.
 const OLD_INPUTS: usize = 30;
+/// Inputs of a graph exported before t207, which has no build heads.
+const JOIN_INPUTS: usize = 34;
 
 type Plan = SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn TypedOp>>>;
 
@@ -55,12 +60,13 @@ pub struct NetworkSeat {
     style: Personality,
 }
 
-/// One seat's choices: its goals, and an order for each fleet row of its
-/// masks.
+/// One seat's choices: its goals, an order for each fleet row of its
+/// masks, and builds for each of its worlds (none from an older graph).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NetworkChoices {
     pub goals: Goals,
     pub fleets: Vec<FleetChoice>,
+    pub planets: Vec<PlanetChoice>,
 }
 
 impl NetworkSeat {
@@ -110,8 +116,7 @@ impl NetworkSeat {
             self.families,
             &mut action,
             &chosen.fleets,
-            // shortcut: the ONNX graph has no build head yet, so the seat never hands builds over; add it with t207 step 2's export.
-            &[],
+            &chosen.planets,
         );
         Ok(decode_action(game_data, empire, &action).submission)
     }
@@ -229,6 +234,28 @@ impl NetworkSeat {
             inputs.push(noise.tensor(&[1, fleets, 1 + fleets]).into());
             inputs.push(noise.tensor(&[1, fleets, 2]).into());
         }
+        let builds = self.plan.model().inputs.len() > JOIN_INPUTS;
+        if builds {
+            // Worlds the seat does not own allow only "no build".
+            let mut mask: Vec<bool> = (0..worlds * BUILD_CHOICES)
+                .map(|idx| idx % BUILD_CHOICES == 0)
+                .collect();
+            for planet in &masks.planets {
+                let at = (planet.record - 1) * BUILD_CHOICES;
+                mask[at..at + BUILD_CHOICES].copy_from_slice(&planet.build);
+            }
+            inputs.push(tensor(&[1, worlds, BUILD_CHOICES], mask).into());
+            inputs.push(
+                noise
+                    .tensor(&[1, worlds, BUILD_SLOTS, BUILD_CHOICES])
+                    .into(),
+            );
+            inputs.push(
+                noise
+                    .tensor(&[1, worlds, BUILD_SLOTS, BUILD_AMOUNT_CHOICES])
+                    .into(),
+            );
+        }
         let outputs = self.plan.run(inputs)?;
         let ints = |idx: usize| -> TractResult<Vec<usize>> {
             Ok(outputs[idx]
@@ -276,7 +303,28 @@ impl NetworkSeat {
                 unload: unload[row] != 0,
             })
             .collect();
-        Ok(NetworkChoices { goals, fleets })
+        let planets = if builds {
+            let (build, amount) = (ints(15)?, ints(16)?);
+            masks
+                .planets
+                .iter()
+                .map(|planet| {
+                    let at = (planet.record - 1) * BUILD_SLOTS;
+                    PlanetChoice {
+                        record: planet.record,
+                        build: std::array::from_fn(|slot| build[at + slot]),
+                        amount: std::array::from_fn(|slot| amount[at + slot]),
+                    }
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        Ok(NetworkChoices {
+            goals,
+            fleets,
+            planets,
+        })
     }
 }
 

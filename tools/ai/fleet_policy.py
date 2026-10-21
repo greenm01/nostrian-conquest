@@ -154,19 +154,22 @@ class FleetAgent(Strategist):
                 head.bias.zero_()
             self.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)[:, 0] = 8.0
 
-    def build_dists(self, batch, worlds):
-        """Per world and slot, ``build`` ``[N, W, S, BUILD_CHOICES]`` masked
-        by the world's build mask, and ``amount`` ``[N, W, S, AMOUNTS]``."""
+    def build_logits(self, batch, worlds):
+        """Per world and slot, ``build`` ``[N, W, S, BUILD_CHOICES]`` logits
+        masked by the world's build mask, and ``amount`` ``[N, W, S,
+        AMOUNTS]``."""
         n = batch["n"]
         worlds = worlds[:n]
         slots = nc_ai_env.BUILD_SLOTS
         build = self.world_build(worlds).unflatten(-1, (slots, -1))
         mask = batch["mask_build"][:n, :, None, :]
         amount = self.world_amount(worlds).unflatten(-1, (slots, -1))
-        return {
-            "build": torch.distributions.Categorical(logits=build.masked_fill(~mask, -torch.inf)),
-            "amount": torch.distributions.Categorical(logits=amount),
-        }
+        return {"build": build.masked_fill(~mask, -torch.inf), "amount": amount}
+
+    def build_dists(self, batch, worlds):
+        """:meth:`build_logits` as distributions."""
+        return {name: torch.distributions.Categorical(logits=logits)
+                for name, logits in self.build_logits(batch, worlds).items()}
 
     def fleet_logits(self, batch, fleets, worlds, goals, mission):
         """Masked fleet-head logits for the real seats; ``mission`` is the

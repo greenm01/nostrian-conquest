@@ -5,6 +5,8 @@
 //! submit seat 1's recorded turn every year. `tiny.onnx` was exported before
 //! the join and unload heads (t190), so it also shows an older graph still
 //! plays; `tiny-joins.onnx` has them, drawn at random, so its fleets join.
+//! `tiny-builds.onnx` also has random build heads (t207), and its seat
+//! hands its builds to the network.
 
 use std::path::Path;
 
@@ -29,20 +31,36 @@ fn commissioning(turn: &TurnSubmission) -> bool {
         })
 }
 
+const STRIKE: Families = Families {
+    strike: true,
+    ..Families::NONE
+};
+
 #[test]
 fn the_rust_seat_makes_the_recorded_turns() {
-    replay("tiny");
+    replay("tiny", STRIKE);
 }
 
 #[test]
 fn a_seat_with_join_heads_makes_the_recorded_turns() {
-    let joins = replay("tiny-joins");
+    let joins = replay("tiny-joins", STRIKE);
     assert!(joins > 0, "the fixture's fleets should join");
 }
 
-/// Replay fixture `name`'s game, checking seat 1's turns; the joins seat 1
-/// ordered.
-fn replay(name: &str) -> usize {
+#[test]
+fn a_seat_that_hands_over_builds_makes_the_recorded_turns() {
+    replay(
+        "tiny-builds",
+        Families {
+            builds: true,
+            ..STRIKE
+        },
+    );
+}
+
+/// Replay fixture `name`'s game with `families` handed over, checking seat
+/// 1's turns; the joins seat 1 ordered.
+fn replay(name: &str, families: Families) -> usize {
     let record: serde_json::Value = serde_json::from_str(
         &std::fs::read_to_string(fixture(&format!("{name}-game.json"))).unwrap(),
     )
@@ -56,10 +74,7 @@ fn replay(name: &str) -> usize {
         .collect();
     let seat = NetworkSeat::load(
         &fixture(&format!("{name}.onnx")),
-        Families {
-            strike: true,
-            ..Families::NONE
-        },
+        families,
         nc_ai::personality("land-grab").unwrap(),
     )
     .expect("the fixture network loads");

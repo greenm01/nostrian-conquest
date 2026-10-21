@@ -10,6 +10,7 @@
 //!
 //! A model given as `A.onnx+convoy` also orders its convoys (transports
 //! without warships), which the executor's ferry orders otherwise (t191).
+//! `A.onnx+builds` also chooses its builds (t207); the suffixes combine.
 //! A model given as `A.onnx@STYLE` plays that style (a name or a `.kdl`
 //! file) in place of `--style`, so two styles can be paired on the same
 //! maps (t207).
@@ -52,6 +53,9 @@ struct Game {
     declared_war: bool,
     defence_points: u64,
     build_points: u64,
+    starbase_points: u64,
+    /// One bit per tax rate the seat set.
+    tax_rates: u128,
     transports_built: u64,
     peak_worlds: u32,
     final_worlds: u32,
@@ -87,7 +91,7 @@ fn main() {
             .position(|arg| arg == name)
             .map(|idx| args[idx + 1].clone())
     };
-    let models: Vec<(PathBuf, bool, Option<String>)> = args
+    let models: Vec<(PathBuf, Families, Option<String>)> = args
         .iter()
         .take_while(|arg| !arg.starts_with("--"))
         .map(|arg| {
@@ -95,10 +99,23 @@ fn main() {
                 Some((model, style)) => (model, Some(style.to_string())),
                 None => (arg.as_str(), None),
             };
-            match arg.strip_suffix("+convoy") {
-                Some(path) => (PathBuf::from(path), true, style),
-                None => (PathBuf::from(arg), false, style),
+            let mut arg = arg;
+            let mut families = Families {
+                strike: true,
+                ..Families::NONE
+            };
+            loop {
+                if let Some(path) = arg.strip_suffix("+convoy") {
+                    families.convoy = true;
+                    arg = path;
+                } else if let Some(path) = arg.strip_suffix("+builds") {
+                    families.builds = true;
+                    arg = path;
+                } else {
+                    break;
+                }
             }
+            (PathBuf::from(arg), families, style)
         })
         .collect();
     let games: u64 = arg("--games").map_or(256, |n| n.parse().expect("--games"));
@@ -163,6 +180,14 @@ fn main() {
             let build: u64 = g.iter().map(|g| g.build_points).sum();
             let defence: u64 = g.iter().map(|g| g.defence_points).sum();
             format!("{:.0}%", 100.0 * defence as f64 / build.max(1) as f64)
+        }),
+        ("starbase share of builds", |g| {
+            let build: u64 = g.iter().map(|g| g.build_points).sum();
+            let starbase: u64 = g.iter().map(|g| g.starbase_points).sum();
+            format!("{:.0}%", 100.0 * starbase as f64 / build.max(1) as f64)
+        }),
+        ("tax rates used a game", |g| {
+            format!("{:.1}", mean(g, |g| f64::from(g.tax_rates.count_ones())))
         }),
         ("transports built", |g| {
             format!("{:.1}", mean(g, |g| g.transports_built as f64))
@@ -231,10 +256,10 @@ fn main() {
 
     let results: Vec<Vec<Game>> = models
         .iter()
-        .map(|(model, convoy, own)| {
+        .map(|(model, families, own)| {
             run(
                 model,
-                *convoy,
+                *families,
                 opponents.as_ref(),
                 own.as_ref().unwrap_or(&style),
                 games,
@@ -249,10 +274,13 @@ fn main() {
         .map_or_else(|| "executors".to_string(), |path| short(path));
     println!("{games} games, {years} years, one network seat ({style}) against three {against}\n");
     print!("{:<36}", "");
-    for (model, convoy, own) in &models {
+    for (model, families, own) in &models {
         let mut name = short(model);
-        if *convoy {
+        if families.convoy {
             name.push_str("+convoy");
+        }
+        if families.builds {
+            name.push_str("+builds");
         }
         if let Some(own) = own {
             name = format!("{name}@{}", short(&PathBuf::from(own)));
@@ -333,7 +361,7 @@ fn mean(games: &[Game], value: impl Fn(&Game) -> f64) -> f64 {
 
 fn run(
     model: &PathBuf,
-    convoy: bool,
+    families: Families,
     opponents: Option<&PathBuf>,
     style: &str,
     games: u64,
@@ -347,16 +375,7 @@ fn run(
             .map(|worker| {
                 let style = style.clone();
                 scope.spawn(move || {
-                    let seat = NetworkSeat::load(
-                        model,
-                        Families {
-                            strike: true,
-                            convoy,
-                            ..Families::NONE
-                        },
-                        style,
-                    )
-                    .expect("the model loads");
+                    let seat = NetworkSeat::load(model, families, style).expect("the model loads");
                     let opponent = opponents.map(|path| {
                         NetworkSeat::load(
                             path,
@@ -396,6 +415,7 @@ fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: 
     ]
     .map(production_item_kind_code);
     let transport = production_item_kind_code(ProductionItemKind::Transport);
+    let starbase = production_item_kind_code(ProductionItemKind::Starbase);
     for _ in 0..years {
         // Network seats commission at the start of the year and the
         // executors at their own turns, as the batch environment has them.
@@ -432,10 +452,11 @@ fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: 
                 .turn(game_data, &game.seats[usize::from(seat) - 1], 0.0, 0)
                 .expect("the network runs");
             out.turns += 1;
-            out.tax_sum += u32::from(
-                turn.tax_rate
-                    .unwrap_or(game_data.players[usize::from(seat) - 1].tax_rate),
-            );
+            let tax = turn
+                .tax_rate
+                .unwrap_or(game_data.players[usize::from(seat) - 1].tax_rate);
+            out.tax_sum += u32::from(tax);
+            out.tax_rates |= 1 << tax;
             out.declared_war |= turn
                 .diplomacy
                 .iter()
@@ -449,6 +470,9 @@ fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: 
                     out.build_points += u64::from(*points_remaining);
                     if defence.contains(kind) {
                         out.defence_points += u64::from(*points_remaining);
+                    }
+                    if *kind == starbase {
+                        out.starbase_points += u64::from(*points_remaining);
                     }
                     if *kind == transport {
                         out.transports_built += u64::from(*points_remaining)
