@@ -2658,6 +2658,23 @@ world with no growth in return. Next: give seats Starbase Command moves, so
 the home world builds bases and sends them to its richest young colonies,
 then retry `growth_tax`.
 
+The owner chose a rule change instead (2026-10-21): a world with no
+starbase in orbit or in its stardock may pay for one base from its own
+treasury past its build capacity ([price decision](../investigations/y95fnqkm-unit-prices-and-opening-resources-under-the-approved-economy.md),
+amended). `colony_starbases` now saves: a colony of Potential 80 or more
+with its garrison met banks its budget until it can order the base. Paired
+against land-grab as adopted, 1,024 maps from 1500000, bean-void:
+
+| Trial | 60 years | 100 years |
+| --- | ---: | ---: |
+| saving `colony_starbases`, before the rule | -0.013 ± 0.017 | -0.009 ± 0.018 |
+| saving `colony_starbases`, with the rule | -0.014 ± 0.017 | -0.002 ± 0.018 |
+| `growth_tax` from `young-tax` 50 | -0.059 ± 0.016 | -0.042 ± 0.017 |
+| the same, with `colony_starbases` | -0.023 ± 0.017 | -0.024 ± 0.017 |
+
+Saving for colony bases now passes "doesn't lose" at both lengths. A low
+young-empire tax still loses, though bases halve the loss.
+
 ### t192
 
 Name the weakness the exploiter found.
