@@ -2679,6 +2679,14 @@ Adopted with the owner's OK (2026-10-21): `colony-starbases` is now a
 personality switch, on in land-grab and `Doctrine::CURRENT`, off in the other
 styles. The ONNX seat fixtures were re-recorded.
 
+Land-grab never guards its bases: its guard posts need the allocation to
+hold a share back, and with `allocate` off it is always 0. The
+`guard_bases` switch (off) sends a warship fleet at rest to Guard a
+Starbase at the nearest threatened world of the seat's with a base and no
+guard, whatever the allocation. Paired as above: -0.016 ± 0.015 at 60
+years, -0.030 ± 0.017 at 100, with 10.5 starbase guards a game (none
+before). Guards cost land-grab warships its strikes need; not adopted.
+
 ### t192
 
 Name the weakness the exploiter found.
