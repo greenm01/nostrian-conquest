@@ -177,6 +177,11 @@ pub struct Doctrine {
     /// builds one before warships, for the base's growth bonus, 5x build
     /// capacity and defence (t207, trial). Off, colonies build no bases.
     pub colony_starbases: bool,
+    /// A world in trouble (threatened, unguarded, and with a budget short
+    /// of the armies and batteries it lacks) scraps the fleets there made
+    /// only of destroyers, ETACs and scouts with Salvage, for the points to
+    /// build its defences (t207, trial; the owner's use). Off, never.
+    pub emergency_salvage: bool,
 }
 
 impl Doctrine {
@@ -202,6 +207,7 @@ impl Doctrine {
             "reinforce" => &mut self.reinforce,
             "keep_starbase" => &mut self.keep_starbase,
             "colony_starbases" => &mut self.colony_starbases,
+            "emergency_salvage" => &mut self.emergency_salvage,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -228,6 +234,7 @@ impl Doctrine {
         reinforce: true,
         keep_starbase: false,
         colony_starbases: false,
+        emergency_salvage: false,
     };
 }
 
@@ -309,6 +316,7 @@ impl Weights {
             reinforce: false,
             keep_starbase: false,
             colony_starbases: false,
+            emergency_salvage: false,
         },
     };
 
@@ -1096,6 +1104,50 @@ fn guarded(game_data: &CoreGameData, empire: u8, sector: [u8; 2]) -> bool {
     })
 }
 
+/// A fleet of nothing but destroyers, ETACs and scouts, the ships worth
+/// scrapping for defences (`Doctrine::emergency_salvage`).
+fn expendable(fleet: &Fleet) -> bool {
+    let ships = &fleet.ships;
+    ships.destroyers + ships.etacs + ships.scouts > 0
+        && ships.cruisers == 0
+        && ships.battleships == 0
+        && ships.loaded_transports == 0
+        && ships.empty_transports == 0
+}
+
+/// World `idx` is under attack (an enemy at war seen in its sector or next
+/// to it within the last year), has no guard of its own, and cannot pay
+/// this year for the armies and batteries it lacks.
+fn in_trouble(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    weights: &Weights,
+    idx: usize,
+    capital: bool,
+) -> bool {
+    let planet = &game_data.planets[idx];
+    let sector = planet.sector.to_array();
+    let year = game_data.conquest.game_year;
+    let attacked = memory.contacts.iter().any(|contact| {
+        contact.empire != 0
+            && contact.empire != memory.empire
+            && at_war_with(game_data, memory.empire, contact.empire)
+            && year.saturating_sub(contact.year) <= 1
+            && distance(contact.coords, sector) < 1.5
+    });
+    if !attacked || guarded(game_data, memory.empire, sector) {
+        return false;
+    }
+    let armies = (army_target(game_data, memory, weights, idx + 1, capital)
+        - f32::from(planet.armies))
+    .max(0.0);
+    let batteries = (weights.batteries - f32::from(planet.ground_batteries)).max(0.0);
+    let cost = |kind: ProductionItemKind| kind.build_cost().unwrap_or(1) as f32;
+    let need = armies * cost(ProductionItemKind::Army)
+        + batteries * cost(ProductionItemKind::GroundBattery);
+    need > game_data.planet_build_points_left(idx + 1).unwrap_or(0) as f32
+}
+
 fn guarding(fleet: &Fleet) -> bool {
     matches!(
         fleet.order,
@@ -1357,6 +1409,15 @@ fn plan_fleets(
                     ..keep
                 })
             };
+            if weights.doctrine.emergency_salvage
+                && expendable(fleet)
+                && let Some(idx) = world_at(game_data, fleet.sector.to_array())
+                && game_data.planets[idx].owner.0 == empire
+                && in_trouble(game_data, memory, weights, idx, Some(idx + 1) == capital)
+                && let Some(choice) = order(Order::Salvage, idx)
+            {
+                return choice;
+            }
 
             if fleet.ships.etacs > 0 {
                 // A colony fleet's job is to arrive, not to fight.

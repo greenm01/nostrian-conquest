@@ -275,6 +275,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 reinforce,
                 keep_starbase: false,
                 colony_starbases: false,
+                emergency_salvage: false,
             },
             ..Weights::from_array(weights)
         },
