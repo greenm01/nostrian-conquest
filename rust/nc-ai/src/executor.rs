@@ -198,6 +198,11 @@ pub struct Doctrine {
     /// threatened world of the empire's that has a base and no guard
     /// (t207, trial; the owner's use). Off, bases get no guard of their own.
     pub guard_bases: bool,
+    /// A warship fleet with crippled ships, at rest or seeking home, guards
+    /// the nearest of the seat's bases until it mends, a turn sooner than
+    /// alone (t207, trial; the owner's use). Off, cripples mend where they
+    /// stand.
+    pub repair_at_bases: bool,
 }
 
 impl Doctrine {
@@ -226,6 +231,7 @@ impl Doctrine {
             "emergency_salvage" => &mut self.emergency_salvage,
             "growth_tax" => &mut self.growth_tax,
             "guard_bases" => &mut self.guard_bases,
+            "repair_at_bases" => &mut self.repair_at_bases,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -255,6 +261,7 @@ impl Doctrine {
         emergency_salvage: false,
         growth_tax: false,
         guard_bases: false,
+        repair_at_bases: false,
     };
 }
 
@@ -342,6 +349,7 @@ impl Weights {
             emergency_salvage: false,
             growth_tax: false,
             guard_bases: false,
+            repair_at_bases: false,
         },
     };
 
@@ -1312,18 +1320,20 @@ fn land_grab(memory: &SeatMemory) -> bool {
         .any(|intel| colonizable(intel, memory.empire))
 }
 
-/// The nearest of the seat's threatened worlds with a base of its own in
-/// orbit (`Doctrine::guard_bases`).
-fn threatened_base(game_data: &CoreGameData, memory: &SeatMemory, fleet: &Fleet) -> Option<usize> {
-    let here = fleet.sector.to_array();
+/// The nearest world of `empire`'s to `here` with one of its bases in
+/// orbit, among those `keep` accepts.
+fn nearest_base(
+    game_data: &CoreGameData,
+    empire: u8,
+    here: [u8; 2],
+    keep: impl Fn(&nc_data::Planet) -> bool,
+) -> Option<usize> {
     game_data
         .planets
         .iter()
         .enumerate()
         .filter(|(_, planet)| {
-            planet.owner.0 == memory.empire
-                && home_starbases(game_data, planet) > 0
-                && threatened(game_data, memory, planet.sector.to_array())
+            planet.owner.0 == empire && home_starbases(game_data, planet) > 0 && keep(planet)
         })
         .min_by(|a, b| {
             distance(a.1.sector.to_array(), here).total_cmp(&distance(b.1.sector.to_array(), here))
@@ -1680,6 +1690,30 @@ fn plan_fleets(
                     }
                 }
             }
+            if weights.doctrine.repair_at_bases && has_combat_ships(fleet) {
+                let mending = !fleet.crippled.is_empty();
+                let target = world_at(game_data, fleet.target.to_array());
+                let at_base = fleet.order == Order::GuardStarbase && target.is_some_and(own_world);
+                if mending && at_base {
+                    return keep;
+                }
+                if mending
+                    && matches!(fleet.order, Order::HoldPosition | Order::SeekHome)
+                    && let Some(idx) = nearest_base(game_data, empire, sector, |_| true)
+                    && let Some(choice) = order(Order::GuardStarbase, idx)
+                {
+                    return choice;
+                }
+                // Mended, the fleet rejoins the reserve unless guards hold.
+                if at_base
+                    && allocation == 0
+                    && !weights.doctrine.guard_bases
+                    && let Some(idx) = target
+                    && let Some(choice) = order(Order::HoldPosition, idx)
+                {
+                    return choice;
+                }
+            }
             // Guards keep station while the allocation holds a share back.
             if allocation >= 1
                 && has_combat_ships(fleet)
@@ -1798,7 +1832,9 @@ fn plan_fleets(
             if weights.doctrine.guard_bases
                 && fleet.order == Order::HoldPosition
                 && has_combat_ships(fleet)
-                && let Some(idx) = threatened_base(game_data, memory, fleet)
+                && let Some(idx) = nearest_base(game_data, empire, sector, |planet| {
+                    threatened(game_data, memory, planet.sector.to_array())
+                })
                 && let Some(choice) = post(idx, game_data.planets[idx].sector.to_array())
             {
                 return choice;

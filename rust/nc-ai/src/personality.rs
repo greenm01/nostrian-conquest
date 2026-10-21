@@ -282,6 +282,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 emergency_salvage: false,
                 growth_tax: false,
                 guard_bases: false,
+                repair_at_bases: false,
             },
             ..Weights::from_array(weights)
         },

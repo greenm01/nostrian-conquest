@@ -1,4 +1,5 @@
-//! Guarding threatened worlds with bases by Guard a Starbase (t207).
+//! Guarding bases by Guard a Starbase: threatened worlds' bases, and bases
+//! that mend crippled ships a turn sooner (t207).
 
 mod common;
 
@@ -8,15 +9,12 @@ use nc_data::Order;
 
 const PLAYERS: u8 = 4;
 
-/// With `guard_bases`, warships guard their own worlds' bases, and the game
-/// accepts every such order.
-#[test]
-fn warships_guard_their_own_bases() {
+/// Play two 60-year games with `doctrine`; count each year's fleets on
+/// Guard a Starbase that `counted` accepts. Every guard is at the guard's
+/// own world and the game accepts every order.
+fn guards(doctrine: Doctrine, counted: impl Fn(&nc_data::Fleet) -> bool) -> u32 {
     let weights = Weights {
-        doctrine: Doctrine {
-            guard_bases: true,
-            ..Doctrine::CURRENT
-        },
+        doctrine,
         ..Weights::TUNED
     };
     let mut guards = 0;
@@ -47,7 +45,7 @@ fn warships_guard_their_own_bases() {
                         .find(|planet| planet.sector == fleet.target)
                         .expect("a guarded base orbits a world");
                     assert_eq!(world.owner, fleet.owner);
-                    guards += 1;
+                    guards += u32::from(counted(fleet));
                 }
             }
             game.run_maintenance().expect("maintenance should run");
@@ -56,5 +54,27 @@ fn warships_guard_their_own_bases() {
             }
         }
     }
-    assert!(guards > 0, "some base should be guarded");
+    guards
+}
+
+#[test]
+fn warships_guard_their_own_bases() {
+    let doctrine = Doctrine {
+        guard_bases: true,
+        ..Doctrine::CURRENT
+    };
+    assert!(
+        guards(doctrine, |_| true) > 0,
+        "some base should be guarded"
+    );
+}
+
+#[test]
+fn crippled_fleets_mend_beside_their_own_bases() {
+    let doctrine = Doctrine {
+        repair_at_bases: true,
+        ..Doctrine::CURRENT
+    };
+    let mending = guards(doctrine, |fleet| !fleet.crippled.is_empty());
+    assert!(mending > 0, "some crippled fleet should mend at a base");
 }
