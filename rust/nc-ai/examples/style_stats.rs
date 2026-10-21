@@ -11,7 +11,7 @@
 //! first attack, its mean worlds at years 10, 20 and 40, and how much it
 //! ferries armies: fleet-years of transports without warships, and armies
 //! unloaded at its own worlds; how many blitzes and invasions it orders; and
-//! how many fleets it orders to join another. `--with` turns on doctrine
+//! how many fleets it orders to join another or to guard a starbase. `--with` turns on doctrine
 //! switches for the measured style.
 
 use std::thread;
@@ -48,6 +48,8 @@ struct Stats {
     invasions: u64,
     /// Join Another Fleet orders given (t207).
     joins: u64,
+    /// Guard a Starbase orders given (t207).
+    guards: u64,
 }
 
 impl Stats {
@@ -70,6 +72,7 @@ impl Stats {
         self.blitzes += other.blitzes;
         self.invasions += other.invasions;
         self.joins += other.joins;
+        self.guards += other.guards;
     }
 }
 
@@ -136,7 +139,7 @@ fn main() {
             "{name}: win share {:.3}; builds {}; first war year {}; first attack year {}; \
              worlds at years 10/20/40 {:.1}/{:.1}/{:.1}; destroyers with a heavy {:.0}% \
              of {:.1} destroyer-years a game; {:.1} convoy fleet-years and {:.1} armies \
-             unloaded a game; {:.1} blitzes and {:.1} invasions ordered a game; {:.1} joins a game",
+             unloaded a game; {:.1} blitzes and {:.1} invasions ordered a game; {:.1} joins and {:.1} starbase guards a game",
             stats.wins / stats.games as f32,
             mix.join(", "),
             mean(&stats.war_years),
@@ -151,6 +154,7 @@ fn main() {
             stats.blitzes as f64 / n,
             stats.invasions as f64 / n,
             stats.joins as f64 / n,
+            stats.guards as f64 / n,
         );
     }
 }
@@ -230,6 +234,7 @@ fn play(style: Weights, default: Weights, map: u64, years: u16) -> Stats {
                             match Order::from_code(*order_code) {
                                 Order::BlitzWorld => stats.blitzes += 1,
                                 Order::InvadeWorld => stats.invasions += 1,
+                                Order::GuardStarbase => stats.guards += 1,
                                 _ => {}
                             }
                         }
