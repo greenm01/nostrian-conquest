@@ -2787,7 +2787,16 @@ fewer worlds: 7.3 at 100 years against 11.9.
 Handing over every fleet family at once fell to 0.03 sampled wins at
 iteration 1, against 0.22 for strike only and 0.13 for strike and
 builds. So the Mac mini run (`t207-builds/run.sh`) hands over strike and
-builds only, from the second head.
+builds only.
+
+**Build as the executor would (owner, 2026-10-21).** Imitation could not
+close the gap, so the build head gained a choice, `BUILD_EXECUTOR`: a world
+whose first slot takes it keeps the executor's builds. The head starts
+there (about 94%), so greedy play equals promoted `fleet-final` exactly
+(paired +0.000 on 96 maps). Sampled play tries other builds at a few worlds
+a year, and the agent keeps those that win. The run starts from
+`fleet-final.pt` with no build imitation; its first sampled win share was
+0.19, against 0.22 for strike only.
 
 ### t192
 
