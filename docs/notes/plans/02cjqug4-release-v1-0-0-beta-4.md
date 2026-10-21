@@ -74,3 +74,14 @@ archives and signed manifest replaced the beta.3 archives on
 assets passed GPG and checksum verification. The website's three manual
 PDFs match the committed beta.4 builds. The download page names no version,
 so it needed no change. Not tested on Windows 7 itself.
+
+## Live update (2026-10-20)
+
+Signed community release `7444c586` built on bean-void (rust 1.98.0),
+tarball SHA-256
+`6cbc5664f9cd04eb5877b91da418b0ed66bb2567845cf4ee5626d4760b1af73c`, went live
+on archvps after an `nc-admin` backup of Beta 1
+(`.backups/beta-1-1792542385-9f174ba0c63f7b94`). It adds Blitz for AI seats
+(t207) and bombardment intel for the attacker (t194). Beta 1 stays
+recruiting at year 3000. All five units restarted; `19fb1f5d` is kept for
+rollback.
