@@ -2654,8 +2654,11 @@ shows 0 batteries and 60 armies after, from 15 and 142). The owner chose to
 match it in the engine only, leaving the classic codecs alone: a new
 `PlanetIntelSource::Bombardment` grants the attacker the world's name,
 owner, Potential, armies and batteries after the attack, as a successful
-assault does. The classic `DATABASE.DAT` export skips it, so its output is
-unchanged. `maint_combat`'s bombardment test now checks the grant and that
+assault does. The classic `DATABASE.DAT` export writes it as ECMAINT
+does: name, owner, Potential, current production, armies and batteries,
+the 0x1e word 0, and the year words (`nc-cli` `maint` test
+`maint_rust_bombardment_gives_the_attacker_the_worlds_post_attack_intel`,
+which replaces the test that the row stayed blank). `maint_combat`'s bombardment test now checks the grant and that
 the attacker's snapshot holds the world's post-attack figures, the ones
 `SeatMemory` takes from the report. The player manual says so under the
 hostile missions.

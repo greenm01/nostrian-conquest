@@ -123,7 +123,7 @@ pub enum PlanetIntelSource {
     AssaultSuccess,
     AssaultFailure,
     /// The attacker's view of a world it bombarded: the figures after the
-    /// attack (t194). Not written to the classic `DATABASE.DAT`.
+    /// attack (t194), as ECMAINT writes it.
     Bombardment,
 }
 

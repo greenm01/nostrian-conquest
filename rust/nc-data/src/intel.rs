@@ -288,7 +288,21 @@ fn snapshot_from_runtime_grant(
             snapshot.seen_year = Some(compat_year);
             snapshot.scout_year = Some(compat_year);
         }
-        PlanetIntelSource::AssaultSuccess | PlanetIntelSource::Bombardment => {
+        PlanetIntelSource::Bombardment => {
+            snapshot.known_name = Some(planet.name.trim().to_string());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
+            snapshot.known_potential_production = Some(u16::from(planet.potential_production));
+            snapshot.known_armies = Some(u8::try_from(planet.armies).unwrap_or(u8::MAX));
+            snapshot.known_ground_batteries =
+                Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
+            snapshot.known_current_production = Some(present_production_points(planet))
+                .map(|value| value.min(u16::from(u8::MAX)) as u8);
+            snapshot.compat_word_1e = Some(0);
+            snapshot.last_intel_year = Some(compat_year);
+            snapshot.seen_year = Some(compat_year);
+            snapshot.scout_year = Some(compat_year);
+        }
+        PlanetIntelSource::AssaultSuccess => {
             snapshot.known_name = Some(planet.name.trim().to_string());
             snapshot.known_owner_empire_id = Some(planet.owner.0);
             snapshot.known_potential_production = Some(u16::from(planet.potential_production));

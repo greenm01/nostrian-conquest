@@ -129,9 +129,6 @@ fn collect_planet_intel_sources(
 ) -> BTreeMap<(u8, usize), PlanetIntelSource> {
     let mut sources = BTreeMap::new();
     for event in &events.planet_intel_events {
-        if event.source == PlanetIntelSource::Bombardment {
-            continue;
-        }
         sources.insert((event.viewer_empire, event.planet_idx), event.source);
     }
     sources
@@ -360,8 +357,15 @@ fn apply_intel_grant_row(
         PlanetIntelSource::AssaultFailure => {
             (None, None, None, None, Some(current_game_year), None)
         }
-        // Skipped by `collect_planet_intel_sources`.
-        PlanetIntelSource::Bombardment => return,
+        // As ECMAINT writes it (the bombard-heavy fixture).
+        PlanetIntelSource::Bombardment => (
+            Some(scout_visible_current_production(planet)),
+            template_word_1e(template_record).or(Some(0)),
+            Some(u8::try_from(planet.armies).unwrap_or(u8::MAX)),
+            Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)),
+            Some(intel_year),
+            Some(intel_year),
+        ),
     };
     apply_visible_row(
         record,

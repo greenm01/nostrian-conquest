@@ -10,10 +10,10 @@ use common::{
 use nc_compat::{DatabaseDat, load_classic_core_files, save_classic_core_files};
 use nc_data::{
     BuildSlot, CampaignStore, Coords, CoreGameData, DiplomaticRelation, EmpireId, Order, Planet,
-    PlayerMode, ProductionItemKind, Real48, diplomatic_relation_toward, recompute_max_speed,
-    set_armies_aboard, set_diplomatic_relation_toward, set_empire_name, set_fleet_at_rest,
-    set_mission_target, set_planet_name, set_player_handle, set_troop_transports,
-    stored_production_points, troop_transports,
+    PlayerMode, ProductionItemKind, Real48, diplomatic_relation_toward, present_production_points,
+    recompute_max_speed, set_armies_aboard, set_diplomatic_relation_toward, set_empire_name,
+    set_fleet_at_rest, set_mission_target, set_planet_name, set_player_handle,
+    set_troop_transports, stored_production_points, troop_transports,
 };
 use nc_engine::GameStateBuilder;
 use std::fs;
@@ -1833,7 +1833,7 @@ fn maint_rust_bombardment_generates_attacker_side_report() {
 }
 
 #[test]
-fn maint_rust_bombardment_does_not_refresh_database_intel() {
+fn maint_rust_bombardment_gives_the_attacker_the_worlds_post_attack_intel() {
     let target = unique_temp_dir("nc-cli-maint-rust-bombard-database");
     copy_fixture_dir("fixtures/ecmaint-bombard-arrive/v1.5", &target);
 
@@ -1856,15 +1856,25 @@ fn maint_rust_bombardment_does_not_refresh_database_intel() {
     let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
+    // Like ECMAINT (the bombard-heavy fixture), the attacker's row shows
+    // the world as the bombardment left it (t194).
+    let world = &reloaded.planets[13];
     let viewer_record = database.record(13, 0, reloaded.planets.len());
-    assert_eq!(viewer_record.planet_name_bytes(), b"UNKNOWN");
-    for offset in [
-        0x15usize, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x23, 0x24, 0x25, 0x26,
-    ] {
-        assert_eq!(
-            viewer_record.raw[offset], 0xff,
-            "offset {offset:#x} should remain unknown after bombard-only intel"
-        );
+    assert_eq!(viewer_record.planet_name_bytes(), world.name.as_bytes());
+    assert_eq!(viewer_record.raw[0x15], world.owner.0);
+    assert_eq!(viewer_record.raw[0x1c], world.potential_production);
+    assert_eq!(
+        u16::from(viewer_record.raw[0x1d]),
+        present_production_points(world).min(255) as u16
+    );
+    assert_eq!(viewer_record.word_at(0x1e), 0);
+    assert_eq!(viewer_record.raw[0x23], world.armies as u8);
+    assert_eq!(viewer_record.raw[0x24], 0);
+    assert_eq!(viewer_record.raw[0x25], world.ground_batteries as u8);
+    assert_eq!(viewer_record.raw[0x26], 0);
+    let year = (reloaded.conquest.game_year - 1).to_le_bytes();
+    for offset in [0x16usize, 0x18, 0x27] {
+        assert_eq!(viewer_record.raw[offset..offset + 2], year, "{offset:#x}");
     }
 
     cleanup_dir(&target);
