@@ -2625,6 +2625,39 @@ Each loses about 0.05, less than a flat 50% (about 0.1) but clearly. The
 weights (build mix, attack ratio, war year) were tuned for the revenue of a
 65% rate, so less money early costs ships the rest of the plan counts on.
 
+**Retuned around starbases and development-driven tax (2026-10-21).** The
+owner: low tax pays only when many undeveloped worlds have high Potential.
+`growth_tax` now mixes a new tuned weight, `young-tax`, with `tax` by the
+empire's total Production over total Potential, so rich undeveloped worlds
+weigh most. Two retunes with one budget (`tune_executor --against-default`,
+30 generations, 24 candidates, 64 maps, 100 years, bean-void): a control
+of land-grab as adopted, and a candidate with `growth_tax`,
+`keep_starbase` and `colony_starbases` on, starbases bounded 0.1-3 and
+`young-tax` 20-65, starting at 50. The control ended at tax 65, starbases
+0.15; the candidate at tax 65, `young-tax` 60.1 (up from 50), starbases
+1.64. Paired on 1,024 untouched maps from 2500000:
+
+| Comparison | 60 years | 100 years |
+| --- | ---: | ---: |
+| candidate against control | -0.044 ± 0.017 | -0.037 ± 0.017 |
+| candidate against adopted | -0.031 ± 0.017 | -0.055 ± 0.018 |
+| control against adopted | +0.013 ± 0.018 | -0.018 ± 0.018 |
+
+The engine's growth matches the manual: a world closes (100 - tax) / 400
+of its gap a year, half again with a base at 50% or less. One young world
+(Potential 100, Production 10), cumulative revenue at years 5 / 10 / 20 /
+40: 65% flat 101 / 284 / 788 / 2006; 50% until 80% grown, then 65%, 97 /
+268 / 805 / 2055; the same with a base (50 points) 74 / 303 / 895 / 2162;
+a base at 65% 51 / 234 / 738 / 1956. Low tax pays where young rich worlds
+have bases, as the owner says. The executor cannot get them there: a world
+without a base can order one only when a year's Production covers 50
+points, so colonies get bases only once well grown, and the seat's actions
+cannot move a base, so the home world (5x capacity) cannot build them for
+its colonies. Tax is empire-wide, so lowering it costs the mature home
+world with no growth in return. Next: give seats Starbase Command moves, so
+the home world builds bases and sends them to its richest young colonies,
+then retry `growth_tax`.
+
 ### t192
 
 Name the weakness the exploiter found.
