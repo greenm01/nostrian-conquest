@@ -180,10 +180,9 @@ fn apply_planet_action(
                 player_record_index_1_based,
                 planet.planet_record_index_1_based,
             )?;
-            let points_left = game_data.planet_build_points_left_for(
-                planet.planet_record_index_1_based,
-                ProductionItemKind::from_code(*kind_code),
-            )?;
+            let points_left = game_data
+                .planet_spend_left(planet.planet_record_index_1_based)?
+                .points_for(ProductionItemKind::from_code(*kind_code));
             if *points_remaining > points_left {
                 return Err(TurnSubmissionError::Validation(format!(
                     "build of {points_remaining} points exceeds planet {}'s remaining budget of {points_left}",

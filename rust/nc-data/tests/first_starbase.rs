@@ -57,8 +57,9 @@ fn a_world_without_a_base_may_order_one_from_its_treasury() {
     let mut game = colony_game(vec![]);
     assert_eq!(game.planet_build_points_left(1).unwrap(), 20);
     assert_eq!(
-        game.planet_build_points_left_for(1, ProductionItemKind::Starbase)
-            .unwrap(),
+        game.planet_spend_left(1)
+            .unwrap()
+            .points_for(ProductionItemKind::Starbase),
         70
     );
     assert!(!order(&mut game, ProductionItemKind::Cruiser, 30));
@@ -102,8 +103,9 @@ fn a_second_base_keeps_the_standard_restrictions() {
     docked.planets[0].stardock.starbases = 1;
     assert_eq!(
         docked
-            .planet_build_points_left_for(1, ProductionItemKind::Starbase)
-            .unwrap(),
+            .planet_spend_left(1)
+            .unwrap()
+            .points_for(ProductionItemKind::Starbase),
         20
     );
 
@@ -113,8 +115,9 @@ fn a_second_base_keeps_the_standard_restrictions() {
     assert_eq!((limits.capacity, limits.first_base), (100, 0));
     assert_eq!(
         based
-            .planet_build_points_left_for(1, ProductionItemKind::Starbase)
-            .unwrap(),
+            .planet_spend_left(1)
+            .unwrap()
+            .points_for(ProductionItemKind::Starbase),
         80
     );
 }
@@ -129,8 +132,9 @@ fn a_base_draws_only_on_its_own_worlds_treasury() {
     game.planets.push(rich);
 
     assert_eq!(
-        game.planet_build_points_left_for(1, ProductionItemKind::Starbase)
-            .unwrap(),
+        game.planet_spend_left(1)
+            .unwrap()
+            .points_for(ProductionItemKind::Starbase),
         30
     );
     assert!(!order(&mut game, ProductionItemKind::Starbase, 50));

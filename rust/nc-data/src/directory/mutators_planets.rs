@@ -190,29 +190,19 @@ impl CoreGameData {
 
     /// Budget still free for new orders this turn: the build budget less the
     /// points already queued (the build screen's BUDGET). A first starbase
-    /// may go past it; see [`Self::planet_build_points_left_for`].
+    /// may go past it; see [`PlanetSpendLimits::points_for`].
     pub fn planet_build_points_left(
         &self,
         record_index_1_based: usize,
     ) -> Result<u32, GameStateMutationError> {
-        self.planet_build_points_left_for(record_index_1_based, ProductionItemKind::Army)
-    }
-
-    /// Points still free this turn for new orders of `kind`. A world with no
-    /// starbase in orbit or in its stardock may pay for one base from its
-    /// treasury outside its build capacity, so a starbase order may use up to
-    /// a base's cost more than other orders.
-    pub fn planet_build_points_left_for(
-        &self,
-        record_index_1_based: usize,
-        kind: ProductionItemKind,
-    ) -> Result<u32, GameStateMutationError> {
         Ok(self
             .planet_spend_left(record_index_1_based)?
-            .points_for(kind))
+            .points_for(ProductionItemKind::Army))
     }
 
-    /// The world's spending limits left after the orders already queued.
+    /// The world's spending limits left after the orders already queued. A
+    /// world with no starbase in orbit or in its stardock may pay for one
+    /// base from its treasury outside its build capacity.
     pub fn planet_spend_left(
         &self,
         record_index_1_based: usize,
