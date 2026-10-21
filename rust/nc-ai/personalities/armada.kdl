@@ -17,6 +17,7 @@ weights {
     attack-ratio 3.303628
     roe 4.3846607
     war-year 25.792002
+    young-tax 64.7396
 }
 doctrine {
     land-grab #true

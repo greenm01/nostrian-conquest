@@ -69,6 +69,9 @@ pub struct Weights {
     pub roe: f32,
     /// Years from the start before every other empire is declared an enemy.
     pub war_year: f32,
+    /// Tax while the empire's worlds are far below their Potential, under
+    /// `Doctrine::growth_tax` (t207); `tax` is the rate once they are near it.
+    pub young_tax: f32,
     /// Behaviour switches under trial; not tuned.
     pub doctrine: Doctrine,
 }
@@ -182,11 +185,11 @@ pub struct Doctrine {
     /// only of destroyers, ETACs and scouts with Salvage, for the points to
     /// build its defences (t207, trial; the owner's use). Off, never.
     pub emergency_salvage: bool,
-    /// Tax from 50% (the starting rate, at which a starbase's growth bonus
-    /// is full) up to the style's rate as the empire's worlds near their
-    /// Potential: the mean of each world's Production over its Potential
-    /// sets the share (t207, trial; the owner's and the manual's advice).
-    /// Off, the style's rate all game.
+    /// Tax from `young_tax` up to `tax` as the empire's undeveloped
+    /// production closes: the share of its worlds' total Potential not yet
+    /// produced sets the mix, so a large gap on rich worlds lowers tax and a
+    /// few poor colonies do not (t207, trial; the owner's and the manual's
+    /// advice). Off, `tax` all game.
     pub growth_tax: bool,
 }
 
@@ -247,7 +250,7 @@ impl Doctrine {
 }
 
 impl Weights {
-    pub const COUNT: usize = 14;
+    pub const COUNT: usize = 15;
 
     /// Hand-set starting weights, before tuning.
     pub const BASELINE: Weights = Weights {
@@ -265,6 +268,7 @@ impl Weights {
         attack_ratio: 1.5,
         roe: 8.0,
         war_year: 5.0,
+        young_tax: 45.0,
         doctrine: Doctrine::CURRENT,
     };
 
@@ -285,6 +289,7 @@ impl Weights {
         attack_ratio: 3.742486,
         roe: 4.784798,
         war_year: 24.076294,
+        young_tax: 62.702686,
         doctrine: Doctrine::CURRENT,
     };
 
@@ -305,6 +310,7 @@ impl Weights {
         attack_ratio: 3.44,
         roe: 4.2,
         war_year: 10.5,
+        young_tax: 64.4,
         doctrine: Doctrine {
             land_grab: false,
             strike_weakest: false,
@@ -345,6 +351,7 @@ impl Weights {
         (0.5, 4.0),
         (0.0, 10.0),
         (0.0, 30.0),
+        (0.0, 65.0),
     ];
 
     pub fn to_array(self) -> [f32; Self::COUNT] {
@@ -363,6 +370,7 @@ impl Weights {
             self.attack_ratio,
             self.roe,
             self.war_year,
+            self.young_tax,
         ]
     }
 
@@ -385,6 +393,7 @@ impl Weights {
             attack_ratio: v[11],
             roe: v[12],
             war_year: v[13],
+            young_tax: v[14],
             doctrine: Doctrine::CURRENT,
         }
     }
@@ -434,7 +443,7 @@ pub fn plan_goals(
     let home = home_world(game_data, empire);
     let (_, labels) = plan_fleets(game_data, memory, masks, weights, home, None);
     let tax = if weights.doctrine.growth_tax {
-        GROWTH_TAX + (weights.tax - GROWTH_TAX).max(0.0) * maturity(game_data, empire)
+        weights.young_tax + (weights.tax - weights.young_tax) * maturity(game_data, empire)
     } else {
         weights.tax
     };
@@ -1117,27 +1126,24 @@ fn guarded(game_data: &CoreGameData, empire: u8, sector: [u8; 2]) -> bool {
     })
 }
 
-/// The tax at which a starbase's growth bonus is full, and the game's
-/// starting rate (`Doctrine::growth_tax`).
-const GROWTH_TAX: f32 = 50.0;
-
-/// How developed `empire`'s worlds are, 0 to 1: the mean of each world's
-/// Production over its Potential.
+/// How developed `empire`'s worlds are, 0 to 1: their total Production
+/// over their total Potential, so rich worlds count for more.
 fn maturity(game_data: &CoreGameData, empire: u8) -> f32 {
-    let shares: Vec<f32> = game_data
+    let (production, potential) = game_data
         .planets
         .iter()
-        .filter(|planet| planet.owner.0 == empire && planet.potential_production > 0)
-        .map(|planet| {
-            (f32::from(nc_data::present_production_points(planet))
-                / f32::from(planet.potential_production))
-            .min(1.0)
-        })
-        .collect();
-    if shares.is_empty() {
-        return 1.0;
+        .filter(|planet| planet.owner.0 == empire)
+        .fold((0.0, 0.0), |(production, potential), planet| {
+            (
+                production + f32::from(nc_data::present_production_points(planet)),
+                potential + f32::from(planet.potential_production),
+            )
+        });
+    if potential > 0.0 {
+        (production / potential).min(1.0)
+    } else {
+        1.0
     }
-    shares.iter().sum::<f32>() / shares.len() as f32
 }
 
 /// A fleet of nothing but destroyers, ETACs and scouts, the ships worth

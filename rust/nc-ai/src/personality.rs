@@ -39,6 +39,7 @@ pub const WEIGHT_NAMES: [&str; Weights::COUNT] = [
     "attack-ratio",
     "roe",
     "war-year",
+    "young-tax",
 ];
 
 const DOCTRINE_NAMES: [&str; 16] = [
