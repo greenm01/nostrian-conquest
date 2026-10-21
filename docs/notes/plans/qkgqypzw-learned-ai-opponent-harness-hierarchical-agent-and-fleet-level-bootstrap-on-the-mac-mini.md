@@ -2685,7 +2685,24 @@ hold a share back, and with `allocate` off it is always 0. The
 Starbase at the nearest threatened world of the seat's with a base and no
 guard, whatever the allocation. Paired as above: -0.016 ± 0.015 at 60
 years, -0.030 ± 0.017 at 100, with 10.5 starbase guards a game (none
-before). Guards cost land-grab warships its strikes need; not adopted.
+before). Guards cost land-grab warships its strikes need; not adopted yet.
+Its 95% interval at 100 years (-0.063 to +0.003) does include zero, so the
+loss is not certain.
+
+A fleet resting beside its own base for a whole turn mends its older
+cripples a turn sooner (manual, Starbase Recovery). The executor never
+used this. `repair_at_bases` (off) sends a crippled warship fleet at rest
+or seeking home to Guard a Starbase at the nearest world of the seat's
+with a base, holds it there while it mends, then returns it to Hold.
+Paired as above:
+
+| Trial | 60 years | 100 years |
+| --- | ---: | ---: |
+| `repair_at_bases` | -0.005 ± 0.008 | -0.001 ± 0.011 |
+| `repair_at_bases` and `guard_bases` | -0.016 ± 0.016 | -0.019 ± 0.017 |
+
+Repair is neutral and passes "doesn't lose"; with it, guarding loses less
+(-0.030 to -0.019 at 100 years).
 
 #### Step 2 plan: let the agent choose everything (2026-10-21)
 
