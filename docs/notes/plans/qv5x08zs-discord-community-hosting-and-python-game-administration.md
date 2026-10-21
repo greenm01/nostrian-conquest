@@ -353,6 +353,12 @@ one play-through by the owner; the announcement channel
 (`NC_DISCORD_CHANNEL_ID`) and a check of its posts. The throwaway pilot
 accounts and archived pilot games stay on the server.
 
+**Owner acceptance (2026-10-20).** In an open test game, "Owner check
+(test)" (`pilot-owner`), the owner signed in through matrix.org OAuth
+(`@greenm01:matrix.org`, seat 1) and Discord OAuth (seat 2), joined and
+played, and reported that it works fine. The game was archived afterwards;
+Beta 1 kept its seats.
+
 **Off-server copies (2026-10-20).** The Mac mini pulls archvps's `.backups`
 nightly at 06:00 local with rsync and sends them to restic on crunch
 (`sftp:crunch:backups/nc-community`, 30 daily, 8 weekly, 24 monthly), via
