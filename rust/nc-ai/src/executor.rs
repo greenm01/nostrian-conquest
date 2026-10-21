@@ -176,9 +176,12 @@ pub struct Doctrine {
     /// scouts, so a weight under one half still keeps a starbase at home
     /// (t207, trial).
     pub keep_starbase: bool,
-    /// A colony whose garrison is met and whose budget covers a starbase
-    /// builds one before warships, for the base's growth bonus, 5x build
-    /// capacity and defence (t207, trial). Off, colonies build no bases.
+    /// A colony of Potential [`BASE_POTENTIAL`] or more without a base
+    /// builds its garrison, then saves the rest of its budget instead of
+    /// buying warships, and orders a starbase as soon as a year's
+    /// Production and its savings both cover one: for the base's growth
+    /// bonus, 5x build capacity and defence (t207, trial). Off, colonies
+    /// build no bases and spend every point.
     pub colony_starbases: bool,
     /// A world in trouble (threatened, unguarded, and with a budget short
     /// of the armies and batteries it lacks) scraps the fleets there made
@@ -961,11 +964,12 @@ fn defended_builds(
     }
     order(ProductionItemKind::GroundBattery, batteries, &mut points);
     if weights.doctrine.colony_starbases
-        && armies == 0
-        && batteries == 0
+        && planet.potential_production >= BASE_POTENTIAL
         && planet.stardock.starbases + home_starbases(game_data, planet) == 0
+        && order(ProductionItemKind::Starbase, 1, &mut points) == 0
     {
-        order(ProductionItemKind::Starbase, 1, &mut points);
+        // Save toward the base.
+        return (builds, amounts);
     }
     if *picket && picket_fits(points) && order(ProductionItemKind::Destroyer, 1, &mut points) > 0 {
         *picket = false;
@@ -1125,6 +1129,10 @@ fn guarded(game_data: &CoreGameData, empire: u8, sector: [u8; 2]) -> bool {
             && fleet.target.to_array() == sector
     })
 }
+
+/// The least Potential for which a colony saves up for its own starbase
+/// (`Doctrine::colony_starbases`).
+const BASE_POTENTIAL: u8 = 80;
 
 /// How developed `empire`'s worlds are, 0 to 1: their total Production
 /// over their total Potential, so rich worlds count for more.
