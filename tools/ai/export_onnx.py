@@ -7,7 +7,8 @@
 The graph plays one seat. It takes the seat's raw observation tables and
 masks, as ``nc_ai_env`` gives them for one seat, and one noise tensor per
 head, and returns each head's choice: the argmax of its masked logits plus
-the noise. Zero noise plays greedy, and joins as ``greedy_join`` does.
+the noise. Zero noise plays greedy, and joins and builds as ``greedy_join``
+does.
 Noise of ``T`` times standard Gumbel samples draws from the softmax at
 temperature ``T`` (the Gumbel-max trick), so the caller sets the difficulty. The fleet target is chosen after the
 mission, conditioned on it, as in training.
@@ -103,10 +104,12 @@ class Deployed(nn.Module):
         # Zero noise is greedy, which joins as the model's greedy play does.
         choices["join"] = torch.where(noise["join"].abs().sum() == 0,
                                       greedy_join(logits["join"]), choices["join"])
-        builds = self.model.build_logits(batch, worlds)
+        logits = self.model.build_logits(batch, g, worlds, goals)
+        builds = {name: (logits[name] + noise[name]).argmax(-1) for name in BUILD_HEADS}
+        builds["build"] = torch.where(noise["build"].abs().sum() == 0,
+                                      greedy_join(logits["build"]), builds["build"])
         return tuple(goals[name] for name in GOAL_HEADS) + tuple(
-            choices[name] for name in FLEET_HEADS) + tuple(
-            (builds[name] + noise[name]).argmax(-1) for name in BUILD_HEADS)
+            choices[name] for name in FLEET_HEADS) + tuple(builds[name] for name in BUILD_HEADS)
 
 
 def recorded_seats(count, years):

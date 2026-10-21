@@ -54,6 +54,18 @@ class BuildHeadTest(unittest.TestCase):
                 taken = np.take_along_axis(self.allowed, chosen, -1)
                 self.assertTrue(taken.all())
 
+    def test_greedy_builds_when_building_is_likelier_than_none(self):
+        # Each kind is less likely than none, but three or more together are
+        # likelier, so greedy builds where at least three are allowed.
+        with torch.no_grad():
+            bias = self.model.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)
+            bias[:, 0], bias[:, 1:] = 2.0, 1.0
+            goals, *_ = self.model.act(self.batch, greedy=True, builds=True)
+        kinds = self.allowed[:, :, 1:].sum(-1)
+        built = goals["build"][:, : self.env.worlds, 0].numpy() > 0
+        self.assertTrue(kinds.max() >= 3)
+        self.assertTrue((built == (kinds >= 3)).all())
+
     def test_the_env_takes_the_heads_builds(self):
         with torch.no_grad():
             goals, *_ = self.model.act(self.batch, builds=True)

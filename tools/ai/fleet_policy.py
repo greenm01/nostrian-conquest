@@ -45,7 +45,8 @@ def greedy_join(logits):
     """The join head's greedy choice from its ``[..., 1 + F]`` logits: join
     when joining at all is likelier than none, then the likeliest host. A
     plain argmax splits joining among the hosts, so none wins at 0.4 against
-    six hosts at 0.1 each (t191)."""
+    six hosts at 0.1 each (t191). The build head's kinds split the same way
+    against "no build" (t207), so its greedy choice is made this way too."""
     hosts = logits[..., 1:]
     join = hosts.logsumexp(-1) > logits[..., 0]
     return torch.where(join, hosts.argmax(-1) + 1, torch.zeros_like(hosts[..., 0], dtype=torch.long))
@@ -110,6 +111,16 @@ def bucket(batch):
     return out
 
 
+def goal_flags(goals, worlds):
+    """``[N, W, 2]``: whether the seat's strike and colony goals name each
+    world."""
+    return torch.stack([
+        torch.nn.functional.one_hot((goals[name] - 1).clamp(min=0), worlds.shape[1])
+        * (goals[name] > 0)[:, None]
+        for name in ("strike", "colonize")
+    ], -1).to(worlds.dtype)
+
+
 class FleetAgent(Strategist):
     def __init__(self, players=4, width=128, layers=3, heads=4):
         super().__init__(players, width, layers, heads)
@@ -128,6 +139,14 @@ class FleetAgent(Strategist):
         self.fleet_join_key = nn.Linear(width, width, bias=False)
         self.fleet_unload = nn.Linear(width, 2)
         slots = nc_ai_env.BUILD_SLOTS
+        # A world's builds see its token, the global token, whether the
+        # seat's strike or colony goal names it, and the seat's posture and
+        # allocation, as the executor's builds follow the goals. Summed
+        # projections, not one over a concatenation, which tract mis-shapes.
+        seat = self.posture.out_features + self.allocation.out_features
+        self.world_build_hidden = nn.Linear(width, width)
+        self.world_build_seat = nn.Linear(width + seat, width, bias=False)
+        self.world_build_flags = nn.Linear(2, width, bias=False)
         self.world_build = nn.Linear(width, slots * nc_ai_env.BUILD_CHOICES)
         self.world_amount = nn.Linear(width, slots * nc_ai_env.BUILD_AMOUNT_CHOICES)
         self.reset_new_heads()
@@ -154,22 +173,29 @@ class FleetAgent(Strategist):
                 head.bias.zero_()
             self.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)[:, 0] = 8.0
 
-    def build_logits(self, batch, worlds):
+    def build_logits(self, batch, g, worlds, goals):
         """Per world and slot, ``build`` ``[N, W, S, BUILD_CHOICES]`` logits
         masked by the world's build mask, and ``amount`` ``[N, W, S,
-        AMOUNTS]``."""
+        AMOUNTS]``, given the seat's ``goals``."""
         n = batch["n"]
-        worlds = worlds[:n]
+        g, worlds = g[:n], worlds[:n]
+        seat = torch.cat([
+            g,
+            torch.nn.functional.one_hot(goals["posture"], self.posture.out_features).to(g.dtype),
+            torch.nn.functional.one_hot(goals["allocation"], self.allocation.out_features).to(g.dtype),
+        ], -1)
+        hidden = torch.relu(self.world_build_hidden(worlds) + self.world_build_seat(seat)[:, None]
+                            + self.world_build_flags(goal_flags(goals, worlds)))
         slots = nc_ai_env.BUILD_SLOTS
-        build = self.world_build(worlds).unflatten(-1, (slots, -1))
+        build = self.world_build(hidden).unflatten(-1, (slots, -1))
         mask = batch["mask_build"][:n, :, None, :]
-        amount = self.world_amount(worlds).unflatten(-1, (slots, -1))
+        amount = self.world_amount(hidden).unflatten(-1, (slots, -1))
         return {"build": build.masked_fill(~mask, -torch.inf), "amount": amount}
 
-    def build_dists(self, batch, worlds):
+    def build_dists(self, batch, g, worlds, goals):
         """:meth:`build_logits` as distributions."""
         return {name: torch.distributions.Categorical(logits=logits)
-                for name, logits in self.build_logits(batch, worlds).items()}
+                for name, logits in self.build_logits(batch, g, worlds, goals).items()}
 
     def fleet_logits(self, batch, fleets, worlds, goals, mission):
         """Masked fleet-head logits for the real seats; ``mission`` is the
@@ -179,13 +205,7 @@ class FleetAgent(Strategist):
         mission_logits = self.fleet_mission(fleets)
         query = self.target_query(fleets + self.mission_embed(mission))
         target_logits = (query @ worlds.transpose(1, 2)) / math.sqrt(fleets.shape[-1])
-        # Flag the worlds the seat's own strike and colony goals name.
-        flags = torch.stack([
-            torch.nn.functional.one_hot((goals[name] - 1).clamp(min=0), worlds.shape[1])
-            * (goals[name] > 0)[:, None]
-            for name in ("strike", "colonize")
-        ], -1).to(worlds.dtype)
-        target_logits = target_logits + self.goal_bias(flags)[:, None, :, 0]
+        target_logits = target_logits + self.goal_bias(goal_flags(goals, worlds))[:, None, :, 0]
         target_mask = torch.gather(
             batch["fleet_target"][:n],
             2,
@@ -245,11 +265,13 @@ class FleetAgent(Strategist):
             lp = dist.log_prob(goals[name])
             goal_logp = goal_logp + (lp.sum(-1) if lp.ndim > 1 else lp)
         if builds:
-            build_dists = self.build_dists(batch, worlds)
+            build_dists = self.build_dists(batch, g, worlds, goals)
             if goal_choices is None or "build" not in goal_choices:
                 goals = dict(goals)
                 for name in BUILD_HEADS:
                     goals[name] = pick(build_dists[name])
+                if greedy:
+                    goals["build"] = greedy_join(build_dists["build"].logits)
             ordered = goals["build"] > 0
             goal_logp = (goal_logp + build_dists["build"].log_prob(goals["build"]).sum((1, 2))
                          + (build_dists["amount"].log_prob(goals["amount"]) * ordered).sum((1, 2)))

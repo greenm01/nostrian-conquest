@@ -22,7 +22,8 @@ import torch
 
 import nc_ai_env
 from fleet_imitate import actions_for
-from fleet_policy import BUILD_HEADS, bucket, build_arrays, fleet_arrays, fleet_batch, load_fleet_agent
+from fleet_policy import (BUILD_HEADS, bucket, build_arrays, fleet_arrays, fleet_batch, greedy_join,
+                          load_fleet_agent)
 from policy import device, goals_for, save
 
 PLAYERS = 4
@@ -59,7 +60,7 @@ def main():
     rng = np.random.default_rng(args.seed)
     torch.manual_seed(args.seed)
     model = load_fleet_agent(args.agent, dev)
-    params = [*model.world_build.parameters(), *model.world_amount.parameters()]
+    params = [p for name, p in model.named_parameters() if name.startswith(("world_build", "world_amount"))]
     for param in model.parameters():
         param.requires_grad_(False)
     for param in params:
@@ -93,8 +94,8 @@ def main():
             ordered = labels["build"] > 0
             model.train()
             with torch.no_grad():
-                _, worlds, _ = model.encode(batch)
-            dists = model.build_dists(batch, worlds)
+                g, worlds, _ = model.encode(batch)
+            dists = model.build_dists(batch, g, worlds, goals)
             loss = (-(dists["build"].log_prob(labels["build"]) * choosing).sum()
                     - (dists["amount"].log_prob(labels["amount"]) * ordered).sum()
                     ) / choosing.sum().clamp(min=1)
@@ -103,7 +104,7 @@ def main():
             optimizer.step()
             losses.append(loss.item())
             with torch.no_grad():
-                hits += int(((dists["build"].probs.argmax(-1) == labels["build"]) & choosing).sum())
+                hits += int(((greedy_join(dists["build"].logits) == labels["build"]) & choosing).sum())
                 slots += int(choosing.sum())
                 built += int((goals["build"][:n] > 0).sum())
                 labelled += int(ordered.sum())
