@@ -2687,6 +2687,66 @@ guard, whatever the allocation. Paired as above: -0.016 ± 0.015 at 60
 years, -0.030 ± 0.017 at 100, with 10.5 starbase guards a game (none
 before). Guards cost land-grab warships its strikes need; not adopted.
 
+#### Step 2 plan: let the agent choose everything (2026-10-21)
+
+The owner's aim: the learned agent tries every order, tax rate and build,
+and keeps what wins, rather than playing what a script dictates. Today the
+strategist sets tax and the other goals, the fleet agent orders the
+handed-over families (colonize, scout, strike) with Join and Unload, and
+the executor still builds and orders every other fleet. The masks already
+offer every legal mission, target, tax rate and build. What holds the agent
+to the script is training: it starts as an imitation of the executor, the
+KL penalty never fades below `--kl-floor 0.02`, the network never builds,
+and its rivals are scripted. Scripted doctrines that pass "doesn't lose"
+stay available as executors to start from and play against, never as rules.
+
+1. **A build head.** The env already takes per-world builds (`build`,
+   `amount` in `BUILD_SLOTS` slots; see `random_agent.py`), with masks that
+   include the first-starbase rule. Add the head to `fleet_policy.py`,
+   imitate the executor's builds into it (`fleet_imitate.py`), hand builds
+   to a learner seat with a `--hand-builds` switch, export it to ONNX and
+   the Rust seat (`nc-ai-onnx`), and re-record the fixtures. Verify: build
+   imitation accuracy reported; seat replays pass; export 0 mismatches.
+2. **Hand over every family.** The hybrid hands the network all fleets,
+   so the executor makes no choice for a learner seat.
+3. **Free every head.** Generalise t191's `--free-heads` to the mission,
+   target, tax and build heads: KL fades to 0 (`--kl-floor 0`), and a
+   rarity bonus on legal choices the policy seldom takes fades out by
+   `--free-entropy-until`. After that only winning keeps a choice.
+4. **Reward results only:** win share and production share, as now. No
+   bonus for any particular order.
+5. **Varied rivals.** The t184 league: the scripted styles, frozen past
+   snapshots, the learner's own recent snapshots, and exploiters trained
+   against it.
+
+Runs:
+
+- **Mac mini (M4 Pro, 12 cores, 24 GB), first.** From promoted
+  `fleet-final.pt`: steps 1-3 with the league off, 200 iterations of 64
+  games at 100 years, `--free-entropy-until 120`, about 4-6 hours. This
+  checks that the build head and freed heads train without collapse.
+- **crunch (Radeon RX 7900, ROCm; 32 cores), when the owner frees it.**
+  crunch is busy with other work, so nothing runs there until the owner
+  says so. The long run there: the league on, 256 games an iteration on
+  the 32 cores, the network on the GPU, 1,000 iterations or more, with
+  exploiters every 200. Check ROCm PyTorch on the 7900 first with a two
+  iteration smoke run.
+
+Exit, per run, against promoted `fleet-final` on the paired behaviour
+report (1,024 maps, 60 and 100 years, mixed builds):
+
+- **Strength:** the interval includes zero or better.
+- **Use:** the report counts every mission, tax rates by year and builds
+  by kind; the run must use more of them than the promoted agent, with tax
+  that varies within games and starbases built at colonies.
+- **Exploit check:** 80 iterations of `--exploit` find no hole.
+- **Export:** 0 mismatches.
+
+Stop rule: the Mac mini run plus one variant (bonus 0.05, or a later
+fade). If greedy play still uses no new orders or loses strength, bring the
+evidence to the owner before the crunch run rather than tuning further.
+Models stay private; promotion only with the owner's OK.
+
 ### t192
 
 Name the weakness the exploiter found.
