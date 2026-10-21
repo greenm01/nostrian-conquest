@@ -2535,6 +2535,39 @@ failed since t194, whose bombardment intel changes what executors learn; it
 was not run then. Its values are re-recorded. The seat fixtures' games were
 re-recorded too, since their executor seats now join.
 
+**The seat's orders after Blitz and Join (2026-10-21).** An agent seat is
+the network's strike fleets plus the executor's colonizers, scouts and
+convoys, so the order set is judged per seat. Promoted `fleet-final` on
+main (`d49fcf76`), `behaviour_report`, 1,024 maps from 100000, bean-void:
+win share 0.523 / 0.715 at 60 / 100 years (opponents now blitz and
+reinforce too); 9.7 / 10.0 of 16 missions; at 100 years per game, Blitz
+32.3, Invade 1.0, Bombard 64.5, Guard/Blockade 48.8, Patrol 35.2, View
+20.3, Scout Sector 2.0, Scout System 6.5, Colonize 13.3, Move Only 0.9,
+Rendezvous 744, and 312 joins (the join head). Never ordered: Hold
+Position (every fleet's resting state), Seek Home (retreats apply it
+themselves), Salvage (rejected) and Guard a Starbase.
+
+**Starbase trials, rejected (2026-10-21).** Guard a Starbase is never
+legal for the agent seat's fleets because the land-grab style builds no
+starbase: its weight, 0.44, rounds to zero. Paired `executor_matches`,
+1,024 games from map 1500000:
+
+| Change | 60 years | 100 years | Starbase guards a game |
+| --- | ---: | ---: | ---: |
+| land-grab, `keep_starbase` (round the target up: one home base) | -0.019 ± 0.017 | -0.023 ± 0.018 | 0 |
+| land-grab, that plus `mend_at_base` | -0.013 ± 0.017 | -0.018 ± 0.018 | 0.4 |
+| turtle, `mend_at_base` (it builds bases already) | -0.004 ± 0.004 | -0.005 ± 0.004 | 3.5 (3.3 without) |
+
+`mend_at_base` sent warships at home with crippled ships to Guard a
+Starbase there until they mended, the manual's repair use (older cripples
+recover a turn sooner). The base costs the land-grab seat more than the
+repair returns, and on the turtle the rule changes little because its
+guards already post there. Every point estimate is negative, so neither
+switch was kept; the patch is in the private `t207-starbase/` run
+directory. Guard a Starbase stays in the game's AI through the turtle,
+whose seats order it about 3.3 times a game. `style_stats` counts starbase
+guards.
+
 ### t192
 
 Name the weakness the exploiter found.

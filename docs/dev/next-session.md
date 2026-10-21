@@ -78,7 +78,7 @@ details are in the plans' result sections.
   rules first. Blitz is adopted: strikes blitz worlds whose batteries are
   known gone, in executor seats and, by converting the network's Invade,
   in agent seats (neutral in both). A Salvage rule (scrap spent ETACs)
-  lost slightly at 100 years and was dropped. Join to reinforce a strike force short of its target is adopted in executor seats (neutral, 2.7 joins a game). The RL variant waits. See the
+  lost slightly at 100 years and was dropped. Join to reinforce a strike force short of its target is adopted in executor seats (neutral, 2.7 joins a game). Agent seats now order 10 of 16 missions plus about 300 joins a game; a home starbase and mending there were tried and dropped (2026-10-21). The RL variant waits. See the
   AI plan's t207 section.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded

@@ -169,15 +169,6 @@ pub struct Doctrine {
     /// its target's defence (t207, accepted: neutral at 60 and 100 years,
     /// about 2.7 joins a game). Off, they keep gathering at home.
     pub reinforce: bool,
-    /// Round a positive starbase target up, as `keep_scouts` does for
-    /// scouts, so a weight under one half still keeps a starbase at home
-    /// (t207, trial). Off, it rounds and the default style builds none.
-    pub keep_starbase: bool,
-    /// Warships at home with crippled ships Guard a Starbase there until
-    /// they mend, so their older cripples recover a turn sooner (t207,
-    /// trial). Off, they gather on Rendezvous in deep space and mend at
-    /// the normal rate.
-    pub mend_at_base: bool,
 }
 
 impl Doctrine {
@@ -201,8 +192,6 @@ impl Doctrine {
             "ferry" => &mut self.ferry,
             "blitz" => &mut self.blitz,
             "reinforce" => &mut self.reinforce,
-            "keep_starbase" => &mut self.keep_starbase,
-            "mend_at_base" => &mut self.mend_at_base,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -227,8 +216,6 @@ impl Doctrine {
         ferry: true,
         blitz: true,
         reinforce: true,
-        keep_starbase: false,
-        mend_at_base: false,
     };
 }
 
@@ -308,8 +295,6 @@ impl Weights {
             ferry: false,
             blitz: false,
             reinforce: false,
-            keep_starbase: false,
-            mend_at_base: false,
         },
     };
 
@@ -725,11 +710,6 @@ fn choose_builds(
     } else {
         weights.scouts
     };
-    let starbase_target = if weights.doctrine.keep_starbase && weights.starbases > 0.0 {
-        weights.starbases.ceil()
-    } else {
-        weights.starbases
-    };
     if weights.doctrine.defend && !is_home {
         let exposure = exposure(game_data, memory, planet.sector.to_array());
         let armies = army_target(game_data, memory, weights, record, false);
@@ -777,7 +757,7 @@ fn choose_builds(
             ProductionItemKind::Starbase,
             short(
                 planet.stardock.starbases + home_starbases(game_data, planet),
-                starbase_target,
+                weights.starbases,
             ),
         ));
         needs.push(Need::Units(
@@ -1582,15 +1562,6 @@ fn plan_fleets(
                 if enough_troops(fleet, intel)
                     && let Some(choice) = order(landing(weights, intel), idx)
                 {
-                    return choice;
-                }
-            }
-            let damaged = has_combat_ships(fleet) && fleet.crippled.total() > 0;
-            if weights.doctrine.mend_at_base && damaged {
-                if fleet.order == Order::GuardStarbase && fleet.target == fleet.sector {
-                    return keep;
-                }
-                if at_home && let Some(choice) = order(Order::GuardStarbase, home_idx) {
                     return choice;
                 }
             }
