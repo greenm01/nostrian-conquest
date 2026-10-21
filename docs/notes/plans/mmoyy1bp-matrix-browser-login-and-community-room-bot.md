@@ -268,6 +268,9 @@ does not hide a turn from Matrix; stale recruitment is flagged),
 and `nc-matrix/tests/community_room.rs` (the bot posts a current announcement,
 skips a stale one, answers `!games` and `!help` against a mock homeserver).
 
+Deployed to archvps on 2026-10-20 as `65f1ac43`. The owner confirmed the bot
+answers commands in `#nostrian-play:matrix.org`.
+
 ## Connections
 
 - [Discord and Nostr browser identities](8vi3s0k3-discord-and-nostr-browser-identities-with-shared-invite-seats.md)

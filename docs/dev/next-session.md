@@ -193,7 +193,7 @@ Matrix client. t142 (signed release `5d6407dc`) makes **Sign in with Matrix**
 one-click OAuth for matrix.org accounts, requesting only `openid`; the bot code
 form remains for other homeservers. Details and evidence are in the
 [Matrix plan](../notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md);
-The Matrix bot answers `!games`, `!help` and `!login` and posts announcements in the community room (t141, done 2026-10-20; not yet deployed).
+The Matrix bot answers `!games`, `!help` and `!login` and posts announcements in the community room (t141, done and deployed 2026-10-20 as `65f1ac43`; owner confirmed the commands in the room).
 
 On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
 inside the `#nostrian:matrix.org` space, and its display name became
