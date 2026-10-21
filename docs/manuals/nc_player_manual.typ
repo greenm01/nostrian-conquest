@@ -840,6 +840,10 @@ stays in orbit and fires again every year until you change its orders. An
 invading or blitzing fleet makes one assault and then, win or lose, its
 survivors hold position in orbit. Order any further attack yourself.
 
+*Each bombardment updates your Total Planet Database.* After the attack, the
+world's entry shows its owner, Potential, armies, and ground batteries as the
+bombardment left them.
+
 *A fleet in orbit on a hostile mission is easy to see.* It has entered the
 owner's solar system, where every fleet is easier to spot, and a fleet at its
 target on an attack mission stands out most of all. Expect his fleets to find

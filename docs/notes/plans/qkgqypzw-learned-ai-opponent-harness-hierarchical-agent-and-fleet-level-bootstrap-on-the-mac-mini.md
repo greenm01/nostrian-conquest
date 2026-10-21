@@ -2647,6 +2647,19 @@ batteries and armies left from the bombardment report (t178). An AI seat
 whose memory falls back loses that. Making bombardments grant intel would
 change every player's intel display, so it waits for the owner.
 
+**Done (2026-10-20).** ECMAINT writes the bombarded world's post-attack
+owner, armies, batteries and production into the attacker's planet
+database (the `ecmaint-bombard-heavy` fixture: the attacker's blank row
+shows 0 batteries and 60 armies after, from 15 and 142). The owner chose to
+match it in the engine only, leaving the classic codecs alone: a new
+`PlanetIntelSource::Bombardment` grants the attacker the world's name,
+owner, Potential, armies and batteries after the attack, as a successful
+assault does. The classic `DATABASE.DAT` export skips it, so its output is
+unchanged. `maint_combat`'s bombardment test now checks the grant and that
+the attacker's snapshot holds the world's post-attack figures, the ones
+`SeatMemory` takes from the report. The player manual says so under the
+hostile missions.
+
 ### t187
 
 Stretch goal: AI empires send in-character dispatches.

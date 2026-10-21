@@ -129,6 +129,9 @@ fn collect_planet_intel_sources(
 ) -> BTreeMap<(u8, usize), PlanetIntelSource> {
     let mut sources = BTreeMap::new();
     for event in &events.planet_intel_events {
+        if event.source == PlanetIntelSource::Bombardment {
+            continue;
+        }
         sources.insert((event.viewer_empire, event.planet_idx), event.source);
     }
     sources
@@ -357,6 +360,8 @@ fn apply_intel_grant_row(
         PlanetIntelSource::AssaultFailure => {
             (None, None, None, None, Some(current_game_year), None)
         }
+        // Skipped by `collect_planet_intel_sources`.
+        PlanetIntelSource::Bombardment => return,
     };
     apply_visible_row(
         record,

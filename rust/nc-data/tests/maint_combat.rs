@@ -5,9 +5,9 @@ use nc_compat::load_classic_core_files;
 use nc_data::{
     ContactReportSource, Coords, CoreGameData, DiplomacyOverride, EmpireId,
     EncounterDispositionEvent, Mission, MissionOutcome, Order, Planet, PlanetIntelSource,
-    PlayerMode, Real48, diplomatic_relation_toward, has_any_force, set_armies_aboard,
-    set_fleet_at_rest, set_mission_target, set_starbase_at_rest, set_troop_transports,
-    troop_transports,
+    PlayerMode, Real48, build_runtime_planet_intel_snapshot, diplomatic_relation_toward,
+    has_any_force, set_armies_aboard, set_fleet_at_rest, set_mission_target, set_starbase_at_rest,
+    set_troop_transports, troop_transports,
 };
 use nc_engine::{run_maintenance_turn, run_maintenance_turn_with_context};
 use std::path::Path;
@@ -208,9 +208,12 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
     assert_eq!(events.bombard_events.len(), 1);
     assert_eq!(events.bombard_events[0].planet_idx, 13);
     assert_eq!(events.bombard_events[0].attacker_empire, 1);
-    assert!(
-        events.planet_intel_events.is_empty(),
-        "bombardment alone should not refresh classic planet-database intel"
+    // The attacker learns the world's figures after the attack (t194).
+    assert_eq!(events.planet_intel_events.len(), 1);
+    let intel = &events.planet_intel_events[0];
+    assert_eq!(
+        (intel.planet_idx, intel.viewer_empire, intel.source),
+        (13, 1, PlanetIntelSource::Bombardment)
     );
     assert!(events.colonization_events.is_empty());
 
@@ -246,6 +249,20 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
             u8::try_from(pre_target.armies).unwrap_or(u8::MAX)
         );
     }
+    let seen = build_runtime_planet_intel_snapshot(
+        &game_data,
+        1,
+        game_data.conquest.game_year,
+        13,
+        PlanetIntelSource::Bombardment,
+    )
+    .expect("the target is a world");
+    assert_eq!(seen.known_owner_empire_id, Some(post_target.owner.0));
+    assert_eq!(
+        seen.known_ground_batteries,
+        Some(post_target.ground_batteries as u8)
+    );
+    assert_eq!(seen.known_armies, Some(post_target.armies as u8));
     assert_eq!(
         diplomatic_relation_toward(&game_data.players[0], 2),
         Some(nc_data::DiplomaticRelation::Enemy)

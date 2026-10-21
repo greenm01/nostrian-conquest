@@ -288,7 +288,7 @@ fn snapshot_from_runtime_grant(
             snapshot.seen_year = Some(compat_year);
             snapshot.scout_year = Some(compat_year);
         }
-        PlanetIntelSource::AssaultSuccess => {
+        PlanetIntelSource::AssaultSuccess | PlanetIntelSource::Bombardment => {
             snapshot.known_name = Some(planet.name.trim().to_string());
             snapshot.known_owner_empire_id = Some(planet.owner.0);
             snapshot.known_potential_production = Some(u16::from(planet.potential_production));

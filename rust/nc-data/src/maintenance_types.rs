@@ -122,6 +122,9 @@ pub enum PlanetIntelSource {
     CivilDisorderContact,
     AssaultSuccess,
     AssaultFailure,
+    /// The attacker's view of a world it bombarded: the figures after the
+    /// attack (t194). Not written to the classic `DATABASE.DAT`.
+    Bombardment,
 }
 
 /// A classic planet-database refresh for one player's view of one planet.

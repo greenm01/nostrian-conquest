@@ -762,6 +762,12 @@ pub(crate) fn resolve_strike(
                     .saturating_sub(present_production_points(post_planet)),
                 stardate_week: None,
             });
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                empire,
+                PlanetIntelSource::Bombardment,
+            );
             if assault_force_destroyed(game_data, &fleets) {
                 push_assault_destroyed_fleet_event(
                     &mut events,
