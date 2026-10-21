@@ -3,14 +3,16 @@
 //! timing and expansion.
 //!
 //! ```text
-//! cargo run --release -p nc-ai --example style_stats -- [--games 1024] [--years 60] [--style FILE.kdl]
+//! cargo run --release -p nc-ai --example style_stats -- [--games 1024] [--years 60] [--style FILE.kdl] [--with SWITCHES]
 //! ```
 //!
 //! For each style it prints the win share, the share of build points spent
 //! on each kind, the mean year of its first declaration of war and of its
 //! first attack, its mean worlds at years 10, 20 and 40, and how much it
 //! ferries armies: fleet-years of transports without warships, and armies
-//! unloaded at its own worlds; and how many blitzes and invasions it orders.
+//! unloaded at its own worlds; how many blitzes and invasions it orders; and
+//! how many fleets it orders to join another. `--with` turns on doctrine
+//! switches for the measured style.
 
 use std::thread;
 
@@ -44,6 +46,8 @@ struct Stats {
     /// Landing orders given: blitzes and invasions (t207).
     blitzes: u64,
     invasions: u64,
+    /// Join Another Fleet orders given (t207).
+    joins: u64,
 }
 
 impl Stats {
@@ -65,6 +69,7 @@ impl Stats {
         self.unloaded += other.unloaded;
         self.blitzes += other.blitzes;
         self.invasions += other.invasions;
+        self.joins += other.joins;
     }
 }
 
@@ -82,14 +87,24 @@ fn main() {
         .iter()
         .position(|arg| arg == "--style")
         .map(|idx| args[idx + 1].clone());
+    let with = args
+        .iter()
+        .position(|arg| arg == "--with")
+        .map(|idx| args[idx + 1].clone());
     let names: Vec<String> = match &file {
         Some(file) => vec![file.clone()],
         None => PERSONALITIES.iter().map(|name| name.to_string()).collect(),
     };
     for name in &names {
-        let style = personality_or_file(name)
+        let mut style = personality_or_file(name)
             .unwrap_or_else(|err| panic!("{err}"))
             .weights;
+        for switch in with.iter().flat_map(|names| names.split(',')) {
+            style
+                .doctrine
+                .enable(switch)
+                .expect("a known doctrine switch");
+        }
         let stats = run(style, default, games, years);
         let total: u64 = stats.points.iter().sum::<u64>().max(1);
         let mix: Vec<String> = BUILD_UNITS
@@ -121,7 +136,7 @@ fn main() {
             "{name}: win share {:.3}; builds {}; first war year {}; first attack year {}; \
              worlds at years 10/20/40 {:.1}/{:.1}/{:.1}; destroyers with a heavy {:.0}% \
              of {:.1} destroyer-years a game; {:.1} convoy fleet-years and {:.1} armies \
-             unloaded a game; {:.1} blitzes and {:.1} invasions ordered a game",
+             unloaded a game; {:.1} blitzes and {:.1} invasions ordered a game; {:.1} joins a game",
             stats.wins / stats.games as f32,
             mix.join(", "),
             mean(&stats.war_years),
@@ -135,6 +150,7 @@ fn main() {
             stats.unloaded as f64 / n,
             stats.blitzes as f64 / n,
             stats.invasions as f64 / n,
+            stats.joins as f64 / n,
         );
     }
 }
@@ -206,6 +222,7 @@ fn play(style: Weights, default: Weights, map: u64, years: u16) -> Stats {
             for block in &turn.fleets {
                 for action in &block.actions {
                     match action {
+                        FleetTurnAction::Join { .. } => stats.joins += 1,
                         FleetTurnAction::UnloadArmies { qty, .. } => {
                             stats.unloaded += u64::from(*qty);
                         }
