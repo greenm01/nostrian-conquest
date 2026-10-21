@@ -182,6 +182,12 @@ pub struct Doctrine {
     /// only of destroyers, ETACs and scouts with Salvage, for the points to
     /// build its defences (t207, trial; the owner's use). Off, never.
     pub emergency_salvage: bool,
+    /// Tax from 50% (the starting rate, at which a starbase's growth bonus
+    /// is full) up to the style's rate as the empire's worlds near their
+    /// Potential: the mean of each world's Production over its Potential
+    /// sets the share (t207, trial; the owner's and the manual's advice).
+    /// Off, the style's rate all game.
+    pub growth_tax: bool,
 }
 
 impl Doctrine {
@@ -208,6 +214,7 @@ impl Doctrine {
             "keep_starbase" => &mut self.keep_starbase,
             "colony_starbases" => &mut self.colony_starbases,
             "emergency_salvage" => &mut self.emergency_salvage,
+            "growth_tax" => &mut self.growth_tax,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -235,6 +242,7 @@ impl Doctrine {
         keep_starbase: false,
         colony_starbases: false,
         emergency_salvage: false,
+        growth_tax: false,
     };
 }
 
@@ -317,6 +325,7 @@ impl Weights {
             keep_starbase: false,
             colony_starbases: false,
             emergency_salvage: false,
+            growth_tax: false,
         },
     };
 
@@ -424,9 +433,13 @@ pub fn plan_goals(
     let at_war = f32::from(year.saturating_sub(start_year)) >= weights.war_year;
     let home = home_world(game_data, empire);
     let (_, labels) = plan_fleets(game_data, memory, masks, weights, home, None);
+    let tax = if weights.doctrine.growth_tax {
+        GROWTH_TAX + (weights.tax - GROWTH_TAX).max(0.0) * maturity(game_data, empire)
+    } else {
+        weights.tax
+    };
     Goals {
-        tax: ((weights.tax / f32::from(TAX_STEP)).round() as usize)
-            .min(100 / usize::from(TAX_STEP)),
+        tax: ((tax / f32::from(TAX_STEP)).round() as usize).min(100 / usize::from(TAX_STEP)),
         diplomacy: masks
             .diplomacy
             .iter()
@@ -1102,6 +1115,29 @@ fn guarded(game_data: &CoreGameData, empire: u8, sector: [u8; 2]) -> bool {
             && guarding(fleet)
             && fleet.target.to_array() == sector
     })
+}
+
+/// The tax at which a starbase's growth bonus is full, and the game's
+/// starting rate (`Doctrine::growth_tax`).
+const GROWTH_TAX: f32 = 50.0;
+
+/// How developed `empire`'s worlds are, 0 to 1: the mean of each world's
+/// Production over its Potential.
+fn maturity(game_data: &CoreGameData, empire: u8) -> f32 {
+    let shares: Vec<f32> = game_data
+        .planets
+        .iter()
+        .filter(|planet| planet.owner.0 == empire && planet.potential_production > 0)
+        .map(|planet| {
+            (f32::from(nc_data::present_production_points(planet))
+                / f32::from(planet.potential_production))
+            .min(1.0)
+        })
+        .collect();
+    if shares.is_empty() {
+        return 1.0;
+    }
+    shares.iter().sum::<f32>() / shares.len() as f32
 }
 
 /// A fleet of nothing but destroyers, ETACs and scouts, the ships worth
