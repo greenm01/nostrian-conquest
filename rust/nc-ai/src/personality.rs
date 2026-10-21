@@ -269,6 +269,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 pickets,
                 ferry,
                 blitz,
+                reinforce: false,
             },
             ..Weights::from_array(weights)
         },

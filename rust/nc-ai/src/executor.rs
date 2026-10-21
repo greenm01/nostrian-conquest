@@ -164,6 +164,11 @@ pub struct Doctrine {
     /// needed are the same (accepted: neutral to slightly better at 60 and
     /// 100 years). Off, such worlds are invaded.
     pub blitz: bool,
+    /// Warships at home that cannot strike on their own Join a strike force
+    /// under way that has fallen short of its target's need, when they bring
+    /// it back up to `attack_ratio` times the target's defence (t207). Off,
+    /// they keep gathering at home.
+    pub reinforce: bool,
 }
 
 impl Doctrine {
@@ -186,6 +191,7 @@ impl Doctrine {
             "pickets" => &mut self.pickets,
             "ferry" => &mut self.ferry,
             "blitz" => &mut self.blitz,
+            "reinforce" => &mut self.reinforce,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -209,6 +215,7 @@ impl Doctrine {
         pickets: false,
         ferry: true,
         blitz: true,
+        reinforce: false,
     };
 }
 
@@ -287,6 +294,7 @@ impl Weights {
             pickets: false,
             ferry: false,
             blitz: false,
+            reinforce: false,
         },
     };
 
@@ -1557,6 +1565,12 @@ fn plan_fleets(
                     return choice;
                 }
             }
+            if weights.doctrine.reinforce
+                && fleet.order == Order::JoinAnotherFleet
+                && own_fleet_with_number(game_data, empire, fleet.mission_target).is_some()
+            {
+                return keep;
+            }
             if !at_home {
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
@@ -1619,6 +1633,17 @@ fn plan_fleets(
                 blockaded = true;
                 return choice;
             }
+            if weights.doctrine.reinforce
+                && !hold
+                && has_combat_ships(fleet)
+                && let Some(host) = strike_host(game_data, memory, weights, empire, fleet)
+            {
+                return FleetChoice {
+                    join: host,
+                    load,
+                    ..keep
+                };
+            }
             let gather = if fleet.order == Order::RendezvousSector && fleet.target == fleet.sector {
                 keep
             } else {
@@ -1628,6 +1653,52 @@ fn plan_fleets(
         })
         .collect();
     (fleets, labels)
+}
+
+/// The record of `empire`'s fleet numbered `number`.
+fn own_fleet_with_number(game_data: &CoreGameData, empire: u8, number: u16) -> Option<usize> {
+    game_data
+        .fleets
+        .iter()
+        .position(|fleet| fleet.owner.0 == empire && fleet.fleet_number.0 == number)
+        .map(|idx| idx + 1)
+}
+
+/// The nearest of the empire's strike forces under way (warships on
+/// Bombard, Invade or Blitz) that is short of what its target needs,
+/// `attack_ratio` times the target's known defence, and that `fleet` would
+/// bring back up to it.
+fn strike_host(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    weights: &Weights,
+    empire: u8,
+    fleet: &Fleet,
+) -> Option<usize> {
+    game_data
+        .fleets
+        .iter()
+        .enumerate()
+        .filter(|(_, host)| {
+            host.owner.0 == empire
+                && host.fleet_number != fleet.fleet_number
+                && has_combat_ships(host)
+                && matches!(
+                    host.order,
+                    Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld
+                )
+                && world_at(game_data, host.target.to_array())
+                    .and_then(|idx| memory.planet_intel.get(&(idx + 1)))
+                    .is_some_and(|intel| {
+                        let need = weights.attack_ratio * defense(intel);
+                        strength(host) < need && strength(host) + strength(fleet) >= need
+                    })
+        })
+        .min_by(|(_, a), (_, b)| {
+            let from = fleet.sector.to_array();
+            distance(a.sector.to_array(), from).total_cmp(&distance(b.sector.to_array(), from))
+        })
+        .map(|(idx, _)| idx + 1)
 }
 
 /// Loaded armies enough to invade a world with its known (or assumed)
