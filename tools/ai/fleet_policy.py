@@ -13,6 +13,12 @@ Since t190 each fleet may also join another of the seat's fleets (pointing
 at the other fleet tokens, or none) and unload its armies. These heads start
 at "none" with zero weights, so a checkpoint saved before them loads and
 plays as it did, and two loads of it start identical.
+
+Since t207 each world token also chooses its builds: a kind (or none) and an
+amount for each of ``BUILD_SLOTS`` slots. Builds are seat-level choices, so
+with ``builds=True`` they ride with the goals: in the goal choices, the goal
+log-probability and the goal distributions. The build head starts at "none"
+like the join head.
 """
 
 import math
@@ -25,9 +31,12 @@ import nc_ai_env
 from policy import HEADS, Strategist, distributions, symlog, START_YEAR, TABLES
 
 FLEET_HEADS = ("mission", "target", "waypoint", "speed", "roe", "load", "detach", "join", "unload")
+BUILD_HEADS = ("build", "amount")
 # Heads added after checkpoints were first saved, and the logit by which each
 # starts on its first choice (none).
 NEW_HEADS = {"fleet_join": 8.0, "fleet_unload": 8.0}
+# Heads whose missing weights a saved agent may lack and start fresh.
+FRESH_PREFIXES = ("fleet_join", "fleet_unload", "world_build", "world_amount")
 SEAT_BUCKET = 128
 ROW_BUCKET = 16
 
@@ -47,7 +56,7 @@ def fleet_batch(obs, masks, goal_masks, select, dev):
     ``fleet_mission`` ``[N, F, MISSIONS]``, ``fleet_target`` ``[N, F,
     MISSIONS, W]``, ``fleet_roe``, ``fleet_load`` ``[N, F, 2]`` and
     ``fleet_detach``, ``fleet_join`` ``[N, F, 1 + F]`` and ``fleet_unload``
-    ``[N, F, 2]``."""
+    ``[N, F, 2]``; and each world's ``mask_build`` ``[N, W, BUILD_CHOICES]``."""
     take = lambda a: torch.from_numpy(np.ascontiguousarray(a[select])).to(dev)
     glob = take(obs["global"]).clone()
     glob[:, 0] -= START_YEAR
@@ -67,6 +76,7 @@ def fleet_batch(obs, masks, goal_masks, select, dev):
     batch["fleet_join"] = take(masks["join"])
     unload = take(masks["unload"])
     batch["fleet_unload"] = torch.stack([torch.ones_like(unload), unload], -1)
+    batch["mask_build"] = take(masks["build"])
     return batch
 
 
@@ -117,7 +127,11 @@ class FleetAgent(Strategist):
         self.fleet_join_query = nn.Linear(width, width, bias=False)
         self.fleet_join_key = nn.Linear(width, width, bias=False)
         self.fleet_unload = nn.Linear(width, 2)
+        slots = nc_ai_env.BUILD_SLOTS
+        self.world_build = nn.Linear(width, slots * nc_ai_env.BUILD_CHOICES)
+        self.world_amount = nn.Linear(width, slots * nc_ai_env.BUILD_AMOUNT_CHOICES)
         self.reset_new_heads()
+        self.reset_build_heads()
 
     def reset_new_heads(self):
         """Start the join and unload heads on "none", the same every time:
@@ -130,6 +144,29 @@ class FleetAgent(Strategist):
                 head.bias[0] = bias
             self.fleet_join_query.weight.zero_()
             self.fleet_join_key.weight.copy_(torch.eye(self.fleet_join_key.in_features))
+
+    def reset_build_heads(self):
+        """Start the build head on "none" in every slot, and the amount
+        head even, the same every time."""
+        with torch.no_grad():
+            for head in (self.world_build, self.world_amount):
+                head.weight.zero_()
+                head.bias.zero_()
+            self.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)[:, 0] = 8.0
+
+    def build_dists(self, batch, worlds):
+        """Per world and slot, ``build`` ``[N, W, S, BUILD_CHOICES]`` masked
+        by the world's build mask, and ``amount`` ``[N, W, S, AMOUNTS]``."""
+        n = batch["n"]
+        worlds = worlds[:n]
+        slots = nc_ai_env.BUILD_SLOTS
+        build = self.world_build(worlds).unflatten(-1, (slots, -1))
+        mask = batch["mask_build"][:n, :, None, :]
+        amount = self.world_amount(worlds).unflatten(-1, (slots, -1))
+        return {
+            "build": torch.distributions.Categorical(logits=build.masked_fill(~mask, -torch.inf)),
+            "amount": torch.distributions.Categorical(logits=amount),
+        }
 
     def fleet_logits(self, batch, fleets, worlds, goals, mission):
         """Masked fleet-head logits for the real seats; ``mission`` is the
@@ -177,10 +214,12 @@ class FleetAgent(Strategist):
                 for name, logits in self.fleet_logits(batch, fleets, worlds, goals,
                                                       mission).items()}
 
-    def act(self, batch, greedy=False, fleet_choices=None, goal_choices=None):
+    def act(self, batch, greedy=False, fleet_choices=None, goal_choices=None, builds=False):
         """Goals and fleet choices, sampled (or greedy) unless given; the goal
         and per-fleet-row log-probabilities; the fleet heads' entropy; the
-        value; and the goal and fleet distributions."""
+        value; and the goal and fleet distributions. With ``builds`` the
+        goals also carry ``build`` and ``amount`` (see the module docs); an
+        amount counts only in a slot that builds."""
         g, worlds, fleets = self.encode(batch)
         n = batch["n"]
         goal_logits, value = self.goal_heads(g, worlds, n)
@@ -202,6 +241,16 @@ class FleetAgent(Strategist):
         for name, dist in goal_dists.items():
             lp = dist.log_prob(goals[name])
             goal_logp = goal_logp + (lp.sum(-1) if lp.ndim > 1 else lp)
+        if builds:
+            build_dists = self.build_dists(batch, worlds)
+            if goal_choices is None or "build" not in goal_choices:
+                goals = dict(goals)
+                for name in BUILD_HEADS:
+                    goals[name] = pick(build_dists[name])
+            ordered = goals["build"] > 0
+            goal_logp = (goal_logp + build_dists["build"].log_prob(goals["build"]).sum((1, 2))
+                         + (build_dists["amount"].log_prob(goals["amount"]) * ordered).sum((1, 2)))
+            goal_dists = {**goal_dists, **build_dists}
         fleet_logp = sum(dists[name].log_prob(fleet_choices[name]) for name in FLEET_HEADS)
         entropy = sum(dist.entropy() for dist in dists.values())
         return goals, fleet_choices, goal_logp, fleet_logp, entropy, value, goal_dists, dists
@@ -214,18 +263,19 @@ def from_strategist(path, dev):
     model = FleetAgent(**checkpoint["config"]).to(dev)
     missing, unexpected = model.load_state_dict(checkpoint["state"], strict=False)
     if unexpected or any(not key.startswith(("fleet_", "mission_embed", "target_query",
-                                             "goal_bias")) for key in missing):
+                                             "goal_bias", "world_")) for key in missing):
         raise SystemExit(f"strategist weights do not fit: {missing} {unexpected}")
     return model
 
 
 def load_fleet_agent(path, dev):
-    """A saved fleet agent; one saved before the join and unload heads gets
-    them at their start (see :meth:`FleetAgent.reset_new_heads`)."""
+    """A saved fleet agent; one saved before the join, unload or build heads
+    gets them at their start (see :meth:`FleetAgent.reset_new_heads` and
+    :meth:`FleetAgent.reset_build_heads`)."""
     checkpoint = torch.load(path, map_location=dev, weights_only=False)
     model = FleetAgent(**checkpoint["config"]).to(dev)
     missing, unexpected = model.load_state_dict(checkpoint["state"], strict=False)
-    if unexpected or any(not key.startswith(("fleet_join", "fleet_unload")) for key in missing):
+    if unexpected or any(not key.startswith(FRESH_PREFIXES) for key in missing):
         raise SystemExit(f"fleet agent weights do not fit: {missing} {unexpected}")
     return model.eval()
 
@@ -238,5 +288,17 @@ def fleet_arrays(choices, select, fleets):
     for name in FLEET_HEADS:
         array = np.zeros((games, seats, fleets), np.int64)
         array[select] = choices[name][:, :fleets].cpu().numpy()
+        out[name] = array
+    return out
+
+
+def build_arrays(goals, select, worlds):
+    """Env ``build`` and ``amount`` arrays ``[games, seats, W, BUILD_SLOTS]``
+    with the selected seats' choices placed at ``select``."""
+    games, seats = select.shape
+    out = {}
+    for name in BUILD_HEADS:
+        array = np.zeros((games, seats, worlds, nc_ai_env.BUILD_SLOTS), np.int64)
+        array[select] = goals[name][:, :worlds].cpu().numpy()
         out[name] = array
     return out

@@ -72,7 +72,7 @@ import torch
 import nc_ai_env
 import policy
 from fleet_imitate import actions_for, frozen_goals
-from fleet_policy import (FLEET_HEADS, FleetAgent, bucket, fleet_arrays, fleet_batch,
+from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, build_arrays, fleet_arrays, fleet_batch,
                           load_fleet_agent)
 from policy import HEADS, device, goals_for, save
 from ppo import advantages, pad_cat
@@ -103,7 +103,8 @@ def handed_rows(obs, select, families, rows):
     """``[N, rows]`` bools: the selected seats' real fleet rows whose family
     is handed over, padded to ``rows``."""
     family = fleet_families(obs["fleets"][select])
-    handed = np.isin(family, [FAMILIES.index(f) for f in families]) & obs["fleets_valid"][select]
+    handed = (np.isin(family, [FAMILIES.index(f) for f in families if f in FAMILIES])
+              & obs["fleets_valid"][select])
     return np.pad(handed, ((0, 0), (0, rows - handed.shape[1])))
 
 
@@ -287,7 +288,8 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
     with torch.no_grad():
         if learner.any():
             batch = bucket(fleet_batch(obs, masks, goal_masks, learner, dev))
-            goals, fleets, goal_lp, fleet_lp, _, value, _, _ = model.act(batch, greedy=greedy)
+            goals, fleets, goal_lp, fleet_lp, _, value, _, _ = model.act(
+                batch, greedy=greedy, builds="builds" in families)
             handed = torch.from_numpy(
                 handed_rows(obs, learner, families, batch["fleets"].shape[1])).to(dev)
             logp = goal_lp + (fleet_lp * handed).sum(-1)
@@ -295,6 +297,8 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
             for name in HEADS:
                 env_goals[name][learner] = chosen[name][learner]
             fleet_actions = fleet_arrays(fleets, learner, env.fleets)
+            if "builds" in families:
+                fleet_actions.update(build_arrays(goals, learner, env.worlds))
             n = batch["n"]
             sample = {
                 "select": learner,
@@ -331,7 +335,9 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
         sample["labels"] = {name: torch.from_numpy(np.pad(
             labels[name][learner], ((0, 0), (0, rows - env.fleets)))) for name in TAUGHT}
         sample["convoy"] = torch.from_numpy(convoy_rows(obs, learner, rows))
-    step = env.step(actions_for(env, fleet_actions), env_goals)
+    actions = actions_for(env, {k: v for k, v in fleet_actions.items() if k in FLEET_HEADS})
+    actions.update({k: v for k, v in fleet_actions.items() if k in BUILD_HEADS})
+    step = env.step(actions, env_goals)
     return step, sample, env_s + time.perf_counter() - started
 
 
@@ -339,6 +345,14 @@ def learner_name(families, style=None):
     """The env seat name of a hybrid learner whose executor plays
     ``style`` (a personality, t167), the default when ``None``."""
     return "hybrid:" + ",".join(families) + (f"@{style}" if style else "")
+
+
+def frozen_name(families):
+    """The env seat name of a frozen agent: the learner's fleet families,
+    with the executor building, since a frozen agent may predate the build
+    head (t207)."""
+    # shortcut: frozen self-snapshots also leave builds to the executor; hand them builds once every league agent has a trained build head.
+    return learner_name([f for f in families if f != "builds"])
 
 
 # Evaluation maps during training. Final confirmations use 100000 and up, so
@@ -356,7 +370,7 @@ def head_to_head(model, strategist, families, opponent, games, years, first_map,
     env = nc_ai_env.Env(PLAYERS, years, threads)
     learner = learner_name(families, style)
     names, roles = [], np.zeros((games, PLAYERS), np.int8)
-    other = learner_name(families) if opponent == "target" else opponent
+    other = frozen_name(families) if opponent == "target" else opponent
     other_role = {"strategist": 2, "target": 3}.get(opponent, 0)
     for game in range(games):
         lineup = [other] * PLAYERS
@@ -416,13 +430,16 @@ def coverage(dist, floor):
 
 
 def kl_to(new, old, handed, free=(), mission_smooth=0.0):
-    """KL(new || old) per seat: the goal heads, plus the fleet heads of the
-    handed-over rows, except the ``free`` ones; the mission head against a
+    """KL(new || old) per seat: the goal heads and any build heads, plus the
+    fleet heads of the handed-over rows, except the ``free`` ones; the mission head against a
     smoothed reference when ``mission_smooth`` is set."""
     total = 0
     for name in HEADS:
         kl = categorical_kl(new[0][name], old[0][name])
         total = total + (kl.sum(-1) if kl.ndim > 1 else kl)
+    for name in BUILD_HEADS:
+        if name in new[0] and name not in free:
+            total = total + categorical_kl(new[0][name], old[0][name]).sum((1, 2))
     for name in FLEET_HEADS:
         if name in free:
             continue
@@ -450,7 +467,8 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
     rows = batch["fleets"].shape[1]
     pad_rows = lambda t: torch.nn.functional.pad(t, (0, rows - t.shape[1]))
-    goals = {k: torch.cat([s["goals"][k] for s in steps]) for k in HEADS}
+    goals = {k: torch.cat([s["goals"][k] for s in steps]) for k in steps[0]["goals"]}
+    builds = "build" in goals
     fleets = {k: torch.cat([pad_rows(s["fleets"][k][:, :rows]) for s in steps])
               for k in FLEET_HEADS}
     handed = torch.cat([pad_rows(s["handed"][:, :rows]) for s in steps])
@@ -474,10 +492,10 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
             mb_handed = torch.nn.functional.pad(handed[idx], (0, mb["fleets"].shape[1] - rows)).to(dev)
             mb_goals = {k: v[idx].to(dev) for k, v in goals.items()}
             _, _, goal_lp, fleet_lp, entropy, value, goal_dists, fleet_dists = model.act(
-                mb, fleet_choices=mb_fleets, goal_choices=mb_goals)
+                mb, fleet_choices=mb_fleets, goal_choices=mb_goals, builds=builds)
             with torch.no_grad():
                 *_, ref_goal_dists, ref_fleet_dists = ref.act(
-                    mb, fleet_choices=mb_fleets, goal_choices=mb_goals)
+                    mb, fleet_choices=mb_fleets, goal_choices=mb_goals, builds=builds)
             logp = goal_lp + (fleet_lp * mb_handed).sum(-1)
             ratio = torch.exp(logp - old_logp[idx].to(dev))
             a = adv[idx].to(dev)
@@ -487,7 +505,10 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
                            mb_handed, args.free_heads, args.mission_smooth).mean()
             ent = (entropy * mb_handed).sum(-1).mean() + policy.joint_entropy(goal_dists).mean()
             free_ent = sum(((act_entropy(fleet_dists[name]) * mb_handed).sum(-1).mean()
-                            for name in args.free_heads), torch.zeros((), device=dev))
+                            for name in args.free_heads if name in FLEET_HEADS),
+                           torch.zeros((), device=dev))
+            if builds and "build" in args.free_heads:
+                free_ent = free_ent + act_entropy(goal_dists["build"]).sum((1, 2)).mean()
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
                     - args.entropy_coef * ent - free_coef * free_ent)
             if mission_coef > 0:
@@ -578,7 +599,7 @@ def main():
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
     args = parser.parse_args()
-    if unknown := set(args.free_heads) - set(FLEET_HEADS):
+    if unknown := set(args.free_heads) - set(FLEET_HEADS) - set(BUILD_HEADS):
         parser.error(f"unknown fleet heads {sorted(unknown)}")
     if args.threads:
         torch.set_num_threads(args.threads)
@@ -602,7 +623,7 @@ def main():
         agents = [(f"{Path(path).parent.name}/{Path(path).stem}", load_fleet_agent(path, dev))
                   for path in args.league_agents]
         league = League([s for s in args.league_styles.split(",") if s], agents,
-                        learner_name(families), args.league_self)
+                        frozen_name(families), args.league_self)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years, args.threads, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
@@ -629,7 +650,7 @@ def main():
         mission_coef = args.mission_bonus * (max(0.0, 1 - (it - 1) / args.mission_until)
                                              if args.mission_until else 1.0)
         drawn = choose_lineups(rng, args.games, learner,
-                               learner_name(families) if target else None, league)
+                               frozen_name(families) if target else None, league)
         names, roles = drawn[:2]
         env.reset(list(range(next_map, next_map + args.games)), seats=names)
         next_map += args.games
@@ -665,6 +686,13 @@ def main():
                    value_loss=vl, kl_ref=kl, entropy=ent, join=rate("join"),
                    unload=rate("unload"), play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)
+        if "builds" in families:
+            # The learner's sampled builds by kind (build choice 1 up), a
+            # count per seat-year (t207).
+            kinds = sum(np.bincount(s["goals"]["build"].numpy().ravel(),
+                                    minlength=nc_ai_env.BUILD_CHOICES) for s in steps)
+            seat_years = max(sum(len(s["goals"]["build"]) for s in steps), 1)
+            row["builds"] = [round(float(k) / seat_years, 3) for k in kinds[1:]]
         if args.mission_smooth > 0 or args.mission_bonus > 0:
             row["mission_coef"] = mission_coef
             row["missions"] = mission_shares(steps, handed_rows_n)

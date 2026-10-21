@@ -176,7 +176,7 @@ def joint_entropy(dists):
     total = 0
     for dist in dists.values():
         ent = dist.entropy()
-        total = total + (ent.sum(-1) if ent.ndim > 1 else ent)
+        total = total + (ent.flatten(1).sum(-1) if ent.ndim > 1 else ent)
     return total
 
 
