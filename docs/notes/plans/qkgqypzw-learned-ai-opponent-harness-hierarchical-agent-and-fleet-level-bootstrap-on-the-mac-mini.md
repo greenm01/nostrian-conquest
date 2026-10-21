@@ -2606,6 +2606,25 @@ bases, so the next step proposed is a retune with `keep_starbase` and
 `colony_starbases` on, letting tax, garrisons and the rest adjust around
 them, then the paired check against the adopted style.
 
+**Tax that follows development (2026-10-21).** The owner: tax is an
+extremely important lever; keep it low while colonies develop, for growth
+and the starbase bonus, and raise it as they mature. The manual says the
+same (start at 50%, raise toward 65% near Potential). The executor sets
+one rate all game, and the agent seat's strategist, imitated from it,
+holds 60% every game. `Doctrine.growth_tax` (off) taxes from 50% up to the
+style's rate in proportion to the empire's maturity. Paired against the
+adopted land-grab executor, 1,024 games from map 1500000:
+
+| Maturity measure | 60 years | 100 years |
+| --- | ---: | ---: |
+| mean of each world's Production / Potential | -0.045 ± 0.017 | -0.047 ± 0.017 |
+| the same, with `colony_starbases` | -0.044 ± 0.016 | -0.053 ± 0.016 |
+| total Production / total Potential (patch in `t207-tax/`) | -0.059 ± 0.016 | -0.042 ± 0.017 |
+
+Each loses about 0.05, less than a flat 50% (about 0.1) but clearly. The
+weights (build mix, attack ratio, war year) were tuned for the revenue of a
+65% rate, so less money early costs ships the rest of the plan counts on.
+
 ### t192
 
 Name the weakness the exploiter found.
