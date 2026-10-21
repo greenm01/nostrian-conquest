@@ -2568,6 +2568,44 @@ directory. Guard a Starbase stays in the game's AI through the turtle,
 whose seats order it about 3.3 times a game. `style_stats` counts starbase
 guards.
 
+**The owner on starbases and Salvage (2026-10-21).** Starbases matter for
+their economic and defensive benefits, and the AI should build them and
+guard them. Salvage is for a player in deep trouble: under attack, scrap
+the weaker ships (destroyers, ETACs, scouts) for quick money to build
+batteries and armies against a blitz or invasion. Hold Position and Seek
+Home (applied automatically) count as used.
+
+Why the executor builds no bases: a base's growth bonus is half again at
+50% tax or lower and fades to nothing at 65%, and the land-grab style taxes
+at 62.7% (the agent seat at 60%), so its one base would sit at the home
+world, already at its Potential. Its other benefit, 5x build capacity,
+spends saved treasury quickly. The seat's actions cannot move a base, and a
+world without one can order a base (50 points) only when a year's
+Production covers it.
+
+Three switches, each paired against the adopted land-grab executor (1,024
+games from map 1500000, bean-void):
+
+| Change | 60 years | 100 years |
+| --- | ---: | ---: |
+| `colony_starbases`: a colony with its garrison met builds a base before warships | -0.014 ± 0.016 | -0.021 ± 0.017 |
+| tax 50% with `colony_starbases` | -0.127 ± 0.015 | -0.136 ± 0.015 |
+| tax 50% alone | -0.093 ± 0.016 | -0.129 ± 0.016 |
+| `emergency_salvage` (23.5 salvages a game) | -0.007 ± 0.016 | -0.035 ± 0.017 |
+
+`emergency_salvage`: a world with an enemy at war seen in or next to its
+sector in the last year, no guard of its own, and a budget short of the
+armies and batteries it lacks salvages the fleets there made only of
+destroyers, ETACs and scouts. A destroyer returns 3 points and a battery
+costs 20, and without a base the world still spends only 1x its
+Production a year, so the scrap money comes too slowly.
+
+None passes as it stands. Lower tax is the large loss, and bases do not
+recover it. As with mixed hulls (t189), the weights were tuned without
+bases, so the next step proposed is a retune with `keep_starbase` and
+`colony_starbases` on, letting tax, garrisons and the rest adjust around
+them, then the paired check against the adopted style.
+
 ### t192
 
 Name the weakness the exploiter found.
