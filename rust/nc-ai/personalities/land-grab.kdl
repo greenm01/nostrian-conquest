@@ -40,6 +40,7 @@ doctrine {
     ferry #true
     blitz #true
     reinforce #true
+    colony-starbases #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

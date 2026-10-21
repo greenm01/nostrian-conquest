@@ -246,7 +246,7 @@ impl Doctrine {
         blitz: true,
         reinforce: true,
         keep_starbase: false,
-        colony_starbases: false,
+        colony_starbases: true,
         emergency_salvage: false,
         growth_tax: false,
     };

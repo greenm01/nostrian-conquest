@@ -36,6 +36,7 @@ doctrine {
     ferry #false
     blitz #false
     reinforce #false
+    colony-starbases #false
 }
 // Tuning keeps the style: battleships preferred, expansion unchanged.
 bounds {

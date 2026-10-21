@@ -2675,6 +2675,10 @@ against land-grab as adopted, 1,024 maps from 1500000, bean-void:
 Saving for colony bases now passes "doesn't lose" at both lengths. A low
 young-empire tax still loses, though bases halve the loss.
 
+Adopted with the owner's OK (2026-10-21): `colony-starbases` is now a
+personality switch, on in land-grab and `Doctrine::CURRENT`, off in the other
+styles. The ONNX seat fixtures were re-recorded.
+
 ### t192
 
 Name the weakness the exploiter found.

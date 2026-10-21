@@ -35,6 +35,7 @@ doctrine {
     ferry #false
     blitz #false
     reinforce #false
+    colony-starbases #false
 }
 // Tuning keeps the style: destroyers preferred, short odds, early-ish war.
 bounds {
