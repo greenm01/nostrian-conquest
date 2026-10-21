@@ -22,7 +22,7 @@ import torch
 
 import nc_ai_env
 from fleet_imitate import actions_for
-from fleet_policy import (BUILD_HEADS, bucket, build_arrays, fleet_arrays, fleet_batch, greedy_join,
+from fleet_policy import (BUILD_HEADS, bucket, build_arrays, fleet_arrays, fleet_batch, greedy_build,
                           load_fleet_agent)
 from policy import device, goals_for, save
 
@@ -104,7 +104,7 @@ def main():
             optimizer.step()
             losses.append(loss.item())
             with torch.no_grad():
-                hits += int(((greedy_join(dists["build"].logits) == labels["build"]) & choosing).sum())
+                hits += int(((greedy_build(dists["build"].logits) == labels["build"]) & choosing).sum())
                 slots += int(choosing.sum())
                 built += int((goals["build"][:n] > 0).sum())
                 labelled += int(ordered.sum())

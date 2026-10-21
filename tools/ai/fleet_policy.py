@@ -17,8 +17,11 @@ plays as it did, and two loads of it start identical.
 Since t207 each world token also chooses its builds: a kind (or none) and an
 amount for each of ``BUILD_SLOTS`` slots. Builds are seat-level choices, so
 with ``builds=True`` they ride with the goals: in the goal choices, the goal
-log-probability and the goal distributions. The build head starts at "none"
-like the join head.
+log-probability and the goal distributions. A world whose first slot
+chooses ``BUILD_EXECUTOR`` builds as the seat's executor would, and its other
+slots and amounts are ignored (and not scored). The build head starts there,
+so a seat that takes over its builds starts level with the executor, and
+sampled play tries other builds at a few worlds a year (``reset_build_heads``).
 """
 
 import math
@@ -45,11 +48,21 @@ def greedy_join(logits):
     """The join head's greedy choice from its ``[..., 1 + F]`` logits: join
     when joining at all is likelier than none, then the likeliest host. A
     plain argmax splits joining among the hosts, so none wins at 0.4 against
-    six hosts at 0.1 each (t191). The build head's kinds split the same way
-    against "no build" (t207), so its greedy choice is made this way too."""
+    six hosts at 0.1 each (t191)."""
     hosts = logits[..., 1:]
     join = hosts.logsumexp(-1) > logits[..., 0]
     return torch.where(join, hosts.argmax(-1) + 1, torch.zeros_like(hosts[..., 0], dtype=torch.long))
+
+
+def greedy_build(logits):
+    """The build head's greedy choice from its ``[..., BUILD_CHOICES]``
+    logits, as ``greedy_join``: building some kind (summed) against none and
+    against building as the executor would, then the likeliest kind."""
+    executor = nc_ai_env.BUILD_EXECUTOR
+    kinds = logits[..., 1:executor]
+    build = kinds.logsumexp(-1) > torch.maximum(logits[..., 0], logits[..., executor])
+    rest = torch.where(logits[..., executor] > logits[..., 0], executor, 0)
+    return torch.where(build, kinds.argmax(-1) + 1, rest)
 
 
 def fleet_batch(obs, masks, goal_masks, select, dev):
@@ -165,13 +178,14 @@ class FleetAgent(Strategist):
             self.fleet_join_key.weight.copy_(torch.eye(self.fleet_join_key.in_features))
 
     def reset_build_heads(self):
-        """Start the build head on "none" in every slot, and the amount
-        head even, the same every time."""
+        """Start the build head on building as the executor would in every
+        slot, about 94% against the kinds and none, and the amount head
+        even, the same every time."""
         with torch.no_grad():
             for head in (self.world_build, self.world_amount):
                 head.weight.zero_()
                 head.bias.zero_()
-            self.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)[:, 0] = 8.0
+            self.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)[:, nc_ai_env.BUILD_EXECUTOR] = 5.0
 
     def build_logits(self, batch, g, worlds, goals):
         """Per world and slot, ``build`` ``[N, W, S, BUILD_CHOICES]`` logits
@@ -271,9 +285,13 @@ class FleetAgent(Strategist):
                 for name in BUILD_HEADS:
                     goals[name] = pick(build_dists[name])
                 if greedy:
-                    goals["build"] = greedy_join(build_dists["build"].logits)
-            ordered = goals["build"] > 0
-            goal_logp = (goal_logp + build_dists["build"].log_prob(goals["build"]).sum((1, 2))
+                    goals["build"] = greedy_build(build_dists["build"].logits)
+            executor = nc_ai_env.BUILD_EXECUTOR
+            # A world that defers to the executor scores only its first slot.
+            live = torch.ones_like(goals["build"], dtype=torch.bool)
+            live[..., 1:] = (goals["build"][..., :1] != executor)
+            ordered = live & (goals["build"] > 0) & (goals["build"] != executor)
+            goal_logp = (goal_logp + (build_dists["build"].log_prob(goals["build"]) * live).sum((1, 2))
                          + (build_dists["amount"].log_prob(goals["amount"]) * ordered).sum((1, 2)))
             goal_dists = {**goal_dists, **build_dists}
         fleet_logp = sum(dists[name].log_prob(fleet_choices[name]) for name in FLEET_HEADS)

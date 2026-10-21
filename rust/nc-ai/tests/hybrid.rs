@@ -1,13 +1,17 @@
 //! Hybrid seats (t157): a strategist whose network also orders the fleets
 //! of handed-over families, and with `builds` builds (t207). Given the
-//! executor's own choices it plays exactly as a strategist; fleet choices
-//! outside the masks are refused.
+//! executor's own choices, or with every world building as the executor
+//! would, it plays exactly as a strategist; fleet choices outside the masks
+//! are refused.
 
 #[allow(dead_code)]
 mod common;
 
 use common::arrays::tuned_without_stations;
-use nc_ai::{BatchActions, BatchEnv, Families, FleetArrays, Seat, Weights};
+use nc_ai::{
+    BUILD_CHOICES, BUILD_EXECUTOR, BUILD_SLOTS, BatchActions, BatchEnv, Families, FleetArrays,
+    Seat, Weights,
+};
 
 const PLAYERS: u8 = 4;
 
@@ -59,18 +63,34 @@ fn lineup(seat: Seat) -> Vec<Seat> {
 
 #[test]
 fn a_hybrid_given_the_executors_fleet_orders_plays_as_a_strategist() {
-    plays_as_a_strategist(Families::ALL);
+    plays_as_a_strategist(Families::ALL, false);
 }
 
 #[test]
 fn a_hybrid_given_the_executors_builds_too_plays_as_a_strategist() {
-    plays_as_a_strategist(Families {
-        builds: true,
-        ..Families::ALL
-    });
+    plays_as_a_strategist(
+        Families {
+            builds: true,
+            ..Families::ALL
+        },
+        false,
+    );
 }
 
-fn plays_as_a_strategist(handed: Families) {
+#[test]
+fn a_hybrid_whose_worlds_build_as_the_executor_would_plays_as_a_strategist() {
+    plays_as_a_strategist(
+        Families {
+            builds: true,
+            ..Families::ALL
+        },
+        true,
+    );
+}
+
+/// With `defer`, every world the seat may build at chooses
+/// [`BUILD_EXECUTOR`] in its first slot in place of the executor's builds.
+fn plays_as_a_strategist(handed: Families, defer: bool) {
     let maps = [101, 102];
     let years = 40;
     let mut hybrid = BatchEnv::new(
@@ -100,9 +120,17 @@ fn plays_as_a_strategist(handed: Families) {
     let mut families = [0usize; 4];
     loop {
         let goals = hybrid.goal_labels();
-        let fleets = hybrid
+        let mut fleets = hybrid
             .fleet_labels(&goals.view())
             .expect("labels are allowed goals");
+        if defer {
+            let allowed = hybrid.masks().build;
+            for (world, slots) in fleets.build.data.chunks_mut(BUILD_SLOTS).enumerate() {
+                if allowed.data[world * BUILD_CHOICES + BUILD_EXECUTOR] {
+                    slots[0] = BUILD_EXECUTOR as i64;
+                }
+            }
+        }
         for &family in fleets.family.data.iter().filter(|&&f| f >= 0) {
             families[family as usize] += 1;
         }

@@ -53,8 +53,12 @@ pub const TAX_STEP: u8 = 5;
 pub const TAX_CHOICES: usize = 21;
 /// Keep the current relation, make it neutral, or declare enemy.
 pub const DIPLOMACY_CHOICES: usize = 3;
-/// No build, or one entry per [`BUILD_UNITS`] row.
-pub const BUILD_CHOICES: usize = 1 + BUILD_UNITS.len();
+/// No build, one entry per [`BUILD_UNITS`] row, then [`BUILD_EXECUTOR`].
+pub const BUILD_CHOICES: usize = 2 + BUILD_UNITS.len();
+/// Build as the seat's executor would (t207): a hybrid seat that hands its
+/// builds to the network keeps the executor's builds at a world whose first
+/// slot chooses this. Anywhere else it builds nothing.
+pub const BUILD_EXECUTOR: usize = 1 + BUILD_UNITS.len();
 /// A quarter, half, three quarters or all of the world's remaining budget.
 pub const BUILD_AMOUNT_CHOICES: usize = 4;
 /// Builds a world may order in one year.
@@ -306,6 +310,7 @@ fn planet_mask(game_data: &CoreGameData, record: usize) -> PlanetMask {
     let left = game_data.planet_spend_left(record).ok();
     let mut build = [false; BUILD_CHOICES];
     build[0] = true;
+    build[BUILD_EXECUTOR] = true;
     for (idx, unit) in BUILD_UNITS.iter().enumerate() {
         build[idx + 1] = left.is_some_and(|left| left.points_for(unit.kind) >= unit.cost);
     }
@@ -500,7 +505,7 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
             continue;
         };
         for (&build, &amount) in choice.build.iter().zip(&choice.amount) {
-            if build == 0 {
+            if build == 0 || build == BUILD_EXECUTOR {
                 continue;
             }
             let unit = &BUILD_UNITS[build - 1];

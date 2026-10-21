@@ -26,10 +26,10 @@ mod personality;
 mod replay;
 
 pub use action::{
-    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DETACH_CHOICES, DETACHES, DIPLOMACY_CHOICES,
-    DecodedTurn, Detach, FleetChoice, FleetMask, MISSION_CHOICES, MISSIONS, PlanetChoice,
-    PlanetMask, ROE_CHOICES, SPEED_CHOICES, SeatAction, SeatMasks, TAX_CHOICES, TAX_STEP,
-    WAYPOINT_CHOICES, commission_submission, decode_action, detach_choice, seat_masks,
+    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_EXECUTOR, BUILD_SLOTS, DETACH_CHOICES, DETACHES,
+    DIPLOMACY_CHOICES, DecodedTurn, Detach, FleetChoice, FleetMask, MISSION_CHOICES, MISSIONS,
+    PlanetChoice, PlanetMask, ROE_CHOICES, SPEED_CHOICES, SeatAction, SeatMasks, TAX_CHOICES,
+    TAX_STEP, WAYPOINT_CHOICES, commission_submission, decode_action, detach_choice, seat_masks,
     sector_mission, waypoint,
 };
 pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};

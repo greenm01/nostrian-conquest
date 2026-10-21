@@ -536,6 +536,7 @@ fn nc_ai_env(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("POSTURES", nc_ai::POSTURES)?;
     m.add("DIPLOMACY_CHOICES", nc_ai::DIPLOMACY_CHOICES)?;
     m.add("BUILD_CHOICES", nc_ai::BUILD_CHOICES)?;
+    m.add("BUILD_EXECUTOR", nc_ai::BUILD_EXECUTOR)?;
     m.add("BUILD_AMOUNT_CHOICES", nc_ai::BUILD_AMOUNT_CHOICES)?;
     m.add("BUILD_SLOTS", nc_ai::BUILD_SLOTS)?;
     m.add("MISSION_CHOICES", nc_ai::MISSION_CHOICES)?;

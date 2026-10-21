@@ -35,8 +35,8 @@ use nc_data::{
 use nc_engine::BUILD_UNITS;
 
 use crate::action::{
-    BUILD_AMOUNT_CHOICES, BUILD_SLOTS, Detach, FleetChoice, FleetMask, MISSIONS, PlanetChoice,
-    SeatAction, SeatMasks, TAX_STEP, build_units, detach_choice,
+    BUILD_AMOUNT_CHOICES, BUILD_EXECUTOR, BUILD_SLOTS, Detach, FleetChoice, FleetMask, MISSIONS,
+    PlanetChoice, SeatAction, SeatMasks, TAX_STEP, build_units, detach_choice,
 };
 use crate::goals::{Goals, claimed_worlds, colonizable, posture_weights, world_at};
 use crate::memory::SeatMemory;
@@ -2022,7 +2022,11 @@ pub fn hand_to_network(
     builds: &[PlanetChoice],
 ) {
     if families.builds {
-        action.planets = builds.to_vec();
+        for (planet, mine) in action.planets.iter_mut().zip(builds) {
+            if mine.build[0] != BUILD_EXECUTOR {
+                *planet = *mine;
+            }
+        }
     }
     for (choice, mine) in action.fleets.iter_mut().zip(network) {
         if !families.contains(fleet_family(&game_data.fleets[choice.record - 1])) {

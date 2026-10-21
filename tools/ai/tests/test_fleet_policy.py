@@ -42,10 +42,15 @@ class BuildHeadTest(unittest.TestCase):
                                         self.select, torch.device("cpu")))
         self.model = FleetAgent()
 
-    def test_starts_on_none_and_only_builds_what_the_mask_allows(self):
+    def test_starts_as_the_executor_and_only_builds_what_the_mask_allows(self):
         with torch.no_grad():
             goals, *_ = self.model.act(self.batch, greedy=True, builds=True)
-        self.assertEqual(int(goals["build"].sum()), 0)
+        executor = nc_ai_env.BUILD_EXECUTOR
+        owned = self.allowed[:, :, executor]
+        self.assertTrue(owned.any())
+        chosen = goals["build"][:, : self.env.worlds].numpy()
+        self.assertTrue((chosen[owned] == executor).all())
+        self.assertTrue((chosen[~owned] == 0).all())
         with torch.no_grad():
             for _ in range(20):
                 goals, _, goal_lp, *_ = self.model.act(self.batch, builds=True)
@@ -55,13 +60,15 @@ class BuildHeadTest(unittest.TestCase):
                 self.assertTrue(taken.all())
 
     def test_greedy_builds_when_building_is_likelier_than_none(self):
-        # Each kind is less likely than none, but three or more together are
-        # likelier, so greedy builds where at least three are allowed.
+        # Each kind is less likely than none (or the unlikely executor), but
+        # three or more together are likelier, so greedy builds where at
+        # least three are allowed.
         with torch.no_grad():
             bias = self.model.world_build.bias.view(nc_ai_env.BUILD_SLOTS, -1)
             bias[:, 0], bias[:, 1:] = 2.0, 1.0
+            bias[:, nc_ai_env.BUILD_EXECUTOR] = -20.0
             goals, *_ = self.model.act(self.batch, greedy=True, builds=True)
-        kinds = self.allowed[:, :, 1:].sum(-1)
+        kinds = self.allowed[:, :, 1:nc_ai_env.BUILD_EXECUTOR].sum(-1)
         built = goals["build"][:, : self.env.worlds, 0].numpy() > 0
         self.assertTrue(kinds.max() >= 3)
         self.assertTrue((built == (kinds >= 3)).all())
