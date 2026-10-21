@@ -33,6 +33,7 @@ doctrine {
     pickets #false
     ferry #false
     blitz #false
+    reinforce #false
 }
 // Tuning keeps the style: destroyers preferred, short odds, early-ish war.
 bounds {

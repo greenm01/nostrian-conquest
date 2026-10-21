@@ -3,7 +3,8 @@
 // Retuned under t206's cover rules with mixed hulls: cruisers and destroyers
 // in about equal weight, no battleships in the line. Spare transports
 // ferry armies to threatened colonies (t191), and strikes blitz worlds whose
-// batteries are known gone (t207). These are `Weights::TUNED`.
+// batteries are known gone (t207). Idle warships join a strike force that
+// falls short of its target (t207). These are `Weights::TUNED`.
 personality "land-grab"
 weights {
     tax 62.702686
@@ -37,6 +38,7 @@ doctrine {
     pickets #false
     ferry #true
     blitz #true
+    reinforce #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

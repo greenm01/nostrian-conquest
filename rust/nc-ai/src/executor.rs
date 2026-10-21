@@ -164,10 +164,10 @@ pub struct Doctrine {
     /// needed are the same (accepted: neutral to slightly better at 60 and
     /// 100 years). Off, such worlds are invaded.
     pub blitz: bool,
-    /// Warships at home that cannot strike on their own Join a strike force
-    /// under way that has fallen short of its target's need, when they bring
-    /// it back up to `attack_ratio` times the target's defence (t207). Off,
-    /// they keep gathering at home.
+    /// Warships at home that cannot strike on their own Join the nearest
+    /// strike force under way that has fallen short of `attack_ratio` times
+    /// its target's defence (t207, accepted: neutral at 60 and 100 years,
+    /// about 2.7 joins a game). Off, they keep gathering at home.
     pub reinforce: bool,
 }
 
@@ -215,7 +215,7 @@ impl Doctrine {
         pickets: false,
         ferry: true,
         blitz: true,
-        reinforce: false,
+        reinforce: true,
     };
 }
 
@@ -1666,8 +1666,7 @@ fn own_fleet_with_number(game_data: &CoreGameData, empire: u8, number: u16) -> O
 
 /// The nearest of the empire's strike forces under way (warships on
 /// Bombard, Invade or Blitz) that is short of what its target needs,
-/// `attack_ratio` times the target's known defence, and that `fleet` would
-/// bring back up to it.
+/// `attack_ratio` times the target's known defence.
 fn strike_host(
     game_data: &CoreGameData,
     memory: &SeatMemory,
@@ -1689,10 +1688,7 @@ fn strike_host(
                 )
                 && world_at(game_data, host.target.to_array())
                     .and_then(|idx| memory.planet_intel.get(&(idx + 1)))
-                    .is_some_and(|intel| {
-                        let need = weights.attack_ratio * defense(intel);
-                        strength(host) < need && strength(host) + strength(fleet) >= need
-                    })
+                    .is_some_and(|intel| strength(host) < weights.attack_ratio * defense(intel))
         })
         .min_by(|(_, a), (_, b)| {
             let from = fleet.sector.to_array();

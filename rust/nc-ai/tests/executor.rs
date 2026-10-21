@@ -84,8 +84,9 @@ fn the_executor_beats_the_aggressor() {
 /// At t159 these matched t154's own results exactly. Since t178, every seat
 /// learns what its own attacks reveal, which changes these games, since
 /// t198 no mixed fleet gets a combat bonus, and since t206 heavies cover
-/// destroyers, which finish cripples at half price. The values below are
-/// recorded with all three.
+/// destroyers, which finish cripples at half price. Since t194 an attacker
+/// learns a world's figures after bombarding it. The values below are
+/// recorded with all four.
 #[test]
 fn the_classic_doctrine_replays_t154_exactly() {
     let classic = Doctrine {
@@ -104,6 +105,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
         pickets: false,
         ferry: false,
         blitz: false,
+        reinforce: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
@@ -119,11 +121,11 @@ fn the_classic_doctrine_replays_t154_exactly() {
     };
     assert_eq!(
         play_match(100000, &[tuned, baseline, baseline, baseline], 60),
-        recorded([411, 223, 262, 374], [6, 3, 6, 5])
+        recorded([473, 128, 334, 490], [7, 2, 5, 6])
     );
     assert_eq!(
         play_match(100001, &mixed, 60),
-        recorded([306, 23, 911, 100], [6, 1, 12, 1])
+        recorded([246, 85, 793, 100], [6, 1, 12, 1])
     );
 }
 

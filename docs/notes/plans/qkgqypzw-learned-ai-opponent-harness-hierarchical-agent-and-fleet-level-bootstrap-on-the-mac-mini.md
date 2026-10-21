@@ -2508,6 +2508,33 @@ because idle ETAC fleets still watch and soak up fire. It fails "doesn't
 lose", so the switch was not kept in `Doctrine`; the patch is in the
 private `t207-blitz/` run directory.
 
+**Join to reinforce, adopted (owner, 2026-10-20).** The owner's doctrine:
+Join Another Fleet reinforces a fleet already on an active mission, where
+Rendezvous gathers fleets at a sector to merge there. t189's `reinforce`
+trial lost because home warships joined any strike under way instead of
+launching a second one. The new `Doctrine.reinforce` fires only for
+warships at home that found no strike of their own (after the strike,
+home-guard and blockade choices) and joins the nearest strike force on
+Bombard, Invade or Blitz whose strength is below `attack_ratio` times its
+target's known defence; empty transports load armies first. Test:
+`nc-ai/tests/reinforce.rs`. Paired `executor_matches`, land-grab against
+land-grab, 1,024 games from map 1500000 (bean-void):
+
+| Rule | 60 years | 100 years | Joins a game (100 years) |
+| --- | ---: | ---: | ---: |
+| strict: the joiner must bring the host up to the need | +0.007 ± 0.004 | +0.012 ± 0.006 | 0.2 |
+| loose: any host short of the need | -0.002 ± 0.011 | +0.010 ± 0.014 | 2.7 |
+
+Both pass "doesn't lose". The owner chose the loose rule, which uses Join
+regularly; it is on in `Doctrine::CURRENT` and the land-grab style.
+`style_stats` now counts joins and takes `--with`. Joins reach only
+executor seats: an agent seat's strike fleets are the network's.
+
+The classic replay test (`the_classic_doctrine_replays_t154_exactly`) had
+failed since t194, whose bombardment intel changes what executors learn; it
+was not run then. Its values are re-recorded. The seat fixtures' games were
+re-recorded too, since their executor seats now join.
+
 ### t192
 
 Name the weakness the exploiter found.
