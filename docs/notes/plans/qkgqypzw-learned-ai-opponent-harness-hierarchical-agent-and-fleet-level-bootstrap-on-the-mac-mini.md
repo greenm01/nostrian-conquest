@@ -2703,6 +2703,8 @@ Paired as above:
 
 Repair is neutral and passes "doesn't lose"; with it, guarding loses less
 (-0.030 to -0.019 at 100 years).
+Adopted with the owner's OK (2026-10-21): `repair-at-bases` is a
+personality switch, on in land-grab and `Doctrine::CURRENT`.
 
 #### Step 2 plan: let the agent choose everything (2026-10-21)
 

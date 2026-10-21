@@ -261,7 +261,7 @@ impl Doctrine {
         emergency_salvage: false,
         growth_tax: false,
         guard_bases: false,
-        repair_at_bases: false,
+        repair_at_bases: true,
     };
 }
 

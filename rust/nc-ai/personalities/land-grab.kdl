@@ -41,6 +41,7 @@ doctrine {
     blitz #true
     reinforce #true
     colony-starbases #true
+    repair-at-bases #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

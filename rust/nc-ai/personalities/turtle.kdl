@@ -37,6 +37,7 @@ doctrine {
     blitz #false
     reinforce #false
     colony-starbases #false
+    repair-at-bases #false
 }
 // Tuning keeps the style: full garrisons and batteries, starbases, late war
 // and long odds.

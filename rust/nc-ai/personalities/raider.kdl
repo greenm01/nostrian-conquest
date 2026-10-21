@@ -36,6 +36,7 @@ doctrine {
     blitz #false
     reinforce #false
     colony-starbases #false
+    repair-at-bases #false
 }
 // Tuning keeps the style: destroyers preferred, short odds, early-ish war.
 bounds {
