@@ -99,6 +99,7 @@ fn network_invasions_land_as_the_executor_would() {
         scout: true,
         strike: true,
         convoy: true,
+        builds: false,
     };
     let mut converted = 0;
     for map_seed in 0..2 {
@@ -122,7 +123,15 @@ fn network_invasions_land_as_the_executor_would() {
                     .filter(|(ours, theirs)| ours != theirs)
                     .count();
                 let mut handed = action.clone();
-                hand_to_network(game_data, memory, &on, every, &mut handed, &network.fleets);
+                hand_to_network(
+                    game_data,
+                    memory,
+                    &on,
+                    every,
+                    &mut handed,
+                    &network.fleets,
+                    &[],
+                );
                 assert_eq!(handed, action);
                 let decoded = decode_action(game_data, empire, &action);
                 game.submit_turn(&decoded.submission)

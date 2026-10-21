@@ -1954,14 +1954,15 @@ pub enum Family {
     Convoy,
 }
 
-/// The mission families a hybrid seat's network orders; the executor
-/// orders the rest.
+/// The mission families a hybrid seat's network orders, and whether it
+/// builds (t207); the executor does the rest.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Families {
     pub colonize: bool,
     pub scout: bool,
     pub strike: bool,
     pub convoy: bool,
+    pub builds: bool,
 }
 
 impl Families {
@@ -1970,12 +1971,15 @@ impl Families {
         scout: false,
         strike: false,
         convoy: false,
+        builds: false,
     };
+    /// Every fleet family; the executor still builds.
     pub const ALL: Families = Families {
         colonize: true,
         scout: true,
         strike: true,
         convoy: true,
+        builds: false,
     };
 
     pub fn contains(&self, family: Family) -> bool {
@@ -2004,7 +2008,8 @@ pub fn network_joins(game_data: &CoreGameData, masks: &mut SeatMasks, families: 
 }
 
 /// Hand a hybrid seat's `families` fleets to its network: `network`'s
-/// choices replace the executor's in `action`. Under the blitz doctrine, the
+/// choices replace the executor's in `action`, and with `families.builds`
+/// so do the network's `builds`. Under the blitz doctrine, the
 /// network's invasions of worlds whose batteries are known gone land as
 /// blitzes, as the executor's do (t207).
 pub fn hand_to_network(
@@ -2014,7 +2019,11 @@ pub fn hand_to_network(
     families: Families,
     action: &mut SeatAction,
     network: &[FleetChoice],
+    builds: &[PlanetChoice],
 ) {
+    if families.builds {
+        action.planets = builds.to_vec();
+    }
     for (choice, mine) in action.fleets.iter_mut().zip(network) {
         if !families.contains(fleet_family(&game_data.fleets[choice.record - 1])) {
             continue;

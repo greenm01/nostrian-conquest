@@ -1,6 +1,7 @@
 //! Hybrid seats (t157): a strategist whose network also orders the fleets
-//! of handed-over families. Given the executor's own fleet choices it plays
-//! exactly as a strategist; fleet choices outside the masks are refused.
+//! of handed-over families, and with `builds` builds (t207). Given the
+//! executor's own choices it plays exactly as a strategist; fleet choices
+//! outside the masks are refused.
 
 #[allow(dead_code)]
 mod common;
@@ -10,12 +11,11 @@ use nc_ai::{BatchActions, BatchEnv, Families, FleetArrays, Seat, Weights};
 
 const PLAYERS: u8 = 4;
 
-/// Batch actions whose fleet fields come from `fleets`; the other fields
-/// are ignored for hybrid seats and left zero.
+/// Batch actions whose fleet and build fields come from `fleets`; the
+/// other fields are ignored for hybrid seats and left zero.
 struct Actions {
     zeros_seat: Vec<i64>,
     zeros_diplomacy: Vec<i64>,
-    zeros_world: Vec<i64>,
     fleets: FleetArrays,
 }
 
@@ -25,7 +25,6 @@ impl Actions {
         Actions {
             zeros_seat: vec![0; seats],
             zeros_diplomacy: vec![0; seats * usize::from(PLAYERS)],
-            zeros_world: vec![0; seats * env.worlds() * nc_ai::BUILD_SLOTS],
             fleets,
         }
     }
@@ -34,8 +33,8 @@ impl Actions {
         BatchActions {
             tax: &self.zeros_seat,
             diplomacy: &self.zeros_diplomacy,
-            build: &self.zeros_world,
-            amount: &self.zeros_world,
+            build: &self.fleets.build.data,
+            amount: &self.fleets.amount.data,
             mission: &self.fleets.mission.data,
             target: &self.fleets.target.data,
             waypoint: &self.fleets.waypoint.data,
@@ -60,6 +59,18 @@ fn lineup(seat: Seat) -> Vec<Seat> {
 
 #[test]
 fn a_hybrid_given_the_executors_fleet_orders_plays_as_a_strategist() {
+    plays_as_a_strategist(Families::ALL);
+}
+
+#[test]
+fn a_hybrid_given_the_executors_builds_too_plays_as_a_strategist() {
+    plays_as_a_strategist(Families {
+        builds: true,
+        ..Families::ALL
+    });
+}
+
+fn plays_as_a_strategist(handed: Families) {
     let maps = [101, 102];
     let years = 40;
     let mut hybrid = BatchEnv::new(
@@ -67,8 +78,8 @@ fn a_hybrid_given_the_executors_fleet_orders_plays_as_a_strategist() {
         &maps,
         &maps,
         &[
-            lineup(Seat::Hybrid(tuned_without_stations(), Families::ALL)),
-            lineup(Seat::Hybrid(tuned_without_stations(), Families::ALL)),
+            lineup(Seat::Hybrid(tuned_without_stations(), handed)),
+            lineup(Seat::Hybrid(tuned_without_stations(), handed)),
         ],
         years,
         0,

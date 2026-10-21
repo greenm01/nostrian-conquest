@@ -49,7 +49,7 @@ impl Env {
     /// `learned`, `strategist` (goals carried out by the tuned executor),
     /// `hybrid:FAMILIES` (a strategist whose network also orders the fleets
     /// of the comma-separated families `colonize`, `scout`, `strike` and
-    /// `convoy`),
+    /// `convoy`, and with `builds` also builds at its worlds),
     /// `executor` (tuned weights), `baseline` (the executor's hand-set
     /// weights), `classic` (t154's executor), `aggressor` or `autopilot`. Every seat is learned by
     /// default. A personality (t167) names its style's executor, and
@@ -125,7 +125,9 @@ impl Env {
     /// carried out `goals` this year: `mission`, `target`, `waypoint`,
     /// `speed`, `roe`,
     /// `load`, `detach`, `join`, `unload` and each row's `family` (0 colonize, 1
-    /// scout, 2 strike, 3 convoy, -1 padding), all `[games, seats, F]` int64.
+    /// scout, 2 strike, 3 convoy, -1 padding), all `[games, seats, F]` int64;
+    /// and the executor's `build` and `amount`, `[games, seats, W,
+    /// BUILD_SLOTS]` int64.
     fn fleet_labels<'py>(
         &self,
         py: Python<'py>,
@@ -166,6 +168,8 @@ impl Env {
         out.set_item("join", array(py, labels.join)?)?;
         out.set_item("unload", array(py, labels.unload)?)?;
         out.set_item("family", array(py, labels.family)?)?;
+        out.set_item("build", array(py, labels.build)?)?;
+        out.set_item("amount", array(py, labels.amount)?)?;
         Ok(out)
     }
 
@@ -459,6 +463,7 @@ fn seat(name: &str) -> PyResult<Seat> {
                 "scout" => handed.scout = true,
                 "strike" => handed.strike = true,
                 "convoy" => handed.convoy = true,
+                "builds" => handed.builds = true,
                 other => {
                     return Err(PyValueError::new_err(format!("unknown family {other:?}")));
                 }

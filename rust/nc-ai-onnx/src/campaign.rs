@@ -50,6 +50,7 @@ pub const AGENT_FAMILIES: Families = Families {
     scout: false,
     strike: true,
     convoy: false,
+    builds: false,
 };
 
 /// A campaign's AI seats during one maintenance run: each seat with the

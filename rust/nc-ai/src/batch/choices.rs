@@ -27,7 +27,24 @@ pub(crate) fn seat_action(
         .enumerate()
         .map(|(other, mask)| choice("diplomacy", actions.diplomacy[at * seats + other], mask))
         .collect::<Result<_, _>>()?;
-    let planets = masks
+    let planets = planet_choices(masks, actions, at, worlds)?;
+    let fleets = fleet_choices(masks, actions, at, fleets)?;
+    Ok(SeatAction {
+        tax,
+        diplomacy,
+        planets,
+        fleets,
+    })
+}
+
+/// One seat's build choices for each of its worlds.
+pub(crate) fn planet_choices(
+    masks: &SeatMasks,
+    actions: &BatchActions,
+    at: usize,
+    worlds: usize,
+) -> Result<Vec<PlanetChoice>, String> {
+    masks
         .planets
         .iter()
         .map(|mask| {
@@ -48,14 +65,7 @@ pub(crate) fn seat_action(
                 amount,
             })
         })
-        .collect::<Result<_, String>>()?;
-    let fleets = fleet_choices(masks, actions, at, fleets)?;
-    Ok(SeatAction {
-        tax,
-        diplomacy,
-        planets,
-        fleets,
-    })
+        .collect()
 }
 
 pub(crate) fn choice(name: &str, value: i64, mask: &[bool]) -> Result<usize, String> {

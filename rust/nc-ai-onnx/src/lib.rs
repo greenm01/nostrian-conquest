@@ -110,6 +110,8 @@ impl NetworkSeat {
             self.families,
             &mut action,
             &chosen.fleets,
+            // shortcut: the ONNX graph has no build head yet, so the seat never hands builds over; add it with t207 step 2's export.
+            &[],
         );
         Ok(decode_action(game_data, empire, &action).submission)
     }
