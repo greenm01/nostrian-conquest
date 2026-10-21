@@ -169,6 +169,14 @@ pub struct Doctrine {
     /// its target's defence (t207, accepted: neutral at 60 and 100 years,
     /// about 2.7 joins a game). Off, they keep gathering at home.
     pub reinforce: bool,
+    /// Round a positive starbase target up, as `keep_scouts` does for
+    /// scouts, so a weight under one half still keeps a starbase at home
+    /// (t207, trial).
+    pub keep_starbase: bool,
+    /// A colony whose garrison is met and whose budget covers a starbase
+    /// builds one before warships, for the base's growth bonus, 5x build
+    /// capacity and defence (t207, trial). Off, colonies build no bases.
+    pub colony_starbases: bool,
 }
 
 impl Doctrine {
@@ -192,6 +200,8 @@ impl Doctrine {
             "ferry" => &mut self.ferry,
             "blitz" => &mut self.blitz,
             "reinforce" => &mut self.reinforce,
+            "keep_starbase" => &mut self.keep_starbase,
+            "colony_starbases" => &mut self.colony_starbases,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -216,6 +226,8 @@ impl Doctrine {
         ferry: true,
         blitz: true,
         reinforce: true,
+        keep_starbase: false,
+        colony_starbases: false,
     };
 }
 
@@ -295,6 +307,8 @@ impl Weights {
             ferry: false,
             blitz: false,
             reinforce: false,
+            keep_starbase: false,
+            colony_starbases: false,
         },
     };
 
@@ -710,6 +724,11 @@ fn choose_builds(
     } else {
         weights.scouts
     };
+    let starbase_target = if weights.doctrine.keep_starbase && weights.starbases > 0.0 {
+        weights.starbases.ceil()
+    } else {
+        weights.starbases
+    };
     if weights.doctrine.defend && !is_home {
         let exposure = exposure(game_data, memory, planet.sector.to_array());
         let armies = army_target(game_data, memory, weights, record, false);
@@ -757,7 +776,7 @@ fn choose_builds(
             ProductionItemKind::Starbase,
             short(
                 planet.stardock.starbases + home_starbases(game_data, planet),
-                weights.starbases,
+                starbase_target,
             ),
         ));
         needs.push(Need::Units(
@@ -911,6 +930,13 @@ fn defended_builds(
         order(ProductionItemKind::Army, armies, &mut points);
     }
     order(ProductionItemKind::GroundBattery, batteries, &mut points);
+    if weights.doctrine.colony_starbases
+        && armies == 0
+        && batteries == 0
+        && planet.stardock.starbases + home_starbases(game_data, planet) == 0
+    {
+        order(ProductionItemKind::Starbase, 1, &mut points);
+    }
     if *picket && picket_fits(points) && order(ProductionItemKind::Destroyer, 1, &mut points) > 0 {
         *picket = false;
     } else if let Some(kind) = preferred_hull(allowed, weights, points, stock) {

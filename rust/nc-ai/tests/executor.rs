@@ -106,6 +106,8 @@ fn the_classic_doctrine_replays_t154_exactly() {
         ferry: false,
         blitz: false,
         reinforce: false,
+        keep_starbase: false,
+        colony_starbases: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
