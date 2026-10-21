@@ -281,6 +281,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 colony_starbases,
                 emergency_salvage: false,
                 growth_tax: false,
+                guard_bases: false,
             },
             ..Weights::from_array(weights)
         },

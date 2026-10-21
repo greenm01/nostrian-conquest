@@ -1,0 +1,60 @@
+//! Guarding threatened worlds with bases by Guard a Starbase (t207).
+
+mod common;
+
+use common::seated_game;
+use nc_ai::{Doctrine, Weights, commission_submission, decode_action, plan_turn, seat_masks};
+use nc_data::Order;
+
+const PLAYERS: u8 = 4;
+
+/// With `guard_bases`, warships guard their own worlds' bases, and the game
+/// accepts every such order.
+#[test]
+fn warships_guard_their_own_bases() {
+    let weights = Weights {
+        doctrine: Doctrine {
+            guard_bases: true,
+            ..Doctrine::CURRENT
+        },
+        ..Weights::TUNED
+    };
+    let mut guards = 0;
+    for map_seed in 0..2 {
+        let mut game = seated_game(PLAYERS, map_seed);
+        let start_year = game.play.built.game_data.conquest.game_year;
+        for _ in 0..60 {
+            for empire in 1..=PLAYERS {
+                if let Some(commission) = commission_submission(&game.play.built.game_data, empire)
+                {
+                    game.submit_turn(&commission).expect("commissioning");
+                }
+                let game_data = &game.play.built.game_data;
+                let memory = &game.seats[usize::from(empire) - 1];
+                let masks = seat_masks(game_data, empire);
+                let action = plan_turn(game_data, memory, &masks, &weights, start_year);
+                let decoded = decode_action(game_data, empire, &action);
+                assert!(decoded.dropped_fleet_orders.is_empty());
+                game.submit_turn(&decoded.submission)
+                    .expect("executor turn should submit");
+            }
+            let game_data = &game.play.built.game_data;
+            for fleet in &game_data.fleets {
+                if fleet.order == Order::GuardStarbase {
+                    let world = game_data
+                        .planets
+                        .iter()
+                        .find(|planet| planet.sector == fleet.target)
+                        .expect("a guarded base orbits a world");
+                    assert_eq!(world.owner, fleet.owner);
+                    guards += 1;
+                }
+            }
+            game.run_maintenance().expect("maintenance should run");
+            if game.play.winner_state.winner_empire.is_some() {
+                break;
+            }
+        }
+    }
+    assert!(guards > 0, "some base should be guarded");
+}

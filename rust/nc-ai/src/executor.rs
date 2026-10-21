@@ -194,6 +194,10 @@ pub struct Doctrine {
     /// few poor colonies do not (t207, trial; the owner's and the manual's
     /// advice). Off, `tax` all game.
     pub growth_tax: bool,
+    /// A warship fleet at rest guards, with Guard a Starbase, the nearest
+    /// threatened world of the empire's that has a base and no guard
+    /// (t207, trial; the owner's use). Off, bases get no guard of their own.
+    pub guard_bases: bool,
 }
 
 impl Doctrine {
@@ -221,6 +225,7 @@ impl Doctrine {
             "colony_starbases" => &mut self.colony_starbases,
             "emergency_salvage" => &mut self.emergency_salvage,
             "growth_tax" => &mut self.growth_tax,
+            "guard_bases" => &mut self.guard_bases,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -249,6 +254,7 @@ impl Doctrine {
         colony_starbases: true,
         emergency_salvage: false,
         growth_tax: false,
+        guard_bases: false,
     };
 }
 
@@ -335,6 +341,7 @@ impl Weights {
             colony_starbases: false,
             emergency_salvage: false,
             growth_tax: false,
+            guard_bases: false,
         },
     };
 
@@ -1305,6 +1312,25 @@ fn land_grab(memory: &SeatMemory) -> bool {
         .any(|intel| colonizable(intel, memory.empire))
 }
 
+/// The nearest of the seat's threatened worlds with a base of its own in
+/// orbit (`Doctrine::guard_bases`).
+fn threatened_base(game_data: &CoreGameData, memory: &SeatMemory, fleet: &Fleet) -> Option<usize> {
+    let here = fleet.sector.to_array();
+    game_data
+        .planets
+        .iter()
+        .enumerate()
+        .filter(|(_, planet)| {
+            planet.owner.0 == memory.empire
+                && home_starbases(game_data, planet) > 0
+                && threatened(game_data, memory, planet.sector.to_array())
+        })
+        .min_by(|a, b| {
+            distance(a.1.sector.to_array(), here).total_cmp(&distance(b.1.sector.to_array(), here))
+        })
+        .map(|(idx, _)| idx)
+}
+
 fn home_starbases(game_data: &CoreGameData, planet: &nc_data::Planet) -> u32 {
     game_data
         .bases
@@ -1765,6 +1791,15 @@ fn plan_fleets(
                 && has_combat_ships(fleet)
                 && let Some(home_sector) = home_sector
                 && let Some(choice) = post(home_idx, home_sector)
+            {
+                return choice;
+            }
+            // Bases get guards whatever the allocation holds back.
+            if weights.doctrine.guard_bases
+                && fleet.order == Order::HoldPosition
+                && has_combat_ships(fleet)
+                && let Some(idx) = threatened_base(game_data, memory, fleet)
+                && let Some(choice) = post(idx, game_data.planets[idx].sector.to_array())
             {
                 return choice;
             }

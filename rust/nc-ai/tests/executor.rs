@@ -110,6 +110,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
         colony_starbases: false,
         emergency_salvage: false,
         growth_tax: false,
+        guard_bases: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
