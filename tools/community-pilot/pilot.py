@@ -9,8 +9,9 @@
 
 Players sign in with real NIP-98 Nostr logins from throwaway keys (and with a
 spare Matrix account when the Keychain item `nc-pilot-matrix` holds its
-password). Terminals are real doors; their bytes go through a terminal
-emulator to read the 80x25 screen. Operator steps send the same JSON requests
+password; matrix.org accounts sign in by OAuth and are skipped). Terminals
+are real doors; their bytes go through a terminal emulator to read the 80x25
+screen. Operator steps send the same JSON requests
 as `nc-admin` to `nc-host admin`, locally or over SSH as `nccommunity`.
 
 Only games named `pilot-*` are changed. On the live server the pilot backs up
@@ -49,6 +50,10 @@ READ_ONLY = {'list', 'inspect', 'history', 'list_invites', 'verify_backup', 'bac
 
 class Failed(Exception):
     pass
+
+
+class Skipped(Exception):
+    """A check that cannot run here, such as a Matrix account that signs in by OAuth."""
 
 
 # ---- operator side ---------------------------------------------------------
@@ -315,10 +320,13 @@ class Pilot:
                    f'{again.status_code}, seat {again.json().get("seat")}, {claimed} claimed')
 
         if matrix:
-            mp = matrix.sign_in(Player(self.origin, 'matrix'))
-            self.check('Matrix sign-in by DM code', mp.account['provider'] == 'matrix', mp.account)
-            seat = mp.join(self.a).json().get('seat')
-            self.check('Matrix player joins pilot A', seat == 4, seat)
+            try:
+                mp = matrix.sign_in(Player(self.origin, 'matrix'))
+                self.check('Matrix sign-in by DM code', mp.account['provider'] == 'matrix', mp.account)
+                seat = mp.join(self.a).json().get('seat')
+                self.check('Matrix player joins pilot A', seat == 4, seat)
+            except Skipped as why:
+                self.check('Matrix sign-in by DM code', None, f'skipped: {why}')
         else:
             self.check('Matrix sign-in', None, 'skipped: no nc-pilot-matrix Keychain item')
 
@@ -572,16 +580,23 @@ class Matrix:
             'type': 'm.login.password', 'identifier': {'type': 'm.id.user', 'user': user}, 'password': password})
         login.raise_for_status()
         self.http.headers['Authorization'] = 'Bearer ' + login.json()['access_token']
-        self.since = self.sync(0)['next_batch']
+        # Only a starting point: an empty filter skips the account's history.
+        empty = json.dumps({'room': {'rooms': []}, 'presence': {'not_types': ['*']},
+                            'account_data': {'not_types': ['*']}})
+        self.since = self.sync(0, empty)['next_batch']
 
-    def sync(self, timeout=10000):
+    def sync(self, timeout=10000, filter=None):
         params = {'timeout': timeout}
+        if filter:
+            params['filter'] = filter
         if getattr(self, 'since', None):
             params['since'] = self.since
         return self.http.get(self.server + '/_matrix/client/v3/sync', params=params).json()
 
     def sign_in(self, player):
-        player.http.post('/auth/matrix/request', json={'matrix_id': self.user}).raise_for_status()
+        response = player.http.post('/auth/matrix/request', json={'matrix_id': self.user})
+        if response.status_code != 200:
+            raise Skipped(response.json().get('error', response.text))
         end = time.monotonic() + 90
         while time.monotonic() < end:
             data = self.sync()

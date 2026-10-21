@@ -343,8 +343,13 @@ with one seat claimed. Checks:
 - Sign-out closes the open terminal; `/api/me` and the terminal then
   refuse (401). No door processes are left running.
 
-Still needed for t121: Matrix sign-in with the spare account; attended
-Discord OAuth and one play-through by the owner; the announcement channel
+Matrix: the bridge signs matrix.org accounts in through OAuth ("Sign in
+with Matrix"), not the DM code, so the owner's `@greenm01:matrix.org`
+cannot test the code path; the pilot now reports such an account as
+skipped. The DM-code path needs an account on another homeserver.
+
+Still needed for t121: attended Discord and matrix.org OAuth sign-ins and
+one play-through by the owner; the announcement channel
 (`NC_DISCORD_CHANNEL_ID`) and a check of its posts. The throwaway pilot
 accounts and archived pilot games stay on the server.
 
