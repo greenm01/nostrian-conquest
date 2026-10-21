@@ -368,6 +368,16 @@ restore from crunch: the latest Beta 1 backup verified (`verify_backup`,
 both file hashes match) and restored into an empty root as Beta 1, one
 seat claimed, daily midnight schedule.
 
+### t211
+
+Turn on Discord announcements, split from t121 when it closed. Set
+`NC_DISCORD_CHANNEL_ID` in `/etc/nc-community/discord.env`, restart
+`nc-community-discord.service`, and check that a test game's recruiting post
+and a completed turn's post appear in the channel, then archive the test
+game.
+
+**Exit:** both posts seen in the configured channel.
+
 ## Map downloads and bot onboarding
 
 ### t122

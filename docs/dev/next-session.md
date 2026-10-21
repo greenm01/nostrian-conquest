@@ -226,7 +226,10 @@ tests passed.
 On 2026-10-18 the owner closed t119, t120, t143, t144 and t205 as built and
 tested; their attended checks (sign-in on all three providers, two browser
 terminals through a turn, live announcements once `NC_DISCORD_CHANNEL_ID` is
-set) are now t121's pilot exit. Run `zk queue` before starting new work. The current priority is the approved community-hosting work. Windows builds use a native MSVC host;
+set) were t121's pilot exit. t121 closed on 2026-10-20: the automated pilot
+(`tools/community-pilot/pilot.py`, 47 checks on archvps), the owner's
+Discord and matrix.org sign-in and play, and nightly off-server copies to
+crunch. Live announcements moved to t211. Run `zk queue` before starting new work. The current priority is the approved community-hosting work. Windows builds use a native MSVC host;
 sync by git bundle rather than remote `git pull`, which has hung before.
 Check its tree before updating it.
 
