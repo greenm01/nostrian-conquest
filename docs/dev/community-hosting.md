@@ -12,8 +12,9 @@ owner has tested sign-in, empire setup, saved orders and reports after two manua
 turns. A fresh invite-only lobby is recruiting, with its owner seat reserved. The turn
 and daily-backup timers are enabled; the lobby has no deadline until its owner
 starts it. The browser test game has been archived and is no longer listed. Both games have verified
-off-server copies and passed isolated paused restores. Two-account attended
-acceptance and automated off-server copying remain pending.
+off-server copies and passed isolated paused restores. Off-server copies are
+automated (see Recovery and acceptance). Attended Discord acceptance remains
+pending.
 
 ## Components
 
@@ -270,8 +271,16 @@ backup verification and restoration into an unused directory. Retain 30 daily
 backups and a pre-upgrade backup, and copy them off the server over encrypted
 transport. The daily backup timer retains 30 daily copies; maintenance retains 30 pre-turn
 copies per game. Manual/pre-upgrade copies are never pruned automatically.
-Off-server automation must be configured and checked before public launch;
-local snapshots alone are not disaster recovery.
+Local snapshots alone are not disaster recovery. The owner's Mac mini pulls
+the server's `.backups` directory every night at 06:00 local (after the
+server's 03:00 UTC backup) and sends it to an encrypted restic repository on
+crunch (`sftp:crunch:backups/nc-community`; 30 daily, 8 weekly and 24
+monthly snapshots). Pulling means a compromised server cannot delete the
+copies. The job is `~/.local/bin/nc-community-backup`, run by the launchd
+agent `net.greenm01.nc-community-backup`, and logs to
+`~/Library/Logs/nc-community-backup.log`. To recover, `restic restore` a
+snapshot, then `nc-admin backup verify` and `backup restore` the game's
+backup folder as above.
 
 If a turn stops with state `maintenance` because its process died, the next
 `due` check (the turns timer, every minute) replays it under its own request

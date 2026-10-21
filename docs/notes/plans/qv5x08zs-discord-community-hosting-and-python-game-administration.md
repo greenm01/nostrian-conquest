@@ -345,9 +345,17 @@ with one seat claimed. Checks:
 
 Still needed for t121: Matrix sign-in with the spare account; attended
 Discord OAuth and one play-through by the owner; the announcement channel
-(`NC_DISCORD_CHANNEL_ID`) and a check of its posts; automated off-server
-copies. The throwaway pilot accounts and archived pilot games stay on the
-server.
+(`NC_DISCORD_CHANNEL_ID`) and a check of its posts. The throwaway pilot
+accounts and archived pilot games stay on the server.
+
+**Off-server copies (2026-10-20).** The Mac mini pulls archvps's `.backups`
+nightly at 06:00 local with rsync and sends them to restic on crunch
+(`sftp:crunch:backups/nc-community`, 30 daily, 8 weekly, 24 monthly), via
+`~/.local/bin/nc-community-backup` and the launchd agent
+`net.greenm01.nc-community-backup`. First copy: 46 backups, 19 MB. Test
+restore from crunch: the latest Beta 1 backup verified (`verify_backup`,
+both file hashes match) and restored into an empty root as Beta 1, one
+seat claimed, daily midnight schedule.
 
 ## Map downloads and bot onboarding
 
