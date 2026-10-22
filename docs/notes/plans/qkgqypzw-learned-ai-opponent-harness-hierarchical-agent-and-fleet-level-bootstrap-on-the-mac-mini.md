@@ -2814,8 +2814,31 @@ Promoted `fleet-final` uses one tax rate a game and joins 441 times.
 Snapshot 150 passes strength at both lengths, and builds more transports
 (138 against 112 at 100 years). The starbase share stays at 2%. Later
 snapshots vary tax more and lose: the strategist's tax head drifts once
-nothing holds it, as the join head did in t191. The exploit check on
-snapshot 150 is still to run.
+nothing holds it, as the join head did in t191.
+
+**Exploit check on snapshot 150 (2026-10-22): a hole.** 80 iterations of
+`--exploit` from `fleet-final`, strike and builds handed over on both
+sides, ran on bean-void. Two things had to be fixed first. Frozen agents
+now choose their builds, since without that a target that hands over
+builds built nothing. The scorer now plays 256 games at a time, since all
+1,024 at once ran out of memory. Greedy, 1,024 maps from 100000, 60 years:
+
+| Seat against three copies of snapshot 150 | Win share |
+| --- | ---: |
+| Snapshot 150 itself | 0.256 +/- 0.014 |
+| Exploiter, iteration 40 | 0.385 +/- 0.015 |
+| Exploiter, iteration 60 | 0.428 +/- 0.015 |
+| Exploiter, iteration 80 | 0.416 +/- 0.015 |
+
+Earlier exploiters held promoted agents to 0.17-0.25 (t191, t202). The
+hole is not in the build head: with the executor building on both sides,
+the iteration-60 exploiter still scores 0.426 +/- 0.022 (512 games). The
+same exploiter scores 0.348 +/- 0.021 against promoted `fleet-final`, which
+t183's exploiter also reached (0.377). So snapshot 150 is more exploitable
+than the promoted agent in its goals and fleet orders, likely the tax and
+join drift once the KL reached 0. It fails the gate and is not promoted.
+Per the stop rule, the evidence goes to the owner before any variant or
+crunch run.
 
 ### t192
 
