@@ -321,13 +321,16 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
             if not seats.any():
                 continue
             batch = bucket(fleet_batch(obs, masks, goal_masks, seats, dev))
-            goals, fleets, *_ = agent.act(batch, greedy=True)
+            goals, fleets, *_ = agent.act(batch, greedy=True, builds="builds" in families)
             chosen = goals_for(goals, seats)
             for name in HEADS:
                 env_goals[name][seats] = chosen[name][seats]
             placed = fleet_arrays(fleets, seats, env.fleets)
-            for name in FLEET_HEADS:
-                fleet_actions[name][seats] = placed[name][seats]
+            if "builds" in families:
+                # The exploit target builds (seats that do not hand builds over ignore these).
+                placed.update(build_arrays(goals, seats, env.worlds))
+            for name, value in placed.items():
+                fleet_actions.setdefault(name, np.zeros_like(value))[seats] = value[seats]
     started = time.perf_counter()
     if teach and sample is not None:
         rows = sample["handed"].shape[1]
