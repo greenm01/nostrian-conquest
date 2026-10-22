@@ -455,13 +455,14 @@ def kl_to(new, old, handed, free=(), mission_smooth=0.0):
     return total
 
 
-def act_entropy(dist):
-    """The entropy of whether a head acts at all: its first choice (none)
-    against all the others together. A bonus on the whole distribution
+def act_entropy(dist, rest=0):
+    """The entropy of whether a head acts at all: its resting choice
+    ``rest`` (none; for builds, as the executor would) against all the
+    others together. A bonus on the whole distribution
     pushes a head with many targets toward a uniform choice among them, so
     it nearly always acts: in the t191 pilot, joins rose to 97% of fleet
     orders and the learner stopped winning."""
-    none = dist.probs[..., 0].clamp(1e-6, 1 - 1e-6)
+    none = dist.probs[..., rest].clamp(1e-6, 1 - 1e-6)
     return -(none * none.log() + (1 - none) * (1 - none).log())
 
 
@@ -512,7 +513,7 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
                             for name in args.free_heads if name in FLEET_HEADS),
                            torch.zeros((), device=dev))
             if builds and "build" in args.free_heads:
-                free_ent = free_ent + act_entropy(goal_dists["build"]).sum((1, 2)).mean()
+                free_ent = free_ent + act_entropy(goal_dists["build"], nc_ai_env.BUILD_EXECUTOR).sum((1, 2)).mean()
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
                     - args.entropy_coef * ent - free_coef * free_ent)
             if mission_coef > 0:
