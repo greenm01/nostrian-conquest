@@ -348,9 +348,10 @@ def learner_name(families, style=None):
 
 
 def frozen_name(families):
-    """The env seat name of a frozen agent: the learner's fleet families,
-    with the executor building, since a frozen agent may predate the build
-    head (t207)."""
+    """The env seat name of a frozen league agent: the learner's fleet
+    families, with the executor building, since a frozen agent may predate
+    the build head (t207). The ``--exploit`` target hands over the learner's
+    families, builds included, so its exploiter meets its builds."""
     # shortcut: frozen self-snapshots also leave builds to the executor; hand them builds once every league agent has a trained build head.
     return learner_name([f for f in families if f != "builds"])
 
@@ -370,7 +371,7 @@ def head_to_head(model, strategist, families, opponent, games, years, first_map,
     env = nc_ai_env.Env(PLAYERS, years, threads)
     learner = learner_name(families, style)
     names, roles = [], np.zeros((games, PLAYERS), np.int8)
-    other = frozen_name(families) if opponent == "target" else opponent
+    other = learner_name(families) if opponent == "target" else opponent
     other_role = {"strategist": 2, "target": 3}.get(opponent, 0)
     for game in range(games):
         lineup = [other] * PLAYERS
@@ -650,7 +651,7 @@ def main():
         mission_coef = args.mission_bonus * (max(0.0, 1 - (it - 1) / args.mission_until)
                                              if args.mission_until else 1.0)
         drawn = choose_lineups(rng, args.games, learner,
-                               frozen_name(families) if target else None, league)
+                               learner_name(families) if target else None, league)
         names, roles = drawn[:2]
         env.reset(list(range(next_map, next_map + args.games)), seats=names)
         next_map += args.games
