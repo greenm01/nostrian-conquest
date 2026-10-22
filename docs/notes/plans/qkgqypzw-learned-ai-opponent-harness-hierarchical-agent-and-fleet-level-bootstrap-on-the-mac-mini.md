@@ -2798,6 +2798,25 @@ a year, and the agent keeps those that win. The run starts from
 `fleet-final.pt` with no build imitation; its first sampled win share was
 0.19, against 0.22 for strike only.
 
+**Mac mini run, 200 iterations (2026-10-21).** Sampled builds of a kind
+other than the executor's rose from 0.5 to 3.8 per seat-year. Greedy evals
+against the executor fell to 0.14 at iteration 75, then rose to 0.41 by
+200, once the KL had faded. Paired `behaviour_report` against promoted
+`fleet-final`, 1,024 maps from 100000:
+
+| Snapshot | 60 years | 100 years | Tax rates a game | Joins a game, 100 y |
+| --- | ---: | ---: | ---: | ---: |
+| 150 | -0.002 +/- 0.020 | +0.013 +/- 0.018 | 1.3 | 931 |
+| 175 | -0.005 +/- 0.020 | -0.021 +/- 0.019 | 1.9 | 1,094 |
+| 200 | -0.072 +/- 0.020 | -0.056 +/- 0.019 | 2.4 | 1,328 |
+
+Promoted `fleet-final` uses one tax rate a game and joins 441 times.
+Snapshot 150 passes strength at both lengths, and builds more transports
+(138 against 112 at 100 years). The starbase share stays at 2%. Later
+snapshots vary tax more and lose: the strategist's tax head drifts once
+nothing holds it, as the join head did in t191. The exploit check on
+snapshot 150 is still to run.
+
 ### t192
 
 Name the weakness the exploiter found.
