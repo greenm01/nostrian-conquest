@@ -2854,6 +2854,13 @@ Paired `behaviour_report` against promoted `fleet-final`, 1,024 maps:
 
 Tax stays at one rate a game (60%), and starbases at 2% of builds.
 
+**Exploit check on snapshot 200** (`exploit-t207c`, bean-void): 80
+iterations of `--exploit`, each snapshot scored over 1,024 games in
+chunks of 256. The target scores 0.246 +/- 0.013 against the same
+panel. The exploiter scores 0.399 at iteration 40, 0.396 at 60 and
+0.386 +/- 0.015 at 80, against 0.416 for the free run. The floor keeps
+strength but does not close the hole, so the snapshot fails the gate.
+
 **Neither run learned to build.** A new `behaviour_report` row counts
 world-years the network builds its own way: 0.0% greedy for snapshot 200
 here and snapshots 150 and 200 of the free run. The first slot's
@@ -2932,6 +2939,27 @@ advantage is mostly noise, which matches the research note's credit
 diagnosis. A better critic (more inputs, such as every seat's state in
 training) and per-decision credit (t216's branch rollouts) are the
 levers.
+
+**Deployment sweep (2026-10-23).** Snapshot 200 sampled at temperature T
+on every head (`behaviour_report`'s `~T` suffix, seeded by map and
+year), paired against its own greedy play on 1,024 maps from 100000,
+one seat against three executors:
+
+| Temperature | Win share, 60 y | Win share, 100 y | Own builds | Tax rates a game, 100 y | Salvage a game, 100 y |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 (greedy) | 0.543 | 0.723 | 0.0% | 1.0 | 0.0 |
+| 0.3 | -0.006 +/- 0.020 | +0.025 +/- 0.018 | 0.3% | 1.0 | 0.0 |
+| 0.5 | +0.006 +/- 0.019 | +0.000 +/- 0.018 | 4.5% | 1.2 | 0.0 |
+| 0.8 | -0.145 +/- 0.019 | -0.189 +/- 0.019 | 21.4% | 2.6 | 1.1 |
+
+Guard Starbase rises from 0.5 to 4.2 a game at 0.8. Temperature 0.5
+plays as well as greedy while building its own way at 4.5% of
+world-years. No temperature is 2 standard errors better than greedy,
+so none goes to the owner for adoption. At 0.8 the rare orders appear
+but cost 0.15-0.19 of win share, the same cost as forcing builds. The
+margin rule was not run: the sweep already shows the low-probability
+choices lose. Sampling helps only if training first makes those choices
+good, which is t213-t216's job.
 
 ### t213
 

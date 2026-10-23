@@ -174,8 +174,9 @@ Step 4's masking and mission-conditioned target already exist; its
 entropy targets go with t213. The task details are in the plan's t212 to
 t217 sections.
 
-The exploit check on the KL-floor run's snapshot 200 (`exploit-t207c` on
-bean-void) was still running when this note was written.
+The exploit check on the KL-floor run's snapshot 200 failed: the
+exploiter reached 0.386 +/- 0.015. t212's results (steps 0 and 1) are
+in the plan's t212 section.
 
 ## Connections
 
