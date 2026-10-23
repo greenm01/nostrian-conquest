@@ -2871,6 +2871,84 @@ short, the anchor's KL charges for every deviation from the executor, and
 a single build's credit is lost in the turn's noise. The first step is a
 paired test of whether forced build overrides change outcomes at all.
 
+**Path forward (owner, 2026-10-23).** Diagnostics first (t212), then
+the anchor changes (t213, t214), then self-imitation (t215). Build credit
+and head changes (t216) wait on t212's paired test. Reward shaping (t217)
+waits on the owner. League changes stay with t184 on crunch. Each run
+uses the t207 gate: paired `behaviour_report` against promoted
+`fleet-final`, the 80-iteration exploit check scored against a fixed
+panel, and 0 export mismatches. Rows are from the [investigation's
+ranked plan](../investigations/g6uo9u0x-training-techniques-for-the-learned-agents-builds-drift-and-rare-orders.md#validation-and-remaining-work).
+
+### t212
+
+Diagnose before training more (Mac mini, hours, no training).
+
+1. Paired build test: on the same maps and seeds, play snapshot 200's
+   seat with the executor's builds against forced network builds (the
+   head's best non-executor kind) at a sampled share of worlds. Report
+   the win share difference with its standard error.
+2. Critic explained variance by game year, on the run's own games.
+3. Deployment sweep on the build, tax and mission heads: temperature 0,
+   0.3, 0.5, 0.8, and a margin rule (play a non-default choice when its
+   probability passes 0.25). Paired `behaviour_report` against greedy.
+
+Exit: the paired build delta, the explained-variance curve, and the
+sweep table recorded here. If the build delta is within 2 standard
+errors of zero, t216 is dropped for builds. A deployment rule 2 standard
+errors better than greedy goes to the owner for adoption.
+
+### t213
+
+Separate KL weights per head (one Mac mini run). Tax and join keep the
+0.02 floor. The build and rare-order heads take a KL to the anchor
+blended with ε = 0.1 of an even spread over legal choices. PPO's ratio
+clip and advantage normalization are taken per head.
+
+Exit: an exploiter scores 0.25 or less; the first slot's probability of
+`BUILD_EXECUTOR` falls below 0.80; paired strength within the t207 gate.
+
+### t214
+
+A moving anchor (one Mac mini run): a KL to the agent's own snapshot
+from one save earlier (TStarBot-X's DAPO), or to a trailing average of
+the policy (Magnetic Mirror Descent, η̃ about 0.05). It replaces the
+fixed imitation floor; a variant keeps the floor on tax and join.
+
+Exit: beats the 0.02-floor agent above 0.27 over 1,000 games; an
+exploiter scores 0.25 or less; tax and join drift no more than with the
+floor.
+
+### t215
+
+Self-imitation (UPGO) and a KL weight drawn each game from {0, 0.005,
+0.02, 0.1}, as Diplomacy's DiL-piKL does.
+
+Exit: 2 standard errors over t214's best on the panel, or more greedy
+use of rare orders at equal strength.
+
+### t216
+
+Build credit and build head structure, only if t212's paired test shows
+forced overrides change outcomes. First, branch rollouts from saved
+states: about 5% of world-years, three branches differing only in that
+world's build, about 10 years each, common seeds; their return
+difference is the build head's advantage. Then, if still flat, a gated
+head ("override?", then the kind), or a build mix the strategist holds
+for several years. Branch rollouts need many CPU cores; crunch suits
+them once the owner frees it.
+
+Exit: a paired override delta over 2 standard errors, and a panel gain.
+
+### t217
+
+Owner decision: an economic-lead reward shaping term. The potential is
+the seat's production share minus its rivals' mean, zero at game end and
+on elimination. Potential-based shaping keeps the best strategy
+unchanged (Ng 1999; Grześ 2017), but it is still a reward change.
+Optional: a novelty bonus for unusual orders that fades to zero. Nothing
+is built until the owner approves.
+
 ### t192
 
 Name the weakness the exploiter found.

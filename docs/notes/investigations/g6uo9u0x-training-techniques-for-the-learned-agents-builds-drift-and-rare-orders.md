@@ -160,6 +160,20 @@ fit the Mac mini; 6-8 suit crunch once the owner frees it.
 | 7 | Gated, then doctrine-level, build head | 2 days to a week | Paired delta > 2 SE and a panel gain |
 | 8 | League: exploiters seeded from executor styles, quality-score PFSP; ask approval for an economic-lead potential | Days, GPU | Exploiter ≤ 0.25 across resets while the panel rises |
 
+Open work (owner, 2026-10-23), in `todo.md`:
+
+- t212: steps 0 and 1.
+- t213: step 2.
+- t214: step 3.
+- t215: step 5.
+- t216: steps 6 and 7, only if t212 shows overrides matter.
+- t217: the shaping decision.
+- t184: step 8's league changes.
+
+Step 4's masking and mission-conditioned target already exist; its
+entropy targets go with t213. The task details are in the plan's t212 to
+t217 sections.
+
 The exploit check on the KL-floor run's snapshot 200 (`exploit-t207c` on
 bean-void) was still running when this note was written.
 
