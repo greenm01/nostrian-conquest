@@ -2971,6 +2971,28 @@ clip and advantage normalization are taken per head.
 Exit: an exploiter scores 0.25 or less; the first slot's probability of
 `BUILD_EXECUTOR` falls below 0.80; paired strength within the t207 gate.
 
+**Run (2026-10-23, Mac mini).** `~/.local/state/nostrian-conquest/ai/t213/`:
+from promoted `fleet-final` with a fresh build head, strike and builds
+handed over, `--kl-floor 0.02` on every head but unload,
+`--build-smooth 0.1 --mission-smooth 0.1 --split-clip`, free entropy
+0.03 fading to 0 by iteration 120, 200 iterations of 64 100-year games.
+Final KL to the anchor was 1.4. Snapshots 150, 175 and 200 export with 0
+mismatches. Paired `behaviour_report` against promoted `fleet-final`,
+1,024 maps from 100000, three executors:
+
+| Snapshot | 60 years | 100 years | Joins a game, 100 y |
+| --- | ---: | ---: | ---: |
+| 150 | +0.032 +/- 0.020 | +0.037 +/- 0.018 | 737 |
+| 175 | +0.062 +/- 0.019 | +0.067 +/- 0.017 | 272 |
+| 200 | +0.059 +/- 0.020 | +0.083 +/- 0.016 | 486 |
+
+Snapshot 200 beats `fleet-final` by more than 2.9 standard errors at
+both lengths. Its gain is in fleet orders: greedy play still builds its own way at 0.0% of
+world-years, uses one tax rate a game, and puts 2% of builds into
+starbases. Sampled play builds its own way at 11% of the builds that
+take effect (4.5% at iteration 1), so the first slot's probability of
+`BUILD_EXECUTOR` is still near 0.89 and the build exit is not met.
+
 ### t214
 
 A moving anchor (one Mac mini run): a KL to the agent's own snapshot
@@ -2981,6 +3003,14 @@ fixed imitation floor; a variant keeps the floor on tax and join.
 Exit: beats the 0.02-floor agent above 0.27 over 1,000 games; an
 exploiter scores 0.25 or less; tax and join drift no more than with the
 floor.
+
+**Run (2026-10-23, Mac mini).** `fleet_ppo.py --anchor-ema H` moves the
+KL reference `H` of the way toward the policy after each iteration (the
+trailing-average form; the reference is saved for `--resume`).
+`~/.local/state/nostrian-conquest/ai/t214/` repeats t213's flags with
+`--anchor-ema 0.05`, so the anchor is the only change and t213's
+snapshot 200 is the baseline to beat. The 0.02 floor now holds the policy
+near its recent self rather than near the imitation copy.
 
 ### t215
 

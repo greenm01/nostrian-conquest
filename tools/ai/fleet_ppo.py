@@ -60,6 +60,13 @@ makes no longer costs more than the reward can repay. ``--split-clip``
 gives the build heads their own PPO ratio and clip, so the many fleet and
 goal choices in a seat-year do not use up the builds' trust region.
 
+``--anchor-ema H`` (t214) moves the KL reference after each iteration:
+its weights become ``(1 - H)`` of themselves plus ``H`` of the policy's
+(``ema_toward``), a trailing magnet as in Magnetic Mirror Descent. The KL
+then charges for change since recent iterations, not for distance from
+the imitation copy, so the policy can wander far while each step stays
+close.
+
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
 ``--resume``, with the run's other options unchanged, continues a run that
@@ -479,6 +486,14 @@ def act_entropy(dist, rest=0):
     return -(none * none.log() + (1 - none) * (1 - none).log())
 
 
+@torch.no_grad()
+def ema_toward(ref, model, share):
+    """Move every weight of ``ref`` ``share`` of the way toward ``model``'s."""
+    for r, m in zip(ref.state_dict().values(), model.state_dict().values()):
+        if r.is_floating_point():
+            r.lerp_(m, share)
+
+
 def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, mission_coef,
            args, dev):
     keys = steps[0]["batch"].keys()
@@ -605,6 +620,9 @@ def main():
     parser.add_argument("--build-smooth", type=float, default=0.0,
                         help="blend the build head's KL reference with this much of an even "
                              "spread over legal builds (t213)")
+    parser.add_argument("--anchor-ema", type=float, default=0.0,
+                        help="move the KL reference this share toward the policy after each "
+                             "iteration (t214); 0 keeps it fixed")
     parser.add_argument("--split-clip", action="store_true",
                         help="give the build heads their own PPO ratio and clip (t213)")
     parser.add_argument("--mission-smooth", type=float, default=0.0,
@@ -671,6 +689,8 @@ def main():
         rng.bit_generator.state = saved["rng"]
         torch.set_rng_state(saved["torch_rng"].cpu())
         next_map, first = saved["next_map"], saved["iteration"] + 1
+        if saved.get("ref"):
+            ref.load_state_dict(saved["ref"])
         if league:
             league.restore(saved["league"], lambda path: load_fleet_agent(path, dev))
         print(f"resuming at iteration {first}", flush=True)
@@ -747,6 +767,8 @@ def main():
         if league:
             league.update(drawn[2], game_reward)
             row["league"] = league.summary()
+        if args.anchor_ema:
+            ema_toward(ref, model, args.anchor_ema)
         save(model, out / "latest.pt", iteration=it, kind="fleet", families=families)
         if it % args.eval_every == 0:
             snapshot = out / f"snapshot-{it:04d}.pt"
@@ -769,7 +791,8 @@ def main():
                        for k, v in row.items()), flush=True)
         resume = dict(iteration=it, model=model.state_dict(), optimizer=optimizer.state_dict(),
                       rng=rng.bit_generator.state, torch_rng=torch.get_rng_state(),
-                      next_map=next_map, league=league.state() if league else None)
+                      next_map=next_map, league=league.state() if league else None,
+                      ref=ref.state_dict() if args.anchor_ema else None)
         torch.save(resume, out / "resume.tmp")
         (out / "resume.tmp").replace(out / "resume.pt")
 

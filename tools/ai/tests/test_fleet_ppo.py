@@ -9,7 +9,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fleet_ppo import act_entropy, categorical_kl, coverage, smoothed_kl  # noqa: E402
+from fleet_ppo import act_entropy, categorical_kl, coverage, ema_toward, smoothed_kl  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -77,6 +77,17 @@ class CoverageTest(unittest.TestCase):
         logits = torch.tensor([0.0, 0.2, -0.3, float("-inf")], requires_grad=True)
         coverage(torch.distributions.Categorical(logits=logits), 0.03).backward()
         self.assertTrue(torch.allclose(logits.grad, torch.zeros(4)))
+
+class EmaTowardTest(unittest.TestCase):
+    def test_moves_float_weights_a_share_of_the_way_and_leaves_counts(self):
+        ref, model = torch.nn.BatchNorm1d(2), torch.nn.BatchNorm1d(2)
+        with torch.no_grad():
+            model.weight.fill_(3.0)
+        model.num_batches_tracked.fill_(7)
+        ema_toward(ref, model, 0.25)
+        self.assertTrue(torch.allclose(ref.weight, torch.full((2,), 1.5)))
+        self.assertEqual(int(ref.num_batches_tracked), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
