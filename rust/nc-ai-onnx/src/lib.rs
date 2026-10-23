@@ -95,6 +95,19 @@ impl NetworkSeat {
         temperature: f32,
         seed: u64,
     ) -> TractResult<TurnSubmission> {
+        Ok(self
+            .turn_and_choices(game_data, memory, temperature, seed)?
+            .0)
+    }
+
+    /// [`Self::turn`], with the network's choices behind it.
+    pub fn turn_and_choices(
+        &self,
+        game_data: &CoreGameData,
+        memory: &SeatMemory,
+        temperature: f32,
+        seed: u64,
+    ) -> TractResult<(TurnSubmission, NetworkChoices)> {
         let empire = memory.empire;
         let mut masks = seat_masks(game_data, empire);
         network_joins(game_data, &mut masks, self.families);
@@ -118,7 +131,7 @@ impl NetworkSeat {
             &chosen.fleets,
             &chosen.planets,
         );
-        Ok(decode_action(game_data, empire, &action).submission)
+        Ok((decode_action(game_data, empire, &action).submission, chosen))
     }
 
     /// Run the network on one seat's observation and masks.

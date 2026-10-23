@@ -692,10 +692,18 @@ def main():
                    unload=rate("unload"), play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)
         if "builds" in families:
-            # The learner's sampled builds by kind (build choice 1 up), a
-            # count per seat-year (t207).
-            kinds = sum(np.bincount(s["goals"]["build"].numpy().ravel(),
-                                    minlength=nc_ai_env.BUILD_CHOICES) for s in steps)
+            # The learner's sampled builds that take effect, by kind (build
+            # choice 1 up, the last as the executor would), a count per
+            # seat-year, over its own worlds and only the first slot of a
+            # world that defers to the executor (t207).
+            executor = nc_ai_env.BUILD_EXECUTOR
+            kinds = 0
+            for s in steps:
+                build = s["goals"]["build"].numpy()
+                owned = s["batch"]["mask_build"].numpy()[:, :build.shape[1], executor]
+                live = owned[:, :, None] & np.ones(build.shape, bool)
+                live[:, :, 1:] &= build[:, :, :1] != executor
+                kinds = kinds + np.bincount(build[live], minlength=nc_ai_env.BUILD_CHOICES)
             seat_years = max(sum(len(s["goals"]["build"]) for s in steps), 1)
             row["builds"] = [round(float(k) / seat_years, 3) for k in kinds[1:]]
         if args.mission_smooth > 0 or args.mission_bonus > 0:

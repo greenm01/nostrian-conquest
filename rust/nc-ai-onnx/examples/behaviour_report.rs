@@ -25,7 +25,8 @@ use std::path::PathBuf;
 use std::thread;
 
 use nc_ai::{
-    Families, Weights, commission_submission, executor_turn, match_game, personality_or_file,
+    BUILD_EXECUTOR, Families, Weights, commission_submission, executor_turn, match_game,
+    personality_or_file,
 };
 use nc_ai_onnx::NetworkSeat;
 use nc_data::{
@@ -54,6 +55,10 @@ struct Game {
     defence_points: u64,
     build_points: u64,
     starbase_points: u64,
+    /// World-years the network built for itself rather than as the
+    /// executor would, and world-years it chose at all (`+builds`).
+    own_builds: u32,
+    build_choices: u32,
     /// One bit per tax rate the seat set.
     tax_rates: u128,
     transports_built: u64,
@@ -185,6 +190,11 @@ fn main() {
             let build: u64 = g.iter().map(|g| g.build_points).sum();
             let starbase: u64 = g.iter().map(|g| g.starbase_points).sum();
             format!("{:.0}%", 100.0 * starbase as f64 / build.max(1) as f64)
+        }),
+        ("worlds built its own way", |g| {
+            let own: u32 = g.iter().map(|g| g.own_builds).sum();
+            let all: u32 = g.iter().map(|g| g.build_choices).sum();
+            format!("{:.1}%", 100.0 * f64::from(own) / f64::from(all.max(1)))
         }),
         ("tax rates used a game", |g| {
             format!("{:.1}", mean(g, |g| f64::from(g.tax_rates.count_ones())))
@@ -448,9 +458,15 @@ fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: 
                 continue;
             }
             let game_data = &game.play.built.game_data;
-            let turn = network
-                .turn(game_data, &game.seats[usize::from(seat) - 1], 0.0, 0)
+            let (turn, chosen) = network
+                .turn_and_choices(game_data, &game.seats[usize::from(seat) - 1], 0.0, 0)
                 .expect("the network runs");
+            out.build_choices += chosen.planets.len() as u32;
+            out.own_builds += chosen
+                .planets
+                .iter()
+                .filter(|planet| planet.build[0] != BUILD_EXECUTOR)
+                .count() as u32;
             out.turns += 1;
             let tax = turn
                 .tax_rate
