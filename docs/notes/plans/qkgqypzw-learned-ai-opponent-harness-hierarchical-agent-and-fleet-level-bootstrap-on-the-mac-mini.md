@@ -2840,6 +2840,30 @@ join drift once the KL reached 0. It fails the gate and is not promoted.
 Per the stop rule, the evidence goes to the owner before any variant or
 crunch run.
 
+**Variant: KL floor 0.02 off the build heads (owner, 2026-10-22).** The
+same run with `--kl-floor 0.02`, and only join, unload, build and amount
+free. The free-head bonus on builds now rests on `BUILD_EXECUTOR`, not
+"none". Final KL to `fleet-final` was 1.1, against 15.8 without the floor.
+Paired `behaviour_report` against promoted `fleet-final`, 1,024 maps:
+
+| Snapshot | 60 years | 100 years | Joins a game, 100 y |
+| --- | ---: | ---: | ---: |
+| 150 | -0.094 +/- 0.020 | -0.120 +/- 0.019 | 1,053 |
+| 175 | -0.107 +/- 0.021 | -0.120 +/- 0.019 | 1,082 |
+| 200 | -0.014 +/- 0.020 | -0.010 +/- 0.018 | 141 |
+
+Tax stays at one rate a game (60%), and starbases at 2% of builds.
+
+**Neither run learned to build.** A new `behaviour_report` row counts
+world-years the network builds its own way: 0.0% greedy for snapshot 200
+here and snapshots 150 and 200 of the free run. The first slot's
+probability of `BUILD_EXECUTOR` moved only from 0.94 to 0.91-0.94 in
+year one. The run log's builds by kind had counted the second slot,
+which is ignored when a world defers; it now counts only builds that take
+effect. Sampled play builds its own way about twice a seat-year, but no
+build wins often enough to move greedy play. So any gain here is in fleet
+orders, not builds.
+
 ### t192
 
 Name the weakness the exploiter found.
