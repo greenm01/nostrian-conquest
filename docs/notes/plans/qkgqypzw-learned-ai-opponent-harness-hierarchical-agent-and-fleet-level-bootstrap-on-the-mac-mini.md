@@ -2864,6 +2864,13 @@ effect. Sampled play builds its own way about twice a seat-year, but no
 build wins often enough to move greedy play. So any gain here is in fleet
 orders, not builds.
 
+**Literature search (2026-10-23).** [Training techniques for the learned
+agent's builds, drift and rare orders](../investigations/g6uo9u0x-training-techniques-for-the-learned-agents-builds-drift-and-rare-orders.md)
+holds the findings and a ranked, cheapest-first set of experiments. In
+short, the anchor's KL charges for every deviation from the executor, and
+a single build's credit is lost in the turn's noise. The first step is a
+paired test of whether forced build overrides change outcomes at all.
+
 ### t192
 
 Name the weakness the exploiter found.
