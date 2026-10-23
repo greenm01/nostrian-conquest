@@ -772,9 +772,19 @@ pub fn push_mission_entries(
         }
         };
         let header = report_header(&source, event.stardate_week, year);
+        // A View World fleet climbs out after viewing, in the same week:
+        // its Move report comes after the viewing report, not before it.
+        let after_viewing = event.kind == Mission::MoveOnly
+            && events.mission_events[..ev_idx]
+                .iter()
+                .any(|e| e.fleet_idx == event.fleet_idx && e.kind == Mission::ViewWorld);
         let (text, narrative_phase) = match body {
             MissionReportBody::Narrative(body) => {
-                let phase = narrative_phase_for_report_text(&body);
+                let phase = if after_viewing {
+                    NarrativePhase::Generic
+                } else {
+                    narrative_phase_for_report_text(&body)
+                };
                 (format!("{header}{body}"), phase)
             }
             MissionReportBody::Structured(items) => {

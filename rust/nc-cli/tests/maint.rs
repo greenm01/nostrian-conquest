@@ -1609,6 +1609,11 @@ fn maint_rust_view_world_generates_results_and_database_intel() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = String::from_utf8_lossy(&results);
     assert!(text.contains("Viewing mission report"));
+    // The fleet climbs back out after viewing, as classic's View does, and
+    // that Move report follows the viewing report.
+    let viewing = text.find("Viewing mission report").unwrap();
+    let moved = text.find("Move mission report").expect("the climb out is reported");
+    assert!(viewing < moved, "the climb-out report comes after the viewing");
     // Strings near the 75-byte chunk boundary may be split across records in the new Stardate
     // header format. Check for unambiguous early-body content instead.
     assert!(text.contains("entered System(15,13)") || text.contains("long range"));
