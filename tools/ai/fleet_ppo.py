@@ -53,6 +53,13 @@ repay. The coverage bonus ``C`` raises each legal mission toward
 head as an entropy bonus would; ``--mission-until N`` fades it to nothing,
 and a mission kept after that is kept because it wins.
 
+``--build-smooth E`` (t213) takes the build head's KL against the
+reference blended with ``E`` of an even spread over its legal builds, as
+``--mission-smooth`` does for missions, so a build the executor never
+makes no longer costs more than the reward can repay. ``--split-clip``
+gives the build heads their own PPO ratio and clip, so the many fleet and
+goal choices in a seat-year do not use up the builds' trust region.
+
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
 ``--resume``, with the run's other options unchanged, continues a run that
@@ -72,7 +79,7 @@ import torch
 import nc_ai_env
 import policy
 from fleet_imitate import actions_for, frozen_goals
-from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, build_arrays, fleet_arrays, fleet_batch,
+from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, build_arrays, build_logp, fleet_arrays, fleet_batch,
                           load_fleet_agent)
 from policy import HEADS, device, goals_for, save
 from ppo import advantages, pad_cat
@@ -288,7 +295,7 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
     with torch.no_grad():
         if learner.any():
             batch = bucket(fleet_batch(obs, masks, goal_masks, learner, dev))
-            goals, fleets, goal_lp, fleet_lp, _, value, _, _ = model.act(
+            goals, fleets, goal_lp, fleet_lp, _, value, goal_dists, _ = model.act(
                 batch, greedy=greedy, builds="builds" in families)
             handed = torch.from_numpy(
                 handed_rows(obs, learner, families, batch["fleets"].shape[1])).to(dev)
@@ -307,6 +314,8 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
                 "fleets": {k: v.cpu() for k, v in fleets.items()},
                 "handed": handed.cpu(),
                 "logp": logp.cpu(),
+                "build_logp": (build_logp(goal_dists, goals) if "builds" in families
+                               else torch.zeros_like(logp)).cpu(),
                 "value": value.cpu(),
             }
         else:
@@ -433,17 +442,21 @@ def coverage(dist, floor):
             * (dist.probs > 0)).sum(-1)
 
 
-def kl_to(new, old, handed, free=(), mission_smooth=0.0):
+def kl_to(new, old, handed, free=(), mission_smooth=0.0, build_smooth=0.0):
     """KL(new || old) per seat: the goal heads and any build heads, plus the
-    fleet heads of the handed-over rows, except the ``free`` ones; the mission head against a
-    smoothed reference when ``mission_smooth`` is set."""
+    fleet heads of the handed-over rows, except the ``free`` ones; the
+    mission head against a smoothed reference when ``mission_smooth`` is
+    set, and the build head when ``build_smooth`` is (t213)."""
     total = 0
     for name in HEADS:
         kl = categorical_kl(new[0][name], old[0][name])
         total = total + (kl.sum(-1) if kl.ndim > 1 else kl)
     for name in BUILD_HEADS:
         if name in new[0] and name not in free:
-            total = total + categorical_kl(new[0][name], old[0][name]).sum((1, 2))
+            kl = (smoothed_kl(new[0][name], old[0][name], build_smooth)
+                  if name == "build" and build_smooth > 0
+                  else categorical_kl(new[0][name], old[0][name]))
+            total = total + kl.sum((1, 2))
     for name in FLEET_HEADS:
         if name in free:
             continue
@@ -483,6 +496,7 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
                   for k in TAUGHT}
         convoy = torch.cat([pad_rows(s["convoy"][:, :rows]) for s in steps])
     old_logp = torch.cat([s["logp"] for s in steps])
+    old_build_logp = torch.cat([s["build_logp"] for s in steps])
     old_value = torch.cat([s["value"] for s in steps])
     adv = torch.from_numpy(np.concatenate(advs))
     ret = adv + old_value
@@ -502,12 +516,23 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
                 *_, ref_goal_dists, ref_fleet_dists = ref.act(
                     mb, fleet_choices=mb_fleets, goal_choices=mb_goals, builds=builds)
             logp = goal_lp + (fleet_lp * mb_handed).sum(-1)
-            ratio = torch.exp(logp - old_logp[idx].to(dev))
             a = adv[idx].to(dev)
-            policy_loss = -torch.min(ratio * a, ratio.clamp(1 - args.clip, 1 + args.clip) * a).mean()
+            clipped = lambda ratio: -torch.min(
+                ratio * a, ratio.clamp(1 - args.clip, 1 + args.clip) * a).mean()
+            if args.split_clip and builds:
+                # The build heads take their own ratio and clip (t213), so
+                # the many fleet and goal choices do not use up their trust
+                # region. Both parts share the seat's advantage, so
+                # normalizing it per part changes nothing.
+                build_lp = build_logp(goal_dists, mb_goals)
+                old_build = old_build_logp[idx].to(dev)
+                policy_loss = (clipped(torch.exp(build_lp - old_build))
+                               + clipped(torch.exp(logp - build_lp - (old_logp[idx].to(dev) - old_build))))
+            else:
+                policy_loss = clipped(torch.exp(logp - old_logp[idx].to(dev)))
             value_loss = (value - ret[idx].to(dev)).pow(2).mean()
             kl_ref = kl_to((goal_dists, fleet_dists), (ref_goal_dists, ref_fleet_dists),
-                           mb_handed, args.free_heads, args.mission_smooth).mean()
+                           mb_handed, args.free_heads, args.mission_smooth, args.build_smooth).mean()
             ent = (entropy * mb_handed).sum(-1).mean() + policy.joint_entropy(goal_dists).mean()
             free_ent = sum(((act_entropy(fleet_dists[name]) * mb_handed).sum(-1).mean()
                             for name in args.free_heads if name in FLEET_HEADS),
@@ -577,6 +602,11 @@ def main():
                         help="weight of the executor's orders on transport fleets (t191)")
     parser.add_argument("--teach-until", type=int, default=0,
                         help="fade --teach-ferry to 0 by this iteration; 0 never fades it")
+    parser.add_argument("--build-smooth", type=float, default=0.0,
+                        help="blend the build head's KL reference with this much of an even "
+                             "spread over legal builds (t213)")
+    parser.add_argument("--split-clip", action="store_true",
+                        help="give the build heads their own PPO ratio and clip (t213)")
     parser.add_argument("--mission-smooth", type=float, default=0.0,
                         help="blend the mission head's KL reference with this much of an "
                              "even spread over legal missions (t207)")

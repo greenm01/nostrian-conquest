@@ -65,6 +65,18 @@ def greedy_build(logits):
     return torch.where(build, kinds.argmax(-1) + 1, rest)
 
 
+def build_logp(dists, goals):
+    """Per seat, the log-probability of its builds under the build and
+    amount ``dists``. A world that defers to the executor scores only its
+    first slot, and an amount counts only in a slot that builds."""
+    executor = nc_ai_env.BUILD_EXECUTOR
+    live = torch.ones_like(goals["build"], dtype=torch.bool)
+    live[..., 1:] = (goals["build"][..., :1] != executor)
+    ordered = live & (goals["build"] > 0) & (goals["build"] != executor)
+    return ((dists["build"].log_prob(goals["build"]) * live).sum((1, 2))
+            + (dists["amount"].log_prob(goals["amount"]) * ordered).sum((1, 2)))
+
+
 def fleet_batch(obs, masks, goal_masks, select, dev):
     """Seat tensors as ``policy.seat_batch``, plus each fleet row's masks:
     ``fleet_mission`` ``[N, F, MISSIONS]``, ``fleet_target`` ``[N, F,
@@ -286,13 +298,7 @@ class FleetAgent(Strategist):
                     goals[name] = pick(build_dists[name])
                 if greedy:
                     goals["build"] = greedy_build(build_dists["build"].logits)
-            executor = nc_ai_env.BUILD_EXECUTOR
-            # A world that defers to the executor scores only its first slot.
-            live = torch.ones_like(goals["build"], dtype=torch.bool)
-            live[..., 1:] = (goals["build"][..., :1] != executor)
-            ordered = live & (goals["build"] > 0) & (goals["build"] != executor)
-            goal_logp = (goal_logp + (build_dists["build"].log_prob(goals["build"]) * live).sum((1, 2))
-                         + (build_dists["amount"].log_prob(goals["amount"]) * ordered).sum((1, 2)))
+            goal_logp = goal_logp + build_logp(build_dists, goals)
             goal_dists = {**goal_dists, **build_dists}
         fleet_logp = sum(dists[name].log_prob(fleet_choices[name]) for name in FLEET_HEADS)
         entropy = sum(dist.entropy() for dist in dists.values())
