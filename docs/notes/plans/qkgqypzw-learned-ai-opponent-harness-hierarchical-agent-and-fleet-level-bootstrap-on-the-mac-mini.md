@@ -2898,6 +2898,41 @@ sweep table recorded here. If the build delta is within 2 standard
 errors of zero, t216 is dropped for builds. A deployment rule 2 standard
 errors better than greedy goes to the owner for adoption.
 
+**Paired build test (2026-10-23).** Snapshot 200 of the KL-floor run,
+greedy, one seat against three executors, 60 years. At a share of its own
+world-years each year, its first build slot was forced to the build
+head's likeliest unit kind in place of `BUILD_EXECUTOR`. The two arms
+match exactly with nothing forced. The script was a scratch file,
+`paired_builds.py`, wrapping `fleet_ppo.play_year`.
+
+| Forced share | Maps | Win share change |
+| ---: | --- | ---: |
+| 0.05 | 100000-100511 | +0.037 +/- 0.028 |
+| 0.05 | 100512-101023 | -0.042 +/- 0.027 |
+| 0.10 | 100512-101023 | -0.060 +/- 0.027 |
+| 0.25 | 100000-100511 | -0.193 +/- 0.028 |
+
+Builds matter: overriding a quarter of world-years costs 0.19 of win
+share. The head's own favourite kind is worse than the executor's build
+on average, at about -0.008 of win share per 1% of world-years
+overridden. Across all 1,024 maps the 5% result is near zero (-0.003 +/-
+0.020). So a deviation's effect is large enough to learn from, but the
+head has not yet learned which deviations help. t216 stays in.
+
+**Critic explained variance** of the final reward, by year, in the same
+games:
+
+| Year | 0 | 10 | 20 | 30 | 40 | 50 | 55 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Explained variance | 0.02 | 0.05 | 0.07 | 0.14 | 0.23 | 0.37 | 0.43 |
+
+The value estimate explains almost nothing of the outcome for the first
+20 years, when most builds and colonies are chosen. So an early build's
+advantage is mostly noise, which matches the research note's credit
+diagnosis. A better critic (more inputs, such as every seat's state in
+training) and per-decision credit (t216's branch rollouts) are the
+levers.
+
 ### t213
 
 Separate KL weights per head (one Mac mini run). Tax and join keep the
