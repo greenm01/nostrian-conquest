@@ -11,6 +11,8 @@
 //! A model given as `A.onnx+convoy` also orders its convoys (transports
 //! without warships), which the executor's ferry orders otherwise (t191).
 //! `A.onnx+builds` also chooses its builds (t207); the suffixes combine.
+//! `A.onnx~T`, before any other suffix, plays at temperature `T` rather
+//! than greedy, its noise seeded by map and year (t212).
 //! A model given as `A.onnx@STYLE` plays that style (a name or a `.kdl`
 //! file) in place of `--style`, so two styles can be paired on the same
 //! maps (t207).
@@ -96,7 +98,7 @@ fn main() {
             .position(|arg| arg == name)
             .map(|idx| args[idx + 1].clone())
     };
-    let models: Vec<(PathBuf, Families, Option<String>)> = args
+    let models: Vec<(PathBuf, Families, Option<String>, f32)> = args
         .iter()
         .take_while(|arg| !arg.starts_with("--"))
         .map(|arg| {
@@ -104,7 +106,10 @@ fn main() {
                 Some((model, style)) => (model, Some(style.to_string())),
                 None => (arg.as_str(), None),
             };
-            let mut arg = arg;
+            let (mut arg, temperature) = match arg.rsplit_once('~') {
+                Some((model, t)) => (model, t.parse().expect("~T is a temperature")),
+                None => (arg, 0.0),
+            };
             let mut families = Families {
                 strike: true,
                 ..Families::NONE
@@ -120,7 +125,7 @@ fn main() {
                     break;
                 }
             }
-            (PathBuf::from(arg), families, style)
+            (PathBuf::from(arg), families, style, temperature)
         })
         .collect();
     let games: u64 = arg("--games").map_or(256, |n| n.parse().expect("--games"));
@@ -266,10 +271,11 @@ fn main() {
 
     let results: Vec<Vec<Game>> = models
         .iter()
-        .map(|(model, families, own)| {
+        .map(|(model, families, own, temperature)| {
             run(
                 model,
                 *families,
+                *temperature,
                 opponents.as_ref(),
                 own.as_ref().unwrap_or(&style),
                 games,
@@ -284,13 +290,16 @@ fn main() {
         .map_or_else(|| "executors".to_string(), |path| short(path));
     println!("{games} games, {years} years, one network seat ({style}) against three {against}\n");
     print!("{:<36}", "");
-    for (model, families, own) in &models {
+    for (model, families, own, temperature) in &models {
         let mut name = short(model);
         if families.convoy {
             name.push_str("+convoy");
         }
         if families.builds {
             name.push_str("+builds");
+        }
+        if *temperature > 0.0 {
+            name.push_str(&format!("~{temperature}"));
         }
         if let Some(own) = own {
             name = format!("{name}@{}", short(&PathBuf::from(own)));
@@ -372,6 +381,7 @@ fn mean(games: &[Game], value: impl Fn(&Game) -> f64) -> f64 {
 fn run(
     model: &PathBuf,
     families: Families,
+    temperature: f32,
     opponents: Option<&PathBuf>,
     style: &str,
     games: u64,
@@ -400,7 +410,7 @@ fn run(
                     (first..first + games)
                         .skip(worker as usize)
                         .step_by(threads as usize)
-                        .map(|map| play(&seat, opponent.as_ref(), map, years))
+                        .map(|map| play(&seat, temperature, opponent.as_ref(), map, years))
                         .collect::<Vec<_>>()
                 })
             })
@@ -412,7 +422,13 @@ fn run(
     })
 }
 
-fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: u16) -> Game {
+fn play(
+    network: &NetworkSeat,
+    temperature: f32,
+    opponent: Option<&NetworkSeat>,
+    map: u64,
+    years: u16,
+) -> Game {
     let mut game = match_game(map, map, &[false; PLAYERS as usize], years);
     let start = game.play.built.game_data.conquest.game_year;
     let seat = (map % u64::from(PLAYERS)) as u8 + 1;
@@ -459,7 +475,12 @@ fn play(network: &NetworkSeat, opponent: Option<&NetworkSeat>, map: u64, years: 
             }
             let game_data = &game.play.built.game_data;
             let (turn, chosen) = network
-                .turn_and_choices(game_data, &game.seats[usize::from(seat) - 1], 0.0, 0)
+                .turn_and_choices(
+                    game_data,
+                    &game.seats[usize::from(seat) - 1],
+                    temperature,
+                    map * 1000 + u64::from(game_data.conquest.game_year),
+                )
                 .expect("the network runs");
             out.build_choices += chosen.planets.len() as u32;
             out.own_builds += chosen
