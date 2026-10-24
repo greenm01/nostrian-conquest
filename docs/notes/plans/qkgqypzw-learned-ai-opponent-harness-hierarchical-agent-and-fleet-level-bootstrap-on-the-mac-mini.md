@@ -3006,6 +3006,11 @@ t183 and t207 (0.377 and 0.348), so snapshot 200 is stronger than
 `fleet-final` and no more exploitable by this measure. Promotion is the
 owner's call.
 
+**Promoted (owner, 2026-10-24).** Snapshot 200 is now `fleet-final`
+(`.pt` eb9d2688…, `.onnx` ebbea298…); the previous agent is kept as
+`fleet-final-pre-t213`, and the models are backed up with restic. t213
+stays open for its build and exploit exits.
+
 ### t214
 
 A moving anchor (one Mac mini run): a KL to the agent's own snapshot
