@@ -99,8 +99,10 @@ afterward.
 
 ## Checks before committing tracking changes
 
-Run `zk index`, `zk list docs/notes --broken-links`, and `git diff --check`.
-zk only indexes Markdown, so it also lists notes that link to the Typst
-manuals or other non-Markdown files; confirm those targets exist on disk.
+Run `zk index`, `python3 scripts/check_note_links.py`, and `git diff --check`.
+The script lists links in the notes, `todo.md` and `done-*.md` whose target
+file is missing, and exits non-zero if any are. Do not use
+`zk list --broken-links` for this: zk also flags working links to code, data
+and manuals, because it resolves links only to its own notes.
 Task IDs must be unique across `todo.md` and every `done-*.md` file, and each
 open task needs one lane, one order key, and a link that resolves.

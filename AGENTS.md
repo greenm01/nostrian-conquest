@@ -107,7 +107,7 @@ Track work with todo.txt and zk as defined in
 - `todo.md` owns open tasks; monthly `done-YYYY-MM.md` files own completions
 - Task detail and evidence live in linked notes under `docs/notes/`
 - Use `zk tasks` to add or complete tasks, and cite task IDs in commits
-- Never reuse a task ID; run `zk index` and `zk list docs/notes --broken-links` before committing tracking changes
+- Never reuse a task ID; run `zk index` and `python3 scripts/check_note_links.py` before committing tracking changes
 
 ## Agent Recall (mem0)
 
