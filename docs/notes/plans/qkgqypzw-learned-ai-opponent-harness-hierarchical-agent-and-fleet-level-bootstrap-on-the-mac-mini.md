@@ -2993,6 +2993,19 @@ starbases. Sampled play builds its own way at 11% of the builds that
 take effect (4.5% at iteration 1), so the first slot's probability of
 `BUILD_EXECUTOR` is still near 0.89 and the build exit is not met.
 
+**Exploit check on snapshot 200** (`exploit-t213`, bean-void): 80
+iterations of `--exploit`, scored over 1,024 games. A first scoring ran
+against t207c's target by mistake (the scorer's directory was copied
+unchanged) and is kept as `score-wrong-target.txt`. Rescored against
+t213's snapshot 200, the target scores 0.259 +/- 0.014 against copies of
+itself and the exploiter 0.281 at iteration 40, 0.326 at 60 and 0.348
++/- 0.015 at 80. That fails the 0.25 exit but is the least exploitable
+of the t207-t213 runs (0.416 free, 0.386 with the floor). Promoted
+`fleet-final` shows holes of the same size to exploiters trained in
+t183 and t207 (0.377 and 0.348), so snapshot 200 is stronger than
+`fleet-final` and no more exploitable by this measure. Promotion is the
+owner's call.
+
 ### t214
 
 A moving anchor (one Mac mini run): a KL to the agent's own snapshot
@@ -3011,6 +3024,23 @@ trailing-average form; the reference is saved for `--resume`).
 `--anchor-ema 0.05`, so the anchor is the only change and t213's
 snapshot 200 is the baseline to beat. The 0.02 floor now holds the policy
 near its recent self rather than near the imitation copy.
+
+Final KL to the moving reference was 0.59. Snapshots 150, 175 and 200
+export with 0 mismatches. Paired `behaviour_report` against t213's
+snapshot 200, 1,024 maps from 100000, three executors:
+
+| Snapshot | 60 years | 100 years | Tax rates a game |
+| --- | ---: | ---: | ---: |
+| 150 | -0.076 +/- 0.020 | -0.076 +/- 0.017 | 1.2 |
+| 175 | -0.063 +/- 0.019 | -0.083 +/- 0.017 | 1.0 |
+| 200 | -0.006 +/- 0.019 | -0.026 +/- 0.017 | 1.4 |
+
+The trailing anchor does not beat t213, so the strength exit fails and
+no exploit check was run. It is the first run whose greedy play varies
+the tax rate (1.4 rates a game), but builds are still the executor's at
+every world-year. With a 0.05 trail the anchor follows the policy within
+about 14 iterations, so the 0.02 floor restrains little; a smaller share
+(0.01) or a DAPO snapshot anchor are the remaining variants.
 
 ### t215
 
