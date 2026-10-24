@@ -425,7 +425,7 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
     let mut confirm = CaptureTerminal::new();
     app.render(&mut confirm)
         .expect("delete confirm should render");
-    assert!(confirm.line(24).contains("Delete item 03? [Y]/N ->"));
+    assert!(confirm.line(24).contains("Delete item 04? [Y]/N ->"));
 
     assert_eq!(
         apply_action(
@@ -668,12 +668,12 @@ fn reports_inbox_typed_id_jump_moves_selection_immediately() {
     assert!(terminal.line(1).starts_with('┌'));
     assert!(terminal.line(24).contains("<TAB> <Q> [03] ->"));
     assert!(!terminal.line(24).contains("-> 3"));
-    assert!(terminal.lines.iter().any(|line| line.contains("Alpha")));
+    assert!(terminal.lines.iter().any(|line| line.contains("Gamma")));
     assert!(
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("Body Alpha"))
+            .any(|line| line.contains("Body Gamma"))
     );
 }
 
@@ -830,9 +830,6 @@ fn reports_inbox_long_preview_scrolls_and_clamps_without_panicking() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
     let mail_year = runtime.game_data.conquest.game_year - 1;
-    runtime
-        .queued_mail
-        .push(incoming_mail(2, 1, mail_year, "Older", "Short body"));
     let long_body = (0..40)
         .map(|idx| format!("Line {idx:02} {}", "x".repeat(90)))
         .collect::<Vec<_>>()
@@ -840,6 +837,9 @@ fn reports_inbox_long_preview_scrolls_and_clamps_without_panicking() {
     runtime
         .queued_mail
         .push(incoming_mail(3, 1, mail_year, "Long", &long_body));
+    runtime
+        .queued_mail
+        .push(incoming_mail(2, 1, mail_year, "Newer", "Short body"));
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {

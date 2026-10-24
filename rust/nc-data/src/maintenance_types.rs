@@ -859,6 +859,8 @@ pub struct MaintenanceEvents {
     pub planet_scorch_events: Vec<PlanetScorchEvent>,
     /// Crippled hulls that recovered when the pass ended.
     pub ship_recovery_events: Vec<ShipsRecoveredEvent>,
+    /// Empires the inactivity rule put on autopilot before this turn.
+    pub autopilot_engaged_empires: Vec<u8>,
 }
 
 impl MaintenanceEvents {
@@ -894,6 +896,7 @@ impl MaintenanceEvents {
             fleet_defection_events,
             planet_scorch_events,
             ship_recovery_events,
+            autopilot_engaged_empires,
         } = other;
         self.bombard_events.extend(bombard_events);
         self.planet_intel_events.extend(planet_intel_events);
@@ -929,5 +932,7 @@ impl MaintenanceEvents {
         self.fleet_defection_events.extend(fleet_defection_events);
         self.planet_scorch_events.extend(planet_scorch_events);
         self.ship_recovery_events.extend(ship_recovery_events);
+        self.autopilot_engaged_empires
+            .extend(autopilot_engaged_empires);
     }
 }

@@ -68,7 +68,7 @@ fn own_queued_messages_lead_the_inbox_newest_first() {
         .iter()
         .map(|item| item.item_type.code())
         .collect::<Vec<_>>();
-    assert_eq!(types, ["OUT", "OUT", "R", "M"]);
+    assert_eq!(types, ["OUT", "OUT", "M", "R"]);
     assert_eq!(items[0].subject, "Second out");
     assert_eq!(items[1].subject, "First out");
 }

@@ -2261,7 +2261,8 @@ In the Fleet List the Ships cell is narrow. When it cannot hold the whole compos
 
 == Autopilot <autopilot>
 
-Autopilot switches on after three missed turns. Your first real return that
+Autopilot switches on after three missed turns, and a report from your Fleet
+Command Center, dated week 1, tells you it has. Your first real return that
 year turns that inactivity autopilot back off: logging into `nc-game`,
 entering through `nc-door`, or submitting a valid turn file. Manual autopilot
 stays on until you change it yourself.

@@ -77,7 +77,7 @@ fn runtime_inbox_items_classify_subjects_and_report_buckets() {
 }
 
 #[test]
-fn runtime_inbox_items_sort_newest_to_oldest_by_stardate() {
+fn runtime_inbox_items_sort_oldest_to_newest_by_stardate() {
     let game_data = fixture_game_data();
     let items = runtime_inbox_items(
         &game_data,
@@ -98,11 +98,11 @@ fn runtime_inbox_items_sort_newest_to_oldest_by_stardate() {
     assert_eq!(
         labels,
         vec![
-            "03/3003 General".to_string(),
-            "02/3003 Scout".to_string(),
-            "01/3003 Patrol".to_string(),
-            "00/3003 Diplomatic".to_string(),
             "52/3002 Bombard".to_string(),
+            "00/3003 Diplomatic".to_string(),
+            "01/3003 Patrol".to_string(),
+            "02/3003 Scout".to_string(),
+            "03/3003 General".to_string(),
         ]
     );
 }

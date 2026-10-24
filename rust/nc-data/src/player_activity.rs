@@ -12,13 +12,16 @@ pub fn default_player_activity_states(player_count: u8) -> Vec<PlayerActivitySta
         .collect()
 }
 
+/// Put each human empire that has missed `threshold` turns on autopilot,
+/// and return the empires this switched on.
 pub fn apply_inactivity_autopilot_policy(
     game_data: &mut CoreGameData,
     threshold: u8,
     player_activity_states: &mut [PlayerActivityState],
-) {
+) -> Vec<u8> {
+    let mut engaged = Vec::new();
     if threshold == 0 {
-        return;
+        return engaged;
     }
     let current_year = game_data.conquest.game_year;
     for state in player_activity_states {
@@ -38,8 +41,10 @@ pub fn apply_inactivity_autopilot_policy(
         if !player.autopilot {
             player.autopilot = true;
             state.inactivity_autopilot_pending_clear = true;
+            engaged.push(state.player_record_index_1_based as u8);
         }
     }
+    engaged
 }
 
 pub fn record_interactive_participation(

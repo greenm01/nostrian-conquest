@@ -101,14 +101,14 @@ impl CampaignMaintenance {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let inactivity_threshold =
             u8::try_from(self.game_data.setup.autopilot_after_turns).unwrap_or(u8::MAX);
-        apply_inactivity_autopilot_policy(
+        let autopilot_engaged_empires = apply_inactivity_autopilot_policy(
             &mut self.game_data,
             inactivity_threshold,
             &mut self.player_activity_states,
         );
         let visible_hazards =
             visible_hazards_from_snapshots(&self.game_data, &self.planet_intel_by_viewer);
-        let events = run_maintenance_turn_with_context_seed_and_lifecycle(
+        let mut events = run_maintenance_turn_with_context_seed_and_lifecycle(
             &mut self.game_data,
             self.campaign_seed,
             &visible_hazards,
@@ -116,6 +116,7 @@ impl CampaignMaintenance {
             &mut self.player_lifecycle_states,
             &mut self.winner_state,
         )?;
+        events.autopilot_engaged_empires = autopilot_engaged_empires;
         for viewer_empire_id in 1..=self.game_data.conquest.player_count {
             let viewer_idx = usize::from(viewer_empire_id) - 1;
             let grants = latest_planet_intel_grants_for_viewer(&events, viewer_empire_id);

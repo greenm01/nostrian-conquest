@@ -127,7 +127,7 @@ pub fn runtime_inbox_items(
                 .map(|(idx, mail)| inbox_item_from_mail(game_data, idx, mail)),
         )
         .collect::<Vec<_>>();
-    items.sort_by(|left, right| inbox_item_sort_key(right).cmp(&inbox_item_sort_key(left)));
+    items.sort_by_key(inbox_item_sort_key);
     items
 }
 

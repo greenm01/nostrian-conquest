@@ -168,6 +168,22 @@ pub fn push_misc_entries(
         });
     }
 
+    // ----- Inactivity autopilot -----
+    for &empire in &events.autopilot_engaged_empires {
+        let source = "From your Fleet Command Center:";
+        let header = report_header(source, Some(1), year);
+        let body = " With no orders from you for several years, autopilot has taken charge of the empire. Idle fleets will gather at our best worlds and warships will guard them; fleets on other missions carry on. Log in or submit a turn to take command again.";
+        entries.push(ReportEntry {
+            text: format!("{header}{body}"),
+            kind: 0x06,
+            tail: RESULTS_TAIL_FLEET,
+            target: ReportTarget::Both { recipient: empire },
+            repeat_next_pointer: false,
+            stardate_week: Some(1),
+            narrative_phase: narrative_phase_for_report_text(body),
+        });
+    }
+
     // ----- Campaign outlook events -----
     // Every joined empire hears it; only the leader reads it as its own claim.
     for event in &events.campaign_outlook_events {

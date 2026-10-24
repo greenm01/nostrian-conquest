@@ -656,6 +656,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         fleet_defection_events,
         planet_scorch_events,
         ship_recovery_events,
+        autopilot_engaged_empires: Vec::new(),
     };
 
     campaign::apply_stored_diplomatic_escalations(game_data, &events)?;
