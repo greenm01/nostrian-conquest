@@ -67,4 +67,15 @@ the file. Work is tracked as t218.
 ## Acceptance and connections
 
 Accepted by the owner on 2026-10-24. The sysop manual carries the
-settings reference once t218 lands.
+settings reference (section "Game settings: `config.kdl`").
+
+## Result
+
+Landed in `8f9c7e1b` on 2026-10-24. `new-game` (nc-sysop and nc-host)
+writes the file and now stores its seed as the campaign seed; logins,
+maintenance and the `settings` commands sync it. Validation: nc-data
+`bbs_config` (17), nc-sysop `basic` (15), nc-game lib and nc-host
+`new_game` tests pass, and an end-to-end `new-game --bbs --players 6
+--seed 42` wrote the reference comment and refused a `players` field.
+Remaining: games created before t218 (beta-1 on archvps) have no
+`config.kdl` and keep their stored settings; nothing was deployed.
