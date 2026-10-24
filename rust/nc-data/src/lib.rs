@@ -45,7 +45,10 @@ mod support;
 mod turns;
 
 pub use account::AccountIdentity;
-pub use bbs_config::{BbsGameConfig, BbsGameConfigError, SeatReservation};
+pub use bbs_config::{
+    BbsGameConfig, BbsGameConfigError, SeatReservation, check_new_ai_seats, sync_game_config,
+    write_game_config,
+};
 pub use builder::{
     FleetOrderSpec, GameStateBuilder, GuardStarbaseSpec, PlanetBuildSpec,
     reset_player_slot_to_baseline,

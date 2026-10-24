@@ -20,7 +20,7 @@ Both are included with the sysop manual.
 ## BBS Quick Start
 
 1. Create a game directory and write `config.kdl` first. Start from
-   `examples/config.kdl` and adjust the seat count and any fixed reservations.
+   `examples/config.kdl` and adjust any fixed reservations.
 
 2. Initialize the BBS campaign:
 

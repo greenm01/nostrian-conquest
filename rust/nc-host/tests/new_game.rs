@@ -41,5 +41,5 @@ fn new_game_writes_the_databases_and_no_classic_files() {
         })
         .collect::<Vec<_>>();
     names.sort();
-    assert_eq!(names, ["hosted.db", "ncgame.db"]);
+    assert_eq!(names, ["config.kdl", "hosted.db", "ncgame.db"]);
 }

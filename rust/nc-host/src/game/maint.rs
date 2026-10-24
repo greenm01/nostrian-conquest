@@ -36,6 +36,7 @@ pub fn run_hosted_maintenance(
     let store = HostedStore::open(&game_dir.join("hosted.db"))?;
     let settings = hosted::get_settings(store.connection(), game_id)?;
     let campaign_store = open_existing_campaign_store(game_dir)?;
+    nc_data::sync_game_config(game_dir, &campaign_store)?;
     let mut maintenance = CampaignMaintenance::load(&campaign_store)?;
     let start_year = maintenance.start_year();
     let mut ai = nc_ai_onnx::CampaignAi::load(

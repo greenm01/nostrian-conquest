@@ -191,9 +191,8 @@ Use this when you want `nc-door` under Mystic, ENiGMA½, Synchronet, WWIV, or a
 similar BBS.
 
 1. Create the game directory.
-2. Write a minimal per-game `config.kdl` with `players` and any fixed-seat
-   `reservations`.
-3. Initialize it with `nc-sysop new-game --bbs`.
+2. Write a per-game `config.kdl` with any fixed-seat `reservations`.
+3. Initialize it with `nc-sysop new-game --bbs --players N`.
 4. Launch `nc-door` with a BBS dropfile.
 5. Keep maintenance outside the door. Run `nc-sysop maint` from the host or
    the BBS event runner.
@@ -241,7 +240,7 @@ This creates one runtime file: `ncgame.db`.
 For BBS door campaigns, write `config.kdl` first and then initialize with:
 
 ```
-nc-sysop new-game --bbs /path/to/mygame
+nc-sysop new-game --bbs --players 4 /path/to/mygame
 ```
 
 Use these creation flags:
@@ -255,8 +254,8 @@ Use these creation flags:
   a random seed and saves it to `ncgame.db`. The seed cannot be changed after
   creation.
 - *`--bbs`:* Flag. Initialize a BBS campaign from an existing per-game
-  `config.kdl`. In this mode, `--name` and `--players` are not accepted on the
-  command line. Use `--seed` only when you want a reproducible map for that
+  `config.kdl`. In this mode `--name` is not accepted; put `game_name` in the
+  file. Use `--seed` only when you want a reproducible map for that
   one campaign.
 
 #admonition("NOTE")[Use a different seed for every game. Reusing the same seed produces the same map, starting positions, and event sequence every time. For BBS campaigns, keep that override on the `new-game --bbs --seed ...` command line instead of storing it in `config.kdl`.]
@@ -272,8 +271,7 @@ human-readable `game_name`.
 - `ncgame.db`: The SQLite runtime database. All live game state is here. Do
   not edit it by hand.
 
-- `config.kdl`: Present only for BBS door campaigns. It holds `players` and
-  optional seat `reservations`.
+- `config.kdl`: The game's settings, which you edit. See @game-config.
 
 // ─── 4. Configuration ─────────────────────────────────────────────────────────
 
@@ -293,12 +291,11 @@ Keep the live paths separate:
 - Live state: per-game `config.kdl` plus `ncgame.db`
 - Runtime path: `nc-door` with a dropfile; ENiGMA½ also passes `--socket-port`
   and Windows Synchronet passes `--socket-descriptor`
-- Operator rule: BBS `config.kdl` supports only `players` and `reservations`;
-  `settings set` does not apply
+- Operator rule: write `config.kdl` before `nc-sysop new-game --bbs`
 - Common hosts: Mystic, ENiGMA½, and Synchronet on Windows or Linux; WWIV on
   Linux with its `CHAIN.TXT` drop file
 
-Use `nc-sysop settings ...` to inspect any non-BBS campaign:
+Use `nc-sysop settings ...` to inspect or change any campaign:
 
 ```
 nc-sysop settings show --dir /srv/nc/games/friday-night
@@ -310,7 +307,7 @@ For the full non-BBS settings reference, including the raw `settings show`
 shape and the advanced carried-forward state fields, see
 `docs/sysop/rust/campaign-settings.md`.
 
-== AI Seats
+== AI Seats <ai-seats>
 
 A non-BBS campaign can seat the learned AI in place of a player:
 
@@ -340,40 +337,64 @@ Maintenance needs the agent file. Set `NC_AI_MODEL` to the path of its
 `.onnx` file wherever `nc-sysop maint` runs. A campaign with AI seats refuses
 maintenance without it.
 
-== BBS `config.kdl`
+== Game settings: `config.kdl` <game-config>
 
-BBS campaigns use a minimal live per-game `config.kdl` instead of the non-BBS
-settings commands:
+Each game keeps its settings in `config.kdl`, in the game directory. It is
+the counterpart of classic ECUTIL's program options. `nc-sysop new-game`
+writes it with the defaults. For a BBS campaign you may write it first;
+`new-game --bbs` reads it, then writes it back in the form below.
 
 ```kdl
-players 4
-reservations {
-  seat player=1 alias="SYSOP"
-  seat player=2 alias="NightShade"
+// Set by nc-sysop new-game and fixed for the game; shown for reference only.
+// players 4, seed 8211, map 18x18
+game_name "Friday Night"
+theme "tokyo_night"
+snoop #true
+session {
+    max_idle_minutes 10
+    minimum_time_minutes 0
+    local_timeout #false
+    remote_timeout #true
 }
+inactivity {
+    autopilot_after_turns 3
+}
+maintenance {
+    enabled #false
+    interval_minutes 1440
+}
+reservations {
+    seat player=1 alias="SYSOP"
+}
+ai_seat player=3 difficulty="normal" personality="land-grab"
 ```
 
-The BBS file supports only these fields:
+Every field may be left out. A missing field takes the default shown above. `game_name` and `theme` left out keep what the game already has.
 
-- `players`
-- `reservations`
+- The first two lines are a comment showing the number of empires, the seed
+  and the map size. `new-game` sets them and they never change. Editing the
+  comment does nothing. A `players`, `seed` or `map_size` field is refused
+  with an error naming it, and logins and maintenance stop until you remove
+  it.
+- *`snoop`* and *`session`:* As described under @sessions.
+- *`inactivity.autopilot_after_turns`:* Put an empire on autopilot after this
+  many missed turns, 0 to 100. `0` turns it off. The default is `3`. An empire
+  whose player gave orders for 3000 and none since goes on autopilot in 3003's
+  maintenance. You may change it during a game, for instance to fix a wrong
+  value.
+- *`maintenance`:* The schedule your timer reads. See @schedule.
+- *`reservations`:* Seats held for named BBS callers. See @reserving-seats.
+- *`ai_seat`:* A seat the computer plays. Only an open seat can become an AI
+  seat; one a person has joined is refused. See @ai-seats.
 
-`nc-sysop settings show --dir /path/to/mygame` reports BBS campaigns in a
-different shape:
+Edits take effect at the next login or maintenance run. Then every empire
+gets a "Game Notice" report listing what changed: the game name, the
+autopilot rule, session limits, the maintenance schedule and which empires the
+computer plays. The theme, snoop and reservations are not announced.
 
-```text
-mode=bbs
-players=4
-reservation seat=1 alias=SYSOP
-reservation seat=2 alias=NightShade
-```
-
-Do not put `game_name`, `theme`, `snoop`, `session`, `inactivity`, or
-`maintenance` in the BBS file. Do not put `seed` there either. It is a one-shot
-`new-game` command line override, not live BBS config.
-
-For BBS campaigns, `nc-sysop settings reserve` and `settings unreserve` edit
-this file for you. `settings set` is for non-BBS campaigns.
+`nc-sysop settings set`, `reserve`, `unreserve`, `ai-seat` and
+`remove-ai-seat` edit this file for you. They rewrite it, so comments you
+added are lost.
 
 == Display Defaults
 
@@ -455,7 +476,7 @@ Door sessions also force the bundled `mag16` theme, whatever the campaign's
 `default_theme_key` says. The in-game *A>nsi color ON/OFF* command switches
 between that ANSI16 palette and a greyscale monochrome view.
 
-== Drop File
+== Drop File <sessions>
 
 `nc-door` can read a BBS drop file directly with `--dropfile <path>`:
 
@@ -511,9 +532,7 @@ Door mode also has an idle limit. It comes from the campaign setting
 The default is `10` minutes. The most is `120`. `0` turns it off. Only a
 keypress counts as activity. The idle clock restarts at each key. When no key
 arrives in that time, `nc-door` shows "No key was pressed for too long.
-Returning to the BBS." and exits normally. BBS campaigns have no idle limit,
-because `config.kdl` has no such field. There the time limit bounds an
-abandoned session instead.
+Returning to the BBS." and exits normally.
 
 Players of one campaign can be in sessions at the same time. Each change a
 player makes is applied to the latest saved state and saved in one database
@@ -671,7 +690,7 @@ For the full node reference and schema, see `docs/sysop/rust/turn-kdl.md`.
 
 // ─── 9. Turn Processing and Maintenance ─────────────────────────────────────
 
-= Turn Processing and Maintenance
+= Turn Processing and Maintenance <schedule>
 
 Run yearly maintenance with:
 
@@ -724,9 +743,9 @@ That example records a weekly schedule. `10080` is seven days in minutes.
 time you want. Pass `--maintenance-next-due ""` to clear the due time.
 
 `nc-sysop maint` never changes these fields. If your timer reads them, it
-must update the due time itself after each run. BBS campaigns have no
-schedule fields, because `config.kdl` has none. For any campaign, the turn
-runs when your timer or you run `nc-sysop maint`.
+must update the due time itself after each run. The turn runs when your
+timer or you run `nc-sysop maint`. `enabled` and `interval_minutes` are also
+in `config.kdl`; the due time is kept only in `ncgame.db`.
 
 // ─── 10. Player Management ────────────────────────────────────────────────────
 
@@ -751,14 +770,11 @@ can run it before maintenance or after restoring a backup.
 
 = Player Management
 
-Non-BBS campaigns keep player reservations and the carried-forward
-inactivity state in `ncgame.db`. BBS door campaigns have no inactivity block
-in `config.kdl`. The BBS software handles caller idle time.
-
-For direct DB-only campaigns, the default inactivity autopilot threshold is
-`3` turns. Set `inactivity_autopilot_after_turns=0` to disable it. A player
-counts as active for the year when he reaches the live `nc-game` menus or
-applies a `submit-turn` file.
+Each campaign tracks when its players last took part in `ncgame.db`. The
+inactivity autopilot threshold is set in `config.kdl` (see @game-config); the
+default is `3` turns and `0` turns it off. A player counts as active for the
+year when he reaches the live `nc-game` menus or applies a `submit-turn`
+file. When inactivity turns autopilot on, the player gets a report saying so.
 
 
 A defeated player keeps one final review-only login. If the empire has no
@@ -767,7 +783,7 @@ empire. The former player's identity and final-review state stay in the
 store. This does not reopen the seat or restore orders. A planetless rogue
 patrols with its warships and does not compete for the throne.
 
-== Reserving Seats
+== Reserving Seats <reserving-seats>
 
 To reserve empire slots for specific BBS users, edit the per-game BBS
 `config.kdl` or use:
@@ -869,8 +885,7 @@ questions, not to share.
   default compiled-in color set, maintenance metadata, optional alias
   reservations, and a small set of carried-forward classic setup fields.
 
-- *`config.kdl`:* Present only for BBS door campaigns. It holds `players` and
-  optional seat `reservations`.
+- *`config.kdl`:* The game's settings file. See @game-config.
 
 // ─── 12. CLI Reference ────────────────────────────────────────────────────────
 
@@ -891,10 +906,10 @@ Logging flags come before the subcommand:
 
 - *`new-game`:* Create a new campaign directory. Direct `nc-game` campaigns use
   `--name`, `--players`, and `--seed`. BBS campaigns use `new-game --bbs` with
-  a minimal per-game `config.kdl`.
-- *`settings show|set|reserve|unreserve`:* Inspect or edit non-BBS runtime
-  policy in `ncgame.db`, or edit BBS seat reservations in per-game
-  `config.kdl`.
+  `--players` and `--seed`, and read `game_name` and the other settings from a
+  `config.kdl` you write first. Every new game gets a `config.kdl`.
+- *`settings show|set|reserve|unreserve`:* Inspect or edit the game's
+  settings. Changes are written to `config.kdl` and `ncgame.db`.
 - *`maint`:* Run one or more maintenance turns against `ncgame.db`.
 - *`map-export --dir <game_dir> [--player <N>] [--out-dir <path>]`:* Write
   one player's star map as `ECMAP-P<N>-Y<year>` `.TXT`, `.CSV`, and

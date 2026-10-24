@@ -133,6 +133,7 @@ pub(super) fn run(root: &Path, game: &str, expected_year: u16, request_id: &str)
     if another || (meta.status == "maintenance" && previous.is_none()) {
         return Err("another maintenance request needs recovery first".into());
     }
+    nc_data::sync_game_config(&dir, &runtime)?;
     runtime.set_hosting_write_blocked(true)?;
     let result = (|| -> Result<Value> {
         store.connection().execute("INSERT INTO web_runs(request_id,expected_year,state,started_at) VALUES (?1,?2,'running',?3)

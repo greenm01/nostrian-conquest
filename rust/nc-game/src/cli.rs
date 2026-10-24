@@ -13,9 +13,7 @@ use crate::terminal::OutputEncoding;
 use crate::terminal::Terminal;
 use crate::terminal::door::{DoorTerminal, DoorTimeout, DoorTransport};
 use crate::terminal::stdout::StdoutTerminal;
-use nc_data::{
-    BbsGameConfig, CampaignStore, CampaignStoreError, STALE_SESSION_MESSAGE, SeatBindSource,
-};
+use nc_data::{CampaignStore, CampaignStoreError, STALE_SESSION_MESSAGE, SeatBindSource};
 use nc_session::launch::{
     LaunchBindingRequest, LaunchPlayerBinding, LaunchPlayerBindingSource,
     resolve_launch_player_binding as shared_resolve_launch_player_binding,
@@ -807,17 +805,7 @@ fn load_runtime_game_config(
     game_dir: &std::path::Path,
     campaign_store: &CampaignStore,
 ) -> Result<RuntimeConfig, Box<dyn std::error::Error>> {
-    let config_path = game_dir.join("config.kdl");
-    if config_path.exists() {
-        let bbs_config = BbsGameConfig::load_kdl(&config_path)?;
-        return Ok(RuntimeConfig {
-            game_name: humanize_slug(&slug_from_dir(game_dir)?),
-            theme: None,
-            reservations: bbs_config.reservations,
-            setup_overrides: RuntimeSetupOverrides::default(),
-        });
-    }
-
+    nc_data::sync_game_config(game_dir, campaign_store)?;
     let settings = campaign_store.load_campaign_settings()?;
     Ok(RuntimeConfig {
         game_name: settings.game_name,
@@ -953,45 +941,6 @@ fn validate_runtime_game_config(
     Ok(())
 }
 
-fn slug_from_dir(dir: &std::path::Path) -> Result<String, Box<dyn std::error::Error>> {
-    let slug = dir
-        .file_name()
-        .and_then(|name| name.to_str())
-        .filter(|name| !name.is_empty())
-        .ok_or_else(|| format!("cannot derive slug from {}", dir.display()))?
-        .to_string();
-    if !slug
-        .chars()
-        .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
-    {
-        return Err(format!(
-            "game slug '{}' must use only lowercase ascii letters, digits, and dashes",
-            slug
-        )
-        .into());
-    }
-    Ok(slug)
-}
-
-fn humanize_slug(slug: &str) -> String {
-    slug.split('-')
-        .filter(|part| !part.is_empty())
-        .map(|part| {
-            let mut chars = part.chars();
-            match chars.next() {
-                Some(first) => {
-                    let mut word = String::new();
-                    word.extend(first.to_uppercase());
-                    word.push_str(chars.as_str());
-                    word
-                }
-                None => String::new(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
@@ -1086,16 +1035,19 @@ mod tests {
         copy_dir_all(&repo_root().join("fixtures/ecutil-init/v1.5"), &root);
         let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
         import_directory_snapshot(&store, &root).expect("seed sqlite snapshot");
+        store
+            .save_campaign_settings(&nc_data::CampaignSettings::new("test", "Test"))
+            .expect("save settings");
         root
     }
 
     fn write_reserved_config(root: &std::path::Path, alias: &str, player: usize) {
         BbsGameConfig {
-            players: 4,
             reservations: vec![SeatReservation {
                 player_record_index_1_based: player,
                 alias: alias.to_string(),
             }],
+            ..BbsGameConfig::new()
         }
         .save_kdl(&root.join("config.kdl"))
         .expect("write BBS config");
@@ -1336,8 +1288,8 @@ mod tests {
         let game_dir = temp_first_time_game_copy();
         seed_joined_player_handle(&game_dir, 2, "Tachyon");
         BbsGameConfig {
-            players: 4,
             reservations: Vec::new(),
+            ..BbsGameConfig::new()
         }
         .save_kdl(&game_dir.join("config.kdl"))
         .expect("write BBS config");
@@ -1493,8 +1445,8 @@ mod tests {
         // Another player's handle equals this caller's real name.
         seed_joined_player_handle(&game_dir, 2, "Tachyon");
         BbsGameConfig {
-            players: 4,
             reservations: Vec::new(),
+            ..BbsGameConfig::new()
         }
         .save_kdl(&game_dir.join("config.kdl"))
         .expect("write BBS config");

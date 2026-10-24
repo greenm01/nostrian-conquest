@@ -7,9 +7,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use nc_ai_onnx::{CampaignAi, model_from_env};
-use nc_data::{
-    BbsGameConfig, CampaignSettings, CampaignStore, SeatReservation, generate_campaign_seed,
-};
+use nc_data::{CampaignSettings, CampaignStore, SeatReservation, generate_campaign_seed};
 use nc_engine::{CampaignMaintenance, build_seeded_new_game};
 
 #[derive(Clone)]
@@ -178,10 +176,9 @@ fn run_new_game(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
 
     let bbs_config_path = target_dir.join("config.kdl");
     if bbs_mode {
-        if game_name.is_some() || args.iter().any(|arg| arg == "--players" || arg == "-p") {
+        if game_name.is_some() {
             return Err(
-                "new-game --bbs reads players from config.kdl; do not pass --name or --players"
-                    .into(),
+                "new-game --bbs reads game_name from config.kdl; do not pass --name".into(),
             );
         }
         if !bbs_config_path.exists() {
@@ -237,19 +234,27 @@ fn run_new_game(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         return Err(format!("{} already contains a campaign", target_dir.display()).into());
     }
 
-    let (player_count, seed) = if bbs_mode {
-        let config = BbsGameConfig::load_kdl(&bbs_config_path)?;
-        (config.players, seed.unwrap_or_else(generate_campaign_seed))
-    } else {
-        (player_count, seed.unwrap_or_else(generate_campaign_seed))
-    };
+    let seed = seed.unwrap_or_else(generate_campaign_seed);
     let game_data = build_seeded_new_game(player_count, 3000, seed)?;
-    store.save_year(game_data.conquest.game_year, &game_data, &[], &[])?;
-    store.save_campaign_settings(&CampaignSettings::new(&slug, &game_name))?;
+    store.save_year_with_intel_and_seed(
+        game_data.conquest.game_year,
+        &game_data,
+        &[],
+        &[],
+        &[],
+        Some(seed),
+    )?;
+    let settings = CampaignSettings::new(&slug, &game_name);
+    store.save_campaign_settings(&settings)?;
+    if bbs_mode {
+        nc_data::sync_game_config(&target_dir, &store)?;
+    }
+    let settings = store.load_campaign_settings()?;
+    nc_data::write_game_config(&target_dir, &store, &settings)?;
     println!(
         "Initialized new game at: {} (name={}, players={}, year=3000, seed={})",
         target_dir.display(),
-        game_name,
+        settings.game_name,
         player_count,
         seed
     );
@@ -280,19 +285,11 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     match cmd {
         "show" => {
             let dir = parse_required_dir_flag(&args[1..])?;
-            if is_bbs_campaign_dir(&dir) {
-                let config = load_bbs_game_config(&dir)?;
-                println!("mode=bbs");
-                println!("players={}", config.players);
-                for reservation in config.reservations {
-                    println!(
-                        "reservation seat={} alias={}",
-                        reservation.player_record_index_1_based, reservation.alias
-                    );
-                }
-                return Ok(());
-            }
             let store = CampaignStore::open_default_in_dir(&dir)?;
+            nc_data::sync_game_config(&dir, &store)?;
+            if let Some(runtime) = store.load_latest_runtime_state()? {
+                println!("players={}", runtime.game_data.players.len());
+            }
             let settings = store.load_campaign_settings()?;
             println!("slug={}", settings.slug);
             println!("game_name={}", settings.game_name);
@@ -342,13 +339,8 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         }
         "set" => {
             let dir = parse_required_dir_flag(&args[1..])?;
-            if is_bbs_campaign_dir(&dir) {
-                return Err(
-                    "BBS campaigns do not support 'settings set'; edit config.kdl directly and use settings reserve/unreserve for reservations"
-                        .into(),
-                );
-            }
             let store = CampaignStore::open_default_in_dir(&dir)?;
+            nc_data::sync_game_config(&dir, &store)?;
             let mut settings = store.load_campaign_settings()?;
             let mut idx = 1;
             while idx < args.len() {
@@ -405,7 +397,7 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
                     other => return Err(format!("unexpected argument: {other}").into()),
                 }
             }
-            store.save_campaign_settings(&settings)?;
+            save_settings(&dir, &store, &settings)?;
             println!("Updated settings for {}", dir.display());
             Ok(())
         }
@@ -413,22 +405,8 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             let dir = parse_required_dir_flag(&args[1..])?;
             let player = parse_required_usize_flag(&args[1..], "--player")?;
             let alias = parse_required_string_flag(&args[1..], "--alias")?;
-            if is_bbs_campaign_dir(&dir) {
-                let store = CampaignStore::open_default_in_dir(&dir)?;
-                let mut config = load_bbs_game_config(&dir)?;
-                config
-                    .reservations
-                    .retain(|reservation| reservation.player_record_index_1_based != player);
-                config.reservations.push(SeatReservation {
-                    player_record_index_1_based: player,
-                    alias,
-                });
-                validate_bbs_reservations_against_runtime(&store, &config)?;
-                save_bbs_game_config(&dir, &config)?;
-                println!("Reserved seat {} in {}", player, dir.display());
-                return Ok(());
-            }
             let store = CampaignStore::open_default_in_dir(&dir)?;
+            nc_data::sync_game_config(&dir, &store)?;
             let mut settings = store.load_campaign_settings()?;
             settings
                 .reservations
@@ -438,7 +416,7 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
                 alias,
             });
             validate_reservations_against_runtime(&store, &settings)?;
-            store.save_campaign_settings(&settings)?;
+            save_settings(&dir, &store, &settings)?;
             println!("Reserved seat {} in {}", player, dir.display());
             Ok(())
         }
@@ -447,25 +425,13 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         "unreserve" => {
             let dir = parse_required_dir_flag(&args[1..])?;
             let player = parse_required_usize_flag(&args[1..], "--player")?;
-            if is_bbs_campaign_dir(&dir) {
-                let mut config = load_bbs_game_config(&dir)?;
-                config
-                    .reservations
-                    .retain(|reservation| reservation.player_record_index_1_based != player);
-                save_bbs_game_config(&dir, &config)?;
-                println!(
-                    "Removed reservation for seat {} in {}",
-                    player,
-                    dir.display()
-                );
-                return Ok(());
-            }
             let store = CampaignStore::open_default_in_dir(&dir)?;
+            nc_data::sync_game_config(&dir, &store)?;
             let mut settings = store.load_campaign_settings()?;
             settings
                 .reservations
                 .retain(|reservation| reservation.player_record_index_1_based != player);
-            store.save_campaign_settings(&settings)?;
+            save_settings(&dir, &store, &settings)?;
             println!(
                 "Removed reservation for seat {} in {}",
                 player,
@@ -489,6 +455,7 @@ fn run_maintenance_for_dir(
         if turns == 1 { "" } else { "s" }
     );
     let store = CampaignStore::open_default_in_dir(dir)?;
+    nc_data::sync_game_config(dir, &store)?;
     // Players' changes are refused as paused until the run ends (t205).
     let run = store.begin_maintenance()?;
     if run.took_over() {
@@ -551,31 +518,22 @@ fn validate_reservations_against_runtime(
     Ok(())
 }
 
-fn validate_bbs_reservations_against_runtime(
+/// Save `settings` to the store and, when the game has a `config.kdl`, to
+/// the file too, so the next sync from the file keeps the change (t218).
+fn save_settings(
+    dir: &Path,
     store: &CampaignStore,
-    config: &BbsGameConfig,
+    settings: &CampaignSettings,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let runtime_state = store
-        .load_latest_runtime_state()?
-        .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    config.validate_reservations_for_player_count(runtime_state.game_data.players.len())?;
+    store.save_campaign_settings(settings)?;
+    if is_bbs_campaign_dir(dir) {
+        nc_data::write_game_config(dir, store, settings)?;
+    }
     Ok(())
 }
 
 fn is_bbs_campaign_dir(dir: &Path) -> bool {
     dir.join("config.kdl").exists()
-}
-
-fn load_bbs_game_config(dir: &Path) -> Result<BbsGameConfig, Box<dyn std::error::Error>> {
-    Ok(BbsGameConfig::load_kdl(&dir.join("config.kdl"))?)
-}
-
-fn save_bbs_game_config(
-    dir: &Path,
-    config: &BbsGameConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    config.save_kdl(&dir.join("config.kdl"))?;
-    Ok(())
 }
 
 fn slug_from_dir(dir: &Path) -> Result<String, Box<dyn std::error::Error>> {

@@ -403,6 +403,9 @@ fn classify_report_subject(lines: &[String]) -> &'static str {
     if normalized.is_empty() {
         return "General";
     }
+    if normalized.starts_with("game notice") {
+        return "Notice";
+    }
 
     if contains_any(&normalized, &["bombard"]) {
         return "Bombard";

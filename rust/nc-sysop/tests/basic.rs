@@ -66,7 +66,11 @@ fn nc_sysop_new_game_initializes_default_campaign_without_hosted_seats() {
     assert!(stdout.contains("players=4"));
     assert!(target.join("ncgame.db").exists());
     assert!(!target.join("DATABASE.DAT").exists());
-    assert!(!target.join("config.kdl").exists());
+    let config =
+        BbsGameConfig::load_kdl(&target.join("config.kdl")).expect("new games write config.kdl");
+    assert_eq!(config.autopilot_after_turns, 3);
+    let text = fs::read_to_string(target.join("config.kdl")).expect("read config.kdl");
+    assert!(text.contains("// players 4, seed "), "{text}");
 
     let runtime = CampaignStore::open_default_in_dir(&target)
         .expect("open campaign store")
@@ -74,7 +78,7 @@ fn nc_sysop_new_game_initializes_default_campaign_without_hosted_seats() {
         .expect("load runtime")
         .expect("runtime snapshot should exist");
     assert_eq!(runtime.game_data.players[0].mode.code(), 0);
-    assert_eq!(fs::read_dir(&target).expect("read dir").count(), 1);
+    assert_eq!(fs::read_dir(&target).expect("read dir").count(), 2);
 
     let _ = fs::remove_dir_all(&target);
 }
@@ -93,19 +97,25 @@ fn nc_sysop_new_game_bbs_requires_existing_config_kdl() {
 fn nc_sysop_new_game_bbs_reads_minimal_config_kdl() {
     let target = unique_temp_dir("nc-sysop-new-game-bbs");
     let config = BbsGameConfig {
-        players: 4,
         reservations: vec![SeatReservation {
             player_record_index_1_based: 1,
             alias: "SYSOP".to_string(),
         }],
+        ..BbsGameConfig::new()
     };
     config
         .save_kdl(&target.join("config.kdl"))
         .expect("write BBS config");
 
-    let stdout = run_nc_sysop(&["new-game", "--bbs", target.to_str().expect("utf-8 path")]);
+    let stdout = run_nc_sysop(&[
+        "new-game",
+        "--bbs",
+        "--players",
+        "6",
+        target.to_str().expect("utf-8 path"),
+    ]);
     assert!(stdout.contains("Initialized new game"));
-    assert!(stdout.contains("players=4"));
+    assert!(stdout.contains("players=6"));
     assert!(target.join("config.kdl").exists());
     assert!(target.join("ncgame.db").exists());
 
@@ -115,7 +125,7 @@ fn nc_sysop_new_game_bbs_reads_minimal_config_kdl() {
         .expect("load runtime")
         .expect("runtime snapshot");
     assert_eq!(runtime.game_data.conquest.game_year, 3000);
-    assert_eq!(runtime.game_data.players.len(), 4);
+    assert_eq!(runtime.game_data.players.len(), 6);
 
     let _ = fs::remove_dir_all(&target);
 }
@@ -124,8 +134,8 @@ fn nc_sysop_new_game_bbs_reads_minimal_config_kdl() {
 fn nc_sysop_new_game_bbs_accepts_seed_as_creation_override() {
     let target = unique_temp_dir("nc-sysop-new-game-bbs-seed");
     let config = BbsGameConfig {
-        players: 4,
         reservations: vec![],
+        ..BbsGameConfig::new()
     };
     config
         .save_kdl(&target.join("config.kdl"))
@@ -139,6 +149,11 @@ fn nc_sysop_new_game_bbs_accepts_seed_as_creation_override() {
         "1515",
     ]);
     assert!(stdout.contains("seed=1515"));
+    let text = fs::read_to_string(target.join("config.kdl")).expect("read config.kdl");
+    assert!(
+        text.contains("// players 4, seed 1515, map 18x18"),
+        "{text}"
+    );
 
     let _ = fs::remove_dir_all(&target);
 }
@@ -171,11 +186,11 @@ fn nc_sysop_maint_runs_rust_maintenance() {
 fn nc_sysop_settings_show_for_bbs_campaign_omits_seed_and_lists_reservations() {
     let target = unique_temp_dir("nc-sysop-settings-show-bbs");
     let config = BbsGameConfig {
-        players: 4,
         reservations: vec![SeatReservation {
             player_record_index_1_based: 2,
             alias: "NightShade".to_string(),
         }],
+        ..BbsGameConfig::new()
     };
     config
         .save_kdl(&target.join("config.kdl"))
@@ -189,7 +204,6 @@ fn nc_sysop_settings_show_for_bbs_campaign_omits_seed_and_lists_reservations() {
         "--dir",
         target.to_str().expect("utf-8 path"),
     ]);
-    assert!(stdout.contains("mode=bbs"));
     assert!(stdout.contains("players=4"));
     assert!(stdout.contains("reservation seat=2 alias=NightShade"));
     assert!(!stdout.contains("seed="));
@@ -201,8 +215,8 @@ fn nc_sysop_settings_show_for_bbs_campaign_omits_seed_and_lists_reservations() {
 fn nc_sysop_settings_reserve_and_unreserve_work_for_bbs_campaigns() {
     let target = unique_temp_dir("nc-sysop-settings-reserve-bbs");
     BbsGameConfig {
-        players: 4,
         reservations: Vec::new(),
+        ..BbsGameConfig::new()
     }
     .save_kdl(&target.join("config.kdl"))
     .expect("write BBS config");
@@ -258,6 +272,8 @@ fn nc_sysop_settings_set_accepts_dir_with_other_flags_for_local_campaigns() {
         target.to_str().expect("utf-8 path"),
         "--game-name",
         "Friday Night NC",
+        "--inactivity-autopilot-after",
+        "5",
     ]);
     assert!(stdout.contains("Updated settings"));
 
@@ -266,6 +282,10 @@ fn nc_sysop_settings_set_accepts_dir_with_other_flags_for_local_campaigns() {
         .load_campaign_settings()
         .expect("load campaign settings");
     assert_eq!(settings.game_name, "Friday Night NC");
+    // The file is written too, so the next sync from it keeps the change.
+    let config = BbsGameConfig::load_kdl(&target.join("config.kdl")).expect("load config");
+    assert_eq!(config.game_name.as_deref(), Some("Friday Night NC"));
+    assert_eq!(config.autopilot_after_turns, 5);
 
     let _ = fs::remove_dir_all(&target);
 }
