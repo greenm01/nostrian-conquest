@@ -200,10 +200,16 @@ On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
 inside the `#nostrian:matrix.org` space, and its display name became
 `ncbot`.
 
-Signed release `19fb1f5d` (v1.0.0-beta.4) went live on 2026-10-19 after an
-`nc-admin` backup of Beta 1; the owner accepted its door rendering and map
-downloads there. Beta 1 stays recruiting at year 3000 with one seat claimed;
-`ea1a6b3b` is kept for rollback. The Nostr gate stays disabled. Community
+Signed release `5e73324d` went live on 2026-10-24 (built on bean-void, tarball
+SHA-256 `d51f8d453d3b6c5bce960ba3a39e00eee147ffbaf5842eff40329e2a8209cb31`):
+per-game `config.kdl` with Game Notices (t218), the autopilot notice, the
+oldest-first inbox and repair at bases. `2b9cba81` is kept for rollback. At
+the owner's request Beta 1 was reset after an `nc-admin` backup
+(`.backups/beta-1-1792863102-33a748e6c7708a6d`); the old game is archived at
+`.archived/beta-1-20261024` under the games root. The new Beta 1 is
+recruiting, invite-only, midnight America/New_York, with seat 1 bound to the
+owner's Nostr, Discord and Matrix accounts. Old invite codes no longer work;
+issue new ones with `/invite`. The Nostr gate stays disabled. Community
 Beta 1 is the only hosted game. Earlier release history is in the archive.
 
 ## Release context
