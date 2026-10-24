@@ -3047,6 +3047,30 @@ every world-year. With a 0.05 trail the anchor follows the policy within
 about 14 iterations, so the 0.02 floor restrains little; a smaller share
 (0.01) or a DAPO snapshot anchor are the remaining variants.
 
+**Slower trail, t214b (2026-10-24, Mac mini).**
+`~/.local/state/nostrian-conquest/ai/t214b/` repeats t214 with
+`--anchor-ema 0.01`, from the same start (`fleet-final-pre-t213`).
+Snapshots 150, 175 and 200 export with 0 mismatches. Paired
+`behaviour_report` (`+builds`) against `fleet-final` (t213's snapshot 200),
+1,024 maps from 100000, three executors:
+
+| Snapshot | 60 years | 100 years |
+| --- | ---: | ---: |
+| 150 | -0.011 +/- 0.019 | -0.047 +/- 0.017 |
+| 175 | -0.027 +/- 0.019 | -0.053 +/- 0.016 |
+| 200 | -0.002 +/- 0.019 | -0.025 +/- 0.016 |
+
+`fleet-final` itself scores 0.617 and 0.816 here. No snapshot beats it,
+and none varies the tax rate or builds its own way greedily, so the slower
+trail loses t214's one gain. **t214 is closed:** a trailing anchor does not
+beat the fixed 0.02 floor at either rate. The DAPO snapshot anchor was not
+run; it is the same idea with a stepped trail and is not expected to do
+better.
+
+**t213 is closed (2026-10-24).** Its strength exit was met and promoted.
+Its build exit (`BUILD_EXECUTOR` below 0.80) and exploit exit (0.25) were
+not; they carry to t215 and t216, which target exactly those failures.
+
 ### t215
 
 Self-imitation (UPGO) and a KL weight drawn each game from {0, 0.005,
