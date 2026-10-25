@@ -3094,6 +3094,20 @@ holds at the baseline's level. `~/.local/state/nostrian-conquest/ai/t215/`
 repeats t213's flags with `--upgo 0.3`, from the same start; t214 is closed,
 so `fleet-final` (t213's snapshot 200) is the baseline.
 
+**Result (2026-10-25).** Snapshots 150, 175 and 200 export with 0
+mismatches. Paired `behaviour_report` (`+builds`) against `fleet-final`
+(0.617 / 0.816), 1,024 maps from 100000, three executors:
+
+| Snapshot | 60 years | 100 years |
+| --- | ---: | ---: |
+| 150 | -0.039 +/- 0.019 | -0.070 +/- 0.016 |
+| 175 | -0.029 +/- 0.020 | -0.034 +/- 0.016 |
+| 200 | -0.013 +/- 0.019 | -0.018 +/- 0.017 |
+
+Snapshot 200 ties; greedy play still builds its own way at 0.0%, uses one
+tax rate a game and never salvages. **t215 is closed:** self-imitation does
+not beat `fleet-final`; the per-game KL weight is not built.
+
 ### t216
 
 Build credit and build head structure, only if t212's paired test shows
@@ -3106,6 +3120,37 @@ for several years. Branch rollouts need many CPU cores; crunch suits
 them once the owner frees it.
 
 Exit: a paired override delta over 2 standard errors, and a panel gain.
+
+**Branching (2026-10-25).** `BatchEnv::branch` (Python `Env.branch`) copies
+games mid-play, state, random streams and turn log included; a Rust test
+shows a copy replays its source exactly and copies given different choices
+part.
+
+**Branch measurement (2026-10-25, Mac mini).** `fleet-final` greedy, one
+seat against three executors, 512 maps from 100000. At year Y each game is
+copied three times, differing only in one learner world's first build slot:
+the executor's build, the head's likeliest other kind, or a random other
+legal kind. The table gives the change in the seat's production-share lead
+against the executor branch (mean +/- standard error, then the mean size of
+the per-game difference), and the lead's spread across games:
+
+| Fork | Horizon | Head's other kind | Random kind | Lead spread |
+| ---: | ---: | --- | --- | ---: |
+| 5 | +10 y | -0.0002 +/- 0.0005 (0.003) | +0.0000 +/- 0.0007 (0.006) | 0.070 |
+| 5 | +30 y | -0.0014 +/- 0.0044 (0.057) | +0.0026 +/- 0.0056 (0.097) | 0.145 |
+| 15 | +10 y | -0.0005 +/- 0.0019 (0.028) | -0.0019 +/- 0.0018 (0.026) | 0.102 |
+| 15 | +30 y | -0.0039 +/- 0.0084 (0.145) | -0.0037 +/- 0.0081 (0.142) | 0.197 |
+
+One build changes a game a lot within decades, but in no direction: the
+mean effect is zero within a standard error at every fork and horizon,
+while per-game divergence grows to most of the lead's spread. The
+executor's build is not beaten by the head's favourite or by chance, so a
+single world-year build carries almost no learnable signal, and branch
+credit would measure chaos, not value. This explains t207-t217: the build
+head stays on `BUILD_EXECUTOR` because nothing better is there to find at
+that grain. **t216's branch-rollout route is closed.** Builds stay with the
+executor; a build mix held over several years is the only build lever left,
+and it is not pursued without the owner.
 
 ### t217
 
