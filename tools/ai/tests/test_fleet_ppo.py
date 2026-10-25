@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np  # noqa: E402
 
-from fleet_ppo import act_entropy, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl  # noqa: E402
+from fleet_ppo import act_entropy, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -119,3 +119,23 @@ class LeadPotentialTest(unittest.TestCase):
                 total += phi_next - phi
                 phi = phi_next
             np.testing.assert_allclose(total, 0.0, atol=1e-6)
+
+
+class UpgoTest(unittest.TestCase):
+    def step(self, reward, value, done):
+        select = np.array([[True]])
+        return {"select": select, "reward": np.array([reward], np.float32),
+                "value": torch.tensor([value]), "done": np.array([done])}
+
+    def test_follows_a_continuation_that_beat_the_critic(self):
+        # Year 2 pays 1 where the critic expected 0.2, so year 1 takes the
+        # actual return rather than the critic's 0.2, and so does year 0.
+        steps = [self.step(0.0, 0.3, False), self.step(0.0, 0.2, False), self.step(1.0, 0.2, True)]
+        out = upgo_advantages(steps, 1.0)
+        np.testing.assert_allclose([o[0] for o in out], [0.7, 0.8, 0.8], atol=1e-6)
+
+    def test_is_zero_when_the_game_went_worse_than_expected(self):
+        steps = [self.step(0.0, 0.5, False), self.step(0.0, 0.4, True)]
+        out = upgo_advantages(steps, 1.0)
+        # Year 0 bootstraps from the critic's 0.4, below its own 0.5.
+        np.testing.assert_allclose([o[0] for o in out], [0.0, 0.0], atol=1e-6)

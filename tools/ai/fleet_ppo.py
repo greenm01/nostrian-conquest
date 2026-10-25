@@ -75,6 +75,14 @@ once the seat owns no world. The terms telescope over a game to a constant,
 so the strategy that wins most is unchanged; a lead shows up within years
 instead of only in the final result. Logged win shares stay unshaped.
 
+``--upgo C`` (t215) adds self-imitation in the form of AlphaStar's UPGO:
+each seat-year's upgoing return bootstraps from the critic's next value
+unless the game's actual continuation did better (``upgo_advantages``), and
+the positive part of that return over the critic's value joins the policy's
+advantage with weight ``C`` (in units of the GAE advantage's spread). Good
+choices that won more than the critic expected are pushed harder; the value
+target is unchanged.
+
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
 ``--resume``, with the run's other options unchanged, continues a run that
@@ -495,6 +503,26 @@ def act_entropy(dist, rest=0):
 
 
 @torch.no_grad()
+def upgo_advantages(steps, gamma):
+    """Self-imitation advantages, laid out as ``advantages``' (t215). The
+    upgoing return is ``G_t = r_t + gamma * max(V_{t+1}, G_{t+1})``, cut at
+    the game's end; the advantage is ``max(0, G_t - V_t)``."""
+    games, seats = steps[0]["select"].shape
+    g_next = np.zeros((games, seats), np.float32)
+    value_next = np.zeros((games, seats), np.float32)
+    out = [None] * len(steps)
+    for t in reversed(range(len(steps))):
+        s = steps[t]
+        sel = s["select"]
+        value = s["value"].numpy()
+        ended = s["done"].astype(np.float32)
+        g = s["reward"] + gamma * (1 - ended) * np.maximum(value_next[sel], g_next[sel])
+        g_next[sel] = g
+        value_next[sel] = value
+        out[t] = np.maximum(0.0, g - value)
+    return out
+
+
 def lead_potential(production, worlds, done):
     """``[games, seats]``: each seat's share of its game's present production
     minus its rivals' mean share, and 0 for a seat without worlds or in a
@@ -516,7 +544,7 @@ def ema_toward(ref, model, share):
 
 
 def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, mission_coef,
-           args, dev):
+           args, dev, upgo=None):
     keys = steps[0]["batch"].keys()
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
     rows = batch["fleets"].shape[1]
@@ -536,7 +564,10 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
     old_value = torch.cat([s["value"] for s in steps])
     adv = torch.from_numpy(np.concatenate(advs))
     ret = adv + old_value
-    adv = (adv - adv.mean()) / (adv.std() + 1e-8)
+    spread = adv.std() + 1e-8
+    adv = (adv - adv.mean()) / spread
+    if upgo is not None:
+        adv = adv + args.upgo * torch.from_numpy(np.concatenate(upgo)) / spread
     stats = []
     model.train()
     for _ in range(args.epochs):
@@ -669,6 +700,8 @@ def main():
                         help="the learner's latest snapshots kept in the league")
     parser.add_argument("--resume", action="store_true",
                         help="continue the run saved in --out")
+    parser.add_argument("--upgo", type=float, default=0.0,
+                        help="weight of UPGO self-imitation in the policy advantage (t215)")
     parser.add_argument("--shape-lead", type=float, default=0.0,
                         help="weight of potential-based shaping on the production lead (t217)")
     parser.add_argument("--limit-credit", type=float, default=1.0,
@@ -758,7 +791,8 @@ def main():
         played = time.perf_counter() - started
         (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
                                       advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
-                                      teach_coef, mission_coef, args, dev)
+                                      teach_coef, mission_coef, args, dev,
+                                      upgo_advantages(steps, args.gamma) if args.upgo else None)
         wins = sum(s["win"].sum() for s in steps) / max((roles == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an

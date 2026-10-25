@@ -3079,6 +3079,21 @@ Self-imitation (UPGO) and a KL weight drawn each game from {0, 0.005,
 Exit: 2 standard errors over t214's best on the panel, or more greedy
 use of rare orders at equal strength.
 
+**Split (2026-10-25).** A KL weight drawn per game only works as in
+DiL-piKL when the network is told the weight; ours has no such input, so a
+random draw would act as a fixed weight of about 0.03 plus noise. That half
+waits for a weight input to the network (export and Rust seat changes) and
+is built only if self-imitation shows promise.
+
+**Self-imitation run (2026-10-25, Mac mini).** `fleet_ppo.py --upgo C`: each
+seat-year's upgoing return `G_t = r_t + gamma * max(V_{t+1}, G_{t+1})`, and
+`C * max(0, G_t - V_t)`, in units of the GAE advantage's spread, joins the
+policy advantage; the value target is unchanged. At `C = 1` a smoke run's
+policy loss was -2.4 (about 0.01 normally) and entropy fell; at 0.3 entropy
+holds at the baseline's level. `~/.local/state/nostrian-conquest/ai/t215/`
+repeats t213's flags with `--upgo 0.3`, from the same start; t214 is closed,
+so `fleet-final` (t213's snapshot 200) is the baseline.
+
 ### t216
 
 Build credit and build head structure, only if t212's paired test shows
