@@ -4,7 +4,7 @@ pub fn print_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] new-game <target_dir> [--name <title>] [--players <1-25>] [--seed <u64>]"
     );
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] new-game --bbs <target_dir> [--seed <u64>]"
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] new-game --bbs <target_dir> [--players <1-25>] [--seed <u64>]"
     );
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] maint <dir> [turns]"
@@ -29,7 +29,7 @@ pub fn print_new_game_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] new-game <target_dir> [--name <title>] [--players <1-25>] [--seed <u64>]"
     );
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] new-game --bbs <target_dir> [--seed <u64>]"
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] new-game --bbs <target_dir> [--players <1-25>] [--seed <u64>]"
     );
 }
 
