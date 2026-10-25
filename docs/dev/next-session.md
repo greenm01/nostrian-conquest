@@ -214,13 +214,13 @@ Beta 1 is the only hosted game. Earlier release history is in the archive.
 
 ## Release context
 
-Beta.4 is published (t210, 2026-10-19): four `nc-sysop` archives built from
-`4abc2140` and a signed `SHA256SUMS.txt` replaced beta.3 on
-`release-artifacts`; the website's three manual PDFs match. It adds door
-renders that send only screen changes (t208) and nc-sysop `map-export`,
-`economy-report` and `check` (t209). The save format is unchanged from
-beta.3. See the [release plan](../notes/plans/02cjqug4-release-v1-0-0-beta-4.md)
-for hashes and checks.
+Beta.5 is published (t219, 2026-10-25): four `nc-sysop` archives built from
+`0bb3b406` and a signed `SHA256SUMS.txt` replaced beta.4 on
+`release-artifacts`; the website's three manual PDFs match. It adds per-game
+`config.kdl` settings with Game Notices (t218), the autopilot report, the
+oldest-first inbox and the executor's t207 behaviours. It is not compatible
+with beta.4 BBS games until their `config.kdl` loses its `players` line. See
+the [release plan](../notes/plans/r5b5nc01-release-v1-0-0-beta-5.md).
 
 The x86 Defender block was cleared by building the standard library from
 source, as the Win7+ target already did. Both x86 release targets now use that
