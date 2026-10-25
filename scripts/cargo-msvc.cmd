@@ -2,7 +2,9 @@
 setlocal
 
 set "VSCMD_SKIP_SENDTELEMETRY=1"
-set "VSDEVCMD=%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+rem The newest Visual Studio or Build Tools with the C++ tools, whatever its version folder.
+set "VSDEVCMD="
+for /f "usebackq delims=" %%I in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSDEVCMD=%%I\Common7\Tools\VsDevCmd.bat"
 
 if not exist "%VSDEVCMD%" (
     echo error: Visual Studio Build Tools developer command script not found at "%VSDEVCMD%"
