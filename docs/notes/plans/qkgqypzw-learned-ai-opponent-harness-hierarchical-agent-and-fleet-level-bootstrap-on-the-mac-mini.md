@@ -3118,6 +3118,24 @@ over `fleet-final` above 2 standard errors at 60 or 100 years without a
 loss at the other; report the critic's explained variance by year against
 t212's (0.02-0.07 over years 0-20) and the share of builds made its own way.
 
+**Result (2026-10-25).** Snapshots 150 and 175 export with 0 mismatches,
+200 with 1 mismatched output of 64 recorded seats. Paired
+`behaviour_report` (`+builds`) against `fleet-final` (0.617 / 0.816), 1,024
+maps from 100000, three executors:
+
+| Snapshot | 60 years | 100 years | Tax rates a game |
+| --- | ---: | ---: | ---: |
+| 150 | -0.036 +/- 0.019 | -0.085 +/- 0.017 | 1.1 |
+| 175 | -0.019 +/- 0.019 | -0.040 +/- 0.017 | 1.0 |
+| 200 | -0.002 +/- 0.019 | -0.031 +/- 0.016 | 1.2 |
+
+The exit fails: weight 1.0 does not beat `fleet-final`, greedy play still
+builds its own way at 0.0% of world-years and starbases stay at 2% of
+builds. Training win share (0.232 over the last 25 iterations) ran slightly
+above t214b's (0.219). The critic's explained variance was not measured.
+The shaping's weight was not tuned against the final reward; that is the
+open variant.
+
 ### t192
 
 Name the weakness the exploiter found.
