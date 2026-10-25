@@ -3136,6 +3136,29 @@ above t214b's (0.219). The critic's explained variance was not measured.
 The shaping's weight was not tuned against the final reward; that is the
 open variant.
 
+**Critic check (2026-10-25).** Greedy, one seat against three executors,
+100 years, 1,024 maps from 100000; explained variance of the final win
+share by year. `fleet-final`'s critic is scored as is; t217's predicts the
+shaped return, so the lead is added back (`V + phi`). Squared correlations
+with the lead added to both critics are in the last two columns.
+
+| Year | fleet-final V | t217 V + phi | fleet-final r2(V + phi) | t217 r2(V + phi) |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 | 0.036 | 0.030 | 0.047 | 0.038 |
+| 5 | 0.071 | 0.093 | 0.115 | 0.108 |
+| 10 | 0.092 | 0.110 | 0.127 | 0.127 |
+| 20 | 0.140 | 0.155 | 0.182 | 0.178 |
+| 40 | 0.334 | 0.386 | 0.375 | 0.403 |
+| 60 | 0.517 | 0.644 | 0.540 | 0.646 |
+| 80 | 0.639 | 0.727 | 0.655 | 0.733 |
+
+Over years 0-20 the shaped critic knows no more than `fleet-final`'s critic
+plus the lead itself; it gains only from year 40 on, after most builds are
+made. At year 10 nothing measured explains more than about 13% of the
+outcome, a limit set by the game's horizon, not the reward. **t217 is
+closed:** shaping stays available as `--shape-lead` (off by default); no
+weight variant is run. Early credit is t216's job (branch rollouts).
+
 ### t192
 
 Name the weakness the exploiter found.
