@@ -12,3 +12,4 @@
 2026-10-16 Stretch goal: AI empires that can be negotiated with. +deferred +ai @development id:t188 order:510 depends:t187 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t188)
 2026-10-16 Update the development-only Nostr VPS installer and gate guides to nc-host. +deferred +hosting @development id:t201 order:520 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t201)
 (B) 2026-10-20 Turn on Discord announcements and check recruiting and turn posts. +parallel +hosting @development id:t211 order:375 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t211)
+(B) 2026-10-25 2026-10-25 Release v1.0.0-beta.5. +parallel +release @development id:t219 order:374 [details](docs/notes/plans/r5b5nc01-release-v1-0-0-beta-5.md)

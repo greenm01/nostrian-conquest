@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Sysop Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 19),
+  date: datetime(year: 2026, month: 10, day: 25),
 )
 
 #set page(
@@ -61,9 +61,9 @@
   #v(1em)
   #text(size: 10pt, style: "italic")[A Rust recreation inspired by the classic 1990s BBS door game Esterian Conquest.]
   #v(2em)
-  #text(size: 11pt, fill: luma(120))[Version 1.0.0-beta.4 — Beta]
+  #text(size: 11pt, fill: luma(120))[Version 1.0.0-beta.5 — Beta]
   #v(0.5em)
-  #text(size: 11pt, fill: luma(120))[Revision date: October 19, 2026]
+  #text(size: 11pt, fill: luma(120))[Revision date: October 25, 2026]
 ]
 
 #pagebreak()

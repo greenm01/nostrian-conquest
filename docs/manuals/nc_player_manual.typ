@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 21),
+  date: datetime(year: 2026, month: 10, day: 25),
 )
 
 #set page(
@@ -74,9 +74,9 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 21, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: October 25, 2026]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.4 — Beta]
+  #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.5 — Beta]
 ]
 
 #pagebreak()
@@ -904,6 +904,9 @@ the recipient list also opens your queued messages.
 
 You may queue up to three messages to each opponent per turn. The inbox has
 three folders: *R* for Reports, *M* for received Messages, and *S* for Sent.
+Each folder lists items oldest first. When the sysop changes a setting you
+would notice, such as the turn schedule or the autopilot rule, a "Game
+Notice" report lists the change.
 *Y* filters the selected folder by year. *D* removes one selected item after
 confirmation. General Command's *Delete ALL reports* clears only Reports;
 it leaves Messages and Sent alone. All reports and messages stay in the
@@ -2261,7 +2264,8 @@ In the Fleet List the Ships cell is narrow. When it cannot hold the whole compos
 
 == Autopilot <autopilot>
 
-Autopilot switches on after three missed turns, and a report from your Fleet
+Autopilot switches on after three missed turns (the sysop can choose another
+number, and you get a Game Notice if it changes), and a report from your Fleet
 Command Center, dated week 1, tells you it has. Your first real return that
 year turns that inactivity autopilot back off: logging into `nc-game`,
 entering through `nc-door`, or submitting a valid turn file. Manual autopilot
