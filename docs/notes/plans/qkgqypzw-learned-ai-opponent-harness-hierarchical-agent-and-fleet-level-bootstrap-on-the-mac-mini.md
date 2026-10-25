@@ -3101,6 +3101,23 @@ unchanged (Ng 1999; Grześ 2017), but it is still a reward change.
 Optional: a novelty bonus for unusual orders that fades to zero. Nothing
 is built until the owner approves.
 
+**Approved (owner, 2026-10-24).** Shaping yes; the potential is the
+production-share lead (share minus the rivals' mean, 0 before the first
+year, at game end and for a seat without worlds); no novelty bonus, since
+free entropy already plays that part and t212 showed forced rare orders
+lose; and run alone before t215, so a gain has one cause.
+`fleet_ppo.py --shape-lead W` adds `W * (gamma * phi(next) - phi(now))` to
+each learner's yearly reward, with the run's own `--gamma`; logged win
+shares stay unshaped. Unit tests check the potential and that the terms
+telescope to zero over a game.
+
+**Run (2026-10-24, Mac mini).** `~/.local/state/nostrian-conquest/ai/t217/`
+repeats t213's flags with `--shape-lead 1.0`, from the same start, so
+t213's snapshot 200 (`fleet-final`) is the baseline. Exit: paired gain
+over `fleet-final` above 2 standard errors at 60 or 100 years without a
+loss at the other; report the critic's explained variance by year against
+t212's (0.02-0.07 over years 0-20) and the share of builds made its own way.
+
 ### t192
 
 Name the weakness the exploiter found.

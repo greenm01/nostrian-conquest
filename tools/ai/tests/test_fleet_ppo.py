@@ -9,7 +9,9 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from fleet_ppo import act_entropy, categorical_kl, coverage, ema_toward, smoothed_kl  # noqa: E402
+import numpy as np  # noqa: E402
+
+from fleet_ppo import act_entropy, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -91,3 +93,29 @@ class EmaTowardTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LeadPotentialTest(unittest.TestCase):
+    def test_is_the_share_lead_and_zero_without_worlds_or_after_the_game(self):
+        production = np.array([[40, 20, 20, 20], [0, 30, 30, 40]])
+        worlds = np.array([[3, 2, 2, 2], [0, 2, 2, 3]])
+        phi = lead_potential(production, worlds, np.array([False, False]))
+        self.assertAlmostEqual(float(phi[0, 0]), 0.4 - 0.2, places=6)
+        self.assertAlmostEqual(float(phi[0, 1]), 0.2 - 0.8 / 3, places=6)
+        self.assertEqual(float(phi[1, 0]), 0.0)
+        self.assertFalse(lead_potential(production, worlds, np.array([True, False]))[0].any())
+
+    def test_shaping_over_a_game_does_not_depend_on_the_play(self):
+        # Undiscounted, the terms telescope to phi(end) - phi(start) = 0 for
+        # every trajectory; with discounting each step's term is unchanged.
+        rng = np.random.default_rng(1)
+        for _ in range(5):
+            years = 12
+            production = rng.integers(1, 50, (years, 1, 4))
+            phi, total = np.zeros((1, 4), np.float32), np.zeros((1, 4))
+            for t in range(years):
+                done = np.array([t == years - 1])
+                phi_next = lead_potential(production[t], np.ones((1, 4)), done)
+                total += phi_next - phi
+                phi = phi_next
+            np.testing.assert_allclose(total, 0.0, atol=1e-6)

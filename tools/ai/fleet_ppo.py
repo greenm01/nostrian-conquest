@@ -67,6 +67,14 @@ then charges for change since recent iterations, not for distance from
 the imitation copy, so the policy can wander far while each step stays
 close.
 
+``--shape-lead W`` (t217) adds potential-based shaping (Ng 1999): each
+year the learner earns ``W * (gamma * phi(next) - phi(now))``, where
+``phi`` is its share of all present production minus its rivals' mean
+share (``lead_potential``), and 0 before the first year, at game end and
+once the seat owns no world. The terms telescope over a game to a constant,
+so the strategy that wins most is unchanged; a lead shows up within years
+instead of only in the final result. Logged win shares stay unshaped.
+
 Each iteration saves ``resume.pt`` in ``--out``: the weights, the optimizer,
 the random states, the next training map and the league's shares.
 ``--resume``, with the run's other options unchanged, continues a run that
@@ -487,6 +495,19 @@ def act_entropy(dist, rest=0):
 
 
 @torch.no_grad()
+def lead_potential(production, worlds, done):
+    """``[games, seats]``: each seat's share of its game's present production
+    minus its rivals' mean share, and 0 for a seat without worlds or in a
+    game that has ended, so shaping sums to a constant (t217)."""
+    production = production.astype(np.float64)
+    total = production.sum(1, keepdims=True)
+    share = np.divide(production, total, out=np.zeros_like(production), where=total > 0)
+    seats = production.shape[1]
+    lead = share - (1 - share) / (seats - 1)
+    lead[(worlds == 0) | done[:, None]] = 0.0
+    return lead.astype(np.float32)
+
+
 def ema_toward(ref, model, share):
     """Move every weight of ``ref`` ``share`` of the way toward ``model``'s."""
     for r, m in zip(ref.state_dict().values(), model.state_dict().values()):
@@ -648,6 +669,8 @@ def main():
                         help="the learner's latest snapshots kept in the league")
     parser.add_argument("--resume", action="store_true",
                         help="continue the run saved in --out")
+    parser.add_argument("--shape-lead", type=float, default=0.0,
+                        help="weight of potential-based shaping on the production lead (t217)")
     parser.add_argument("--limit-credit", type=float, default=1.0,
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
@@ -713,6 +736,7 @@ def main():
         steps, done, env_s = [], np.zeros(args.games, bool), 0.0
         # Each game's learner win share, averaged over its learner seats.
         game_reward = np.zeros(args.games)
+        phi = np.zeros((args.games, PLAYERS), np.float32)
         while not done.all():
             step, sample, seconds = play_year(env, model, strategist, roles, done, families, dev,
                                               teach=teach_coef > 0,
@@ -720,8 +744,14 @@ def main():
                                               frozen=league.agents if league else None)
             env_s += seconds
             game_reward += (step["reward"] * (roles == 1)).sum(1) / (roles == 1).sum(1)
+            shaped = step["reward"]
+            if args.shape_lead:
+                phi_next = lead_potential(step["production"], step["worlds"], step["done"])
+                shaped = shaped + args.shape_lead * (args.gamma * phi_next - phi)
+                phi = phi_next
             if sample is not None:
-                sample["reward"] = step["reward"][sample["select"]]
+                sample["reward"] = shaped[sample["select"]]
+                sample["win"] = step["reward"][sample["select"]]
                 sample["done"] = np.repeat(step["done"][:, None], PLAYERS, 1)[sample["select"]]
                 steps.append(sample)
             done = step["done"].copy()
@@ -729,7 +759,7 @@ def main():
         (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
                                       advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
                                       teach_coef, mission_coef, args, dev)
-        wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
+        wins = sum(s["win"].sum() for s in steps) / max((roles == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an
         # unload (t191).
