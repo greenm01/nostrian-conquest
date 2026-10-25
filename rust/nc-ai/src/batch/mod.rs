@@ -320,6 +320,20 @@ impl BatchEnv {
         self.limit_credit = credit;
     }
 
+    /// A new batch whose game `i` is an exact copy of this batch's game
+    /// `games[i]`, mid-game state, random streams and turn log included, so
+    /// copies given the same choices play out identically (t216's branch
+    /// rollouts). A game may be copied more than once.
+    pub fn branch(&self, games: &[usize]) -> Self {
+        Self {
+            players: self.players,
+            years: self.years,
+            threads: self.threads,
+            slots: games.iter().map(|&game| self.slots[game].clone()).collect(),
+            limit_credit: self.limit_credit,
+        }
+    }
+
     pub fn games(&self) -> usize {
         self.slots.len()
     }

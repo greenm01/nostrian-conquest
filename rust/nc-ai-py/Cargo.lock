@@ -798,7 +798,7 @@ dependencies = [
 
 [[package]]
 name = "nc-ai"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "kdl",
  "nc-data",
@@ -811,7 +811,7 @@ dependencies = [
 
 [[package]]
 name = "nc-ai-py"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "nc-ai",
  "nc-data",
@@ -821,11 +821,11 @@ dependencies = [
 
 [[package]]
 name = "nc-classic"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 
 [[package]]
 name = "nc-compat"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "nc-classic",
  "nc-data",
@@ -833,7 +833,7 @@ dependencies = [
 
 [[package]]
 name = "nc-data"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "blake3",
  "chrono",
@@ -847,14 +847,14 @@ dependencies = [
 
 [[package]]
 name = "nc-engine"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "nc-data",
 ]
 
 [[package]]
 name = "nc-fuzz"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "nc-data",
  "nc-engine",
@@ -863,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "nc-harness"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "kdl",
  "nc-compat",
@@ -873,7 +873,7 @@ dependencies = [
 
 [[package]]
 name = "nc-nostr"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 dependencies = [
  "base64",
  "blake3",

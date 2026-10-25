@@ -352,6 +352,23 @@ impl Env {
         Ok(out)
     }
 
+    /// A new environment whose game `i` is an exact copy of this one's game
+    /// `games[i]` as it stands, so copies stepped with the same choices stay
+    /// identical and differ only where their choices do (t216).
+    fn branch(&self, games: Vec<usize>) -> PyResult<Self> {
+        let batch = self.batch()?;
+        if games.iter().any(|&game| game >= batch.games()) {
+            return Err(PyValueError::new_err("no such game"));
+        }
+        Ok(Self {
+            players: self.players,
+            years: self.years,
+            threads: self.threads,
+            limit_credit: self.limit_credit,
+            batch: Some(batch.branch(&games)),
+        })
+    }
+
     /// Every submission applied in game `game`, in order, as turn KDL: with
     /// the game's seeds, enough for `replay` to rebuild it.
     fn turns(&self, game: usize) -> PyResult<Vec<String>> {

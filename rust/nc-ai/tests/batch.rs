@@ -418,3 +418,50 @@ fn a_production_lead_at_the_year_limit_pays_the_limit_credit() {
     assert_eq!(total(1.0), 1.0);
     assert_eq!(total(0.25), 0.25);
 }
+
+/// Branch rollouts (t216): a copied game given the same choices plays the
+/// same game to the end; copies of one game given different choices part.
+#[test]
+fn branched_games_replay_their_source_and_part_on_other_choices() {
+    let maps = [61, 62];
+    let years = 20;
+    let mut env = BatchEnv::new(PLAYERS, &maps, &maps, &learned(maps.len()), years, 0);
+    let mut rng = Rng(5);
+    for _ in 0..6 {
+        let arrays = random_arrays(&env, &env.masks(), &mut rng);
+        env.step(Some(&arrays.view()), None)
+            .expect("masked choices");
+    }
+    let mut copy = env.branch(&[0, 1]);
+    let mut twins = env.branch(&[1, 1]);
+    for year in 6..years {
+        let masks = env.masks();
+        assert_eq!(copy.masks(), masks, "year {year}: masks differ");
+        let arrays = random_arrays(&env, &masks, &mut rng);
+        let original = env
+            .step(Some(&arrays.view()), None)
+            .expect("masked choices");
+        let copied = copy
+            .step(Some(&arrays.view()), None)
+            .expect("masked choices");
+        assert_eq!(original, copied, "year {year}: step results differ");
+        let twin_arrays = random_arrays(&twins, &twins.masks(), &mut rng);
+        twins
+            .step(Some(&twin_arrays.view()), None)
+            .expect("masked choices");
+        for game in 0..maps.len() {
+            for empire in 1..=PLAYERS {
+                assert_eq!(
+                    env.game(game).observe(empire),
+                    copy.game(game).observe(empire)
+                );
+            }
+        }
+    }
+    assert_eq!(env.game(1).turns, copy.game(1).turns);
+    assert_ne!(
+        twins.game(0).turns,
+        twins.game(1).turns,
+        "different choices from one position should play different games"
+    );
+}
