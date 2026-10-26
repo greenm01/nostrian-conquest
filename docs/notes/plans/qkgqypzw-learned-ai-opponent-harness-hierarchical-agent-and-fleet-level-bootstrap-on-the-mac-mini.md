@@ -1136,6 +1136,21 @@ Robustness, the league's purpose, was not measured, because the exploiter
 already found no hole in snapshot 200. The fixed mix stays the training
 setup; t191 trains on it.
 
+**Second league run (2026-10-26), against a known hole.** t213's exploiter
+now beats `fleet-final` 0.348 +/- 0.015 against an even 0.25, so the
+league has something to close. The run is `t184/run`: t213's recipe from
+`fleet-final-pre-t213`, so it differs from `fleet-final` only in its
+opponents. The league is smaller than last time, to keep games on the
+executor. It holds the fixed mix's three scripted seats, `fleet-final`,
+the exploiter and the learner's last three snapshots. Frozen agents now
+play their own build heads, so the exploiter keeps the builds it learned.
+An agent saved before the build head builds as the executor would.
+
+**Exit:** paired against `fleet-final` (1,024 maps from 100000, three
+executors, 60 and 100 years), the interval includes zero or better. A
+fresh 80-iteration exploiter, made the same way as t213's, scores below
+0.348 against it.
+
 ### t185
 
 Start some training games from saved mid-game positions.

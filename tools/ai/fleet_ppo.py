@@ -384,11 +384,9 @@ def learner_name(families, style=None):
 
 def frozen_name(families):
     """The env seat name of a frozen league agent: the learner's fleet
-    families, with the executor building, since a frozen agent may predate
-    the build head (t207). The ``--exploit`` target hands over the learner's
-    families, builds included, so its exploiter meets its builds."""
-    # shortcut: frozen self-snapshots also leave builds to the executor; hand them builds once every league agent has a trained build head.
-    return learner_name([f for f in families if f != "builds"])
+    families, builds included. An agent saved before the build head gets it
+    at ``BUILD_EXECUTOR``, which builds as the executor would (t207)."""
+    return learner_name(families)
 
 
 # Evaluation maps during training. Final confirmations use 100000 and up, so
