@@ -1151,6 +1151,37 @@ executors, 60 and 100 years), the interval includes zero or better. A
 fresh 80-iteration exploiter, made the same way as t213's, scores below
 0.348 against it.
 
+**Result: stopped at iteration 100; it loses strength again.** In-run
+evaluation against three executors (EVAL_MAPS, 128 games):
+
+| Iteration | t184 league | t213 fixed mix |
+|---|---|---|
+| 25 | 0.180 +/- 0.024 | 0.207 |
+| 50 | 0.199 +/- 0.025 | 0.250 |
+| 75 | 0.172 +/- 0.024 | 0.332 |
+| 100 | 0.180 +/- 0.024 | 0.336 |
+
+The league's running shares at iteration 94 show why. The learner beat
+the aggressor (0.86), so the draw almost never chose it, and it lost to
+everything else: `fleet-final` 0.045, the executor 0.12, the exploiter
+0.15, its own snapshots 0.06-0.09. Prioritized self-play then fills the
+iteration with games the learner loses three to one, whose rewards are
+nearly all zero, and it learns nothing. t213 grew from 0.21 to 0.34 over
+the same span on the fixed mix. With the strength test failed, the exploit
+check was not run; no snapshot is a candidate.
+
+Two league runs have now lost to the fixed mix. The exploit hole (0.348)
+stays open, and t184 stays open. The next league attempt needs a
+different draw before more compute: a fixed share of fixed-mix games (say
+75%) with the league only as the rest, and opponents mixed within a game
+(one exploiter seat among executors) rather than three copies of one
+opponent.
+
+Two fixes from this run stay: frozen league agents play their own build
+heads (`c0d440d1`), and PPO minibatches trim their rows to their own
+widest seat (`c31947ba`), which took the update from 200-600 s back to
+about 50 s when one seat holds many fleets.
+
 ### t185
 
 Start some training games from saved mid-game positions.
