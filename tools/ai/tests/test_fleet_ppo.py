@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np  # noqa: E402
 
-from fleet_ppo import act_entropy, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
+from fleet_ppo import League, act_entropy, choose_lineups, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -89,6 +89,17 @@ class EmaTowardTest(unittest.TestCase):
         ema_toward(ref, model, 0.25)
         self.assertTrue(torch.allclose(ref.weight, torch.full((2,), 1.5)))
         self.assertEqual(int(ref.num_batches_tracked), 0)
+
+
+class LeagueShareTest(unittest.TestCase):
+    def test_only_the_league_share_of_games_meets_the_league(self):
+        league = League(["executor@rusher"], [], "hybrid:strike", 3, share=0.25)
+        names, _, opponents = choose_lineups(np.random.default_rng(0), 400, "hybrid:strike",
+                                             league=league)
+        drawn = opponents >= 0
+        self.assertTrue(0.15 < drawn.mean() < 0.35)
+        for lineup, from_league in zip(names, drawn):
+            self.assertEqual("executor@rusher" in lineup, from_league)
 
 
 if __name__ == "__main__":

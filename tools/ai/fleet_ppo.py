@@ -21,7 +21,9 @@ With ``--league`` (t184), each game seats the learner against three copies
 of one opponent drawn from a league: the scripted styles of
 ``--league-styles``, the frozen agents of ``--league-agents`` (past
 snapshots, exploiters), and the learner's own last ``--league-self``
-snapshots, each added as it is saved. An opponent is drawn in proportion to
+snapshots, each added as it is saved. ``--league-share S`` draws only that
+share of games from the league and plays the rest on the fixed mix (two
+full-league runs lost strength, t184). An opponent is drawn in proportion to
 how far the learner is from beating it (prioritized fictitious self-play,
 as AlphaStar did): weight ``1 - min(1, 2s) + 0.1``, where ``s`` is the
 learner's running win share against it (0.25 even, 0.5 or more beaten).
@@ -191,8 +193,8 @@ class League:
 
     PRIOR, RATE = 0.25, 0.1
 
-    def __init__(self, styles, agents, frozen_seat, keep_self):
-        self.frozen_seat, self.keep_self = frozen_seat, keep_self
+    def __init__(self, styles, agents, frozen_seat, keep_self, share=1.0):
+        self.frozen_seat, self.keep_self, self.share = frozen_seat, keep_self, share
         self.entries = [{"label": style, "seat": style, "model": None, "self": False}
                         for style in styles]
         for label, model in agents:
@@ -257,9 +259,9 @@ def choose_lineups(rng, games, learner, target=None, league=None):
     scripted. An exploiter meets only the target. With a ``league``, also
     returns each game's opponent entry."""
     names, roles = [], np.zeros((games, PLAYERS), np.int8)
-    opponents = np.zeros(games, np.int64)
+    opponents = np.full(games, -1, np.int64)  # -1: a fixed-mix game
     for game in range(games):
-        if league is not None:
+        if league is not None and rng.random() < league.share:
             pick = league.draw(rng)
             opponents[game] = pick
             learners = 1 + (rng.random() < 0.3)
@@ -694,6 +696,9 @@ def main():
                         help="the league's scripted opponents, as env seat names")
     parser.add_argument("--league-agents", nargs="*", default=[],
                         help="frozen fleet-agent checkpoints in the league")
+    parser.add_argument("--league-share", type=float, default=1.0,
+                        help="the share of games drawn from the league; the rest "
+                             "are the fixed mix")
     parser.add_argument("--league-self", type=int, default=3,
                         help="the learner's latest snapshots kept in the league")
     parser.add_argument("--resume", action="store_true",
@@ -730,7 +735,7 @@ def main():
         agents = [(f"{Path(path).parent.name}/{Path(path).stem}", load_fleet_agent(path, dev))
                   for path in args.league_agents]
         league = League([s for s in args.league_styles.split(",") if s], agents,
-                        frozen_name(families), args.league_self)
+                        frozen_name(families), args.league_self, args.league_share)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years, args.threads, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")

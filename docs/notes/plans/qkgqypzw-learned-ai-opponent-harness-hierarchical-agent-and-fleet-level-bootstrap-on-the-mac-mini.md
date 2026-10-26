@@ -1182,6 +1182,12 @@ heads (`c0d440d1`), and PPO minibatches trim their rows to their own
 widest seat (`c31947ba`), which took the update from 200-600 s back to
 about 50 s when one seat holds many fleets.
 
+**t184b (2026-10-26).** `--league-share 0.25`: three games in four are
+the fixed mix, so the learner keeps t213's diet, and the fourth draws
+from a league of `fleet-final`, the exploiter and the learner's last three
+snapshots (no scripted styles, which the fixed mix already plays). Same
+recipe and exit as above; `t184b/run`.
+
 ### t185
 
 Start some training games from saved mid-game positions.
