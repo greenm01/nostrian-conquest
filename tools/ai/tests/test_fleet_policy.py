@@ -12,7 +12,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import nc_ai_env  # noqa: E402
-from fleet_policy import FleetAgent, bucket, build_arrays, fleet_batch, greedy_join  # noqa: E402
+from fleet_policy import FleetAgent, bucket, build_arrays, fleet_batch, greedy_join, trim_rows  # noqa: E402
 
 
 class GreedyJoinTest(unittest.TestCase):
@@ -80,6 +80,37 @@ class BuildHeadTest(unittest.TestCase):
         shape = (2, 4, self.env.worlds, nc_ai_env.BUILD_SLOTS)
         self.assertEqual(arrays["build"].shape, shape)
         self.assertEqual(arrays["amount"].shape, shape)
+
+
+class TrimRowsTest(unittest.TestCase):
+    def test_a_trimmed_batch_plays_as_the_padded_one(self):
+        torch.manual_seed(0)
+        env = nc_ai_env.Env(4, 10)
+        env.reset([1, 2], seats=[["hybrid:strike,builds", "executor", "executor", "executor"]] * 2)
+        batch = fleet_batch(env.observe(), env.masks(), env.goal_masks(), env.hybrid.copy(),
+                            torch.device("cpu"))
+        # As if another seat in the iteration held 40 more rows of each table.
+        wide = {}
+        for name, value in batch.items():
+            pad = [0, 0] * value.ndim
+            if name.removesuffix("_valid") in ("fleets", "contacts", "starbases") or name.startswith("fleet_"):
+                pad[-3] = 40
+            if name == "fleet_join":
+                pad[1] = 40
+            wide[name] = torch.nn.functional.pad(value, pad)
+        trimmed = trim_rows(wide)
+        for name, value in batch.items():
+            self.assertLessEqual(trimmed[name].shape[1], max(1, value.shape[1]), name)
+        model = FleetAgent()
+        with torch.no_grad():
+            a = model.act(bucket(trimmed), greedy=True, builds=True)
+            b = model.act(bucket(wide), greedy=True, builds=True)
+        rows = batch["fleets"].shape[1]
+        for name in ("mission", "target", "join"):
+            self.assertTrue(torch.equal(a[1][name][:, :rows], b[1][name][:, :rows]), name)
+        torch.testing.assert_close(a[2], b[2])
+        torch.testing.assert_close(a[3][:, :rows], b[3][:, :rows])
+        torch.testing.assert_close(a[5], b[5])
 
 
 if __name__ == "__main__":

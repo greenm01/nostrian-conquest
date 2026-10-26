@@ -110,6 +110,22 @@ def _round_up(n, step):
     return max(step, -(-n // step) * step)
 
 
+def trim_rows(batch):
+    """``batch`` with its fleet, contact and starbase rows cut after the last
+    valid row of any seat in it, so a minibatch is not padded to the widest
+    seat of the whole iteration (t184)."""
+    out = dict(batch)
+    for table in ("fleets", "contacts", "starbases"):
+        valid = batch[f"{table}_valid"].any(0).nonzero()
+        width = int(valid.max()) + 1 if len(valid) else 1
+        for name, value in batch.items():
+            if name.removesuffix("_valid") == table or (table == "fleets" and name.startswith("fleet_")):
+                out[name] = value[:, :width]
+        if table == "fleets":
+            out["fleet_join"] = out["fleet_join"][..., :1 + width]  # none, then a host per row
+    return out
+
+
 def bucket(batch):
     """``batch`` padded to bucketed shapes, as ``policy.bucket``, with fleet
     masks padded along the fleet rows. Every mask row allows at least its

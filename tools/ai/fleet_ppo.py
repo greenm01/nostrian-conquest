@@ -102,7 +102,7 @@ import torch
 import nc_ai_env
 import policy
 from fleet_imitate import actions_for, frozen_goals
-from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, build_arrays, build_logp, fleet_arrays, fleet_batch,
+from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, trim_rows, build_arrays, build_logp, fleet_arrays, fleet_batch,
                           load_fleet_agent)
 from policy import HEADS, device, goals_for, save
 from ppo import advantages, pad_cat
@@ -570,10 +570,12 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
     model.train()
     for _ in range(args.epochs):
         for idx in torch.randperm(len(adv)).split(args.minibatch):
-            mb = bucket({k: v[idx].to(dev) for k, v in batch.items()})
-            mb_fleets = {k: torch.nn.functional.pad(v[idx], (0, mb["fleets"].shape[1] - rows))
-                         .to(dev) for k, v in fleets.items()}
-            mb_handed = torch.nn.functional.pad(handed[idx], (0, mb["fleets"].shape[1] - rows)).to(dev)
+            mb = trim_rows({k: v[idx].to(dev) for k, v in batch.items()})
+            # Rows past the trim take choice 0, the only one their padded masks allow.
+            cut, mb = mb["fleets"].shape[1], bucket(mb)
+            fit = lambda t: torch.nn.functional.pad(t[:, :cut], (0, mb["fleets"].shape[1] - cut)).to(dev)
+            mb_fleets = {k: fit(v[idx]) for k, v in fleets.items()}
+            mb_handed = fit(handed[idx])
             mb_goals = {k: v[idx].to(dev) for k, v in goals.items()}
             _, _, goal_lp, fleet_lp, entropy, value, goal_dists, fleet_dists = model.act(
                 mb, fleet_choices=mb_fleets, goal_choices=mb_goals, builds=builds)
@@ -611,10 +613,8 @@ def update(model, ref, optimizer, steps, advs, kl_coef, free_coef, teach_coef, m
                            * mb_handed).sum(-1).mean()
                 loss = loss - mission_coef * covered
             if teach:
-                width = mb["fleets"].shape[1] - rows
-                mb_labels = {k: torch.nn.functional.pad(v[idx], (0, width)).to(dev)
-                             for k, v in labels.items()}
-                mb_convoy = torch.nn.functional.pad(convoy[idx], (0, width)).to(dev)
+                mb_labels = {k: fit(v[idx]) for k, v in labels.items()}
+                mb_convoy = fit(convoy[idx])
                 loss = loss + teach_coef * teacher_loss(fleet_dists, mb_fleets, mb_labels,
                                                         mb_convoy & mb_handed.bool())
             optimizer.zero_grad()
