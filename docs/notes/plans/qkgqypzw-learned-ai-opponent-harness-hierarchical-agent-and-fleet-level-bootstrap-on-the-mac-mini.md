@@ -1188,6 +1188,34 @@ from a league of `fleet-final`, the exploiter and the learner's last three
 snapshots (no scripted styles, which the fixed mix already plays). Same
 recipe and exit as above; `t184b/run`.
 
+**The minibatch, not the league, sank the first attempts.** t184b's first
+50 iterations ran at minibatch 128, as t184 had, and scored 0.180 and
+0.195 against the executor at 25 and 50. Restarted at t213's 256 (the row
+trim keeps it in memory), it tracked t213: 0.191, 0.266, 0.250, 0.273,
+0.344, 0.312, 0.383 and 0.344 at 25 to 200, against t213's 0.207, 0.250,
+0.332, 0.336, 0.328, 0.309, 0.291 and 0.371. So t184's full-league result
+above was taken at the wrong minibatch and is not a fair verdict on the
+full league.
+
+In its league quarter, the learner's running share against the t213
+exploiter rose from 0.14 to 0.29; against `fleet-final` it stayed near
+0.07.
+
+Paired against `fleet-final` (1,024 maps from 100000, three executors,
+builds handed over; `behaviour_report`, bean-void):
+
+| Snapshot | 60 years | 100 years |
+|---|---|---|
+| 150 | -0.065 +/- 0.019 | -0.090 +/- 0.017 |
+| 175 | -0.055 +/- 0.020 | -0.071 +/- 0.017 |
+| 200 | -0.038 +/- 0.020 | -0.055 +/- 0.017 |
+
+Snapshot 200 loses by about three standard errors at 100 years, so it
+fails the strength half of the exit. The exploit check runs anyway, to
+learn whether the league bought robustness: 80 iterations against
+snapshot 200 as t213's was made (`exploit-t184b` on bean-void), and t213's
+exploiter scored against it too.
+
 ### t185
 
 Start some training games from saved mid-game positions.
