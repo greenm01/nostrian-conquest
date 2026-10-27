@@ -1239,6 +1239,24 @@ about 0.03. Whether that trade is worth taking, and whether a
 smaller league share (0.1) keeps the robustness at less cost, are the
 owner's call; t184 stays open.
 
+**What t213's exploiter does** (`behaviour_report`, 512 maps from 100000,
+60 years). Against three copies of `fleet-final` it wins 0.366 where
+`fleet-final` in its seat wins 0.260. Most of its play matches; the
+difference is fleet handling. It joins fleets five times as often (374
+joins a game against 72) and sends fewer to deep-space rendezvous (200
+against 291). Against three `fleet-final`s it loses 1.8 fewer worlds and
+holds 0.8 more at the end. It is a specialist: against three executors it
+wins only 0.407 against `fleet-final`'s 0.599.
+
+So the hole is defensive. `fleet-final`'s attacks are sized against
+fleets left spread out, and an opponent that keeps its warships merged
+into a few large stacks turns them back. A human who keeps fleets
+together could find that, so the hole matters for real games. t184b
+joins more than `fleet-final` (117 to 220 a game against executors,
+against 32), which fits it having learned to meet that play. A run at
+`--league-share 0.1` (`t184c`) tests whether less league play keeps the
+robustness at less cost.
+
 ### t185
 
 Start some training games from saved mid-game positions.
