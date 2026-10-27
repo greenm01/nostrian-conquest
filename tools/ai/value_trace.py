@@ -7,9 +7,13 @@ rates its own seat year by year, and the years it fell most.
 
 One greedy learner seat plays three ``--opponent`` seats (a scripted
 policy, or three greedy copies of a frozen agent), the seat rotated game by
-game as ``head_to_head`` does. It prints the mean value, worlds and
+game as ``head_to_head`` does. The critic predicts the win discounted from
+the year limit, so the value is shown undiscounted, ``V / gamma ** (years -
+year)`` (``--gamma`` and ``--limit-credit`` as in training, so the win is on
+the critic's scale). It prints that estimate, worlds and
 production share by decade beside the final win share, then the ``--top``
-largest one-year falls in value with the seat's state before and after.
+largest one-year falls, among all games and among games the seat lost,
+with its state before and after.
 Map, seat and year name a position exactly: greedy play from that map
 reaches it again, so the falls are start points for t185.
 ``--csv`` writes every game-year for plotting elsewhere.
@@ -48,6 +52,9 @@ def main():
     parser.add_argument("--years", type=int, default=100)
     parser.add_argument("--first-map", type=int, default=100_000)
     parser.add_argument("--top", type=int, default=20)
+    parser.add_argument("--gamma", type=float, default=0.995)
+    parser.add_argument("--limit-credit", type=float, default=0.5,
+                        help="the reward for a lead at the year limit, as in training")
     parser.add_argument("--threads", type=int, default=0)
     parser.add_argument("--csv")
     args = parser.parse_args()
@@ -64,7 +71,7 @@ def main():
     names = [[learner_name(FAMILIES) if s == seat[g] else other for s in range(PLAYERS)]
              for g in range(games)]
     roles = np.where(np.arange(PLAYERS)[None] == seat[:, None], 1, other_role).astype(np.int8)
-    env = nc_ai_env.Env(PLAYERS, years, args.threads)
+    env = nc_ai_env.Env(PLAYERS, years, args.threads, limit_credit=args.limit_credit)
     env.reset(list(range(args.first_map, args.first_map + games)), seats=names)
 
     # Row y: the value the seat saw at the start of year y, and its worlds
@@ -89,6 +96,7 @@ def main():
         done = step["done"].copy()
         year += 1
 
+    values /= args.gamma ** (years - np.arange(years + 1))[:, None]
     print(f"{games} games, {args.opponent} opponents, mean win share {win.mean():.3f}\n")
     print("year  games  value  worlds  share")
     for y in range(0, year, 10):
@@ -97,13 +105,14 @@ def main():
               f"{np.nanmean(worlds[y]) if y else float('nan'):6.1f}  "
               f"{np.nanmean(share[y]) if y else float('nan'):5.3f}")
 
-    print(f"\nlargest one-year falls in value (map, seat, year: the year it fell over)")
-    print("  map     seat  year  value        worlds    share          win")
-    for g, y in falls(values, args.top):
-        print(f"  {args.first_map + g:<7d} {seat[g]:4d}  {y:4d}  "
-              f"{values[y, g]:.3f}>{values[y + 1, g]:.3f}  "
-              f"{worlds[y, g]:3.0f}>{worlds[y + 1, g]:<3.0f}  "
-              f"{share[y, g]:.3f}>{share[y + 1, g]:.3f}  {win[g]:.2f}")
+    for label, games_in in (("all games", win >= 0), ("games it lost", win < 0.5)):
+        print(f"\nlargest one-year falls, {label} (year: the year it fell over)")
+        print("  map     seat  year  value        worlds    share          win")
+        for g, y in falls(np.where(games_in, values, np.nan), args.top):
+            print(f"  {args.first_map + g:<7d} {seat[g]:4d}  {y:4d}  "
+                  f"{values[y, g]:.3f}>{values[y + 1, g]:.3f}  "
+                  f"{worlds[y, g]:3.0f}>{worlds[y + 1, g]:<3.0f}  "
+                  f"{share[y, g]:.3f}>{share[y + 1, g]:.3f}  {win[g]:.2f}")
 
     if args.csv:
         with open(args.csv, "w", newline="") as out:

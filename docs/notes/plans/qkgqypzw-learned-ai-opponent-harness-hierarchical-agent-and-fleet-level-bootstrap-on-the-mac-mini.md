@@ -1245,6 +1245,43 @@ already estimates it.
 league games, and lists the years where it fell most, with the game
 state. Those positions feed t185 now and t166's loss mining later.
 
+**Done (2026-10-26): `tools/ai/value_trace.py`.** One greedy seat of a
+fleet agent plays three scripted seats or three copies of a frozen agent.
+The tool undoes the critic's discount (`V / gamma ** (years - year)`)
+and plays with training's `--limit-credit 0.5`, so the estimate and the
+result share a scale. It prints the estimate, worlds and production share
+by decade, the largest one-year falls over all games and over lost games,
+and with `--csv` every game-year. There is no chart: matplotlib is not
+in the AI environment, and the CSV plots anywhere. Map, seat and year
+name a position exactly, since greedy play from that map reaches it
+again.
+
+`fleet-final`, 100 years (`t186/` in the state directory):
+
+| Year | Executors (1,024): estimate | worlds | share | Exploiter (256): estimate | share |
+|---|---|---|---|---|---|
+| 0 | 0.228 | | | 0.228 | |
+| 20 | 0.217 | 4.5 | 0.239 | 0.280 | 0.256 |
+| 40 | 0.290 | 6.7 | 0.306 | 0.311 | 0.320 |
+| 60 | 0.366 | 8.6 | 0.432 | 0.329 | 0.384 |
+| 80 | 0.417 | 10.4 | 0.549 | 0.317 | 0.405 |
+| result | 0.527 | | | 0.340 | |
+
+Three findings:
+
+1. **The critic underrates easy games.** Against three executors the
+   early estimate is 0.23 for a seat that ends with 0.53; it learned on
+   the harder fixed mix. Against the exploiter it is close (0.34).
+2. **Its biggest falls are noise in won games.** Over all games, 19 of
+   the 20 largest falls (0.2 to 0.36 in a year) come in games the seat
+   won or led at the limit, often with production share unchanged and
+   the estimate above 1. The critic is unsure of dominant late positions
+   it rarely trained in, as t217's explained-variance table suggested.
+3. **In lost games the falls are real.** They come with a lost world or a
+   drop in production share (0.29 to 0.14 on map 100504 in year 35), and
+   they spread from year 19 to 97, most between 25 and 70. These are
+   t185's start positions: the lost-games list, not the overall one.
+
 **Against the critical path (2026-10-15).**
 
 - **None of t182–t186 gates the critical path.** That path is the
