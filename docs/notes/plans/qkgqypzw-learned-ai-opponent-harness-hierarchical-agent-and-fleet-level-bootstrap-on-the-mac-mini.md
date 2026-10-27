@@ -1216,7 +1216,7 @@ learn whether the league bought robustness: 80 iterations against
 snapshot 200 as t213's was made (`exploit-t184b` on bean-void), and t213's
 exploiter scored against it too.
 
-**The league closed the hole.** Greedy, 1,024 games of 60 years, each
+**The league closed the hole this test finds.** Greedy, 1,024 games of 60 years, each
 learner against three copies of the target (`exploit_score.py`):
 
 | Exploiter | Against `fleet-final` (t213 check) | Against t184b snapshot 200 |
@@ -1227,12 +1227,15 @@ learner against three copies of the target (`exploit_score.py`):
 | fresh, 80 iterations | 0.348 +/- 0.015 | 0.246 +/- 0.013 |
 | t213's exploiter | 0.348 +/- 0.015 | 0.274 +/- 0.014 |
 
-A fresh exploiter finds nothing in snapshot 200: 80 iterations end at an
-even 0.246. t213's exploiter, which beat `fleet-final` 0.348, falls to
+An exploiter trained as t213's was finds nothing in snapshot 200: 80
+iterations end at an even 0.246. t213's exploiter, which beat `fleet-final` 0.348, falls to
 0.274 against it. So t184's robustness half is met, and its strength half
 is not (-0.055 +/- 0.017 at 100 years). The league quarter traded about
-five points of win share against executors for an agent with no
-exploitable hole. Whether that trade is worth taking, and whether a
+five points of win share against executors for an agent this test
+cannot exploit. That is evidence, not proof: the test is one search
+(about 10,000 games, from an agent near the target), one lineup (one seat
+against three copies), 60-year games, and it cannot see a hole under
+about 0.03. Whether that trade is worth taking, and whether a
 smaller league share (0.1) keeps the robustness at less cost, are the
 owner's call; t184 stays open.
 
