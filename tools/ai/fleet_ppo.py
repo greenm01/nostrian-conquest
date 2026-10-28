@@ -28,6 +28,13 @@ how far the learner is from beating it (prioritized fictitious self-play,
 as AlphaStar did): weight ``1 - min(1, 2s) + 0.1``, where ``s`` is the
 learner's running win share against it (0.25 even, 0.5 or more beaten).
 
+``--starts FILE`` (t185) replays ``--start-share`` of each iteration's
+games from start positions, the falls in value of games ``--start-model``
+lost (``value_trace.py --starts``): that model plays the learner's seat
+greedily against three executors from the position's map until two years
+before the fall, and the learner plays on from there. The learner trains
+only on the years it played.
+
 ``--free-heads join,unload`` (t191) lets fleet heads that imitation never
 saw used leave their start: they are left out of the KL penalty, and the
 entropy of whether they act at all earns ``--free-entropy`` (see
@@ -298,6 +305,24 @@ def choose_lineups(rng, games, learner, target=None, league=None):
         names.append([lineup[i] for i in order])
         roles[len(names) - 1] = np.array(role)[order]
     return (names, roles, opponents) if league is not None else (names, roles)
+
+
+def place_starts(rng, starts, games, learner, warm_role, names, roles, maps):
+    """Turn the first ``games`` lineups into replays of drawn start
+    positions (t185): the position's map, three executors, and the
+    learner's seat played by the frozen agent of ``warm_role`` until the
+    returned year, two before the fall, when the learner takes it over.
+    Other games hand over at year 0."""
+    handover = np.zeros(len(names), np.int64)
+    for game in range(games):
+        start = starts[rng.integers(len(starts))]
+        lineup = ["executor"] * PLAYERS
+        lineup[start["seat"]] = learner
+        names[game], maps[game] = lineup, start["map"]
+        roles[game] = 0
+        roles[game, start["seat"]] = warm_role
+        handover[game] = max(0, start["year"] - 2)
+    return handover
 
 
 def play_year(env, model, strategist, roles, done, families, dev, greedy=False, target=None,
@@ -701,6 +726,10 @@ def main():
                              "are the fixed mix")
     parser.add_argument("--league-self", type=int, default=3,
                         help="the learner's latest snapshots kept in the league")
+    parser.add_argument("--starts", help="start positions from value_trace.py --starts (t185)")
+    parser.add_argument("--start-model", help="the agent that played the start positions")
+    parser.add_argument("--start-share", type=float, default=0.25,
+                        help="the share of games replayed from a start position")
     parser.add_argument("--resume", action="store_true",
                         help="continue the run saved in --out")
     parser.add_argument("--upgo", type=float, default=0.0,
@@ -736,6 +765,10 @@ def main():
                   for path in args.league_agents]
         league = League([s for s in args.league_styles.split(",") if s], agents,
                         frozen_name(families), args.league_self, args.league_share)
+    starts = json.loads(Path(args.starts).read_text()) if args.starts else None
+    if starts and (target is not None or not args.start_model):
+        raise SystemExit("--starts needs --start-model and does not mix with --exploit")
+    warm = load_fleet_agent(args.start_model, dev) if starts else None
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years, args.threads, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
@@ -766,20 +799,36 @@ def main():
         drawn = choose_lineups(rng, args.games, learner,
                                learner_name(families) if target else None, league)
         names, roles = drawn[:2]
-        env.reset(list(range(next_map, next_map + args.games)), seats=names)
+        maps = list(range(next_map, next_map + args.games))
         next_map += args.games
+        frozen = league.agents if league else []
+        handover = np.zeros(args.games, np.int64)
+        if starts:
+            # The warm-up seats play the start model, after every league agent.
+            warm_role = 3 + len(frozen)
+            placed = round(args.start_share * args.games)
+            handover = place_starts(rng, starts, placed, learner, warm_role, names, roles, maps)
+            frozen = frozen + [warm]
+            if league:
+                drawn[2][:placed] = -1  # replays, not league games
+        # The roles once every seat is handed over.
+        learning = np.where(roles == 3 + len(frozen) - 1, 1, roles) if starts else roles.copy()
+        env.reset(maps, seats=names)
         model.eval()
         steps, done, env_s = [], np.zeros(args.games, bool), 0.0
         # Each game's learner win share, averaged over its learner seats.
         game_reward = np.zeros(args.games)
         phi = np.zeros((args.games, PLAYERS), np.float32)
+        year = 0
         while not done.all():
+            roles[handover == year] = learning[handover == year]
             step, sample, seconds = play_year(env, model, strategist, roles, done, families, dev,
                                               teach=teach_coef > 0,
                                               target=target,
-                                              frozen=league.agents if league else None)
+                                              frozen=frozen or None)
+            year += 1
             env_s += seconds
-            game_reward += (step["reward"] * (roles == 1)).sum(1) / (roles == 1).sum(1)
+            game_reward += (step["reward"] * (learning == 1)).sum(1) / (learning == 1).sum(1)
             shaped = step["reward"]
             if args.shape_lead:
                 phi_next = lead_potential(step["production"], step["worlds"], step["done"])
@@ -796,7 +845,7 @@ def main():
                                       advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
                                       teach_coef, mission_coef, args, dev,
                                       upgo_advantages(steps, args.gamma) if args.upgo else None)
-        wins = sum(s["win"].sum() for s in steps) / max((roles == 1).sum(), 1)
+        wins = sum(s["win"].sum() for s in steps) / max((learning == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an
         # unload (t191).

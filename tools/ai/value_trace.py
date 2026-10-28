@@ -16,11 +16,14 @@ largest one-year falls, among all games and among games the seat lost,
 with its state before and after.
 Map, seat and year name a position exactly: greedy play from that map
 reaches it again, so the falls are start points for t185.
-``--csv`` writes every game-year for plotting elsewhere.
+``--csv`` writes every game-year for plotting elsewhere, and ``--starts``
+each lost game's largest fall as a start position for ``fleet_ppo.py
+--starts`` (t185).
 """
 
 import argparse
 import csv
+import json
 
 import numpy as np
 
@@ -57,6 +60,7 @@ def main():
                         help="the reward for a lead at the year limit, as in training")
     parser.add_argument("--threads", type=int, default=0)
     parser.add_argument("--csv")
+    parser.add_argument("--starts", help="write each lost game's largest fall here (JSON)")
     args = parser.parse_args()
     dev = device()
     model = load_fleet_agent(args.model, dev)
@@ -113,6 +117,17 @@ def main():
                   f"{values[y, g]:.3f}>{values[y + 1, g]:.3f}  "
                   f"{worlds[y, g]:3.0f}>{worlds[y + 1, g]:<3.0f}  "
                   f"{share[y, g]:.3f}>{share[y + 1, g]:.3f}  {win[g]:.2f}")
+
+    if args.starts:
+        lost = np.where(win < 0.5, values, np.nan)
+        starts = [{"map": args.first_map + g, "seat": int(seat[g]), "year": y}
+                  for g, y in falls(lost, lost.size)]
+        first = {}
+        for start in starts:  # falls() is largest first, so the first per map is its largest
+            first.setdefault(start["map"], start)
+        with open(args.starts, "w") as out:
+            json.dump(list(first.values()), out)
+        print(f"\n{len(first)} start positions written to {args.starts}")
 
     if args.csv:
         with open(args.csv, "w", newline="") as out:

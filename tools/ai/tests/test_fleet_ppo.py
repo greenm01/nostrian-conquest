@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np  # noqa: E402
 
-from fleet_ppo import League, act_entropy, choose_lineups, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
+from fleet_ppo import League, act_entropy, choose_lineups, place_starts, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -100,6 +100,20 @@ class LeagueShareTest(unittest.TestCase):
         self.assertTrue(0.15 < drawn.mean() < 0.35)
         for lineup, from_league in zip(names, drawn):
             self.assertEqual("executor@rusher" in lineup, from_league)
+
+
+class PlaceStartsTest(unittest.TestCase):
+    def test_replays_take_the_first_games_and_hand_over_before_the_fall(self):
+        names, roles = choose_lineups(np.random.default_rng(0), 4, "hybrid:strike")
+        maps = [10, 11, 12, 13]
+        starts = [{"map": 100504, "seat": 2, "year": 35}]
+        handover = place_starts(np.random.default_rng(0), starts, 2, "hybrid:strike", 5,
+                                names, roles, maps)
+        self.assertEqual(maps, [100504, 100504, 12, 13])
+        self.assertEqual(handover.tolist(), [33, 33, 0, 0])
+        for game in (0, 1):
+            self.assertEqual(names[game], ["executor", "executor", "hybrid:strike", "executor"])
+            self.assertEqual(roles[game].tolist(), [0, 0, 5, 0])
 
 
 if __name__ == "__main__":

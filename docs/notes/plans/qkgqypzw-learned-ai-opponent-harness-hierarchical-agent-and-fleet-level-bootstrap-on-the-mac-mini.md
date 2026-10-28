@@ -1296,6 +1296,34 @@ only in states the training rarely reaches.
 - the late-game measures in the behaviour report improve without
   hurting the early game.
 
+**Design (2026-10-28, owner's choice: start from the falls in lost
+games).** A position is a map, a seat and a year, taken from t186's
+lost-games list (`value_trace.py --starts`): each game `fleet-final-pre-t184`
+lost against three executors gives its largest one-year fall in value.
+Nothing is stored. The training game replays the position: the same map,
+three executors, and the old agent playing the seat greedily until two
+years before the fall, when the learner takes the seat over. Every
+seat's memory is rebuilt because the game itself is replayed. The replay
+runs inside the normal 100 years, so it costs nothing extra, and the
+learner trains only on the years it played. Replays are exact: 48 of 48,
+mixed into a batch with 16 other games, reach the recorded worlds and
+production share at the fall year.
+
+Of 1,024 games against three executors, `fleet-final-pre-t184` lost 188;
+40 of their largest falls come before year 15, where a replay is little
+different from a normal start, so the run uses the other 143
+(`t185/starts-15.json`), spread evenly over years 15 to 99.
+
+`fleet_ppo.py --starts FILE --start-model PT --start-share S` replays S
+of each iteration's games. Replays are kept out of the league's shares.
+
+**Run (`t185/run`):** t184b's recipe from the same start
+(`fleet-final-pre-t213`, `--league-share 0.25`) with `--start-share
+0.25`, so it differs from the promoted agent only in the replays.
+**Exit:** paired against `fleet-final` (1,024 maps from 100000), worlds
+lost and worlds at the end at 100 years improve and win share at 60
+years does not fall (interval includes zero or better).
+
 ### t186
 
 Track the win-probability estimate through games.
