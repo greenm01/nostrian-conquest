@@ -1257,6 +1257,21 @@ against 32), which fits it having learned to meet that play. A run at
 `--league-share 0.1` (`t184c`) tests whether less league play keeps the
 robustness at less cost.
 
+**t184c (`--league-share 0.1`) is worse on both counts.** Paired against
+`fleet-final` (1,024 maps from 100000), and t213's exploiter against
+three copies of each (1,024 games, 60 years):
+
+| Snapshot | 60 years | 100 years | t213's exploiter |
+|---|---|---|---|
+| t184c 150 | -0.045 +/- 0.019 | -0.094 +/- 0.017 | 0.301 +/- 0.014 |
+| t184c 175 | -0.010 +/- 0.019 | -0.082 +/- 0.017 | 0.341 +/- 0.015 |
+| t184c 200 | -0.054 +/- 0.019 | -0.111 +/- 0.018 | 0.294 +/- 0.014 |
+| t184b 200 | -0.038 +/- 0.020 | -0.055 +/- 0.017 | 0.274 +/- 0.014 |
+
+Less league play bought neither strength nor robustness: every t184c
+snapshot loses more at 100 years than t184b's and stays more exploitable.
+t184b's snapshot 200 is the candidate.
+
 ### t185
 
 Start some training games from saved mid-game positions.
