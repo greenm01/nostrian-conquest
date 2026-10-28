@@ -44,12 +44,15 @@ details are in the plans' result sections.
 - **The agent.** It is the fleet-level agent (t157), with the strike
   family handed to the network and convoys (transports without warships)
   left to the executor's ferry, on t175's strategist with the allocation
-  goal. t213 (per-head anchoring, builds handed over) promoted its
-  snapshot 200 on 2026-10-24: greedy against three executors on 1,024 maps
-  it wins 0.617 at 60 years and 0.816 at 100 (+0.059 / +0.083 paired
-  against the t191 agent); an 80-iteration exploiter reaches 0.348. Its
-  build head always defers to the executor in greedy play. The previous
-  agent is `fleet-final-pre-t213`. Models are backed up with
+  goal. t184b (t213's recipe with a quarter of games against a league of
+  `fleet-final`, t213's exploiter and its own snapshots) promoted its
+  snapshot 200 on 2026-10-28. It trades -0.038 / -0.055 win share against
+  three executors (60 / 100 years, paired with the t213 agent) for
+  robustness: t213's exploiter, which beat the t213 agent 0.348 by keeping
+  its warships merged, falls to 0.274, and a fresh 80-iteration exploiter
+  ends at 0.246. Its build head defers to the executor in greedy play.
+  The previous agent is `fleet-final-pre-t184`; it is not yet deployed to
+  archvps. Models are backed up with
   restic to archvps and crunch (`~/.local/bin/nc-ai-backup`).
   - Checkpoints: `~/.local/state/nostrian-conquest/ai/fleet-final.pt` and
     `fleet-final.onnx`.

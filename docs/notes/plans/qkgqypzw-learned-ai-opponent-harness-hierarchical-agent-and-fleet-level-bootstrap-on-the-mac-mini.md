@@ -1272,6 +1272,13 @@ Less league play bought neither strength nor robustness: every t184c
 snapshot loses more at 100 years than t184b's and stays more exploitable.
 t184b's snapshot 200 is the candidate.
 
+**Promoted (2026-10-28, owner's OK).** t184b's snapshot 200 is
+`fleet-final`; the t213 agent is kept as `fleet-final-pre-t184`. t184 is
+closed: its robustness goal is met, at a cost of about five points of win
+share against executors, so its "beats the fixed mix" exit is amended to
+"no exploitable hole at a small strength cost". Not yet deployed to
+archvps.
+
 ### t185
 
 Start some training games from saved mid-game positions.
