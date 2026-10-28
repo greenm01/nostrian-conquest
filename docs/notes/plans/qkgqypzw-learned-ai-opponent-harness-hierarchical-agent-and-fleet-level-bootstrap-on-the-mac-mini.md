@@ -1324,6 +1324,29 @@ of each iteration's games. Replays are kept out of the league's shares.
 lost and worlds at the end at 100 years improve and win share at 60
 years does not fall (interval includes zero or better).
 
+**Result (2026-10-28): it fails.** Paired against `fleet-final` (t184b
+snapshot 200), 1,024 maps from 100000, three executors:
+
+| Snapshot | Win, 60 years | Win, 100 years | Worlds at end, 100 | Worlds lost, 100 |
+|---|---|---|---|---|
+| 150 | -0.104 +/- 0.020 | -0.128 +/- 0.019 | -2.44 +/- 0.24 | +0.19 +/- 0.22 |
+| 175 | -0.076 +/- 0.019 | -0.096 +/- 0.018 | -1.88 +/- 0.22 | +0.27 +/- 0.21 |
+| 200 | -0.076 +/- 0.019 | -0.110 +/- 0.018 | -2.08 +/- 0.23 | +0.69 +/- 0.22 |
+
+Every measure the exit names went the wrong way. In training its
+evaluation against executors stayed between 0.22 and 0.32 (t184b reached
+0.34 to 0.38). It also joins fleets three times as often as `fleet-final`
+(1,334 to 1,679 a game at 100 years, against 524).
+
+A likely reason: a quarter of its games began in a losing position
+against three executors, so those games paid almost nothing whatever it
+did, as the full league's lopsided games did in t184. They pull the value
+and the advantage toward "the game is lost" without showing what saves
+it. t185 stays open. A retry would need starts the learner can turn:
+take the position earlier (five or ten years before the fall rather than
+two) or use a smaller share (0.1), and judge it on worlds lost from the
+start positions themselves, not only on full games.
+
 ### t186
 
 Track the win-probability estimate through games.
