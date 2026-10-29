@@ -829,7 +829,8 @@ fn fleet_list_live_eta_projects_years_for_stopped_fleet_after_new_order() {
         &state.game_data,
         fleet_idx,
         ordered_fleet.target.to_array(),
-        false,
+        // A world mission's ETA includes entering the system.
+        true,
         true,
     ) {
         nc_engine::FleetEtaEstimate::Arrived => 0,
@@ -876,6 +877,7 @@ fn fleet_group_selection_live_eta_projects_years_for_stopped_fleet() {
     fleet.speed = 0;
     fleet.order = nc_data::Order::ViewWorld;
     fleet.target = nc_data::Coords::from_array(target);
+    fleet.target_depth = 1;
     let expected_years = match nc_engine::estimate_fleet_eta_to_destination(
         &state.game_data,
         state
@@ -885,7 +887,8 @@ fn fleet_group_selection_live_eta_projects_years_for_stopped_fleet() {
             .position(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
             .expect("fleet #1 should exist"),
         target,
-        false,
+        // A world mission's ETA includes entering the system.
+        true,
         true,
     ) {
         nc_engine::FleetEtaEstimate::Arrived => 0,

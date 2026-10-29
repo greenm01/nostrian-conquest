@@ -37,7 +37,8 @@ pub(super) fn estimate_fleet_eta_to_destination(
     let Some(fleet) = game_data.fleets.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
-    if fleet.sector.to_array() == destination {
+    // Inside the sector, the time to enter the system still counts.
+    if fleet.sector.to_array() == destination && !include_system {
         return FleetEtaEstimate::Arrived;
     }
     let speed = if fleet.speed == 0 && use_max_speed_if_stopped {

@@ -1,6 +1,6 @@
 use nc_data::{CoreGameData, Order, map_size_for_player_count};
 
-use crate::{FleetEtaEstimate, estimate_fleet_eta_to_destination};
+use crate::{FleetEtaEstimate, estimate_fleet_eta, estimate_fleet_eta_to_destination};
 
 pub fn fleet_target_eta_estimate(
     game_data: &CoreGameData,
@@ -124,12 +124,14 @@ fn fleet_display_eta_estimate(game_data: &CoreGameData, fleet_idx: usize) -> Fle
     }
     let current = fleet.sector.to_array();
     let target = fleet.target.to_array();
-    if current == target {
+    // A world target is reached only inside its system, which can take
+    // another year after the fleet is in the sector.
+    if current == target && fleet.target_depth == 0 {
         return FleetEtaEstimate::Arrived;
     }
     let map_size = map_size_for_player_count(game_data.conquest.player_count);
     if target[0] == 0 || target[1] == 0 || target[0] > map_size || target[1] > map_size {
         return FleetEtaEstimate::Unreachable;
     }
-    estimate_fleet_eta_to_destination(game_data, fleet_idx, target, false, true)
+    estimate_fleet_eta(game_data, fleet_idx)
 }
