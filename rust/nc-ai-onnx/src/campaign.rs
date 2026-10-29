@@ -164,6 +164,7 @@ impl CampaignAi {
                     .game_data
                     .join_player(player, &format!("AI Empire {player}"))
                     .map_err(|err| format!("AI seat {player} cannot join: {err}"))?;
+                nc_data::name_unnamed_worlds(&mut maintenance.game_data, player as u8);
             }
             if let Some(commission) = commission_submission(&maintenance.game_data, memory.empire) {
                 apply(maintenance, &commission)?;
@@ -180,10 +181,15 @@ impl CampaignAi {
         Ok(())
     }
 
-    /// After a year runs: every AI seat reads that year's reports.
-    pub fn learn(&mut self, maintenance: &CampaignMaintenance) {
+    /// After a year runs: every AI seat reads that year's reports and names
+    /// the worlds it took, so players never see them unnamed.
+    pub fn learn(&mut self, maintenance: &mut CampaignMaintenance) {
         for (_, memory) in &mut self.seats {
             memory.learn_year(&maintenance.game_data, maintenance.last_year_events());
+        }
+        // Named after every seat has read the year, which none of them saw.
+        for (_, memory) in &self.seats {
+            nc_data::name_unnamed_worlds(&mut maintenance.game_data, memory.empire);
         }
     }
 

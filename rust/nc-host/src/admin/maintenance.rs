@@ -153,7 +153,7 @@ pub(super) fn run(root: &Path, game: &str, expected_year: u16, request_id: &str)
         }
         turn.run_turn().map_err(|e| e.to_string())?;
         if let Some(ai) = &mut ai {
-            ai.learn(&turn);
+            ai.learn(&mut turn);
         }
         let end_year = turn.game_data.conquest.game_year;
         turn.save(&runtime.recording_maintenance(request_id, year)?)

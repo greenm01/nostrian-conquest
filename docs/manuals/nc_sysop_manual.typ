@@ -328,7 +328,11 @@ strength. On test maps it won about two games in three against three scripted
 executor opponents. `normal` won about three in five, and `easy` about one in
 five.
 
-A reserved seat cannot be an AI seat. Each maintenance year, every AI seat
+A reserved seat cannot be an AI seat. An AI seat claims its empire as soon as
+the game next reads its settings, at a login or a maintenance run, so players
+see it as "AI Empire" and its seat number from their first turn. It names its
+homeworld and each world it takes from a fixed list of names, never with a name
+another planet in the game has. Each maintenance year, every AI seat
 commissions its ships and submits its turn before the year runs, as a player
 would. It sees only what a player of that seat could see. Its memory is kept
 in `ncgame.db` between runs.

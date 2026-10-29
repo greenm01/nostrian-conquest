@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     PlayerMode, Real48, diplomatic_relation_toward, is_classic_text_char,
-    is_homeworld_seed_ignoring_name, set_diplomatic_relation_toward, set_empire_name,
-    set_planet_name, stored_diplomatic_relation,
+    is_homeworld_seed_ignoring_name, planet_name_in_use, set_diplomatic_relation_toward,
+    set_empire_name, set_planet_name, stored_diplomatic_relation,
 };
 
 const DEFAULT_JOIN_TAX_RATE: u8 = 50;
@@ -133,6 +133,15 @@ impl CoreGameData {
                 .map(|idx| idx + 1)
                 .ok_or(GameStateMutationError::MissingPlanetRecord { index_1_based: 0 })?
         };
+        if planet_name_in_use(
+            self,
+            homeworld_name,
+            Some(homeworld_planet_index_1_based - 1),
+        ) {
+            return Err(GameStateMutationError::DuplicatePlanetName {
+                planet_index_1_based: homeworld_planet_index_1_based,
+            });
+        }
         let planet = self
             .planets
             .get_mut(homeworld_planet_index_1_based - 1)
@@ -155,6 +164,11 @@ impl CoreGameData {
         planet_name: &str,
     ) -> Result<(), GameStateMutationError> {
         let owner_empire = player_record_index_1_based as u8;
+        if planet_name_in_use(self, planet_name, Some(planet_record_index_1_based - 1)) {
+            return Err(GameStateMutationError::DuplicatePlanetName {
+                planet_index_1_based: planet_record_index_1_based,
+            });
+        }
         let planet = self
             .planets
             .get_mut(planet_record_index_1_based - 1)

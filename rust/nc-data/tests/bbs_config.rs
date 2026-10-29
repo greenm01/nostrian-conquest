@@ -350,5 +350,16 @@ fn the_computer_takes_only_open_seats() {
     config.save_kdl(&path).expect("save");
     sync_game_config(&dir, &store).expect("seat 2 is open");
     assert!(sysop_reports(&store)[0].contains("Empire 2 is now played by the computer."));
+    // The seat claims its empire at once, so players see it on their first turn.
+    let players = store
+        .load_latest_runtime_state()
+        .expect("load")
+        .expect("state")
+        .game_data
+        .players;
+    assert_eq!(players[1].mode, nc_data::PlayerMode::Human);
+    assert_eq!(players[1].empire_name, "AI Empire 2");
+    assert_eq!(players[2].mode, nc_data::PlayerMode::CivilDisorder);
+    sync_game_config(&dir, &store).expect("a joined AI seat syncs again");
     let _ = std::fs::remove_dir_all(dir);
 }

@@ -71,6 +71,10 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
             game.submit_turn(&turn).unwrap();
         }
         game.run_maintenance().unwrap();
+        // AI seats name the worlds they took.
+        for empire in 1..=PLAYERS as u8 {
+            nc_data::name_unnamed_worlds(&mut game.play.built.game_data, empire);
+        }
 
         // The campaign: one stored maintenance run.
         let mut maintenance = CampaignMaintenance::load(&store).unwrap();
@@ -79,7 +83,7 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
             .expect("the campaign has AI seats");
         ai.play(&mut maintenance).unwrap();
         maintenance.run_turn().unwrap();
-        ai.learn(&maintenance);
+        ai.learn(&mut maintenance);
         let year = maintenance.game_data.conquest.game_year;
         maintenance.save(&store).unwrap();
         ai.save(&store, year).unwrap();

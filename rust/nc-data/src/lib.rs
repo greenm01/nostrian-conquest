@@ -119,7 +119,8 @@ pub use model::{
 };
 pub use motion::{set_fleet_at_rest, set_starbase_at_rest};
 pub use names::{
-    ownership_summary, player_handle_matches, set_empire_name, set_planet_name, set_player_handle,
+    name_unnamed_worlds, ownership_summary, planet_name_in_use, player_handle_matches,
+    set_empire_name, set_planet_name, set_player_handle,
 };
 pub use planet_summary::{
     CompactUnitSummaryStyle, OrbitPresenceSummary, OwnedPlanetStatus, build_queue_unit_counts,

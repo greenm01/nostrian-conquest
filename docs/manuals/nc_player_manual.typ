@@ -276,6 +276,10 @@ Your empire begins with:
   fleets, each of one cruiser and one ETAC (an Environmental Transformation
   And Colonization ship), and two lone destroyers.
 
+You name your homeworld when you first log in, and each new colony the next
+time you log in after taking it. No two planets in a game share a name, so the
+game refuses a name another world already has, whatever its capitals.
+
 The colony fleets move at speed 3, the ETAC's pace. The destroyers move at
 speed 6, as fast as any ship in the game. Send them out early to see what
 lies near you.

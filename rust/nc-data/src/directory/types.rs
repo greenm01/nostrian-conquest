@@ -371,6 +371,9 @@ pub enum GameStateMutationError {
     InvalidPlanetName {
         planet_index_1_based: usize,
     },
+    DuplicatePlanetName {
+        planet_index_1_based: usize,
+    },
     InvalidEmpireName {
         player_index_1_based: usize,
     },
@@ -760,6 +763,13 @@ impl std::fmt::Display for GameStateMutationError {
             } => write!(
                 f,
                 "planet {} name must be printable ASCII",
+                planet_index_1_based
+            ),
+            Self::DuplicatePlanetName {
+                planet_index_1_based,
+            } => write!(
+                f,
+                "planet {} name is already used by another planet",
                 planet_index_1_based
             ),
             Self::InvalidEmpireName {

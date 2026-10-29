@@ -554,6 +554,30 @@ pub fn sync_game_config(
     config.apply_to(&mut settings);
     check_new_ai_seats(&runtime.game_data, &before.ai_seats, &settings.ai_seats)
         .map_err(|err| crate::CampaignStoreError::InvalidState(format!("config.kdl: {err}")))?;
+    // An AI seat claims its empire now, so players see it from their first
+    // turn rather than after the first maintenance run.
+    let open: Vec<usize> = settings
+        .ai_seats
+        .iter()
+        .map(|seat| seat.player_record_index_1_based)
+        .filter(|&player| runtime.game_data.player_slot_is_open_for_first_join(player))
+        .collect();
+    if !open.is_empty() {
+        store.change(runtime.game_year, |state| {
+            for &player in &open {
+                state
+                    .game_data
+                    .join_player(player, &format!("AI Empire {player}"))
+                    .map_err(|err| {
+                        crate::CampaignStoreError::InvalidState(format!(
+                            "AI seat {player} cannot join: {err}"
+                        ))
+                    })?;
+                crate::name_unnamed_worlds(&mut state.game_data, player as u8);
+            }
+            Ok::<(), crate::CampaignStoreError>(())
+        })?;
+    }
     if settings == before {
         return Ok(());
     }

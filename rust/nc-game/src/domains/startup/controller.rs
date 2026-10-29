@@ -886,6 +886,11 @@ impl App {
                         Some("Homeworld names need at least one visible character.".to_string());
                     return;
                 }
+                if nc_data::planet_name_in_use(&self.game_data, value, None) {
+                    self.startup_state.first_time_status =
+                        Some("Another world already has that name.".to_string());
+                    return;
+                }
                 self.startup_state.first_time_status = None;
                 self.startup_state.first_time_homeworld_name = value.to_string();
                 self.startup_state.first_time_input.clear();
@@ -896,6 +901,11 @@ impl App {
                 if value.is_empty() {
                     self.startup_state.first_time_status =
                         Some("World names need at least one visible character.".to_string());
+                    return;
+                }
+                if nc_data::planet_name_in_use(&self.game_data, value, None) {
+                    self.startup_state.first_time_status =
+                        Some("Another world already has that name.".to_string());
                     return;
                 }
                 self.startup_state.first_time_status = None;

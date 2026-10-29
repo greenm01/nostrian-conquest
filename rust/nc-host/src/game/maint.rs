@@ -70,7 +70,7 @@ pub fn run_hosted_maintenance(
         }
         maintenance.run_turn()?;
         if let Some(ai) = &mut ai {
-            ai.learn(&maintenance);
+            ai.learn(&mut maintenance);
         }
         if settings.game_tier == GameTier::Sandbox {
             recycle_sandbox_seats(

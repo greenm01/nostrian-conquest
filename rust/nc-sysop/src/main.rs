@@ -477,7 +477,7 @@ fn run_maintenance_for_dir(
         }
         maintenance.run_turn()?;
         if let Some(ai) = &mut ai {
-            ai.learn(&maintenance);
+            ai.learn(&mut maintenance);
         }
         println!(
             "  Turn {}: year {}",
