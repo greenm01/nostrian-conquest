@@ -31,8 +31,8 @@ learner's running win share against it (0.25 even, 0.5 or more beaten).
 ``--starts FILE`` (t185) replays ``--start-share`` of each iteration's
 games from start positions, the falls in value of games ``--start-model``
 lost (``value_trace.py --starts``): that model plays the learner's seat
-greedily against three executors from the position's map until two years
-before the fall, and the learner plays on from there. The learner trains
+greedily against three executors from the position's map until
+``--start-lead`` years before the fall (2 by default), and the learner plays on from there. The learner trains
 only on the years it played.
 
 ``--free-heads join,unload`` (t191) lets fleet heads that imitation never
@@ -307,11 +307,11 @@ def choose_lineups(rng, games, learner, target=None, league=None):
     return (names, roles, opponents) if league is not None else (names, roles)
 
 
-def place_starts(rng, starts, games, learner, warm_role, names, roles, maps):
+def place_starts(rng, starts, games, learner, warm_role, names, roles, maps, lead=2):
     """Turn the first ``games`` lineups into replays of drawn start
     positions (t185): the position's map, three executors, and the
     learner's seat played by the frozen agent of ``warm_role`` until the
-    returned year, two before the fall, when the learner takes it over.
+    returned year, ``lead`` before the fall, when the learner takes it over.
     Other games hand over at year 0."""
     handover = np.zeros(len(names), np.int64)
     for game in range(games):
@@ -321,7 +321,7 @@ def place_starts(rng, starts, games, learner, warm_role, names, roles, maps):
         names[game], maps[game] = lineup, start["map"]
         roles[game] = 0
         roles[game, start["seat"]] = warm_role
-        handover[game] = max(0, start["year"] - 2)
+        handover[game] = max(0, start["year"] - lead)
     return handover
 
 
@@ -728,6 +728,8 @@ def main():
                         help="the learner's latest snapshots kept in the league")
     parser.add_argument("--starts", help="start positions from value_trace.py --starts (t185)")
     parser.add_argument("--start-model", help="the agent that played the start positions")
+    parser.add_argument("--start-lead", type=int, default=2,
+                        help="hand a start position over this many years before its fall")
     parser.add_argument("--start-share", type=float, default=0.25,
                         help="the share of games replayed from a start position")
     parser.add_argument("--resume", action="store_true",
@@ -807,7 +809,8 @@ def main():
             # The warm-up seats play the start model, after every league agent.
             warm_role = 3 + len(frozen)
             placed = round(args.start_share * args.games)
-            handover = place_starts(rng, starts, placed, learner, warm_role, names, roles, maps)
+            handover = place_starts(rng, starts, placed, learner, warm_role, names, roles, maps,
+                                    args.start_lead)
             frozen = frozen + [warm]
             if league:
                 drawn[2][:placed] = -1  # replays, not league games

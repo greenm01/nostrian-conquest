@@ -115,6 +115,16 @@ class PlaceStartsTest(unittest.TestCase):
             self.assertEqual(names[game], ["executor", "executor", "hybrid:strike", "executor"])
             self.assertEqual(roles[game].tolist(), [0, 0, 5, 0])
 
+    def test_the_lead_sets_the_handover_and_never_goes_before_year_zero(self):
+        names, roles = choose_lineups(np.random.default_rng(0), 2, "hybrid:strike")
+        starts = [{"map": 1, "seat": 0, "year": 8}]
+        handover = place_starts(np.random.default_rng(0), starts, 1, "hybrid:strike", 5,
+                                names, roles, [10, 11], lead=10)
+        self.assertEqual(handover.tolist(), [0, 0])
+        handover = place_starts(np.random.default_rng(0), starts, 1, "hybrid:strike", 5,
+                                names, roles, [10, 11], lead=5)
+        self.assertEqual(handover.tolist(), [3, 0])
+
 
 if __name__ == "__main__":
     unittest.main()

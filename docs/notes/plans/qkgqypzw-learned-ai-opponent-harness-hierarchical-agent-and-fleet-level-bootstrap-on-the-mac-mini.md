@@ -3118,6 +3118,42 @@ uses the t207 gate: paired `behaviour_report` against promoted
 panel, and 0 export mismatches. Rows are from the [investigation's
 ranked plan](../investigations/g6uo9u0x-training-techniques-for-the-learned-agents-builds-drift-and-rare-orders.md#validation-and-remaining-work).
 
+**The agent's tax (2026-10-28).** The promoted agent sets one rate,
+60%, in every game (`behaviour_report`: 1.0 rates a game). Its tax head is
+nearly one-hot on that choice: greedy over 256 100-year games against
+three executors, choice 12 holds 0.93 of the mass in year 0, 0.99 in years
+10-30, and still 0.90 in year 90; no other rate ever passes 0.25. The
+t213 agent before it is the same. The head imitated an executor that holds
+one rate all game, and the KL floor keeps it there. That fits the
+evidence above: every development-driven tax trial lost 0.02-0.06 against
+a flat rate under the approved economy. So dynamic tax is not a training
+problem but a rules one: under these prices a near-flat high rate wins,
+and the agent plays it.
+
+**The orders still unused, for the owner's decision (2026-10-28).** The
+promoted agent's greedy use per 100-year game against three executors
+(1,024 maps): Rendezvous 692, Bombard 67, Guard/Blockade 38, Patrol 32,
+Blitz 31, View 20, Colonize 13, Scout 8, Invade 1.1, and 524 joins
+through the join head. Below one a game:
+
+| Order | Use a game | Manual purpose | Tried | Proposal |
+|---|---:|---|---|---|
+| Hold Position | 0.1 | the idle state every one-shot mission returns to | none | drop from the exit: fleets hold by default, so an explicit order adds nothing |
+| Move Fleet | 0.9 | plain transit, then hold | none | drop: Rendezvous and Patrol move fleets and also mass or watch |
+| Seek Home | 0 | return to the nearest owned world | none; ROE already retreats fleets this way | drop: the engine applies it on retreat |
+| Guard a Starbase | 0.5 | stay on a base and defend it | `guard_bases` lost -0.016 / -0.030 (2026-10-21) | drop unless starbases matter more under future rules |
+| Join (mission 13) | 0 | follow and merge into a host fleet | covered by the join head (524 a game) | met through the join head |
+| Salvage | 0 | scrap ships for half their cost at a world | `emergency_salvage` rejected (2026-10-20) | drop: no trial has found a use that pays |
+| Tax | one rate, 60% | lower while colonies grow, higher when mature | every development-driven rate lost 0.02-0.06 | drop "dynamic tax" under these prices (see above) |
+| Starbases | 2% of builds | defence and the growth bonus | `colony_starbases` adopted; guards lost | met as far as the rules reward them |
+
+With that amended exit, t207 is met by the promoted agent: every order
+whose use the manuals and the trials justify is ordered at least once a
+game, it does not lose to its predecessor beyond t184's agreed cost, and
+the exploit check is clean. t189 is in the same position: mixed hulls are
+adopted, the executor uses the justified orders, and deep-space staging
+was tried and rejected (2026-10-18).
+
 ### t212
 
 Diagnose before training more (Mac mini, hours, no training).
