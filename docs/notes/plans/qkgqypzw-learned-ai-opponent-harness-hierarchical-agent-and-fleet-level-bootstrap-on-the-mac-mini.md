@@ -1347,6 +1347,15 @@ take the position earlier (five or ten years before the fall rather than
 two) or use a smaller share (0.1), and judge it on worlds lost from the
 start positions themselves, not only on full games.
 
+**t185b (2026-10-28).** Both changes: `--start-lead 10` hands the seat
+over ten years before the fall, and `--start-share 0.1` replays a tenth of
+games. Same recipe and start otherwise (`t185b/run`). Besides the full
+paired report, `tools/ai/start_check.py` replays all 143 positions, hands
+each to the candidate and to `fleet-final` ten years before the fall, and
+reports the paired win share from there. As a check of the tool,
+`fleet-final-pre-t184` handed its own positions at the fall year wins 0 of
+12, as the recorded games did.
+
 ### t186
 
 Track the win-probability estimate through games.
