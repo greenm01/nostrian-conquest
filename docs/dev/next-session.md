@@ -51,8 +51,13 @@ details are in the plans' result sections.
   robustness: t213's exploiter, which beat the t213 agent 0.348 by keeping
   its warships merged, falls to 0.274, and a fresh 80-iteration exploiter
   ends at 0.246. Its build head defers to the executor in greedy play.
-  The previous agent is `fleet-final-pre-t184`; it is not yet deployed to
-  archvps. Models are backed up with
+  The previous agent is `fleet-final-pre-t184`. Deployed to archvps on
+  2026-10-28 (owner's OK): `/opt/nc-community/models/fleet-final.onnx`,
+  named by `NC_AI_MODEL` in systemd drop-ins
+  (`/etc/systemd/system/{nc-community,nc-community-turns}.service.d/ai-model.conf`),
+  outside the release tree so a release swap keeps it. AI seats play only
+  where a game's `config.kdl` names an `ai_seat`. To update the model,
+  replace the file; maintenance loads it each run. Models are backed up with
   restic to archvps and crunch (`~/.local/bin/nc-ai-backup`).
   - Checkpoints: `~/.local/state/nostrian-conquest/ai/fleet-final.pt` and
     `fleet-final.onnx`.
