@@ -1356,6 +1356,27 @@ reports the paired win share from there. As a check of the tool,
 `fleet-final-pre-t184` handed its own positions at the fall year wins 0 of
 12, as the recorded games did.
 
+**t185b result (2026-10-29): it ties, so t185 closes.** Paired against
+`fleet-final`, 1,024 maps from 100000, three executors:
+
+| Snapshot | Win, 60 | Win, 100 | Worlds at end, 100 | Worlds lost, 100 | From the 143 starts |
+|---|---|---|---|---|---|
+| 150 | -0.012 +/- 0.019 | -0.035 +/- 0.018 | -0.53 +/- 0.24 | +0.46 +/- 0.23 | +0.035 +/- 0.026 |
+| 175 | +0.025 +/- 0.019 | +0.004 +/- 0.017 | +0.58 +/- 0.24 | +0.25 +/- 0.23 | +0.010 +/- 0.030 |
+| 200 | -0.004 +/- 0.019 | -0.016 +/- 0.018 | +0.06 +/- 0.24 | -0.13 +/- 0.23 | +0.010 +/- 0.026 |
+
+Handing over ten years early and replaying a tenth of games removed
+t185's loss: no snapshot is worse than `fleet-final` beyond noise. But
+none meets the exit either. Worlds lost does not fall for any snapshot,
+and from the start positions themselves, the thing the replays train,
+the best gain is +0.035 +/- 0.026 (`fleet-final` wins 0.322 of them).
+Under the stop rule agreed on 2026-10-28, t185 closes as no measurable
+gain at this scale: 143 positions from one agent's losses against
+executors are too few, and too like ordinary late games, to teach
+anything a 100-year game does not. It may return with t166, where real
+losses against people would give positions the simulator does not reach.
+Nothing is promoted.
+
 ### t186
 
 Track the win-probability estimate through games.
