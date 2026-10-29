@@ -3163,6 +3163,12 @@ the exploit check is clean. t189 is in the same position: mixed hulls are
 adopted, the executor uses the justified orders, and deep-space staging
 was tried and rejected (2026-10-18).
 
+**Closed (owner, 2026-10-28).** The owner approved the amended exit: t207
+and t189 close as met by the promoted agent (t184b's snapshot 200) and the
+adopted executor. Hold Position, Move Fleet, Seek Home, Guard a Starbase,
+Salvage and dynamic tax leave the exit on the evidence above; they return
+if the rules or prices change.
+
 ### t212
 
 Diagnose before training more (Mac mini, hours, no training).
