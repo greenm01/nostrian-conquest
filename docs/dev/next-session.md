@@ -75,20 +75,15 @@ details are in the plans' result sections.
   ([tdkitij6](../notes/decisions/tdkitij6-heavies-cover-the-destroyers-which-finish-cripples-at-half-price.md)).
   Mixes now beat pure cruisers 70/30 at equal cost. The combat model's
   `engine-t206` preset matches the engine.
-- **Mixed hulls adopted, agent retrained (t189/t191, 2026-10-19).**
-  Retuned under t206, mixed executors match cruiser ones, so the land-grab
-  style and rusher build cruisers and destroyers (the turtle stays
-  cruisers). The executor builds for the network seat, so the agent was
-  retrained on mixed fleets and promoted: 0.725 at 100 years against the
-  old agent's 0.192 with mixed builds. Main's AI may ship again; the live
-  stack carries beta.4. See the AI plan's t189 and t191 sections.
-- **Next (t207, 2026-10-20).** Opening the mission head by RL failed
-  (rare missions never win the greedy argmax). The owner chose executor
-  rules first. Blitz is adopted: strikes blitz worlds whose batteries are
-  known gone, in executor seats and, by converting the network's Invade,
-  in agent seats (neutral in both). A Salvage rule (scrap spent ETACs)
-  lost slightly at 100 years and was dropped. Join to reinforce a strike force short of its target is adopted in executor seats (neutral, 2.7 joins a game). Agent seats now order 10 of 16 missions plus about 300 joins a game; a home starbase and mending there were tried and dropped (2026-10-21). The RL variant waits. See the
-  AI plan's t207 section.
+- **AI training paused (2026-10-29).** t184-t186, t189, t207 and
+  t212-t217 are closed; each result is in its plan section. The owner
+  approved an amended "every order" exit: Hold, Move, Seek Home, Guard a
+  Starbase, Salvage and development-driven tax stay out, since every trial
+  of them lost under the current rules and prices. Tax holds 60% and the
+  executor builds. Tools kept: `value_trace.py` (the critic's estimate
+  through games, and start positions), `start_check.py`, `fleet_ppo.py`
+  `--league-share` and `--starts`. The next AI step is t166, learning from
+  real games, once people play AI seats in the community.
 
 The owner signed off t165 and t167 on 2026-10-18 without recorded
 playtests. t166 now needs real human games, played with the players'

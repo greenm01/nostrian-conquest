@@ -178,6 +178,15 @@ The exploit check on the KL-floor run's snapshot 200 failed: the
 exploiter reached 0.386 +/- 0.015. t212's results (steps 0 and 1) are
 in the plan's t212 section.
 
+**Outcome (2026-10-29).** Every step above has run and t212-t217 are
+closed; none beat the anchored agent on its own. Builds stay with the
+executor: one build moves a game but in no direction (t216). Shaping,
+self-imitation and a trailing anchor tied or lost (t217, t215, t214).
+Step 8's league gave the robustness this research sought: with a quarter
+of games against a league holding t213's exploiter, the promoted agent
+(t184b) leaves no hole an 80-iteration exploiter finds, at a cost of about
+five points against executors. See the plan's t184 section.
+
 ## Connections
 
 - [t207 plan section](../plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t207):
