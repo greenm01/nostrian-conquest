@@ -206,8 +206,8 @@ pub struct FleetBattleEvent {
     /// Enemy starbases destroyed in this battle.
     pub enemy_starbases_destroyed: u32,
     /// Whether the attacking side struck by surprise: the defending empire
-    /// had not sighted the attacker in this sector and layer. The
-    /// `Intercepted` side is the attacker.
+    /// had no starbase in this sector and had not sighted the attacker
+    /// there. The `Intercepted` side is the attacker.
     pub surprise: bool,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
