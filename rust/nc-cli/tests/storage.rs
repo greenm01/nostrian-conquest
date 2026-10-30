@@ -378,7 +378,7 @@ fn db_export_says_the_sighting_memory_is_not_written() {
             .load_latest_runtime_game_data()
             .expect("the store is unchanged")
             .sightings
-            .knows(1, Coords::new(7, 9), 1, 2)
+            .knows(1, Coords::new(7, 9), 2)
     );
 
     cleanup_dir(&source);

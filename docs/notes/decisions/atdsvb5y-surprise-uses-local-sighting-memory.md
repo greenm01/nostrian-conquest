@@ -152,6 +152,18 @@ invader's surprise changes the first exchange's dice, so seed 9 no longer
 does it and the test pins seed 2, the lowest that does. No other existing
 test depended on the absence of a surprise.
 
+## Amendment (2026-10-30)
+
+The owner made two changes. First, memory is per sector, not per sector and
+layer: units at the same coordinates communicate, so a picket in deep space
+that spots an attacker warns the guards inside the system, and the other way
+round. The memory lasts while the empire has any unit in the sector. Rows
+keep the layer where they were noted, so the storage schema is unchanged.
+Second, a starbase blocks surprise: no attack on an empire with a starbase
+in the sector is a surprise, even before the base has sighted the attacker.
+Code: `SightingMemory` (`rust/nc-data/src/model/sighting.rs`) and
+`Year::battle` (`rust/nc-engine/src/maint/encounter/handler.rs`).
+
 ## Acceptance and connections
 
 Accepted by the owner on 2026-10-10 after Codex's comparison and Claude's

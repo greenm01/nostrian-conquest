@@ -3,8 +3,9 @@ use std::collections::BTreeMap;
 use super::fleet::empire_bit;
 use super::ids::Coords;
 
-/// What one empire has sighted in one sector and depth layer: the set of
-/// opponent empires, kept while the empire has a fleet or starbase there.
+/// What one empire has sighted in one sector, noted in the depth layer where
+/// it saw them: the set of opponent empires. The empire knows them in the
+/// whole sector while it has a fleet or starbase there.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Sighting {
     pub viewer: u8,
@@ -17,12 +18,14 @@ pub struct Sighting {
 }
 
 /// Local sighting memory (combat decision 6, surprise). Each viewing empire
-/// keeps, per sector and depth layer, the opponent empires it has sighted
-/// there. An actual sighting by any of the viewer's units, or a combat,
-/// adds the opponent; the set is shared by all of the viewer's fleets and
-/// starbases in that sector and layer. It persists across years while the
-/// viewer has a unit there, and is cleared when that presence ends. Not a
-/// classic field: an export drops it and an import starts with none.
+/// keeps, per sector, the opponent empires it has sighted there. An actual
+/// sighting by any of the viewer's units, or a combat, adds the opponent;
+/// the set is shared by all of the viewer's fleets and starbases in the
+/// sector, in deep space and inside the system alike (owner, 2026-10-30).
+/// Entries stay keyed by the layer where they were noted, as stored. It
+/// persists across years while the viewer has a unit in the sector, and is
+/// cleared when that presence ends. Not a classic field: an export drops it
+/// and an import starts with none.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SightingMemory {
     /// By viewer, sector x, sector y, layer; an entry is never empty.
@@ -39,18 +42,22 @@ impl SightingMemory {
         self.entries.len()
     }
 
-    /// Whether `viewer` has sighted `opponent` in `sector` and `layer`.
-    pub fn knows(&self, viewer: u8, sector: Coords, layer: u8, opponent: u8) -> bool {
+    /// Whether `viewer` has sighted `opponent` anywhere in `sector`.
+    pub fn knows(&self, viewer: u8, sector: Coords, opponent: u8) -> bool {
         empire_bit(opponent).is_some_and(|bit| {
-            self.entries
-                .get(&key(viewer, sector, layer))
-                .is_some_and(|opponents| opponents & bit != 0)
+            [0, 1].into_iter().any(|layer| {
+                self.entries
+                    .get(&key(viewer, sector, layer))
+                    .is_some_and(|opponents| opponents & bit != 0)
+            })
         })
     }
 
-    /// Whether `viewer` holds any memory in `sector` and `layer`.
-    pub fn holds(&self, viewer: u8, sector: Coords, layer: u8) -> bool {
-        self.entries.contains_key(&key(viewer, sector, layer))
+    /// Whether `viewer` holds any memory in `sector`.
+    pub fn holds(&self, viewer: u8, sector: Coords) -> bool {
+        [0, 1]
+            .into_iter()
+            .any(|layer| self.entries.contains_key(&key(viewer, sector, layer)))
     }
 
     /// `viewer` has sighted `opponent` in `sector` and `layer`.
@@ -60,15 +67,17 @@ impl SightingMemory {
         }
     }
 
-    /// `viewer` has no unit in `sector` and `layer` any more.
-    pub fn forget(&mut self, viewer: u8, sector: Coords, layer: u8) {
-        self.entries.remove(&key(viewer, sector, layer));
+    /// `viewer` has no unit in `sector` any more.
+    pub fn forget(&mut self, viewer: u8, sector: Coords) {
+        for layer in [0, 1] {
+            self.entries.remove(&key(viewer, sector, layer));
+        }
     }
 
-    /// Keep the memories for which `present(viewer, sector, layer)` holds.
-    pub fn retain(&mut self, mut present: impl FnMut(u8, Coords, u8) -> bool) {
+    /// Keep the memories for which `present(viewer, sector)` holds.
+    pub fn retain(&mut self, mut present: impl FnMut(u8, Coords) -> bool) {
         self.entries
-            .retain(|&(viewer, x, y, layer), _| present(viewer, Coords::new(x, y), layer));
+            .retain(|&(viewer, x, y, _), _| present(viewer, Coords::new(x, y)));
     }
 
     /// Every memory, by viewer, then sector, then layer.
@@ -93,7 +102,7 @@ impl SightingMemory {
             opponents,
         } = sighting;
         if opponents == 0 {
-            self.forget(viewer, sector, layer);
+            self.entries.remove(&key(viewer, sector, layer));
         } else {
             self.entries.insert(key(viewer, sector, layer), opponents);
         }

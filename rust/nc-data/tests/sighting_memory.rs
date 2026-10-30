@@ -42,38 +42,46 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) {
 const HERE: Coords = Coords::new(7, 9);
 
 #[test]
-fn a_sighting_is_per_viewer_place_layer_and_opponent() {
+fn a_sighting_is_per_viewer_sector_and_opponent() {
     let mut memory = SightingMemory::default();
     assert!(memory.is_empty());
     memory.note(1, HERE, 1, 2);
     memory.note(1, HERE, 1, 25);
 
-    assert!(memory.knows(1, HERE, 1, 2));
-    assert!(memory.knows(1, HERE, 1, 25));
-    assert!(!memory.knows(1, HERE, 1, 3), "another opponent");
+    assert!(memory.knows(1, HERE, 2));
+    assert!(memory.knows(1, HERE, 25));
+    assert!(!memory.knows(1, HERE, 3), "another opponent");
     assert!(
-        !memory.knows(2, HERE, 1, 1),
+        !memory.knows(2, HERE, 1),
         "the opponent has no memory of it"
     );
-    assert!(!memory.knows(1, HERE, 0, 2), "the other layer");
-    assert!(!memory.knows(1, Coords::new(9, 7), 1, 2), "another sector");
+    assert!(!memory.knows(1, Coords::new(9, 7), 2), "another sector");
     assert_eq!(memory.len(), 1, "one place, shared by every unit there");
 }
 
 #[test]
-fn forgetting_a_place_leaves_the_others() {
+fn a_sighting_in_one_layer_is_known_in_the_whole_sector() {
+    let mut memory = SightingMemory::default();
+    // Seen from deep space; the fleets inside the system know it too.
+    memory.note(1, HERE, 0, 2);
+    assert!(memory.knows(1, HERE, 2));
+    assert!(memory.holds(1, HERE));
+}
+
+#[test]
+fn forgetting_a_sector_clears_both_layers_and_leaves_the_others() {
     let mut memory = SightingMemory::default();
     memory.note(1, HERE, 1, 2);
     memory.note(1, HERE, 0, 2);
     memory.note(3, HERE, 1, 2);
 
-    memory.forget(1, HERE, 1);
-    assert!(!memory.holds(1, HERE, 1));
-    assert!(memory.holds(1, HERE, 0) && memory.holds(3, HERE, 1));
+    memory.forget(1, HERE);
+    assert!(!memory.holds(1, HERE));
+    assert!(!memory.knows(1, HERE, 2));
+    assert!(memory.holds(3, HERE));
 
-    memory.retain(|viewer, _, _| viewer != 1);
-    assert_eq!(memory.len(), 1);
-    assert!(memory.knows(3, HERE, 1, 2));
+    memory.retain(|viewer, _| viewer != 3);
+    assert!(memory.is_empty());
 }
 
 #[test]
@@ -162,7 +170,7 @@ fn the_store_round_trips_sighting_memory_per_snapshot() {
 
     let mut later = state.game_data.clone();
     later.conquest.game_year = year + 1;
-    later.sightings.forget(1, HERE, 1);
+    later.sightings.forget(1, HERE);
     let second = store
         .save_year(year + 1, &later, &[], &[])
         .expect("save the next year");
@@ -235,7 +243,7 @@ fn a_classic_export_drops_sighting_memory_and_leaves_the_store_alone() {
             .load_latest_runtime_game_data()
             .expect("the store is unchanged")
             .sightings
-            .knows(1, HERE, 1, 2)
+            .knows(1, HERE, 2)
     );
 
     copy_dir_all(&exported, &reimported);

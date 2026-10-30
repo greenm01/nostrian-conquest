@@ -687,9 +687,9 @@ worth taking.
 
 *A starbase and warships in orbit* fight every hostile fleet before it can
 strike. A starbase adds 1 to your die and never retreats. An attacker that
-loses the orbit is driven off without bombarding or landing. Once your forces
-there have spotted an empire, keeping a fleet or starbase in the system denies
-that empire a surprise attack.
+loses the orbit is driven off without bombarding or landing. A starbase
+denies every attacker a surprise there. Once your fleets in the sector have
+spotted an empire, keeping one there denies that empire a surprise attack.
 
 *Scorch Earth* is a last resort. It denies a conqueror half the world's
 production and goods, but every year it is in force the world loses
@@ -1569,20 +1569,27 @@ Nobody else joins: not a third empire, not allies, not fleets that arrive
 later in the week. The fleet that started the attack spends the week fighting
 instead of moving. A fight does not change the empires' diplomacy.
 
-*Surprise.* Your empire remembers, in each sector and layer where it has a
-fleet or a starbase, which opposing empires it has spotted there. Whenever any
-of your fleets or starbases there spots an alien unit, its empire goes into
-that memory, and so does the empire of any fleet you fight there. All of your
-fleets and starbases in that sector and layer share it. The memory lasts,
-from week to week and year to year, for as long as you keep a fleet or a
-starbase in that sector and layer. When the last one leaves or is destroyed,
-it is gone. An opponent that leaves and comes back does not erase it. It is
-local readiness, not knowledge of the whole empire: what a scout learned in
-another sector does nothing here.
+*Surprise.* Your empire remembers, in each sector where it has a fleet or a
+starbase, which opposing empires it has spotted there. Whenever any of your
+fleets or starbases there spots an alien unit, its empire goes into that
+memory, and so does the empire of any fleet you fight there. All of your
+fleets and starbases in the sector share it, in deep space and inside the
+system alike: a picket in deep space that spots an enemy warns the guards in
+orbit, and the other way round. The memory lasts, from week to week and year
+to year, for as long as you keep a fleet or a starbase anywhere in that
+sector. When the last one leaves or is destroyed, it is gone. An opponent
+that leaves and comes back does not erase it. It is local readiness, not
+knowledge of the whole empire: what a scout learned in another sector does
+nothing here.
 
-An attack is a *surprise* when the defending empire's memory there does not
-include the attacker's empire: none of its fleets or starbases there has
-spotted the attacker, and the two have not fought there. The attacking side
+A *starbase* keeps its whole sector ready. While you have a starbase in a
+sector, no attack on you there is a surprise, whether or not the base has
+spotted the attacker yet.
+
+An attack is a *surprise* when the defending empire has no starbase in the
+sector and its memory there does not include the attacker's empire: none of
+its fleets or starbases there has spotted the attacker, and the two have not
+fought there. The attacking side
 then adds 1 to its die in the first round of the battle. The bonus adds to
 the other die bonuses, a result above 9 still reads as 9, an unmodified 9 is
 still the only critical hit, and a pursuit round never gets it. Only the attacker can surprise. A defender that
@@ -1831,8 +1838,9 @@ attack strength, a starbase counting 100.
 == Fleet Battle Die Modifiers and Hit Formula
 
 - Starbase on your side: `+1`
-- Surprise (the defending empire had not spotted the attacker in that sector
-  and layer): `+1` to the attacker, in the first exchange only
+- Surprise (the defending empire has no starbase in the sector and had not
+  spotted the attacker there): `+1` to the attacker, in the first exchange
+  only
 - Heavy line (your cruisers, battleships, and starbases cost at least twice
   the enemy's, crippled hulls at full price; destroyers do not count):
   `+1`, judged every exchange

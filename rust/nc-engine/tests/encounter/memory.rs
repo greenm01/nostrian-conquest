@@ -112,7 +112,7 @@ fn a_sighting_is_remembered_and_kept_across_years() {
         for (viewer, opponent, count) in [(1, 2, &mut sighted_by_1), (2, 1, &mut sighted_by_2)] {
             let contact = first_contact(&events, viewer, A).is_some();
             assert_eq!(
-                game_data.sightings.knows(viewer, here(), 0, opponent),
+                game_data.sightings.knows(viewer, here(), opponent),
                 contact,
                 "seed {seed}: empire {viewer}'s memory follows its contact"
             );
@@ -134,7 +134,6 @@ fn a_sighting_is_remembered_and_kept_across_years() {
                     game_data.sightings.knows(
                         sighting.viewer,
                         sighting.sector,
-                        sighting.layer,
                         sighting.opponents.trailing_zeros() as u8 + 1
                     ),
                     "seed {seed}: kept into year {later}: {sighting:?}"
@@ -167,7 +166,7 @@ fn a_combat_is_remembered_by_both_sides() {
     for (game_data, events) in years(&scenario, &enemies(), SEEDS) {
         let fought = attacks(&events, 1, A) + attacks(&events, 2, A) > 0;
         for (viewer, opponent) in [(1, 2), (2, 1)] {
-            let remembers = game_data.sightings.knows(viewer, here(), 0, opponent);
+            let remembers = game_data.sightings.knows(viewer, here(), opponent);
             if fought && present(&game_data, viewer) {
                 assert!(
                     remembers,
@@ -177,7 +176,7 @@ fn a_combat_is_remembered_by_both_sides() {
             }
             if !present(&game_data, viewer) {
                 assert!(
-                    !game_data.sightings.holds(viewer, here(), 0),
+                    !game_data.sightings.holds(viewer, here()),
                     "empire {viewer} left or died"
                 );
             }
@@ -186,16 +185,13 @@ fn a_combat_is_remembered_by_both_sides() {
     assert!(remembered_after_battle >= 100, "{remembered_after_battle}");
 }
 
-/// The attack is a surprise exactly when the defending empire had not
-/// sighted the attacker, even by a unit that only watches (a starbase never
-/// attacks): its first contact before the attack makes the memory. The
-/// share of unsighted defenders follows the sighting formula the Python
-/// control uses.
+/// A starbase keeps its empire ready in its whole sector: an attack on an
+/// empire with a starbase in the sector is never a surprise, even before
+/// the base has sighted the attacker (owner, 2026-10-30).
 #[test]
-fn surprise_needs_a_defender_that_has_not_sighted_the_attacker() {
-    // Empire 1's five blockading cruisers (sensor factor 5) find empire 2's
-    // starbase (visibility 90/52) in deep space; the base, at factor 30,
-    // scans their 1.1-times-visible stack.
+fn a_starbase_in_the_sector_blocks_surprise() {
+    // Empire 1's five blockading cruisers attack empire 2's starbase in
+    // deep space; the base often has not scanned them yet.
     let mut scenario = board();
     put(
         &mut scenario,
@@ -203,50 +199,26 @@ fn surprise_needs_a_defender_that_has_not_sighted_the_attacker() {
         Fleet::on_station(1, A, false, Order::GuardBlockadeWorld, ca(5)).roe(10),
     );
     add_starbase(&mut scenario, 2, 1, A, false);
-    let (mut attacked, mut sighted_first, mut unsighted) = (0, 0usize, 0usize);
-    // The base rolls once a tick, so a battle at tick t follows t - 1 rolls
-    // of it for certain and the tick-t roll when its turn came first.
-    let (mut at_least, mut at_most, mut variance) = (0.0, 0.0, 0.0);
+    let (mut attacked, mut before_contact) = (0, 0);
     for (game_data, events) in years(&scenario, &enemies(), MANY) {
         let Some(&(tick, surprise)) = attacks_by(&events, 1).first() else {
             continue;
         };
         attacked += 1;
-        let contact = first_contact(&events, 2, A);
-        if surprise {
-            assert!(
-                contact.is_none_or(|seen| seen >= tick),
-                "surprised at tick {tick} after contact at {contact:?}"
-            );
-            unsighted += 1;
-        } else {
-            assert!(
-                contact.is_some_and(|seen| seen <= tick),
-                "not surprised at tick {tick}, contact at {contact:?}"
-            );
-            sighted_first += 1;
-        }
+        assert!(
+            !surprise,
+            "a starbase's empire was surprised at tick {tick}"
+        );
+        before_contact += usize::from(first_contact(&events, 2, A).is_none_or(|seen| seen >= tick));
         // The attacker remembers the base either way.
         if present(&game_data, 1) {
-            assert!(game_data.sightings.knows(1, here(), 0, 2));
+            assert!(game_data.sightings.knows(1, here(), 2));
         }
-        let shown = 1.1;
-        let low = 1.0 - unseen(i32::from(tick) - 1, 30.0, shown, 5.0);
-        let high = 1.0 - unseen(i32::from(tick), 30.0, shown, 5.0);
-        at_least += low;
-        at_most += high;
-        variance += high * (1.0 - high);
     }
-    eprintln!(
-        "{attacked} attacks: {sighted_first} after the base's own sighting, \
-         expected between {at_least:.1} and {at_most:.1}"
-    );
-    assert!(attacked >= 500 && unsighted > 100 && sighted_first > 100);
-    let slack = 4.5 * variance.sqrt() + 1.0;
+    assert!(attacked >= 100, "{attacked}");
     assert!(
-        sighted_first as f64 >= at_least - slack && sighted_first as f64 <= at_most + slack,
-        "{sighted_first} of {attacked} attacks followed the base's sighting, \
-         expected between {at_least:.1} and {at_most:.1} (slack {slack:.1})"
+        before_contact > 0,
+        "some attacks come before the base's first contact"
     );
 }
 
@@ -429,7 +401,7 @@ fn memory_lasts_while_the_empire_stays_whatever_the_opponent_does() {
         for year in 0..3 {
             run(&mut game_data, seed + 10 * year, &declared(&[]));
             assert!(
-                game_data.sightings.knows(1, here(), 0, 2),
+                game_data.sightings.knows(1, here(), 2),
                 "seed {seed}, year {year}: the holder still remembers empire 2"
             );
         }
@@ -439,7 +411,7 @@ fn memory_lasts_while_the_empire_stays_whatever_the_opponent_does() {
         // is no surprise in any year, though it is where memory is absent.
         for (mut returned, remembers) in [(game_data.clone(), true), (scenario.clone(), false)] {
             if !remembers {
-                returned.sightings.forget(1, here(), 0);
+                returned.sightings.forget(1, here());
             }
             put(
                 &mut returned,
@@ -482,9 +454,9 @@ fn memory_ends_when_the_empires_presence_does() {
     let mut game_data = scenario;
     run(&mut game_data, 1, &declared(&[]));
     assert!(!present(&game_data, 1));
-    assert!(!game_data.sightings.holds(1, here(), 0), "it left");
+    assert!(!game_data.sightings.holds(1, here()), "it left");
     assert!(
-        !game_data.sightings.holds(2, here(), 0),
+        !game_data.sightings.holds(2, here()),
         "empire 2 has no unit there to remember"
     );
 
@@ -511,9 +483,9 @@ fn memory_ends_when_the_empires_presence_does() {
     for (game_data, _) in years(&scenario, &enemies(), SEEDS) {
         if !present(&game_data, 1) {
             destroyed += 1;
-            assert!(!game_data.sightings.holds(1, here(), 0), "it died");
+            assert!(!game_data.sightings.holds(1, here()), "it died");
         } else {
-            assert!(game_data.sightings.knows(1, here(), 0, 2));
+            assert!(game_data.sightings.knows(1, here(), 2));
         }
     }
     assert!(destroyed > 20, "{destroyed} years destroyed the destroyer");
@@ -550,16 +522,13 @@ fn a_gap_in_presence_clears_the_memory_within_a_year() {
     let gap = relay(3, [9, 14]);
     assert_eq!(gap.fleets[1].sector, here(), "the second fleet arrived");
     assert_ne!(gap.fleets[0].sector, here(), "the first had left");
-    assert!(
-        !gap.sightings.holds(1, here(), 0),
-        "nobody was there between"
-    );
+    assert!(!gap.sightings.holds(1, here()), "nobody was there between");
 
     let overlap = relay(1, [9, 12]);
     assert_eq!(overlap.fleets[1].sector, here(), "the second fleet arrived");
     assert_ne!(overlap.fleets[0].sector, here(), "the first had left");
     assert!(
-        overlap.sightings.knows(1, here(), 0, 2),
+        overlap.sightings.knows(1, here(), 2),
         "somebody was always there"
     );
 }

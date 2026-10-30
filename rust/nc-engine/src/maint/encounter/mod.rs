@@ -121,21 +121,21 @@ fn build_units(game_data: &CoreGameData) -> Vec<Unit> {
 }
 
 /// Drop the sighting memory of every empire that has no fleet or starbase
-/// left in the sector and layer it remembers. The ticks keep this true as
-/// units move and die; this settles what happens outside them, in the
-/// orders phase and after the year (colonization, defections).
+/// left in the sector it remembers. The ticks keep this true as units move
+/// and die; this settles what happens outside them, in the orders phase and
+/// after the year (colonization, defections).
 pub(super) fn prune_sightings(game_data: &mut CoreGameData) {
     if game_data.sightings.is_empty() {
         return;
     }
-    let present: HashSet<(u8, [u8; 2], u8)> = build_units(game_data)
+    let present: HashSet<(u8, [u8; 2])> = build_units(game_data)
         .iter()
         .filter(|unit| unit.active)
-        .map(|unit| (unit.owner, unit.sector, unit.layer))
+        .map(|unit| (unit.owner, unit.sector))
         .collect();
     game_data
         .sightings
-        .retain(|viewer, sector, layer| present.contains(&(viewer, sector.to_array(), layer)));
+        .retain(|viewer, sector| present.contains(&(viewer, sector.to_array())));
 }
 
 /// What the year's ticks produced.

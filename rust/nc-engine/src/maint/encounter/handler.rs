@@ -91,27 +91,24 @@ impl Year<'_> {
     }
 
     /// Forget what an empire remembers where its units have left or died,
-    /// unless another of its units is still there: a viewer's sighting
-    /// memory lasts as long as it has a unit in the sector and layer.
+    /// unless another of its units is still in the sector: a viewer's
+    /// sighting memory lasts as long as it has a unit in the sector.
     fn settle_sightings(&mut self, game_data: &mut CoreGameData) {
         for presence in std::mem::take(&mut self.departed) {
-            let Presence {
-                empire,
-                sector,
-                layer,
-            } = presence;
-            let sector = Coords::from_array(sector);
-            if game_data.sightings.holds(empire, sector, layer) && !self.occupied(presence) {
-                game_data.sightings.forget(empire, sector, layer);
+            let Presence { empire, sector, .. } = presence;
+            if !self.in_sector(empire, sector) {
+                game_data
+                    .sightings
+                    .forget(empire, Coords::from_array(sector));
             }
         }
     }
 
-    /// Whether the empire has a unit in play at `presence`.
-    fn occupied(&self, presence: Presence) -> bool {
+    /// Whether `empire` has a unit in play anywhere in `sector`.
+    fn in_sector(&self, empire: u8, sector: [u8; 2]) -> bool {
         self.units
             .iter()
-            .any(|u| u.active && Presence::of(u) == presence)
+            .any(|u| u.active && u.owner == empire && u.sector == sector)
     }
 
     /// Fleet unit `unit`'s strike test passed: once it holds the orbit, it
@@ -328,15 +325,10 @@ impl Year<'_> {
     }
 
     /// Empires `a` and `b` fought in a sector and layer: each that has a
-    /// unit there remembers the other.
+    /// unit in the sector remembers the other.
     fn note_combat(&self, game_data: &mut CoreGameData, sector: [u8; 2], layer: u8, a: u8, b: u8) {
         for (viewer, opponent) in [(a, b), (b, a)] {
-            let presence = Presence {
-                empire: viewer,
-                sector,
-                layer,
-            };
-            if self.occupied(presence) {
+            if self.in_sector(viewer, sector) {
                 game_data
                     .sightings
                     .note(viewer, Coords::from_array(sector), layer, opponent);
@@ -808,9 +800,9 @@ impl Year<'_> {
     /// each side its empire's units in the sector and layer; nobody else
     /// joins. Every unit of each side becomes known (3, fought) to the
     /// other empire, and each empire remembers the other here. The attack
-    /// is a surprise when the defending empire had not sighted the
-    /// attacking one in this sector and layer, decided before the combat
-    /// adds to anyone's memory. Returns who held the field.
+    /// is a surprise when the defending empire has no starbase in this
+    /// sector and had not sighted the attacking one anywhere in it, decided
+    /// before the combat adds to anyone's memory. Returns who held the field.
     #[allow(clippy::too_many_arguments)]
     fn battle(
         &mut self,
@@ -824,9 +816,14 @@ impl Year<'_> {
     ) -> Option<u8> {
         let a = self.units[attacker];
         let sector = Coords::from_array(a.sector);
-        let surprise = !game_data
-            .sightings
-            .knows(defender_empire, sector, a.layer, a.owner);
+        // A starbase in the sector keeps its empire's forces there ready.
+        let watched = self.units.iter().any(|u| {
+            u.active
+                && u.kind == UnitKind::Base
+                && u.owner == defender_empire
+                && u.sector == a.sector
+        });
+        let surprise = !watched && !game_data.sightings.knows(defender_empire, sector, a.owner);
         self.note_combat(game_data, a.sector, a.layer, a.owner, defender_empire);
         for &unit in volunteers {
             self.awareness.raise(defender_empire, unit, 3);

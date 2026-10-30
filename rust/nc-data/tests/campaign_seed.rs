@@ -88,6 +88,6 @@ fn derived_seed_sees_sighting_memory() {
     }
 
     let mut forgotten = remembering(1, [4, 5], 1, 2);
-    forgotten.sightings.forget(1, Coords::from_array([4, 5]), 1);
+    forgotten.sightings.forget(1, Coords::from_array([4, 5]));
     assert_eq!(seed(&forgotten), seed(&game_data));
 }
