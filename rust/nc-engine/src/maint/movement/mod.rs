@@ -6,7 +6,7 @@ mod starbase;
 mod stepper;
 
 use super::{FleetRemovalRemapInfo, MovementEvents};
-use crate::{CoreGameData, Order, VisibleHazardIntel};
+use crate::{CoreGameData, Mission, Order, VisibleHazardIntel};
 use arrivals::{handle_fleet_arrival, handle_hostile_target_entry};
 pub(super) use starbase::BaseStep;
 pub(super) use stepper::TickEnd;
@@ -106,6 +106,13 @@ impl<'a> YearMovement<'a> {
             handle_hostile_target_entry(game_data, &mut self.events, fleet_idx, order_kind, target);
         }
         let end = test_arrival(game_data, &mut self.tracks[fleet_idx], fleet_idx, tick);
+        if let Some(week) = self.tracks[fleet_idx].climbed_out.take() {
+            for event in &mut self.events.pending_observation_events {
+                if event.fleet_idx == fleet_idx && event.kind == Mission::ViewWorld {
+                    event.exit_week = Some(week);
+                }
+            }
+        }
         if end == TickEnd::Resolved {
             handle_fleet_arrival(
                 game_data,

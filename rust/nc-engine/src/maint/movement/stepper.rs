@@ -74,6 +74,8 @@ pub(super) struct FleetTrack {
     /// A resolved View World climbing back out of the system (ECMAINT turns
     /// the order into a Move out at full speed, `0b5d:219c`).
     viewing_out: Option<OrderKey>,
+    /// The week a View World fleet finished climbing out, until taken.
+    pub(super) climbed_out: Option<u8>,
     pub(super) travel_speed: u8,
 }
 
@@ -209,6 +211,7 @@ pub(super) fn test_arrival(
             last_tick,
         ) {
             track.resolved = Some(key);
+            track.climbed_out = Some(tick);
         }
         return TickEnd::Underway;
     }

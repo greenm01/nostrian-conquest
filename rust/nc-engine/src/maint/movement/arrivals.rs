@@ -84,6 +84,7 @@ pub(super) fn handle_fleet_arrival(
                     target_coords: coords,
                     intel_event,
                     stardate_week: None,
+                    exit_week: None,
                 });
         }
         Order::ViewWorld => {
@@ -121,6 +122,7 @@ pub(super) fn handle_fleet_arrival(
                     target_coords: coords,
                     intel_event,
                     stardate_week: None,
+                    exit_week: None,
                 });
         }
         Order::Salvage => {

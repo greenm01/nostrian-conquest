@@ -475,6 +475,22 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
         }),
         "the Move out of the system resolves in the same year and reports"
     );
+    // The Move report is stamped with the week the climb out ended, after
+    // the viewing, as classic's are (12/3002, then 21/3002 in ec2.txt).
+    let week = |kind| {
+        events
+            .mission_events
+            .iter()
+            .find(|event| event.fleet_idx == 0 && event.kind == kind)
+            .and_then(|event| event.stardate_week)
+            .expect("the event has a week")
+    };
+    assert!(
+        week(Mission::MoveOnly) > week(Mission::ViewWorld),
+        "viewed in week {}, out in week {}",
+        week(Mission::ViewWorld),
+        week(Mission::MoveOnly)
+    );
 }
 
 #[test]

@@ -82,6 +82,8 @@ struct PendingObservationEvent {
     target_coords: [u8; 2],
     intel_event: Option<PlanetIntelEvent>,
     stardate_week: Option<u8>,
+    /// A View World fleet's week out of the system, when it got out.
+    exit_week: Option<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -846,7 +848,7 @@ fn finalize_pending_observation_events(
                 planet_idx: None,
                 location_coords: Some(pending.location_coords),
                 target_coords: Some(pending.target_coords),
-                stardate_week: pending.stardate_week,
+                stardate_week: pending.exit_week.or(pending.stardate_week),
             });
         }
     }
