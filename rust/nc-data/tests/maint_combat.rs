@@ -229,21 +229,21 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
 
     let post_target = &game_data.planets[13];
     assert_eq!(post_target.owner.0, pre_target.owner.0);
-    // Three-round bombardment: batteries absorb suppression fire in rounds 1-2.
-    // Armies are only hit if batteries reach 0 before round 3 (breakthrough).
+    // Batteries take every hit while they stand; armies are hit only once
+    // the last battery has fallen.
     assert!(
         u8::try_from(post_target.ground_batteries).unwrap_or(u8::MAX)
             <= u8::try_from(pre_target.ground_batteries).unwrap_or(u8::MAX),
         "batteries should be damaged or destroyed"
     );
     if post_target.ground_batteries == 0 {
-        // Breakthrough occurred: armies may have been reduced.
+        // The batteries fell: the hits behind them may have reached the armies.
         assert!(
             u8::try_from(post_target.armies).unwrap_or(u8::MAX)
                 <= u8::try_from(pre_target.armies).unwrap_or(u8::MAX)
         );
     } else {
-        // No breakthrough: armies are shielded.
+        // A battery still stands: the armies are shielded.
         assert_eq!(
             u8::try_from(post_target.armies).unwrap_or(u8::MAX),
             u8::try_from(pre_target.armies).unwrap_or(u8::MAX)

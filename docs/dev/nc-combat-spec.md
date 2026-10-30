@@ -519,25 +519,16 @@ fleet of that empire in orbit there under Bombard and ready to strike joins it
 as one force, sharing its losses as a battle side does, and does not strike
 again that year.
 
-**Batteries shield the stardock.** An exchange that begins with batteries
-standing hits batteries only: it cripples healthy batteries first, then, once
-every battery is crippled, destroys crippled ones, and the hits beyond what
-the batteries can take expire.
-Docked ships are exposed from the next exchange, the first one that begins
-with no batteries standing
-([combat decision 5](../notes/decisions/mk1ie4e3-batteries-shield-the-stardock-and-failed-landings-hold-orbit.md)).
-
-1. **Round 1 (Suppression):** If batteries stand, the attacker's hits go to
-   batteries only; otherwise they go to the stardock. Batteries fire back.
-   Armies, goods, and factories are shielded.
-2. **Round 2 (Suppression):** Same targeting by the batteries standing at the
-   start of the round. Batteries fire back again with whatever survives
-   round 1.
-3. **Round 3 (Breakthrough or continued suppression):** If batteries reached
-   zero before this round, attacker hits go to the stardock first and then
-   cascade into armies, stored goods, and factories. If batteries still
-   remain, this round is another suppression exchange --- batteries continue
-   to shield everything behind them and fire back.
+**Batteries shield the stardock.** Every round pours its hits down one
+target order: batteries (cripple every healthy one, then destroy the crippled
+ones), then the stardock, then armies, then stored goods and factories. A hit
+goes to the highest target still standing. While any battery stands, the hits
+the batteries cannot take expire, so nothing behind them is touched. Once the
+last battery falls, the rest of that round's hits go on to the stardock and
+below in the same round
+([combat decision 5](../notes/decisions/mk1ie4e3-batteries-shield-the-stardock-and-failed-landings-hold-orbit.md),
+amended 2026-10-30). Batteries fire back each round they stand. A world with
+no batteries takes all three rounds on its stardock and armies.
 
 #### Planetary Hit Costs
 Orbital hits are on the same 10x scale as fleet combat, so each target costs

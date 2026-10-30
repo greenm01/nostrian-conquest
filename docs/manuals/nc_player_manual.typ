@@ -1705,7 +1705,7 @@ transports turn for home.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 
-Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only. They cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. Hits beyond what the batteries can take are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's soft targets survive another turn.
+Each bombardment turn resolves three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield everything behind them. Once the last battery falls, the rest of that round's hits flow on down the line. A world with no batteries takes your fire on its stardock and armies from the first round.
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Orbital fire is far less effective than ship-to-ship fire: ships firing at dug-in guns read the bombardment table at a third of fleet strength. Guns firing at ships in orbit read it at full strength. A lone cruiser cannot level a fortified world in a single volley.
 
@@ -1994,18 +1994,19 @@ escorts' bombardment AS. It is focus fire aimed at the descending transports
 first: each transport destroyed costs `20` hits (2x its DS) and takes its army
 with it, and any hits left over fall on the escorts.
 
-Each bombardment turn runs three rounds. Batteries shield the stardock: an
-exchange that begins with batteries standing hits batteries only, and hits
-beyond what destroys them expire. Docked ships are exposed from the next
-exchange.
-- *Rounds 1--2 (Suppression):* While batteries stand at the start of the
-  round, attacker hits go to batteries only; with none standing, they go to
-  the stardock. Batteries fire back each round. Armies, stored goods, and
-  industry are shielded.
-- *Round 3 (Breakthrough):* If batteries reached zero before this round,
-  attacker hits go to the stardock, then cascade into armies, stored goods,
-  and industry. If batteries still stand, round 3 is another suppression
-  exchange.
+Each bombardment turn runs three rounds, and each round pours its hits down
+the same order of targets:
+
++ Ground batteries: cripple every healthy one, then destroy the crippled ones.
++ Ships in the stardock.
++ Armies.
++ Stored goods and factories.
+
+A hit goes to the highest target still standing. While any battery stands,
+the hits it cannot take are lost, so nothing below the batteries is touched.
+Once the last battery falls, the rest of the round's hits go on to the
+stardock and below in the same round. Batteries fire back each round they
+stand.
 
 Invasion suppresses for up to three rounds, as a bombardment does, but its
 hits strike the batteries only and never the stardock, armies, or industry. It

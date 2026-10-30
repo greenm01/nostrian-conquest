@@ -78,6 +78,18 @@ the batteries, and a failed landing or blocked Invade already ended on Hold
 with its report. Bombard's industrial rates are unchanged here; the economy
 task changes them.
 
+## Amendment (2026-10-30)
+
+The owner changed point 1 after a lone cruiser killed one army a year at an
+undefended world: rounds 1 and 2 hit only an empty stardock and wasted their
+fire. Every round now pours its hits down one order: batteries, stardock,
+armies, then stored goods and factories. Batteries still shield what lies
+behind them while any stands, but the hits left in the round that destroys
+the last one go on down the order, and there is no separate round-3
+breakthrough. The rule lives in `apply_planet_bombardment_damage`
+(`rust/nc-engine/src/maint/combat/assault.rs`). The owner chose the full
+spill over having batteries absorb the round in which they die.
+
 ## Acceptance and connections
 
 Accepted by the owner on 2026-10-10. Evidence: Codex's exact bombardment

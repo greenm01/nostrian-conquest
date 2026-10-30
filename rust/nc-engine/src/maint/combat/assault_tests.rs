@@ -10,8 +10,7 @@
 use nc_data::{Planet, Real48};
 
 use super::assault::{
-    apply_planet_bombardment_damage, apply_planet_suppression_damage, resolve_landing_battle,
-    resolve_seeded_landing,
+    apply_planet_bombardment_damage, resolve_landing_battle, resolve_seeded_landing,
 };
 use super::exchange::{COMBAT_KIND_BLITZ_GROUND, COMBAT_KIND_GROUND, landing_volley};
 
@@ -224,22 +223,26 @@ fn world(batteries: u16, armies: u16, destroyers: u32, battleships: u32) -> Plan
 }
 
 #[test]
-fn standing_batteries_take_every_hit_and_the_excess_expires() {
+fn hits_left_after_the_last_battery_falls_pour_down_the_hierarchy() {
     let mut planet = world(2, 10, 0, 1);
 
-    // 400 hits against two batteries: 132 cripple both, 132 destroy them,
-    // 136 expire, and the docked battleship (DS 110) would have died of them.
-    apply_planet_suppression_damage(&mut planet, 400);
+    // 400 hits against two batteries: 132 cripple both and 132 destroy them.
+    // The other 136 go on: 110 destroy the docked battleship (DS 110), and
+    // 26 destroy two armies (10 each).
+    apply_planet_bombardment_damage(&mut planet, 400);
     assert_eq!(planet.ground_batteries, 0);
     assert_eq!(planet.crippled_batteries, 0);
-    assert_eq!(planet.stardock.battleships, 1);
-    assert_eq!(planet.armies, 10);
-
-    // The next exchange begins with no batteries: the dock is exposed.
-    apply_planet_suppression_damage(&mut planet, 200);
     assert_eq!(planet.stardock.battleships, 0);
-    // Suppression never reaches the armies.
-    assert_eq!(planet.armies, 10);
+    assert_eq!(planet.armies, 8);
+}
+
+#[test]
+fn an_undefended_world_with_an_empty_dock_loses_armies_at_once() {
+    let mut planet = world(0, 22, 0, 0);
+
+    // A lone cruiser's round: 19 hits, one army and 9 to spare.
+    apply_planet_bombardment_damage(&mut planet, 19);
+    assert_eq!(planet.armies, 21);
 }
 
 #[test]
@@ -248,7 +251,7 @@ fn hits_short_of_the_last_battery_do_not_spill_onto_the_dock() {
 
     // 131 hits cripple one battery; the other 65 expire. Spilled onto the
     // dock they would have destroyed all five docked destroyers (DS 7).
-    apply_planet_suppression_damage(&mut planet, 131);
+    apply_planet_bombardment_damage(&mut planet, 131);
     assert_eq!(planet.ground_batteries, 3);
     assert_eq!(planet.crippled_batteries, 1);
     assert_eq!(planet.stardock.destroyers, 5);
@@ -259,10 +262,10 @@ fn batteries_are_all_crippled_before_any_is_destroyed() {
     let mut planet = world(3, 0, 0, 0);
 
     // 250 hits: 198 cripple all three, then 52 fall short of finishing one.
-    apply_planet_suppression_damage(&mut planet, 250);
+    apply_planet_bombardment_damage(&mut planet, 250);
     assert_eq!((planet.ground_batteries, planet.crippled_batteries), (3, 3));
     // Crippled batteries are finished for 66 hits each: two of three.
-    apply_planet_suppression_damage(&mut planet, 140);
+    apply_planet_bombardment_damage(&mut planet, 140);
     assert_eq!((planet.ground_batteries, planet.crippled_batteries), (1, 1));
 }
 

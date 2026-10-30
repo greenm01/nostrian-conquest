@@ -250,18 +250,6 @@ fn stardock_summary_diff(
     }
 }
 
-/// Suppression damage. Batteries shield the stardock (combat decision 5): an
-/// exchange that begins with batteries standing hits them only, and the hits
-/// beyond what destroys them expire. Once none stand, the exchange hits the
-/// stardock. Armies, stored goods, and factories are shielded either way.
-pub(super) fn apply_planet_suppression_damage(planet: &mut nc_data::Planet, hits: u32) {
-    if planet.ground_batteries > 0 {
-        apply_battery_hits(planet, hits);
-    } else {
-        reduce_stardock(planet, hits);
-    }
-}
-
 fn apply_capped_invasion_soften_damage(
     planet: &mut nc_data::Planet,
     hits: u32,
@@ -279,11 +267,17 @@ fn apply_capped_invasion_soften_damage(
     army_loss
 }
 
-/// The breakthrough exchange, which only an exchange that begins with no
-/// batteries standing can be: stardock -> armies -> stored goods -> factories.
-/// Units cost their DS in hits; hits reaching goods and factories are scaled
-/// down from the 10x combat scale before the per-unit conversion.
+/// One bombardment exchange. Every hit goes to the highest target still
+/// standing: batteries -> stardock -> armies -> stored goods and factories.
+/// While any battery stands, the hits it does not take expire, so batteries
+/// shield everything behind them. Units cost their DS in hits; hits reaching
+/// goods and factories are scaled down from the 10x combat scale before the
+/// per-unit conversion.
 pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
+    let hits = apply_battery_hits(planet, hits);
+    if planet.ground_batteries > 0 {
+        return;
+    }
     let mut hits = reduce_stardock(planet, hits);
 
     let army_loss =
@@ -668,17 +662,11 @@ pub(crate) fn resolve_strike(
                     ^ u64::from(coords[1]),
             );
 
-            // Three-round bombardment: rounds 1-2 suppression, round 3 breakthrough if batteries cleared.
+            // Three rounds; each pours its hits down the target hierarchy.
             for round in 1..=3u32 {
                 let attack_as = bombard_attack_as(&fleet_state);
                 if attack_as == 0 {
                     break; // fleet has no bombardment capability left
-                }
-                let batteries_at_round_start =
-                    u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX);
-                let is_breakthrough = round == 3 && batteries_at_round_start == 0;
-                if is_breakthrough {
-                    breakthrough = true;
                 }
 
                 let defense_as = battery_attack_as(&game_data.planets[planet_idx]);
@@ -722,13 +710,9 @@ pub(crate) fn resolve_strike(
                     fleet_state = fleet_state_from_records(game_data, &fleets, &[]);
                 }
 
-                // Apply planet damage: suppression or breakthrough.
                 let hits = scalar_hits_with_critical(attacker_exchange);
-                if is_breakthrough {
-                    apply_planet_bombardment_damage(&mut game_data.planets[planet_idx], hits);
-                } else {
-                    apply_planet_suppression_damage(&mut game_data.planets[planet_idx], hits);
-                }
+                apply_planet_bombardment_damage(&mut game_data.planets[planet_idx], hits);
+                breakthrough |= game_data.planets[planet_idx].ground_batteries == 0;
             }
 
             let post_planet = &game_data.planets[planet_idx];
