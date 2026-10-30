@@ -412,11 +412,11 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     }
     loop {
         let (new_merge_events, remap_info) = merging::process_mission_fleet_merging(game_data)?;
-        if new_merge_events.is_empty() {
-            break;
+        if !new_merge_events.is_empty() {
+            refs.merge_events.extend(new_merge_events.iter().copied());
+            refs.remap(&remap_info.fleet_indices);
         }
-        refs.merge_events.extend(new_merge_events.iter().copied());
-        refs.remap(&remap_info.fleet_indices);
+        // Run even with no merge: a host destroyed this year aborts its joiners.
         let new_join_host_events = merging::process_join_host_updates(
             game_data,
             &new_merge_events,
@@ -427,7 +427,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             .iter()
             .any(|event| matches!(event, JoinMissionHostEvent::Retargeted { .. }));
         refs.join_host_events.extend(new_join_host_events);
-        if !had_retargets {
+        if new_merge_events.is_empty() || !had_retargets {
             break;
         }
     }

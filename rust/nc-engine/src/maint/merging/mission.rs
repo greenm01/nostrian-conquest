@@ -2,7 +2,7 @@ use super::super::{FleetMergeEvent, JoinMissionHostEvent, Mission};
 use super::helpers::{merge_fits_host, merge_one_fleet_into_host};
 use crate::navigation::motion::target_depth;
 use crate::{CoreGameData, Order, maint::FleetRemovalRemapInfo};
-use nc_data::{Coords, troop_transports};
+use nc_data::{Coords, has_any_force, troop_transports};
 
 pub(super) fn process_mission_fleet_merging(
     game_data: &mut CoreGameData,
@@ -38,7 +38,12 @@ pub(super) fn process_mission_fleet_merging(
         let Some(&host_idx) = fleet_lookup.get(&(joiner_owner, host_number)) else {
             continue;
         };
-        if host_idx == joiner_idx || to_remove[host_idx] {
+        // A host destroyed this year keeps its empty record until next
+        // turn's cull; joining it would revive its number and its order.
+        if host_idx == joiner_idx
+            || to_remove[host_idx]
+            || !has_any_force(&game_data.fleets[host_idx])
+        {
             continue;
         }
         let same_coords = game_data.fleets[host_idx].sector.to_array() == joiner_coords;

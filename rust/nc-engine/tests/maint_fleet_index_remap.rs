@@ -4,7 +4,7 @@
 
 use nc_data::{
     ColonizationResolvedEvent, Coords, CoreGameData, Fleet, GameStateBuilder, JoinMissionHostEvent,
-    Mission, MissionOutcome, Order, set_planet_name,
+    Mission, MissionOutcome, Order, has_any_force, set_planet_name,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -353,4 +353,60 @@ fn arrival_report_week_is_the_tick_the_order_resolves() {
     // The report carries the tick the Move resolved, as classic's do: the
     // fleet enters (6,4) on tick 26.
     assert_eq!(arrival.stardate_week, Some(26));
+}
+
+#[test]
+fn joiners_hold_when_their_host_dies_bombarding() {
+    let mut game_data = baseline();
+    let fortress = [6, 6];
+    place_world(&mut game_data, 10, fortress, 2);
+    game_data.planets[10].ground_batteries = 20;
+    // Fleet 2 (index 1), one destroyer, bombards the fortress and dies in orbit.
+    order_fleet(
+        &mut game_data,
+        1,
+        fortress,
+        Order::BombardWorld,
+        fortress,
+        6,
+    );
+    let host = &mut game_data.fleets[1];
+    (host.ships.cruisers, host.ships.destroyers) = (0, 1);
+    host.ships.etacs = 0;
+    // Fleet 1 (index 0) waits for it in deep space over the fortress.
+    order_fleet(
+        &mut game_data,
+        0,
+        fortress,
+        Order::JoinAnotherFleet,
+        fortress,
+        0,
+    );
+    game_data.fleets[0].mission_target = 2;
+    let joiner_cruisers = game_data.fleets[0].ships.cruisers;
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert!(
+        events.fleet_merge_events.is_empty(),
+        "{:?}",
+        events.fleet_merge_events
+    );
+    let joiner = fleet_by_number(&game_data, 1, 1);
+    assert_eq!(joiner.order, Order::HoldPosition);
+    assert_eq!(joiner.ships.cruisers, joiner_cruisers);
+    // The dead host's empty record waits for next turn's cull.
+    assert!(
+        !game_data
+            .fleets
+            .iter()
+            .any(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2 && has_any_force(fleet))
+    );
+    assert!(events.join_host_events.iter().any(|event| matches!(
+        event,
+        JoinMissionHostEvent::HostDestroyed {
+            owner_empire: 1,
+            ..
+        }
+    )));
 }
