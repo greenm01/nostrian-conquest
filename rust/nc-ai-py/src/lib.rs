@@ -4,8 +4,8 @@
 //! the masks describe. Games run with the GIL released.
 
 use nc_ai::{
-    BatchActions, BatchEnv, BatchGoals, Families, MatchResult, Seat, SeatPolicy, Table, Tensor,
-    Weights,
+    BatchActions, BatchEnv, BatchGoals, Families, MatchResult, Seat, SeatPolicy, StoredPosition,
+    Table, Tensor, Weights, load_position,
 };
 use nc_data::TurnSubmission;
 use numpy::{Element, PyArray1, PyArrayMethods, PyReadonlyArrayDyn};
@@ -21,6 +21,42 @@ struct Env {
     threads: usize,
     limit_credit: f32,
     batch: Option<BatchEnv>,
+}
+
+/// Each game's stored start, every distinct `(path, year)` loaded once. No
+/// starts at all means every game starts fresh.
+fn stored_starts(
+    starts: Vec<Option<(String, u16)>>,
+    games: usize,
+    players: u8,
+) -> PyResult<Vec<Option<StoredPosition>>> {
+    if starts.is_empty() {
+        return Ok(vec![None; games]);
+    }
+    if starts.len() != games {
+        return Err(PyValueError::new_err("starts must hold one entry per game"));
+    }
+    let mut loaded: std::collections::HashMap<(String, u16), StoredPosition> = Default::default();
+    starts
+        .into_iter()
+        .map(|start| {
+            let Some((path, year)) = start else {
+                return Ok(None);
+            };
+            if !loaded.contains_key(&(path.clone(), year)) {
+                let position = load_position(std::path::Path::new(&path), year)
+                    .map_err(|err| PyValueError::new_err(format!("{path}: {err}")))?;
+                if position.game_data.conquest.player_count != players {
+                    return Err(PyValueError::new_err(format!(
+                        "{path} is a game of {} players, not {players}",
+                        position.game_data.conquest.player_count
+                    )));
+                }
+                loaded.insert((path.clone(), year), position);
+            }
+            Ok(Some(loaded[&(path, year)].clone()))
+        })
+        .collect()
 }
 
 #[pymethods]
@@ -55,13 +91,17 @@ impl Env {
     /// default. A personality (t167) names its style's executor, and
     /// `strategist`, `hybrid:...` and `executor` take a style as
     /// `@NAME`, e.g. `hybrid:strike@rusher`; the default is `land-grab`.
-    #[pyo3(signature = (map_seeds, campaign_seeds = None, seats = None))]
+    /// `starts` gives each game `None` or `(path, year)`: play on from that
+    /// year of the stored game database at `path`, with its own campaign
+    /// seed, its years already played counting toward `years`.
+    #[pyo3(signature = (map_seeds, campaign_seeds = None, seats = None, starts = None))]
     fn reset(
         &mut self,
         py: Python<'_>,
         map_seeds: Vec<u64>,
         campaign_seeds: Option<Vec<u64>>,
         seats: Option<Vec<Vec<String>>>,
+        starts: Option<Vec<Option<(String, u16)>>>,
     ) -> PyResult<()> {
         let campaign_seeds = campaign_seeds.unwrap_or_else(|| map_seeds.clone());
         if campaign_seeds.len() != map_seeds.len() {
@@ -85,13 +125,15 @@ impl Env {
                 "seats must hold one lineup per game and one name per seat",
             ));
         }
+        let starts = stored_starts(starts.unwrap_or_default(), map_seeds.len(), self.players)?;
         let (players, years, threads) = (self.players, self.years, self.threads);
         let mut batch = py.detach(|| {
-            BatchEnv::new(
+            BatchEnv::with_starts(
                 players,
                 &map_seeds,
                 &campaign_seeds,
                 &lineups,
+                &starts,
                 years,
                 threads,
             )

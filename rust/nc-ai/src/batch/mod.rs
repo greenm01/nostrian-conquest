@@ -46,6 +46,7 @@ use crate::executor::{
     Families, Weights, execute_goals, fleet_family, hand_to_network, network_joins, plan_goals,
 };
 use crate::game::SeatedGame;
+use crate::stored::StoredPosition;
 use crate::goals::{GoalMasks, Goals, goal_masks};
 use crate::observe::{
     CONTACT_WIDTH, FLEET_WIDTH, GLOBAL_WIDTH, Observation, PLANET_WIDTH, STARBASE_WIDTH,
@@ -261,6 +262,23 @@ impl BatchEnv {
         years: u16,
         threads: usize,
     ) -> Self {
+        let starts = vec![None; map_seeds.len()];
+        Self::with_starts(players, map_seeds, campaign_seeds, lineups, &starts, years, threads)
+    }
+
+    /// [`BatchEnv::new`], with game `i` played on from `starts[i]` when it
+    /// is set: a stored year of a played game, which keeps its own campaign
+    /// seed and counts its years already played toward `years`.
+    pub fn with_starts(
+        players: u8,
+        map_seeds: &[u64],
+        campaign_seeds: &[u64],
+        lineups: &[Vec<Seat>],
+        starts: &[Option<StoredPosition>],
+        years: u16,
+        threads: usize,
+    ) -> Self {
+        assert_eq!(map_seeds.len(), starts.len(), "one start per map seed");
         assert_eq!(
             map_seeds.len(),
             campaign_seeds.len(),
@@ -288,13 +306,25 @@ impl BatchEnv {
                     _ => Policy::Aggressor,
                 })
                 .collect();
-            let game = seated_game(map_seeds[idx], policies, campaign_seeds[idx], years);
+            let (game, start_year) = match &starts[idx] {
+                Some(start) => (start.seated_game(), start.start_year),
+                None => {
+                    let game = seated_game(map_seeds[idx], policies, campaign_seeds[idx], years);
+                    let year = game.play.built.game_data.conquest.game_year;
+                    (game, year)
+                }
+            };
+            assert_eq!(
+                game.play.built.game_data.conquest.player_count, players,
+                "a stored start has the batch's players"
+            );
+            let years_played = game.play.built.game_data.conquest.game_year - start_year;
             let mut new = Slot {
-                start_year: game.play.built.game_data.conquest.game_year,
+                start_year,
                 game,
                 lineup,
                 choices: aggressor_choices(map_seeds[idx]),
-                years_played: 0,
+                years_played,
                 masks: Vec::new(),
                 goal_masks: Vec::new(),
                 result: None,

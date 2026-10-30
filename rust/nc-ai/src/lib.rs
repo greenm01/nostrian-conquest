@@ -24,6 +24,7 @@ mod memory;
 mod observe;
 mod personality;
 mod replay;
+mod stored;
 
 pub use action::{
     BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_EXECUTOR, BUILD_SLOTS, DETACH_CHOICES, DETACHES,
@@ -52,3 +53,4 @@ pub use personality::{
     personality_or_file,
 };
 pub use replay::{match_game, replay};
+pub use stored::{StoredPosition, load_position};

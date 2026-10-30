@@ -28,6 +28,26 @@ impl CampaignStore {
         super::snapshot_core::load_snapshot_game_data(&mut conn, snapshot_id)
     }
 
+    /// Every stored year's snapshot id and year, oldest first.
+    pub fn snapshot_years(&self) -> Result<Vec<(i64, u16)>, CampaignStoreError> {
+        let conn = self.connection()?;
+        let mut stmt = conn.prepare("SELECT id, game_year FROM snapshots ORDER BY game_year")?;
+        let years = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get::<_, i64>(1)? as u16)))?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(years)
+    }
+
+    /// The player lifecycle states saved with `snapshot_id`.
+    pub fn load_snapshot_player_lifecycle_states(
+        &self,
+        snapshot_id: i64,
+        player_count: u8,
+    ) -> Result<Vec<PlayerLifecycleState>, CampaignStoreError> {
+        let conn = self.connection()?;
+        super::player_lifecycle::load_player_lifecycle_rows(&conn, snapshot_id, player_count)
+    }
+
     /// Includes hidden reports so a later save preserves their stored history.
     pub fn load_latest_runtime_state(
         &self,

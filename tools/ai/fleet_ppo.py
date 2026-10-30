@@ -35,6 +35,11 @@ greedily against three executors from the position's map until
 ``--start-lead`` years before the fall (2 by default), and the learner plays on from there. The learner trains
 only on the years it played.
 
+``--stored-starts FILE`` plays ``--stored-share`` of each iteration's
+games on from positions of games people played (``stored_starts.py``): the
+learner takes the entry's seat at once, against three executors, and the
+game's years already played count toward ``--years``.
+
 ``--free-heads join,unload`` (t191) lets fleet heads that imitation never
 saw used leave their start: they are left out of the KL penalty, and the
 entropy of whether they act at all earns ``--free-entropy`` (see
@@ -323,6 +328,23 @@ def place_starts(rng, starts, games, learner, warm_role, names, roles, maps, lea
         roles[game, start["seat"]] = warm_role
         handover[game] = max(0, start["year"] - lead)
     return handover
+
+
+def place_stored(rng, stored, games, learner, names, roles):
+    """Turn the first ``games`` lineups into games played on from stored
+    positions (``stored_starts.py``): the learner takes the entry's seat at
+    once, against three executors. Returns every game's ``(db, year)``
+    start, None for the rest."""
+    env_starts = [None] * len(names)
+    for game in range(games):
+        start = stored[rng.integers(len(stored))]
+        lineup = ["executor"] * PLAYERS
+        lineup[start["seat"]] = learner
+        names[game] = lineup
+        roles[game] = 0
+        roles[game, start["seat"]] = 1
+        env_starts[game] = (start["db"], start["year"])
+    return env_starts
 
 
 def play_year(env, model, strategist, roles, done, families, dev, greedy=False, target=None,
@@ -732,6 +754,10 @@ def main():
                         help="hand a start position over this many years before its fall")
     parser.add_argument("--start-share", type=float, default=0.25,
                         help="the share of games replayed from a start position")
+    parser.add_argument("--stored-starts",
+                        help="positions of played games from stored_starts.py")
+    parser.add_argument("--stored-share", type=float, default=0.25,
+                        help="the share of games played on from a stored position")
     parser.add_argument("--resume", action="store_true",
                         help="continue the run saved in --out")
     parser.add_argument("--upgo", type=float, default=0.0,
@@ -771,6 +797,9 @@ def main():
     if starts and (target is not None or not args.start_model):
         raise SystemExit("--starts needs --start-model and does not mix with --exploit")
     warm = load_fleet_agent(args.start_model, dev) if starts else None
+    stored = json.loads(Path(args.stored_starts).read_text()) if args.stored_starts else None
+    if stored and (starts or target is not None):
+        raise SystemExit("--stored-starts does not mix with --starts or --exploit")
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years, args.threads, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
@@ -814,9 +843,15 @@ def main():
             frozen = frozen + [warm]
             if league:
                 drawn[2][:placed] = -1  # replays, not league games
+        env_starts = None
+        if stored:
+            placed = round(args.stored_share * args.games)
+            env_starts = place_stored(rng, stored, placed, learner, names, roles)
+            if league:
+                drawn[2][:placed] = -1  # stored games, not league games
         # The roles once every seat is handed over.
         learning = np.where(roles == 3 + len(frozen) - 1, 1, roles) if starts else roles.copy()
-        env.reset(maps, seats=names)
+        env.reset(maps, seats=names, starts=env_starts)
         model.eval()
         steps, done, env_s = [], np.zeros(args.games, bool), 0.0
         # Each game's learner win share, averaged over its learner seats.

@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np  # noqa: E402
 
-from fleet_ppo import League, act_entropy, choose_lineups, place_starts, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
+from fleet_ppo import League, act_entropy, choose_lineups, place_starts, place_stored, categorical_kl, coverage, ema_toward, lead_potential, smoothed_kl, upgo_advantages  # noqa: E402
 
 
 class ActEntropyTest(unittest.TestCase):
@@ -124,6 +124,18 @@ class PlaceStartsTest(unittest.TestCase):
         handover = place_starts(np.random.default_rng(0), starts, 1, "hybrid:strike", 5,
                                 names, roles, [10, 11], lead=5)
         self.assertEqual(handover.tolist(), [3, 0])
+
+
+class PlaceStoredTest(unittest.TestCase):
+    def test_stored_games_take_the_first_games_with_the_learner_in_the_seat(self):
+        names, roles = choose_lineups(np.random.default_rng(0), 3, "hybrid:strike")
+        stored = [{"db": "/games/crunch-ai-2026-10-30.db", "year": 3040, "seat": 0,
+                   "human": True}]
+        starts = place_stored(np.random.default_rng(0), stored, 2, "hybrid:strike", names, roles)
+        self.assertEqual(starts, [("/games/crunch-ai-2026-10-30.db", 3040)] * 2 + [None])
+        for game in (0, 1):
+            self.assertEqual(names[game], ["hybrid:strike", "executor", "executor", "executor"])
+            self.assertEqual(roles[game].tolist(), [1, 0, 0, 0])
 
 
 if __name__ == "__main__":

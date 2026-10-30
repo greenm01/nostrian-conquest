@@ -1640,6 +1640,38 @@ the AI's losses mined. A retrained agent passes the t165 readiness gate
 again, and wins more often against the human-style model than the agent it
 replaces.
 
+**Progress (2026-10-30): positions from door games.** The owner's crunch lab
+game (`crunch-ai-2026-10-30.db`, Empire 1 human, Empires 2–4 AI seats,
+Empire 1 fell in 3046) is the first human game kept for this. Game copies
+are named as in [game history backups](../../dev/game-history-backups.md).
+
+- **Stored starts.**
+  - `nc_ai::load_position(db, year)` loads a stored year (state, campaign
+    seed, lifecycle, and each seat's planet intel; contacts are not stored
+    per year). `BatchEnv::with_starts` plays on from it, and the years
+    already played count toward the limit.
+  - `Env.reset(..., starts=[(db, year) | None])` exposes it to Python.
+  - `stored_starts.py` picks the 15 years before each seat's fall, or every
+    5th year, and `fleet_ppo.py --stored-starts FILE --stored-share S` trains
+    from them.
+  - A two-iteration smoke run trained from the lab game.
+- **Review.** `human_review.py GAME.db AGENT.pt` rates every seat by year
+  and compares the agent's orders with the human's.
+  - `fleet-final` rated Empire 1 at 0.62 in 3021 with 7 worlds, below 0.20
+    from 3028, and at 0.03 or less from 3040. The game was lost about 15
+    years before the fall.
+  - In 3046 the agent would have kept the 1st Fleet (43 ships, 8 loaded
+    transports) home at Benedict instead of sending it to bombard (7,8).
+- **What door games do not store.**
+  - A door player's orders are written into the year's snapshot, so the
+    stored year holds them. AI seats order inside maintenance, and their
+    turns are not saved anywhere.
+  - The year before the orders therefore cannot be rebuilt: replaying a
+    year needs the AI seats' turns. So human orders cannot yet be separated
+    from the position they were given in.
+  - Imitating human turns needs the AI seats' turns logged with each
+    maintenance run. This is open with the owner.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.
