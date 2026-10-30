@@ -1515,7 +1515,11 @@ impl App {
             .fleet_order_selected_row()
             .map(|row| vec![row])
             .unwrap_or_default();
-        self.recommended_fleet_target(mission_code, &selected, BTreeSet::new())
+        let records = selected
+            .iter()
+            .map(|row| row.fleet_record_index_1_based)
+            .collect();
+        self.recommended_fleet_target(mission_code, &selected, records)
     }
 
     pub(crate) fn fleet_order_default_target_coords(&self) -> Option<[u8; 2]> {

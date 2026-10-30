@@ -5476,3 +5476,83 @@ fn fleet_change_speed_updates_current_speed_inline() {
         .expect("fleet #4 should exist");
     assert_eq!(fleet.speed, 0);
 }
+
+#[test]
+fn fleet_order_salvage_defaults_to_the_nearest_owned_world() {
+    let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
+    let mut state = latest_runtime_state(&fixture_dir);
+    let worlds = state
+        .game_data
+        .planets
+        .iter()
+        .filter(|planet| planet.owner.0 == 1)
+        .map(|planet| planet.sector.to_array())
+        .collect::<Vec<_>>();
+    // The world listed last, not the homeworld listed first, is beside the fleet.
+    let near = *worlds.last().expect("player 1 owns two worlds");
+    assert_ne!(near, worlds[0]);
+    let fleet = state
+        .game_data
+        .fleets
+        .iter_mut()
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
+        .expect("fleet should exist");
+    fleet.sector = nc_data::Coords::from_array(near);
+    nc_data::set_fleet_at_rest(fleet);
+    save_runtime_state(&fixture_dir, &state);
+
+    let mut app = load_player_1_app(&fixture_dir);
+    open_order_mission_picker_from_fleet_menu(&mut app, Some(1));
+    submit_mission_code(&mut app, "15");
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("salvage target should render");
+    assert!(
+        line_containing(&terminal, "Target XX [")
+            .contains(&format!("Target XX [{:02}] <Q> ->", near[0])),
+        "{:?}",
+        terminal.lines
+    );
+}
+
+#[test]
+fn fleet_order_seek_home_picks_the_nearest_owned_world_not_the_first() {
+    let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
+    let mut state = latest_runtime_state(&fixture_dir);
+    let worlds = state
+        .game_data
+        .planets
+        .iter()
+        .filter(|planet| planet.owner.0 == 1)
+        .map(|planet| planet.sector.to_array())
+        .collect::<Vec<_>>();
+    let near = *worlds.last().expect("player 1 owns two worlds");
+    let fleet = state
+        .game_data
+        .fleets
+        .iter_mut()
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
+        .expect("fleet should exist");
+    // One sector off the near world, in deep space.
+    fleet.sector =
+        nc_data::Coords::from_array([near[0], if near[1] > 1 { near[1] - 1 } else { 2 }]);
+    nc_data::set_fleet_at_rest(fleet);
+    save_runtime_state(&fixture_dir, &state);
+
+    let mut app = load_player_1_app(&fixture_dir);
+    open_order_mission_picker_from_fleet_menu(&mut app, Some(1));
+    submit_mission_code(&mut app, "2");
+    confirm_fleet_order(&mut app, true);
+
+    let state = latest_runtime_state(&fixture_dir);
+    let fleet = state
+        .game_data
+        .fleets
+        .iter()
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
+        .expect("fleet should still exist");
+    assert_eq!(fleet.order.code(), 2);
+    assert_eq!(fleet.target.to_array(), near);
+}
