@@ -759,6 +759,7 @@ pub fn push_roe_entries(
                 target_fleet_number,
                 enemy_initial,
                 retreat_target_coords,
+                resumed,
                 losses_sustained,
                 enemy_losses_inflicted,
                 reason,
@@ -776,13 +777,12 @@ pub fn push_roe_entries(
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
-                        "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we withdrew toward System({},{}) {}. {}",
+                        "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we {} {}. {}",
                         classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         fleet_force_summary(enemy_initial, 0),
                         withdrawal_reason_clause(reason),
-                        retreat_target_coords[0],
-                        retreat_target_coords[1],
+                        withdrawal_heading(game_data, retreat_target_coords, resumed),
                         loss_clause,
                         enemy_losses_sentence(enemy_losses_inflicted),
                     )
@@ -799,6 +799,7 @@ pub fn push_roe_entries(
                 target_fleet_number,
                 enemy_initial,
                 retreat_target_coords,
+                resumed,
                 losses_sustained,
                 enemy_losses_inflicted,
                 reason,
@@ -816,13 +817,12 @@ pub fn push_roe_entries(
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
-                        "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We withdrew toward System({},{}) {}. {}",
+                        "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We {} {}. {}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         withdrawal_reason_clause(reason),
                         classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(enemy_initial, 0),
-                        retreat_target_coords[0],
-                        retreat_target_coords[1],
+                        withdrawal_heading(game_data, retreat_target_coords, resumed),
                         loss_clause,
                         enemy_losses_sentence(enemy_losses_inflicted),
                     )
@@ -854,4 +854,23 @@ pub fn push_roe_entries(
             narrative_phase: narrative_phase_for_report_text(&body),
         });
     }
+}
+
+/// Where a fleet that left a battle headed: home, or on toward its own
+/// target when it broke off en route and carried on.
+fn withdrawal_heading(game_data: &CoreGameData, coords: [u8; 2], resumed: bool) -> String {
+    let [x, y] = coords;
+    if !resumed {
+        return format!("withdrew toward System({x},{y})");
+    }
+    let place = if game_data
+        .planets
+        .iter()
+        .any(|p| p.sector.to_array() == coords)
+    {
+        "System"
+    } else {
+        "Sector"
+    };
+    format!("broke away and continued toward {place}({x},{y})")
 }

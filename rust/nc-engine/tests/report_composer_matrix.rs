@@ -164,6 +164,7 @@ fn roe_retreat_and_abort_merge_into_one_report() {
                 ..ShipLosses::default()
             },
             retreat_target_coords: [5, 5],
+            resumed: false,
             losses_sustained: ShipLosses {
                 destroyers: 1,
                 ..ShipLosses::default()

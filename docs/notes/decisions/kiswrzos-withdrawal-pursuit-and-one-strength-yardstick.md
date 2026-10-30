@@ -142,3 +142,30 @@ and the models in `tools/combat-model/`. Source synthesis:
 Refines [NC combat stays](b5u6lekb-rust-keeps-its-own-combat-system.md) and
 partly supersedes [the engagement ADR](gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md)
 (its willingness clause).
+
+## Amendment (2026-10-30): fleets met en route carry on, and routes avoid contacts
+
+The owner's live game: an unescorted transport fleet on Join met a one-
+destroyer picket in empty space on its way, broke off under pursuit fire,
+and was put on Seek Home. Re-ordered each year, it met the same picket and
+lost a transport every time. The owner called the break-off right but the
+Seek Home wrong: the fleet should carry on to join its host.
+
+- **Carry on en route.** A fleet that loses the field or breaks off before it
+  reaches its target sector keeps its order, on a moving order and with the
+  ships its mission needs, at no more than its new top speed. It takes the
+  pursuit first and stays in its escape episode. A fleet beaten at its own
+  target, or one that lost the ships its mission needs, still seeks home.
+  Owner's choice among en route only, every order, and non-combat orders.
+- **Enemy contacts steer routes.** Each empire keeps the sectors where its
+  units sighted or fought another empire's units, with the year, in the
+  sighting memory (`snapshot_contacts`). Unlike the surprise memory it
+  outlives the empire's presence, but it counts for two years of movement
+  and then expires, since a sighted fleet may have been passing through.
+  Routing adds a contact sector's cost beside known enemy worlds.
+- **Every travelling order routes.** Bombard, Invade, Blitz, Guard/Blockade,
+  Guard Starbase and Salvage now use the hazard-aware route on their
+  approach, like Move and Join; the target sector itself is never avoided.
+
+The player manual (Movement and Arrival, Withdrawal and Retreat) and the
+combat spec (step 6, Retreat) carry the rules.

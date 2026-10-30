@@ -12,9 +12,63 @@ use super::support::{DEEP_SPACE, Ships, diplomacy, empty_board, place_fleet};
 /// Transports attacked by a destroyer take the compulsory exchange and
 /// leave. A destroyer (speed 6) catches transports (speed 5) for certain,
 /// so one pursuit exchange follows and no more: two volleys of at most 10
-/// execution hits destroy at most one transport, which costs 20.
+/// execution hits destroy at most one transport, which costs 20. Met on the
+/// way, they carry on toward their target with their order.
 #[test]
 fn unarmed_survivors_escape_after_one_exchange_and_one_pursuit() {
+    let (game_data, events) = transports_caught_by_a_destroyer([7, 8]);
+
+    assert_eq!(game_data.fleets[4].order, Order::MoveOnly);
+    assert_eq!(game_data.fleets[4].target.to_array(), [7, 8]);
+    // Empire 2 now routes around where it met the destroyer.
+    let year = game_data.conquest.game_year;
+    assert!(
+        game_data
+            .sightings
+            .recent_contacts(2, year)
+            .any(|sector| sector.to_array() == DEEP_SPACE)
+    );
+    assert!(
+        events
+            .encounter_disposition_events
+            .iter()
+            .any(|event| matches!(
+                event,
+                EncounterDispositionEvent::PursuitFire {
+                    fleet_idx: 4,
+                    resumed: true,
+                    ..
+                }
+            ))
+    );
+}
+
+/// Transports beaten at their own target go home, as before.
+#[test]
+fn unarmed_survivors_beaten_at_their_target_seek_home() {
+    let (game_data, events) = transports_caught_by_a_destroyer(DEEP_SPACE);
+
+    assert_eq!(game_data.fleets[4].order, Order::SeekHome);
+    assert!(
+        events
+            .encounter_disposition_events
+            .iter()
+            .any(|event| matches!(
+                event,
+                EncounterDispositionEvent::PursuitFire {
+                    fleet_idx: 4,
+                    resumed: false,
+                    ..
+                }
+            ))
+    );
+}
+
+/// A destroyer of empire 1 meets 200 transports of empire 2, on Move to
+/// `transport_target`, in deep space.
+fn transports_caught_by_a_destroyer(
+    transport_target: [u8; 2],
+) -> (CoreGameData, nc_data::MaintenanceEvents) {
     let mut game_data = empty_board(4, 0);
     place_fleet(
         &mut game_data,
@@ -35,7 +89,7 @@ fn unarmed_survivors_escape_after_one_exchange_and_one_pursuit() {
         2,
         DEEP_SPACE,
         Order::MoveOnly,
-        [7, 8],
+        transport_target,
         Ships {
             tt: 200,
             ..Ships::default()
@@ -49,7 +103,6 @@ fn unarmed_survivors_escape_after_one_exchange_and_one_pursuit() {
 
     assert_eq!(game_data.fleets[0].ships.destroyers, 1);
     assert!(troop_transports(&game_data.fleets[4]) >= 199);
-    assert_eq!(game_data.fleets[4].order, Order::SeekHome);
     assert!(
         events
             .fleet_battle_events
@@ -75,6 +128,7 @@ fn unarmed_survivors_escape_after_one_exchange_and_one_pursuit() {
                 }
             ))
     );
+    (game_data, events)
 }
 
 #[test]

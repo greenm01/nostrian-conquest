@@ -950,6 +950,7 @@ fn build_encounter_preview(
                     target_fleet_number: Some(DEFENDER_FLEET_NUMBER),
                     enemy_initial: enemy.to_ship_losses(),
                     retreat_target_coords: retreat_coords(world.target_coords),
+                    resumed: false,
                     losses_sustained: ShipLosses {
                         destroyers: u32::from(rng.range_u8(0, 1)),
                         transports: u32::from(rng.range_u8(0, 1)),
@@ -987,6 +988,7 @@ fn build_encounter_preview(
                     target_fleet_number: Some(DEFENDER_FLEET_NUMBER),
                     enemy_initial: enemy.to_ship_losses(),
                     retreat_target_coords: retreat_coords(world.target_coords),
+                    resumed: false,
                     losses_sustained: ShipLosses {
                         cruisers: u32::from(rng.range_u8(0, 1)),
                         destroyers: u32::from(rng.range_u8(0, 2)),

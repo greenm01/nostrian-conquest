@@ -1344,6 +1344,7 @@ fn results_merge_roe_retreat_into_invasion_abort_report() {
                 ..ShipLosses::default()
             },
             retreat_target_coords: [16, 13],
+            resumed: false,
             losses_sustained: ShipLosses {
                 destroyers: 1,
                 ..ShipLosses::default()
@@ -1403,6 +1404,7 @@ fn roe_retreat_without_losses_uses_natural_wording() {
                 ..ShipLosses::default()
             },
             retreat_target_coords: [11, 11],
+            resumed: false,
             losses_sustained: ShipLosses::default(),
             enemy_losses_inflicted: ShipLosses::default(),
             reason: EncounterDispositionReason::RoeWithdrawal,
@@ -1479,6 +1481,7 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
                 ..ShipLosses::default()
             },
             retreat_target_coords: [5, 13],
+            resumed: false,
             losses_sustained: ShipLosses::default(),
             enemy_losses_inflicted: ShipLosses::default(),
             reason: EncounterDispositionReason::RoeWithdrawal,
@@ -1642,6 +1645,7 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
                 ..ShipLosses::default()
             },
             retreat_target_coords: [10, 6],
+            resumed: false,
             losses_sustained: ShipLosses::default(),
             enemy_losses_inflicted: ShipLosses::default(),
             reason: EncounterDispositionReason::RoeWithdrawal,
@@ -1767,6 +1771,7 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
             target_fleet_number: None,
             enemy_initial: ShipLosses::default(),
             retreat_target_coords: [8, 6],
+            resumed: false,
             losses_sustained: ShipLosses::default(),
             enemy_losses_inflicted: ShipLosses::default(),
             reason: EncounterDispositionReason::RoeWithdrawal,

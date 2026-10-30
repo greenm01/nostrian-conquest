@@ -36,6 +36,14 @@ pub(super) fn visible_hazard_intel_from_snapshots(
         }
     }
 
+    let year = game_data.conquest.game_year;
+    intel.foreign_fleets.extend(
+        game_data
+            .sightings
+            .recent_contacts(viewer_empire, year)
+            .map(|sector| sector.to_array()),
+    );
+
     for fleet in &game_data.fleets {
         if fleet.owner.0 == 0 || fleet.owner.0 == viewer_empire {
             continue;

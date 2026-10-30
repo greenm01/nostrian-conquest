@@ -589,15 +589,15 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     assert!((9..15).contains(&x) && y == 13, "{:?}", [x, y]);
     assert_eq!(attacker.speed, attacker.max_speed);
 
+    // The hostile broke off short of its own target, so it carried on with
+    // its Move to (8,13), one sector on, and arrived instead of going home.
     let hostile = &game_data.fleets[4];
-    assert_eq!(hostile.order, Order::SeekHome);
-    // The retreat runs at the full speed of the ships it has left (0 when
-    // this stalled contact lost none).
-    assert_eq!(hostile.speed, hostile.max_speed);
+    assert_eq!(hostile.sector.to_array(), [8, 13]);
+    assert_eq!(hostile.order, Order::HoldPosition);
 }
 
 #[test]
-fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
+fn friendly_roe_withdrawal_en_route_keeps_the_invade_mission() {
     let game_data = configured_invade_contact_state(0, 10);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
@@ -612,15 +612,17 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
                 nc_data::EncounterDispositionReason::RoeWithdrawal,
             ))
     }));
-    assert!(events.mission_events.iter().any(|event| {
+    // Met short of its target, it carries on: no abort, the order kept.
+    assert!(!events.mission_events.iter().any(|event| {
         event.owner_empire == 1
             && event.kind == Mission::InvadeWorld
             && event.outcome == MissionOutcome::Aborted
     }));
 
     let attacker = &game_data.fleets[0];
-    assert_eq!(attacker.order, Order::SeekHome);
-    // The retreat runs at full speed (0 for this stalled contact).
+    assert_eq!(attacker.order, Order::InvadeWorld);
+    assert_eq!(attacker.target.to_array(), [15, 13]);
+    // At full speed (0 for this stalled contact).
     assert_eq!(attacker.speed, attacker.max_speed);
 }
 

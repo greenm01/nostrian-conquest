@@ -26,10 +26,28 @@ pub struct Sighting {
 /// persists across years while the viewer has a unit in the sector, and is
 /// cleared when that presence ends. Not a classic field: an export drops it
 /// and an import starts with none.
+///
+/// It also keeps each empire's enemy contacts for routing: the sectors where
+/// it has sighted or fought another empire's units, and the year it last
+/// did. Unlike the surprise memory, a contact outlives the viewer's presence
+/// but expires after [`CONTACT_MEMORY_YEARS`]: ships move on.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SightingMemory {
     /// By viewer, sector x, sector y, layer; an entry is never empty.
     entries: BTreeMap<(u8, u8, u8, u8), u32>,
+    /// By viewer, sector x, sector y: the year of the latest contact.
+    contacts: BTreeMap<(u8, u8, u8), u16>,
+}
+
+/// How many years of movement a contact steers routes around.
+pub const CONTACT_MEMORY_YEARS: u16 = 2;
+
+/// One empire's latest enemy contact in one sector.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Contact {
+    pub viewer: u8,
+    pub sector: Coords,
+    pub year: u16,
 }
 
 impl SightingMemory {
@@ -89,6 +107,41 @@ impl SightingMemory {
                 sector: Coords::new(x, y),
                 layer,
                 opponents,
+            })
+    }
+
+    /// `viewer` met an enemy unit in `sector` in `year`.
+    pub fn note_contact(&mut self, viewer: u8, sector: Coords, year: u16) {
+        let latest = self
+            .contacts
+            .entry((viewer, sector.x, sector.y))
+            .or_default();
+        *latest = (*latest).max(year);
+    }
+
+    /// The sectors where `viewer` met an enemy recently enough, in `year`,
+    /// to route around them.
+    pub fn recent_contacts(&self, viewer: u8, year: u16) -> impl Iterator<Item = Coords> + '_ {
+        self.contacts
+            .range((viewer, 0, 0)..=(viewer, u8::MAX, u8::MAX))
+            .filter(move |(_, seen)| year.saturating_sub(**seen) < CONTACT_MEMORY_YEARS)
+            .map(|(&(_, x, y), _)| Coords::new(x, y))
+    }
+
+    /// Drop the contacts too old, in `year`, to route around.
+    pub fn expire_contacts(&mut self, year: u16) {
+        self.contacts
+            .retain(|_, seen| year.saturating_sub(*seen) < CONTACT_MEMORY_YEARS);
+    }
+
+    /// Every contact, by viewer, then sector.
+    pub fn contacts(&self) -> impl Iterator<Item = Contact> + '_ {
+        self.contacts
+            .iter()
+            .map(|(&(viewer, x, y), &year)| Contact {
+                viewer,
+                sector: Coords::new(x, y),
+                year,
             })
     }
 

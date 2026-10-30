@@ -22,6 +22,7 @@
 
 use crate::{CoreGameData, Order};
 
+use super::fleet_battle::mission_lost_its_ships;
 use super::state::{Member, TaskForce};
 use nc_data::{
     Coords, EscapeEpisode, Real48, has_any_force, set_fleet_at_rest, set_mission_target,
@@ -92,11 +93,36 @@ pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
     abort_mission_to_seek_home_or_hold(game_data, fleet_idx, retreat_target);
 }
 
+/// Whether fleet `idx`, beaten or breaking off before it reached its target,
+/// keeps its order and carries on (owner, 2026-10-30): it is still en route
+/// on a moving order and has the ships its mission needs. A fleet beaten at
+/// its own target goes home.
+pub(super) fn resumes_mission(game_data: &CoreGameData, idx: usize) -> bool {
+    let fleet = &game_data.fleets[idx];
+    has_any_force(fleet)
+        && fleet.sector != fleet.target
+        && !matches!(
+            fleet.order,
+            Order::HoldPosition | Order::SeekHome | Order::Unknown(_)
+        )
+        && !mission_lost_its_ships(game_data, idx, fleet.order)
+}
+
+/// Keep a resuming fleet on its order, at the full speed of the ships it has
+/// left, as a fleet that held the field carries on.
+fn carry_on(fleet: &mut nc_data::Fleet) {
+    fleet.speed = fleet.max_speed;
+}
+
 /// Send the fleets still on a side at the end home after their losses are
-/// on the records: each fleet with ships retreats on its own; one with none
-/// holds at rest until it is culled. Fleets that broke off have escaped
-/// already.
-pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &TaskForce) {
+/// on the records: each fleet with ships retreats on its own, unless it is
+/// in `resuming`; one with none holds at rest until it is culled. Fleets that
+/// broke off have escaped already.
+pub(super) fn retreat_task_force(
+    game_data: &mut CoreGameData,
+    task_force: &TaskForce,
+    resuming: &std::collections::HashSet<usize>,
+) {
     for idx in task_force
         .members
         .iter()
@@ -105,6 +131,10 @@ pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &Task
     {
         if !has_any_force(&game_data.fleets[idx]) {
             hold_until_culled(&mut game_data.fleets[idx]);
+            continue;
+        }
+        if resuming.contains(&idx) {
+            carry_on(&mut game_data.fleets[idx]);
             continue;
         }
         retreat_fleet(game_data, idx);
@@ -117,21 +147,29 @@ pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &Task
 /// episode is always from the cell it is in, since leaving the cell ends
 /// it), with `pursuer` noted as having had its pursuit exchange. A fleet
 /// with nowhere to go holds where it is and is in no episode; one with no
-/// ships holds at rest until it is culled.
+/// ships holds at rest until it is culled. A fleet that `resumes` keeps its
+/// order and is in the escape episode all the same.
 pub(super) fn escape_fleet(
     game_data: &mut CoreGameData,
     idx: usize,
     coords: [u8; 2],
     pursuer: Option<u8>,
+    resumes: bool,
 ) {
     if !has_any_force(&game_data.fleets[idx]) {
         hold_until_culled(&mut game_data.fleets[idx]);
         return;
     }
-    let home = nearest_friendly_world(game_data, idx);
-    abort_mission_to_seek_home_or_hold(game_data, idx, home);
+    let goes_on = if resumes {
+        carry_on(&mut game_data.fleets[idx]);
+        true
+    } else {
+        let home = nearest_friendly_world(game_data, idx);
+        abort_mission_to_seek_home_or_hold(game_data, idx, home);
+        home.is_some()
+    };
     let fleet = &mut game_data.fleets[idx];
-    fleet.escape = home.map(|_| {
+    fleet.escape = goes_on.then(|| {
         let mut episode = fleet.escape.unwrap_or(EscapeEpisode {
             sector: Coords::from_array(coords),
             layer: u8::from(fleet.depth >= Real48::HALF),

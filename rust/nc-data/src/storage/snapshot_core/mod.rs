@@ -182,7 +182,7 @@ pub(super) fn write_changed_core_rows(
         conquest::write(tx, snapshot_id, &after.conquest)?;
     }
     if before.sightings != after.sightings {
-        clear_tables(tx, snapshot_id, &["snapshot_sightings"])?;
+        clear_tables(tx, snapshot_id, &sightings::TABLES)?;
         sightings::write(tx, snapshot_id, &after.sightings)?;
     }
     Ok(())

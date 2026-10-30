@@ -1,10 +1,14 @@
 //! Local sighting memory: one row per viewing empire, sector, and layer
-//! that remembers an opponent, with the opponents as a bit mask.
+//! that remembers an opponent, with the opponents as a bit mask; and the
+//! routing contacts: one row per viewing empire and sector, with the year of
+//! the latest contact.
 
 use rusqlite::{Connection, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row};
 use crate::model::{Coords, Sighting, SightingMemory};
+
+pub(super) const TABLES: [&str; 2] = ["snapshot_sightings", "snapshot_contacts"];
 
 pub(super) const SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS snapshot_sightings (
@@ -15,6 +19,14 @@ pub(super) const SCHEMA: &str = "
         layer INTEGER NOT NULL,
         opponents INTEGER NOT NULL,
         PRIMARY KEY(snapshot_id, viewer, sector_x, sector_y, layer)
+    );
+    CREATE TABLE IF NOT EXISTS snapshot_contacts (
+        snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
+        viewer INTEGER NOT NULL,
+        sector_x INTEGER NOT NULL,
+        sector_y INTEGER NOT NULL,
+        year INTEGER NOT NULL,
+        PRIMARY KEY(snapshot_id, viewer, sector_x, sector_y)
     );";
 
 pub(super) fn write(
@@ -33,6 +45,19 @@ pub(super) fn write(
                 ":sector_y": sighting.sector.y,
                 ":layer": sighting.layer,
                 ":opponents": sighting.opponents,
+            },
+        )?;
+    }
+    for contact in sightings.contacts() {
+        insert_row(
+            tx,
+            "snapshot_contacts",
+            named_params! {
+                ":snapshot_id": snapshot_id,
+                ":viewer": contact.viewer,
+                ":sector_x": contact.sector.x,
+                ":sector_y": contact.sector.y,
+                ":year": contact.year,
             },
         )?;
     }
@@ -59,6 +84,22 @@ pub(super) fn load(
     let mut memory = SightingMemory::default();
     for row in rows {
         memory.set(row?);
+    }
+    let mut stmt = conn.prepare(
+        "SELECT viewer, sector_x, sector_y, year
+         FROM snapshot_contacts
+         WHERE snapshot_id = ?1",
+    )?;
+    let rows = stmt.query_map(params![snapshot_id], |row| {
+        Ok((
+            row.get::<_, u8>("viewer")?,
+            Coords::new(row.get("sector_x")?, row.get("sector_y")?),
+            row.get::<_, u16>("year")?,
+        ))
+    })?;
+    for row in rows {
+        let (viewer, sector, year) = row?;
+        memory.note_contact(viewer, sector, year);
     }
     Ok(memory)
 }

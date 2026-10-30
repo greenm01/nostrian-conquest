@@ -586,7 +586,11 @@ pub enum EncounterDispositionEvent {
         target_empire: u8,
         target_fleet_number: Option<u8>,
         enemy_initial: ShipLosses,
+        /// Where the fleet headed: home, or on to its own target when it
+        /// broke off en route and carried on (`resumed`).
         retreat_target_coords: [u8; 2],
+        /// The fleet kept its order and carried on toward its target.
+        resumed: bool,
         losses_sustained: ShipLosses,
         enemy_losses_inflicted: ShipLosses,
         reason: EncounterDispositionReason,
@@ -605,7 +609,11 @@ pub enum EncounterDispositionEvent {
         target_empire: u8,
         target_fleet_number: Option<u8>,
         enemy_initial: ShipLosses,
+        /// Where the fleet headed: home, or on to its own target when it
+        /// broke off en route and carried on (`resumed`).
         retreat_target_coords: [u8; 2],
+        /// The fleet kept its order and carried on toward its target.
+        resumed: bool,
         losses_sustained: ShipLosses, // What the withdrawing fleet lost
         enemy_losses_inflicted: ShipLosses, // What the withdrawing fleet inflicted on pursuer
         reason: EncounterDispositionReason,

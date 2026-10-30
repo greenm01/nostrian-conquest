@@ -19,7 +19,7 @@ use super::reporting::{
     single_named_fleet_number,
 };
 use super::retreat::{
-    dominant_empire_after_battle, escape_fleet, retreat_fleet, retreat_task_force,
+    dominant_empire_after_battle, escape_fleet, resumes_mission, retreat_fleet, retreat_task_force,
 };
 use super::state::{
     BattleRole, FleetCombatState, IDX_SB, IDX_TT, Member, Record, TaskForce, Transports,
@@ -378,7 +378,11 @@ fn is_ship_loss_abort_reason(order: Order, reason: FleetOrderValidationError) ->
 
 /// The fleet's losses left it without the ships its order needs. Checked
 /// while the fleet still has that order and its target.
-fn mission_lost_its_ships(game_data: &CoreGameData, fleet_idx: usize, order: Order) -> bool {
+pub(super) fn mission_lost_its_ships(
+    game_data: &CoreGameData,
+    fleet_idx: usize,
+    order: Order,
+) -> bool {
     if mission_kind_for_order(Some(order)).is_none() {
         return false;
     }
@@ -829,8 +833,11 @@ pub(super) fn fight_encounter_with_dice(
             continue;
         }
         if tf.engaged_in_battle && Some(tf.empire) != dominant_empire {
-            retreat_task_force(game_data, tf);
-            for fleet_idx in fighting_fleets(tf) {
+            let resuming: HashSet<usize> = fighting_fleets(tf)
+                .filter(|&idx| resumes_mission(game_data, idx))
+                .collect();
+            retreat_task_force(game_data, tf, &resuming);
+            for fleet_idx in fighting_fleets(tf).filter(|idx| !resuming.contains(idx)) {
                 emit_aborted_mission_event(
                     game_data,
                     &mut events,
@@ -897,15 +904,18 @@ pub(super) fn fight_encounter_with_dice(
                 None
             };
             let pursuer = withdrawal.pursued.then_some(target_empire_code);
-            escape_fleet(game_data, fleet_idx, coords, pursuer);
-            emit_aborted_mission_event(
-                game_data,
-                &mut events,
-                fleet_idx,
-                order,
-                coords,
-                abort_reason,
-            );
+            let resumed = resumes_mission(game_data, fleet_idx);
+            escape_fleet(game_data, fleet_idx, coords, pursuer, resumed);
+            if !resumed {
+                emit_aborted_mission_event(
+                    game_data,
+                    &mut events,
+                    fleet_idx,
+                    order,
+                    coords,
+                    abort_reason,
+                );
+            }
             if !member.state.has_units() {
                 continue;
             }
@@ -932,6 +942,7 @@ pub(super) fn fight_encounter_with_dice(
                     target_fleet_number,
                     enemy_initial,
                     retreat_target_coords,
+                    resumed,
                     losses_sustained: losses,
                     enemy_losses_inflicted,
                     reason: withdrawal.reason,
@@ -949,6 +960,7 @@ pub(super) fn fight_encounter_with_dice(
                     target_fleet_number,
                     enemy_initial,
                     retreat_target_coords,
+                    resumed,
                     losses_sustained: losses,
                     enemy_losses_inflicted,
                     reason: withdrawal.reason,

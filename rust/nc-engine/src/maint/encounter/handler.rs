@@ -322,6 +322,8 @@ impl Year<'_> {
         let u = self.units[observer];
         let sector = Coords::from_array(u.sector);
         game_data.sightings.note(u.owner, sector, u.layer, opponent);
+        let year = game_data.conquest.game_year;
+        game_data.sightings.note_contact(u.owner, sector, year);
     }
 
     /// Empires `a` and `b` fought in a sector and layer: each that has a
@@ -333,6 +335,10 @@ impl Year<'_> {
                     .sightings
                     .note(viewer, Coords::from_array(sector), layer, opponent);
             }
+            let year = game_data.conquest.game_year;
+            game_data
+                .sightings
+                .note_contact(viewer, Coords::from_array(sector), year);
         }
     }
 

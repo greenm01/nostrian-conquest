@@ -112,7 +112,7 @@ pub use map_export::{
     STARMAP_TEXT_FILE_NAME, build_galaxy_map_export_data, build_player_map_export_data,
 };
 pub use model::{
-    BuildSlot, Conquest, Coords, CrippledHulls, CrippledShips, DiplomaticRelation, EmpireId,
+    BuildSlot, CONTACT_MEMORY_YEARS, Conquest, Contact, Coords, CrippledHulls, CrippledShips, DiplomaticRelation, EmpireId,
     EscapeEpisode, Fleet, FleetId, HullClass, Ipbm, MaintenanceDays, Order, Planet, Player,
     PlayerMode, ProductionItemKind, RECOVERY_TURNS, RecordNumber, Recovered, Setup, ShipCounts,
     Sighting, SightingMemory, Starbase, StarbaseId, Stardock,

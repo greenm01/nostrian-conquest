@@ -261,6 +261,44 @@ fn sqlite_store_round_trips_escape_episodes_and_classic_export_drops_them() {
     assert_eq!(exported_game.fleets[0].escape, None);
 }
 
+/// Enemy contacts are runtime state: the store keeps each empire's latest
+/// contact year by sector.
+#[test]
+fn sqlite_store_round_trips_enemy_contacts() {
+    let source = repo_root().join("fixtures/ecutil-init/v1.5");
+    let imported = temp_dir("nc-data-storage-contacts");
+    copy_dir_all(&source, &imported);
+    let store = CampaignStore::open(imported.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    let year = state.game_data.conquest.game_year;
+    state
+        .game_data
+        .sightings
+        .note_contact(1, Coords::new(8, 9), year);
+    state
+        .game_data
+        .sightings
+        .note_contact(2, Coords::new(3, 4), year - 1);
+    store
+        .save_year(
+            year,
+            &state.game_data,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save runtime snapshot");
+
+    let runtime_game = store
+        .load_latest_runtime_game_data()
+        .expect("load latest runtime game data");
+    assert_eq!(runtime_game.sightings, state.game_data.sightings);
+    assert_eq!(runtime_game.sightings.contacts().count(), 2);
+}
+
 /// Crippled hulls are runtime state: the store keeps every class's counts by
 /// turns left and the separate count for this pass, a classic export writes
 /// whole hulls (the ship counts are untouched) and drops the damage, and a
@@ -515,6 +553,7 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
             "snapshot_conquest",
             "snapshot_conquest_maintenance_days",
             "snapshot_conquest_previous_rankings",
+            "snapshot_contacts",
             "snapshot_fleet_crippled",
             "snapshot_fleets",
             "snapshot_ipbms",

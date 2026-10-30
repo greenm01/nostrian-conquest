@@ -100,6 +100,15 @@ impl StateHash {
                 self.u64(u64::from(sighting.opponents));
             }
         }
+        let contacts: Vec<_> = sightings.contacts().collect();
+        if !contacts.is_empty() {
+            self.u64(contacts.len() as u64);
+            for contact in contacts {
+                self.u64(u64::from(contact.viewer));
+                self.coords(contact.sector);
+                self.u64(u64::from(contact.year));
+            }
+        }
     }
 
     fn player(&mut self, player: &Player) {

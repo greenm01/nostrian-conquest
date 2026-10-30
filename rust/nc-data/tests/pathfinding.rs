@@ -353,3 +353,61 @@ fn pathfinder_never_detours_through_row_or_column_zero() {
         "{route:?}"
     );
 }
+
+/// An empire routes around the sectors where it met enemy ships, for two
+/// years of movement after the contact, then forgets them.
+#[test]
+fn visible_hazard_intel_routes_around_recent_enemy_contacts_until_they_expire() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let fleet = &mut game_data.fleets[0];
+    fleet.sector = Coords::new(2, 2);
+    fleet.order = Order::JoinAnotherFleet;
+    fleet.target = Coords::new(6, 2);
+    fleet.speed = 3;
+    game_data.sightings.note_contact(1, Coords::new(4, 2), 3000);
+    // Another empire's contact is not ours.
+    game_data.sightings.note_contact(2, Coords::new(4, 3), 3000);
+
+    for (year, avoided) in [(3000, true), (3001, true), (3002, false)] {
+        game_data.conquest.game_year = year;
+        let intel = visible_hazard_intel_from_snapshots(&game_data, &Default::default(), 1);
+        assert_eq!(intel.foreign_fleets.contains(&[4, 2]), avoided, "{year}");
+        assert!(!intel.foreign_fleets.contains(&[4, 3]));
+        if avoided {
+            let route = plan_route_with_intel(&game_data, 0, &intel).expect("route");
+            assert!(
+                !route.steps.iter().any(|step| step.coords == [4, 2]),
+                "{year}"
+            );
+        }
+    }
+    game_data.sightings.expire_contacts(3002);
+    assert_eq!(game_data.sightings.contacts().count(), 0);
+}
+
+/// Attack orders route around known enemy worlds on the way to their target,
+/// and their target itself is always allowed.
+#[test]
+fn pathfinder_routes_attack_orders_around_enemy_worlds_but_into_the_target() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let fleet = &mut game_data.fleets[0];
+    fleet.sector = Coords::new(2, 2);
+    fleet.order = Order::BombardWorld;
+    fleet.target = Coords::new(6, 2);
+    fleet.speed = 3;
+    let mut intel = VisibleHazardIntel::default();
+    intel.foreign_worlds.insert([4, 2]);
+    intel.foreign_worlds.insert([6, 2]);
+
+    let route = plan_route_with_intel(&game_data, 0, &intel).expect("route should exist");
+    assert!(!route.steps.iter().any(|step| step.coords == [4, 2]));
+    assert_eq!(route.steps.last().map(|step| step.coords), Some([6, 2]));
+}

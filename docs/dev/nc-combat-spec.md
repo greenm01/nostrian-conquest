@@ -655,8 +655,14 @@ Planet), with no extra battery volley.
 6. **Retreat**: Once the losses are on the fleet records (each fleet's own
    share, as the battle allocated it), each surviving fleet's maximum speed
    is recomputed from the ships it has left, as classic's `24a3:036b` does.
-   A fleet that did not hold the field, broke off under its ROE or unarmed,
-   or lost the ships its mission needs then gets the Seek Home order as the
+   A fleet that did not hold the field or broke off under its ROE or
+   unarmed, but was still on its way to its target (its sector is not its
+   target sector) on a moving order with the ships its mission needs, keeps
+   its order and carries on, its speed capped at its new maximum; it gets no
+   mission abort, stays in its escape episode, and its report says it broke
+   away and continued (amended 2026-10-30). Any other fleet that did not
+   hold the field, broke off, or lost the ships its mission needs then gets
+   the Seek Home order as the
    order path writes it: its target is classic's nearest
    friendly world (`24a3:0876`, as every classic abort and retreat picks
    it), the owned world nearest by travel distance from the fleet's own

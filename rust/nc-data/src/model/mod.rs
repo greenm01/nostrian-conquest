@@ -21,5 +21,5 @@ pub use ipbm::Ipbm;
 pub use planet::{BuildSlot, Planet, ProductionItemKind, Stardock};
 pub use player::{DiplomaticRelation, Player, PlayerMode};
 pub use setup::Setup;
-pub use sighting::{Sighting, SightingMemory};
+pub use sighting::{CONTACT_MEMORY_YEARS, Contact, Sighting, SightingMemory};
 pub use starbase::Starbase;

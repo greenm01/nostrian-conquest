@@ -619,10 +619,13 @@ enemy unseen gains an edge in the first round. Once your forces have spotted
 an empire in a system, keeping a fleet or starbase there keeps that warning
 against it.
 
-When the odds turn against a fleet, it breaks off and seeks home: it heads
+When the odds turn against a fleet, it breaks off. A fleet met on its way to
+its target then carries on toward it, orders unchanged, and steers around
+that sector afterward. A fleet beaten at its own target seeks home: it heads
 for the nearest world you own, measured from where it is, and never the world
 of the system it is in (see Withdrawal and Retreat in @appendix-combat). A
-faster enemy may catch it on the way out, so retreat is not always clean.
+faster enemy may catch it on the way out, so breaking off is not always
+clean.
 
 == Attacking Worlds <attacking-worlds>
 
@@ -750,11 +753,20 @@ a descent. Move Fleet followed by Hold Position is not an order to enter
 orbit.
 
 A fleet never moves across and down at once. It climbs out of orbit, crosses
-the map in a straight line to the center of its target sector, and only then
-heads down toward the world. A fleet leaving a world spends its first sector
-of movement on the climb, so it covers one sector less in its first year.
-Distance is measured in a straight line, so three sectors on a diagonal are
-about 4.2 sectors of travel.
+the map to the center of its target sector, and only then heads down toward
+the world. A fleet leaving a world spends its first sector of movement on the
+climb, so it covers one sector less in its first year. Distance is measured
+in a straight line, so three sectors on a diagonal are about 4.2 sectors of
+travel.
+
+A fleet on any mission that travels *steers around known danger* on the way.
+It avoids the sectors of enemy worlds your empire knows about, and the
+sectors where your ships met enemy ships in the last two years. It takes a
+detour of a few sectors to stay clear, and goes straight through when no
+such detour exists. Its own target is never avoided. A contact with enemy
+ships counts for two years of movement and then fades, since ships move on;
+meeting them there again renews it. Without such knowledge, a fleet flies
+straight to its target.
 
 When a fleet arrives depends on its mission.
 
@@ -1480,7 +1492,8 @@ appendix give the numbers.
    broken off and any pursuit is done, or, unresolved, after 64 exchanges.
    Carried hits are thrown away. Each surviving fleet's speed is worked out
    again from the ships it has left. A fleet that did not hold the field
-   seeks home (see Withdrawal and Retreat).
+   seeks home, unless it was still on its way to its target (see Withdrawal
+   and Retreat).
 
 == Who Fights Whom
 
@@ -1688,7 +1701,7 @@ line. A battle still undecided after 64 exchanges just ends: nobody wins,
 nobody retreats, and the next week's encounter rules decide whether the
 fleets meet again.
 
-A fleet that retreats, or aborts a mission its ROE will not let it fight for, is put on Seek Home at full speed. It heads for the nearest planet you own, measured from where it is. If the fleet is in a solar system, that system's world is never chosen, even when you own it. A fleet beaten in deep space may go down to the world below it. The game picks the planet the same way when a fleet on Seek Home loses its target on the way. With no planet to go to, the fleet holds where it is, with one exception: a fleet that backs away from an enemy fleet climbs out to the deep space of its own sector at full speed on Move Only. On arrival it goes back to Hold Position. Its report says why it left (its ROE, or no warships left) and whether it was caught on the way out.
+A fleet that breaks off or loses a battle before it reaches its target keeps its order and carries on toward the target, at the speed its surviving ships allow, as long as it still has the ships its mission needs. The enemy's pursuit, if any, still comes first. A fleet beaten at its target, or one that lost the ships its mission needs, retreats instead. A fleet that retreats, or aborts a mission its ROE will not let it fight for, is put on Seek Home at full speed. It heads for the nearest planet you own, measured from where it is. If the fleet is in a solar system, that system's world is never chosen, even when you own it. A fleet beaten in deep space may go down to the world below it. The game picks the planet the same way when a fleet on Seek Home loses its target on the way. With no planet to go to, the fleet holds where it is, with one exception: a fleet that backs away from an enemy fleet climbs out to the deep space of its own sector at full speed on Move Only. On arrival it goes back to Hold Position. Its report says why it left (its ROE, or no warships left) and whether it was caught on the way out.
 
 == Planetary Combat
 

@@ -376,6 +376,9 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         visible_hazards_by_empire,
         diplomacy_overrides,
     )?;
+    game_data
+        .sightings
+        .expire_contacts(game_data.conquest.game_year);
     let assist_watch = year.assist_watch;
     refs.movement_events = year.movement_events;
     refs.encounter_events = year.encounter_events;

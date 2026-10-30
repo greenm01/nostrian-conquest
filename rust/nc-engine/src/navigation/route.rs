@@ -123,6 +123,12 @@ fn order_uses_pathfinding(order: Order) -> bool {
             | Order::ColonizeWorld
             | Order::JoinAnotherFleet
             | Order::RendezvousSector
+            | Order::BombardWorld
+            | Order::InvadeWorld
+            | Order::BlitzWorld
+            | Order::GuardBlockadeWorld
+            | Order::GuardStarbase
+            | Order::Salvage
     )
 }
 

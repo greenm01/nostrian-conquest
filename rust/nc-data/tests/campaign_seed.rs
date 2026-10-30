@@ -87,6 +87,12 @@ fn derived_seed_sees_sighting_memory() {
         }
     }
 
+    let mut contacted = game_data.clone();
+    contacted
+        .sightings
+        .note_contact(1, Coords::from_array([4, 5]), 3001);
+    assert_ne!(seed(&contacted), seed(&game_data));
+
     let mut forgotten = remembering(1, [4, 5], 1, 2);
     forgotten.sightings.forget(1, Coords::from_array([4, 5]));
     assert_eq!(seed(&forgotten), seed(&game_data));
