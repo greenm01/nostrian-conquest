@@ -59,6 +59,8 @@ pub struct CampaignAi {
     networks: BTreeMap<String, NetworkSeat>,
     seats: Vec<(AiSeat, SeatMemory)>,
     stale: Vec<(usize, u16)>,
+    /// Every turn the seats applied this run: `(game_year, player, turn)`.
+    turns: Vec<(u16, usize, TurnSubmission)>,
 }
 
 impl CampaignAi {
@@ -129,6 +131,7 @@ impl CampaignAi {
             networks,
             seats,
             stale,
+            turns: Vec::new(),
         }))
     }
 
@@ -142,7 +145,7 @@ impl CampaignAi {
 
     /// Before a year runs: every AI seat that may play commissions its
     /// ships and submits its turn.
-    pub fn play(&self, maintenance: &mut CampaignMaintenance) -> Result<(), Box<dyn Error>> {
+    pub fn play(&mut self, maintenance: &mut CampaignMaintenance) -> Result<(), Box<dyn Error>> {
         for (seat, memory) in &self.seats {
             let player = seat.player_record_index_1_based;
             let access = player_access_mode(
@@ -166,10 +169,11 @@ impl CampaignAi {
                     .map_err(|err| format!("AI seat {player} cannot join: {err}"))?;
                 nc_data::name_unnamed_worlds(&mut maintenance.game_data, player as u8);
             }
+            let year = maintenance.game_data.conquest.game_year;
             if let Some(commission) = commission_submission(&maintenance.game_data, memory.empire) {
                 apply(maintenance, &commission)?;
+                self.turns.push((year, player, commission));
             }
-            let year = maintenance.game_data.conquest.game_year;
             let turn = self.networks[&seat.personality].turn(
                 &maintenance.game_data,
                 memory,
@@ -177,6 +181,7 @@ impl CampaignAi {
                 (u64::from(year) << 8) ^ player as u64,
             )?;
             apply(maintenance, &turn)?;
+            self.turns.push((year, player, turn));
         }
         Ok(())
     }
@@ -193,7 +198,8 @@ impl CampaignAi {
         }
     }
 
-    /// Save every AI seat's memory, learned up to `game_year`. Call after
+    /// Save every AI seat's memory, learned up to `game_year`, and the turns
+    /// the seats played this run. Call after
     /// the maintenance run is saved.
     pub fn save(&self, store: &CampaignStore, game_year: u16) -> Result<(), Box<dyn Error>> {
         for (seat, memory) in &self.seats {
@@ -203,6 +209,12 @@ impl CampaignAi {
                 &serde_json::to_string(memory)?,
             )?;
         }
+        let turns: Vec<_> = self
+            .turns
+            .iter()
+            .map(|(year, player, turn)| (*year, *player, turn.to_kdl_string()))
+            .collect();
+        store.save_ai_turns(&turns)?;
         Ok(())
     }
 

@@ -115,6 +115,49 @@ impl CampaignStore {
             .optional()?)
     }
 
+    /// Replace the AI seats' turns of every year in `turns`, which holds
+    /// `(game_year, player, turn KDL)` in the order they were applied. With
+    /// the year's stored snapshot, they replay its maintenance exactly.
+    pub fn save_ai_turns(&self, turns: &[(u16, usize, String)]) -> Result<(), CampaignStoreError> {
+        let mut conn = self.connection()?;
+        let tx = conn.transaction()?;
+        let mut years: Vec<u16> = turns.iter().map(|(year, ..)| *year).collect();
+        years.dedup();
+        for year in years {
+            tx.execute(
+                "DELETE FROM ai_turns WHERE game_year = ?1",
+                params![i64::from(year)],
+            )?;
+            for (seq, (_, player, turn)) in turns.iter().filter(|t| t.0 == year).enumerate() {
+                tx.execute(
+                    "INSERT INTO ai_turns(game_year, seq, player_record_index, turn)
+                     VALUES (?1, ?2, ?3, ?4)",
+                    params![i64::from(year), seq as i64, *player as i64, turn],
+                )?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// The AI seats' turns of `game_year` as `(player, turn KDL)`, in the
+    /// order they were applied.
+    pub fn load_ai_turns(
+        &self,
+        game_year: u16,
+    ) -> Result<Vec<(usize, String)>, CampaignStoreError> {
+        let conn = self.connection()?;
+        let mut stmt = conn.prepare(
+            "SELECT player_record_index, turn FROM ai_turns WHERE game_year = ?1 ORDER BY seq",
+        )?;
+        let turns = stmt
+            .query_map(params![i64::from(game_year)], |row| {
+                Ok((row.get::<_, i64>(0)? as usize, row.get(1)?))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(turns)
+    }
+
     /// Replace AI seat `player`'s memory, learned up to `game_year`.
     pub fn save_ai_seat_memory(
         &self,

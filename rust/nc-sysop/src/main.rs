@@ -485,7 +485,7 @@ fn run_maintenance_for_dir(
     }
 
     for turn in 1..=turns {
-        if let Some(ai) = &ai {
+        if let Some(ai) = &mut ai {
             ai.play(&mut maintenance)?;
         }
         maintenance.run_turn()?;

@@ -148,7 +148,7 @@ pub(super) fn run(root: &Path, game: &str, expected_year: u16, request_id: &str)
         let mut ai =
             nc_ai_onnx::CampaignAi::load(&runtime, &turn, nc_ai_onnx::model_from_env().as_deref())
                 .map_err(|e| e.to_string())?;
-        if let Some(ai) = &ai {
+        if let Some(ai) = &mut ai {
             ai.play(&mut turn).map_err(|e| e.to_string())?;
         }
         turn.run_turn().map_err(|e| e.to_string())?;

@@ -1669,8 +1669,20 @@ are named as in [game history backups](../../dev/game-history-backups.md).
   - The year before the orders therefore cannot be rebuilt: replaying a
     year needs the AI seats' turns. So human orders cannot yet be separated
     from the position they were given in.
-  - Imitating human turns needs the AI seats' turns logged with each
-    maintenance run. This is open with the owner.
+  - **AI turns are now logged.** Maintenance writes each AI seat's turns
+    to `ai_turns` in the game database, in the order applied. This happens
+    only in games with AI seats; the owner chose SQLite in the game
+    database over a separate store.
+    `nc_ai::opening_position(db, year)` replays year − 1 with them. The
+    campaign test checks that the replay equals the stored year every year.
+    Comparing the opening with the stored year gives the people's orders.
+    The lab game predates the log, so only games from the next maintenance
+    on can be used.
+  - **Still to do once games with logged turns exist:**
+    - `encode_order` (order to the network's action choices), with a
+      round-trip test;
+    - `human_demos.py`;
+    - `fleet_ppo.py --human-demos`. Training waits for 20 human games.
 
 ### t189
 

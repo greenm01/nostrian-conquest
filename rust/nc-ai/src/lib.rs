@@ -53,4 +53,4 @@ pub use personality::{
     personality_or_file,
 };
 pub use replay::{match_game, replay};
-pub use stored::{StoredPosition, load_position};
+pub use stored::{StoredPosition, load_position, opening_position};

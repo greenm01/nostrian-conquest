@@ -5,9 +5,11 @@
 
 use std::path::{Path, PathBuf};
 
-use nc_ai::{commission_submission, match_game};
+use nc_ai::{commission_submission, match_game, opening_position};
 use nc_ai_onnx::{AGENT_FAMILIES, CampaignAi, NetworkSeat};
-use nc_data::{AiDifficulty, AiSeat, CampaignSettings, CampaignStore};
+use nc_data::{
+    AiDifficulty, AiSeat, CampaignSettings, CampaignStore, CoreGameData, TurnSubmission,
+};
 use nc_engine::CampaignMaintenance;
 
 const PLAYERS: usize = 4;
@@ -58,7 +60,9 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
         nc_ai::personality("land-grab").unwrap(),
     )
     .unwrap();
+    let first_year = game.play.built.game_data.conquest.game_year;
     for _ in 0..years {
+        let played_before = game.turns.len();
         // The simulator: each seat commissions and plays in seat order.
         for empire in 1..=PLAYERS as u8 {
             if let Some(commission) = commission_submission(&game.play.built.game_data, empire) {
@@ -81,31 +85,59 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
         let mut ai = CampaignAi::load(&store, &maintenance, Some(&model()))
             .unwrap()
             .expect("the campaign has AI seats");
+        let played_year = maintenance.game_data.conquest.game_year;
         ai.play(&mut maintenance).unwrap();
         maintenance.run_turn().unwrap();
         ai.learn(&mut maintenance);
         let year = maintenance.game_data.conquest.game_year;
         maintenance.save(&store).unwrap();
         ai.save(&store, year).unwrap();
+        // The year's AI turns are stored, in the order they were applied.
+        let logged: Vec<_> = store
+            .load_ai_turns(played_year)
+            .unwrap()
+            .into_iter()
+            .map(|(_, turn)| turn)
+            .collect();
+        let simulated: Vec<_> = game.turns[played_before..]
+            .iter()
+            .map(TurnSubmission::to_kdl_string)
+            .collect();
+        assert_eq!(
+            logged, simulated,
+            "year {played_year}: the stored AI turns differ"
+        );
 
         let stored = store.load_latest_runtime_state().unwrap().unwrap();
         // Saving writes the year's reports, which the simulator does not
         // keep; their record ranges are the only other difference.
-        let mut campaign = stored.game_data;
-        for (player, simulated) in campaign
-            .players
-            .iter_mut()
-            .zip(&game.play.built.game_data.players)
-        {
-            player.messages_first = simulated.messages_first;
-            player.messages_last = simulated.messages_last;
-            player.results_first = simulated.results_first;
-            player.results_last = simulated.results_last;
-        }
+        let simulator_ranges = |mut game_data: CoreGameData| {
+            for (player, simulated) in game_data
+                .players
+                .iter_mut()
+                .zip(&game.play.built.game_data.players)
+            {
+                player.messages_first = simulated.messages_first;
+                player.messages_last = simulated.messages_last;
+                player.results_first = simulated.results_first;
+                player.results_last = simulated.results_last;
+            }
+            game_data
+        };
         assert_eq!(
-            campaign, game.play.built.game_data,
+            simulator_ranges(stored.game_data),
+            game.play.built.game_data,
             "year {year}: the campaign and the simulator differ"
         );
+        // The year before and its logged AI turns rebuild the year's start.
+        if played_year > first_year {
+            let opening = opening_position(store.path(), year).unwrap();
+            assert_eq!(
+                simulator_ranges(opening.game_data),
+                game.play.built.game_data,
+                "year {year}: the replayed opening differs"
+            );
+        }
         let restored = CampaignMaintenance::load(&store).unwrap();
         let ai = CampaignAi::load(&store, &restored, Some(&model()))
             .unwrap()

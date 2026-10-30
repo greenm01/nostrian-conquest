@@ -24,6 +24,17 @@ A copy taken twice on one day replaces that day's file. Each database holds
 every year's snapshot, so the latest copy of a game is its full history; the
 dated copies keep a game that is later reset or deleted.
 
+## What a copy holds for AI training
+
+Each database keeps one snapshot per year. A door player's orders are
+written into that year's snapshot, so a stored year is the position with
+the orders its people gave. AI seats order during maintenance, and since
+2026-10-30 maintenance logs their turns in the `ai_turns` table (only in
+games with AI seats). With them, `nc_ai::opening_position` replays the year
+before and rebuilds the position as maintenance left it, before anyone gave
+orders. Games played before then can seed training positions but cannot
+separate their people's orders from the position.
+
 ## Taking a copy
 
 Copy a live database with sqlite's online backup, never with `cp`, so a game

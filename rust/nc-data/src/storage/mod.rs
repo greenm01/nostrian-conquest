@@ -387,6 +387,13 @@ impl CampaignStore {
                  game_year INTEGER NOT NULL,
                  memory TEXT NOT NULL
              );
+             CREATE TABLE IF NOT EXISTS ai_turns (
+                 game_year INTEGER NOT NULL,
+                 seq INTEGER NOT NULL,
+                 player_record_index INTEGER NOT NULL,
+                 turn TEXT NOT NULL,
+                 PRIMARY KEY(game_year, seq)
+             );
              CREATE TABLE IF NOT EXISTS seat_bind_sources (
                  player_record_index INTEGER PRIMARY KEY,
                  bind_source TEXT NOT NULL

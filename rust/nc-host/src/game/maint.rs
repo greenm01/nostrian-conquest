@@ -65,7 +65,7 @@ pub fn run_hosted_maintenance(
             )?;
             rejected_submissions += 1;
         }
-        if let Some(ai) = &ai {
+        if let Some(ai) = &mut ai {
             ai.play(&mut maintenance)?;
         }
         maintenance.run_turn()?;

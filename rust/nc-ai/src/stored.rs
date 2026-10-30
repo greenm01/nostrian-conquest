@@ -4,7 +4,10 @@
 
 use std::path::Path;
 
-use nc_data::{CampaignStore, CampaignStoreError, CoreGameData, PlayerLifecycleState};
+use nc_data::{
+    CampaignStore, CampaignStoreError, CoreGameData, PlayerLifecycleState, TurnSubmission,
+    name_unnamed_worlds,
+};
 use nc_harness::{BuiltScenario, ScenarioBuildReport, ScenarioPlay};
 
 use crate::game::SeatedGame;
@@ -97,4 +100,48 @@ pub fn load_position(path: &Path, year: u16) -> Result<StoredPosition, CampaignS
         start_year,
         seats,
     })
+}
+
+/// The campaign at `path` at the start of `year` as maintenance left it,
+/// before anyone gave orders: year − 1 played on with the AI seats' logged
+/// turns, its people's orders already in its snapshot. Compared with
+/// `year`'s snapshot, it gives the orders people gave in `year`.
+///
+/// Refused when the campaign has AI seats but year − 1 has no logged turns.
+/// shortcut: inactivity autopilot and an AI seat's first join are not
+/// replayed; both matter only to the years they happen in.
+pub fn opening_position(path: &Path, year: u16) -> Result<StoredPosition, CampaignStoreError> {
+    let store = CampaignStore::open(path)?;
+    let invalid = |err: String| CampaignStoreError::InvalidState(err);
+    let ai_seats: Vec<u8> = store
+        .campaign_settings()?
+        .map(|settings| settings.ai_seats)
+        .unwrap_or_default()
+        .iter()
+        .map(|seat| seat.player_record_index_1_based as u8)
+        .collect();
+    let turns = store.load_ai_turns(year - 1)?;
+    if !ai_seats.is_empty() && turns.is_empty() {
+        return Err(invalid(format!(
+            "{} logged no AI turns in {}",
+            path.display(),
+            year - 1
+        )));
+    }
+    let mut game = load_position(path, year - 1)?.seated_game();
+    for (_, turn) in &turns {
+        let turn = TurnSubmission::parse_kdl_str(turn).map_err(|err| invalid(err.to_string()))?;
+        game.submit_turn(&turn)
+            .map_err(|err| invalid(err.to_string()))?;
+    }
+    game.run_maintenance()
+        .map_err(|err| invalid(err.to_string()))?;
+    // AI seats name the worlds they took once the year has run.
+    for &empire in &ai_seats {
+        name_unnamed_worlds(&mut game.play.built.game_data, empire);
+    }
+    let mut opening = load_position(path, year)?;
+    opening.game_data = game.play.built.game_data;
+    opening.player_lifecycle_states = game.play.player_lifecycle_states;
+    Ok(opening)
 }
