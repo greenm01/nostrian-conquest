@@ -1555,6 +1555,8 @@ fn maint_rust_scout_system_generates_results_report() {
     // Cruiser speed settles in orbit one sector away within the year.
     recompute_max_speed(scout);
     scout.speed = scout.max_speed;
+    // An owned world: classic gives an unowned one only its potential.
+    game_data.planets[13].owner.0 = 2;
     game_data.planets[13].stardock.destroyers = 2;
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 

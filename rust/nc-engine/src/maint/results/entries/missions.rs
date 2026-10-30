@@ -13,7 +13,7 @@ use crate::maint::results::compose::{
 };
 use crate::maint::results::entries::intel::{
     matching_planet_intel_event, owner_clause_from_snapshot, scouted_world_report_body,
-    stardock_scan_summary_from_snapshot,
+    stardock_scan_summary_from_snapshot, unowned_world_scout_body,
 };
 use crate::maint::results::entries::{
     NarrativePhase, ReportEntry, ReportTarget, narrative_phase_for_report_text,
@@ -504,9 +504,10 @@ pub fn push_mission_entries(
             (Mission::ViewWorld, MissionOutcome::Succeeded) => {
                 let body = if let Some(intel_event) = matching_planet_intel_event(events, event) {
                     if let Some(snapshot) = intel_event.observed_snapshot.as_ref() {
+                        let owner_clause = owner_clause_from_snapshot(snapshot, game_data);
                         format!(
-                            " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {} and has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
-                            owner_clause_from_snapshot(snapshot, game_data),
+                            " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {owner_clause} {} has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
+                            view_joiner(&owner_clause),
                             snapshot.known_potential_production.unwrap_or(0),
                         )
                     } else if let Some(planet_idx) = event.planet_idx {
@@ -523,7 +524,8 @@ pub fn push_mission_entries(
                                 )
                             };
                             format!(
-                                " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {owner_clause} and has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
+                                " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {owner_clause} {} has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
+                                view_joiner(&owner_clause),
                                 u16::from(planet.potential_production),
                             )
                         } else {
@@ -733,7 +735,12 @@ pub fn push_mission_entries(
                             Some(owner) => classic_empire_clause(game_data, owner),
                             None => "Unknown".to_string(),
                         };
-                        let body = scouted_world_report_body(
+                        let body = if snapshot.known_owner_empire_id == Some(0) {
+                            unowned_world_scout_body(
+                                [x, y],
+                                snapshot.known_potential_production.unwrap_or(0),
+                            )
+                        } else { scouted_world_report_body(
                             snapshot.known_name.as_deref().unwrap_or("Unknown"),
                             [
                                 owner,
@@ -744,7 +751,7 @@ pub fn push_mission_entries(
                                 snapshot.known_ground_batteries.unwrap_or(0).to_string(),
                             ],
                             &stardock_scan_summary_from_snapshot(snapshot),
-                        );
+                        ) };
                         (
                             0x0Bu8,
                             RESULTS_TAIL_SCOUTING,
@@ -762,7 +769,9 @@ pub fn push_mission_entries(
                             classic_empire_clause(game_data, planet.owner.0)
                         };
                         let stardock_summary = stardock_scan_summary(planet);
-                        let body = scouted_world_report_body(
+                        let body = if planet.owner.0 == 0 {
+                            unowned_world_scout_body([x, y], u16::from(planet.potential_production))
+                        } else { scouted_world_report_body(
                             &planet.name.clone(),
                             [
                                 owner,
@@ -776,7 +785,7 @@ pub fn push_mission_entries(
                                 u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX).to_string(),
                             ],
                             &stardock_summary,
-                        );
+                        ) };
                         (
                             0x0Bu8,
                             RESULTS_TAIL_SCOUTING,
@@ -855,4 +864,14 @@ pub fn push_mission_entries(
         });
     }
     consumed_roe_disposition_indices
+}
+
+/// Classic's View World report: an unowned world "but has" a potential,
+/// any other "and has" one.
+fn view_joiner(owner_clause: &str) -> &'static str {
+    if owner_clause == "unowned" {
+        "but"
+    } else {
+        "and"
+    }
 }

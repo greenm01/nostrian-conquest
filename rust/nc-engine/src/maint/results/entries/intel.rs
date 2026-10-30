@@ -71,6 +71,15 @@ pub fn scouted_world_report_body(
     lines.join("\n")
 }
 
+/// Scout Solar System report body for an unowned world: classic gives only
+/// its potential.
+pub fn unowned_world_scout_body(coords: [u8; 2], potential: u16) -> String {
+    let [x, y] = coords;
+    format!(
+        " Scouting mission report: We are in extended orbit around the world in System({x},{y}). The world is unowned but has a potential value of {potential} points."
+    )
+}
+
 pub fn push_intel_entries(
     entries: &mut Vec<ReportEntry>,
     game_data: &CoreGameData,

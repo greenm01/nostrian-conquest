@@ -781,7 +781,7 @@ fn restore_scout_orders_and_generate_on_station_observations(
                             planet_idx,
                             nc_data::PlanetIntelSource::ScoutSolarSystem,
                         ),
-                        stardate_week: None,
+                        stardate_week: Some(1),
                     });
                 }
                 movement_events.mission_events.push(MissionEvent {
@@ -793,7 +793,8 @@ fn restore_scout_orders_and_generate_on_station_observations(
                     planet_idx,
                     location_coords: Some(coords),
                     target_coords: Some(coords),
-                    stardate_week: None,
+                    // Classic reports a scout already in orbit in the year's first week.
+                    stardate_week: Some(1),
                 });
             }
             _ => {}
