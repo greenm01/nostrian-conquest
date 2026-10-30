@@ -147,7 +147,7 @@ fn patrol_contact_report_uses_ascii_dash_within_record_bytes() {
 }
 
 #[test]
-fn structured_report_rows_keep_label_column_alignment() {
+fn structured_report_rows_put_one_space_after_the_label() {
     let mut game_data = seeded_game_data();
     seed_world_with_raw_name(&mut game_data, b"biggy");
 
@@ -156,11 +156,16 @@ fn structured_report_rows_keep_label_column_alignment() {
         .iter()
         .find(|line| line.starts_with("Attacker:"))
         .expect("attacker row");
-    assert_eq!(&attacker[..18], "Attacker:         ");
+    assert!(attacker.starts_with("Attacker: "), "{attacker}");
     let force_idx = lines
         .iter()
         .position(|line| line.starts_with("Attacking force:"))
         .expect("attacking force row");
-    assert_eq!(&lines[force_idx][..18], "Attacking force:  ");
-    assert!(lines[force_idx][18..].starts_with(|ch: char| ch.is_ascii_uppercase()));
+    let value = lines[force_idx]
+        .strip_prefix("Attacking force: ")
+        .expect("one space after the label");
+    assert!(
+        value.starts_with(|ch: char| ch.is_ascii_uppercase()),
+        "{value}"
+    );
 }

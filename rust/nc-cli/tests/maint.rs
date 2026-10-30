@@ -1308,13 +1308,13 @@ fn maint_rust_surviving_fleet_battle_reports_loaded_armies_without_zero_army_cla
     assert!(
         report_texts
             .iter()
-            .any(|report| report.contains("Our forces:       DD3 TT*2")),
+            .any(|report| report.contains("Our forces: DD3 TT*2")),
         "expected friendly force summary with loaded armies, got: {report_texts:?}"
     );
     assert!(
         report_texts
             .iter()
-            .any(|report| { report.contains("Alien forces:     DD1 TT2") })
+            .any(|report| { report.contains("Alien forces: DD1 TT2") })
     );
     assert!(
         !report_texts
@@ -2143,11 +2143,11 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     let attacker_report =
         joined_report_containing(&results, "ALERT: Planetary invasion successful!");
     assert!(
-        attacker_report.contains("World defenses:   5 ground batteries and 60 armies"),
+        attacker_report.contains("World defenses: 5 ground batteries and 60 armies"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy losses:     5 ground batteries and 60 armies"),
+        attacker_report.contains("Enemy losses: 5 ground batteries and 60 armies"),
         "{attacker_report}"
     );
     assert!(
@@ -2171,7 +2171,7 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     );
     assert!(defender_report.contains("TT*120"), "{defender_report}");
     assert!(
-        defender_report.contains("Our defenses:     5 ground batteries and 60 armies"),
+        defender_report.contains("Our defenses: 5 ground batteries and 60 armies"),
         "{defender_report}"
     );
     assert!(
@@ -2325,11 +2325,11 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let attacker_report = joined_report_containing(&results, "ALERT: Blitz assault successful!");
     assert!(
-        attacker_report.contains("World defenses:   1 ground battery and 1 army"),
+        attacker_report.contains("World defenses: 1 ground battery and 1 army"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy losses:     1 ground battery and 1 army"),
+        attacker_report.contains("Enemy losses: 1 ground battery and 1 army"),
         "{attacker_report}"
     );
 
@@ -2341,7 +2341,7 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     assert!(defender_report.contains("DD1"), "{defender_report}");
     assert!(defender_report.contains("TT*10"), "{defender_report}");
     assert!(
-        defender_report.contains("Our defenses:     1 ground battery and 1 army"),
+        defender_report.contains("Our defenses: 1 ground battery and 1 army"),
         "{defender_report}"
     );
 

@@ -938,8 +938,8 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
         .join(" ")
         .replace('\n', " ");
     assert!(text.contains("ALERT: Orbital bombardment underway!"));
-    assert!(text.contains("Our forces:       BB10 CA11 TT*14 TT7"));
-    assert!(text.contains("World defenses:   undefended"));
+    assert!(text.contains("Our forces: BB10 CA11 TT*14 TT7"));
+    assert!(text.contains("World defenses: undefended"));
     assert!(text.contains("Bombing damage: 336 points of industry destroyed."));
     assert!(text.contains("Bombing damage: 25 stored production destroyed."));
     assert!(!text.contains("336 factories"));
@@ -1126,7 +1126,7 @@ fn scout_system_report_uses_estimated_production_not_present_production() {
 }
 
 #[test]
-fn scout_system_report_aligns_its_fact_rows() {
+fn scout_system_report_puts_one_space_after_each_label() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)
         .with_year(3026)
@@ -1165,9 +1165,7 @@ fn scout_system_report_aligns_its_fact_rows() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events)).join("\n");
     let lines: Vec<&str> = text.lines().collect();
     assert!(
-        lines
-            .iter()
-            .any(|line| line.starts_with("Owned by:         ")),
+        lines.iter().any(|line| line.starts_with("Owned by: Empire")),
         "{text}"
     );
     assert!(lines.contains(&"Number of armies: 7"), "{text}");

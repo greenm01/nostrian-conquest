@@ -1,7 +1,5 @@
 use super::binary::{RESULTS_TEXT_SIZE, wrap_classic_paragraph};
 
-pub const STRUCTURED_LABEL_WIDTH: usize = 18;
-
 pub enum StructuredBodyItem {
     Title(String),
     Label { label: String, value: String },
@@ -76,23 +74,10 @@ pub fn wrap_text_lines(text: &str, width: usize) -> Vec<String> {
     lines
 }
 
+/// A labeled row as classic writes it: the label, one space, the value.
 pub fn wrap_labeled_lines(label: &str, value: &str) -> Vec<String> {
-    let label_width = STRUCTURED_LABEL_WIDTH.min(RESULTS_TEXT_SIZE.saturating_sub(8));
-    let value_width = RESULTS_TEXT_SIZE.saturating_sub(label_width);
-    let wrapped_value = wrap_text_lines(value, value_width);
-    if wrapped_value.is_empty() {
+    if value.trim().is_empty() {
         return vec![label.trim_end().to_string()];
     }
-
-    let mut lines = Vec::with_capacity(wrapped_value.len());
-    let first_prefix = format!("{label:<label_width$}");
-    let continuation_prefix = " ".repeat(label_width);
-    for (idx, chunk) in wrapped_value.into_iter().enumerate() {
-        if idx == 0 {
-            lines.push(format!("{first_prefix}{chunk}"));
-        } else {
-            lines.push(format!("{continuation_prefix}{chunk}"));
-        }
-    }
-    lines
+    wrap_text_lines(&format!("{} {value}", label.trim_end()), RESULTS_TEXT_SIZE)
 }
