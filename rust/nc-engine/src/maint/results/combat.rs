@@ -237,7 +237,7 @@ pub fn planetary_defense_outcome_line(
 pub fn crippled_batteries_line(crippled: u8) -> Option<String> {
     (crippled > 0).then(|| {
         format!(
-            "{crippled} ground {} left crippled; crippled batteries recover only after a year in which the world is not attacked.",
+            "{crippled} ground {} left crippled.",
             if crippled == 1 { "battery" } else { "batteries" }
         )
     })
