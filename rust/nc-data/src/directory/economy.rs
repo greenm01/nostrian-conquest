@@ -242,6 +242,18 @@ impl CoreGameData {
                 empire_name: empire_name_for_rankings(record),
                 planets_owned: self.player_owned_planet_count_current_known(idx + 1),
                 current_production: self.empire_present_production(idx + 1),
+                previous_planets: self
+                    .conquest
+                    .previous_planet_count
+                    .get(idx)
+                    .copied()
+                    .unwrap_or(0),
+                previous_production: self
+                    .conquest
+                    .previous_production
+                    .get(idx)
+                    .copied()
+                    .unwrap_or(0),
             })
             .collect::<Vec<_>>();
 

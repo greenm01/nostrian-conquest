@@ -13,12 +13,14 @@ use nc_data::{EmpireProductionRankingSort, PublicEmpireStatus, player_public_sta
 
 pub struct RankingsScreen;
 
-const RANKINGS_COLUMNS: [TableColumn<'static>; 5] = [
-    TableColumn::left("Empire Name", 23),
-    TableColumn::right("ID", 4),
-    TableColumn::right("Planets", 11),
-    TableColumn::right("Production", 16),
-    TableColumn::right("State", 12),
+const RANKINGS_COLUMNS: [TableColumn<'static>; 7] = [
+    TableColumn::left("Empire Name", 20),
+    TableColumn::right("ID", 3),
+    TableColumn::right("Planets", 7),
+    TableColumn::right("Prev Planets", 12),
+    TableColumn::right("Production", 10),
+    TableColumn::right("Prev Prod", 9),
+    TableColumn::right("State", 8),
 ];
 
 impl RankingsScreen {
@@ -51,7 +53,9 @@ impl RankingsScreen {
                     row.empire_name,
                     format_empire_id(row.empire_id),
                     row.planets_owned.to_string(),
+                    row.previous_planets.to_string(),
                     row.current_production.to_string(),
+                    row.previous_production.to_string(),
                     status.to_string(),
                 ]
             })

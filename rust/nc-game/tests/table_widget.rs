@@ -1448,6 +1448,18 @@ fn rankings_screen_centers_block_and_pins_dismiss_prompt_to_table() {
 
     assert_eq!(title_col, table_col + 1);
     assert_eq!(dismiss_col, table_col + 1);
+
+    let header = buffer.plain_line(table_row + 1);
+    assert!(header.contains("Prev Planets"), "{header}");
+    assert!(header.contains("Prev Prod"), "{header}");
+    let first_row = buffer.plain_line(table_row + 3);
+    let cells = first_row
+        .split('│')
+        .map(str::trim)
+        .filter(|cell| !cell.is_empty())
+        .collect::<Vec<_>>();
+    // The ECUTIL fixture seeds every empire's previous year at 1 planet, 100 production.
+    assert_eq!(&cells[2..6], ["1", "1", "100", "100"], "{first_row}");
 }
 
 #[test]

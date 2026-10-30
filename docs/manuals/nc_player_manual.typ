@@ -921,7 +921,13 @@ New reports and messages from the latest maintenance appear in the scrolling
 login review. You can read and remove them there before you reach the main
 menu.
 
-The empire rankings table shows each joined empire in one of three states:
+The empire rankings table lists each empire's planets and production, both
+this turn and last. *Planets* and *Production* are the empire's current
+counts. *Prev Planets* and *Prev Prod* are the same counts from the previous
+turn. Compare the two to see whether a rival is growing or shrinking, and by
+how much.
+
+The table also shows each joined empire in one of three states:
 *Active*, *MIA*, or *Defeated*. *MIA* means inactivity autopilot is running
 because that player missed three turns in a row. *Defeated* means the empire
 has been removed from active command.

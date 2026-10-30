@@ -116,6 +116,9 @@ pub struct EmpireProductionRankingRow {
     pub empire_name: String,
     pub planets_owned: usize,
     pub current_production: u16,
+    /// Planets and production at the start of the last maintenance pass.
+    pub previous_planets: u8,
+    pub previous_production: u16,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
