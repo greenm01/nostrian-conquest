@@ -171,11 +171,3 @@ pub fn format_report_first_line(source_clause: &str, week: u8, year: u16) -> Str
         format!("{source_clause}{}{stardate}", " ".repeat(padding))
     }
 }
-
-/// Format the year-only rankings banner `Stardate`.
-///
-/// Classic EC uses `Stardate: YYYY A.D.` for the rankings header rather than
-/// the `week/year` form used in per-report entries.
-pub fn format_rankings_stardate(year: u16) -> String {
-    format!("Stardate: {year} A.D.")
-}

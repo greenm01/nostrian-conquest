@@ -5,13 +5,11 @@ pub mod entries;
 pub mod format;
 pub mod join;
 pub mod mod_constants;
-pub mod rankings;
 pub mod render;
 pub mod structured;
 pub mod validation;
 
 pub use entries::{apply_results_reviewable_flags, build_results_dat, build_results_report_blocks};
-pub use rankings::build_rankings_text;
 
 #[cfg(test)]
 mod tests {

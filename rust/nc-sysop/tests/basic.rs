@@ -300,6 +300,7 @@ fn nc_sysop_help_lists_only_local_and_bbs_public_subcommands() {
     assert!(stdout.contains("settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat>"));
     assert!(stdout.contains("map-export --dir <game_dir> [--player <N>]"));
     assert!(stdout.contains("economy-report --dir <game_dir> --player <N>"));
+    assert!(stdout.contains("rankings-export --dir <game_dir>"));
     assert!(stdout.contains("check --dir <game_dir>"));
     assert!(!stdout.contains("maint-all"));
     assert!(!stdout.contains("host "));
@@ -464,4 +465,37 @@ fn nc_sysop_check_passes_a_played_campaign_and_reports_a_damaged_file() {
 
     let _ = fs::remove_dir_all(&target);
     let _ = fs::remove_dir_all(&empty);
+}
+
+#[test]
+fn nc_sysop_rankings_export_writes_kdl_only_when_asked() {
+    let target = unique_temp_dir("nc-sysop-rankings-export");
+    let dir = target.to_str().expect("utf-8 path");
+    run_nc_sysop(&["new-game", dir, "--players", "4", "--seed", "7"]);
+    run_nc_sysop(&["maint", dir]);
+    assert!(
+        !target.join("RANKINGS.TXT").exists(),
+        "maintenance writes no rankings"
+    );
+
+    let stdout = run_nc_sysop(&["rankings-export", "--dir", dir]);
+    assert!(stdout.contains("Exported rankings"));
+    let text =
+        fs::read_to_string(target.join("exports/RANKINGS-Y3001.kdl")).expect("rankings file");
+    let doc: kdl::KdlDocument = text.parse().expect("valid KDL");
+    let rankings = doc.get("rankings").expect("rankings node");
+    assert_eq!(
+        rankings.get("year").and_then(|v| v.as_integer()),
+        Some(3001)
+    );
+    let empires = rankings.children().expect("empires").nodes();
+    assert_eq!(empires.len(), 4);
+    for (rank, empire) in empires.iter().enumerate() {
+        assert_eq!(
+            empire.get("rank").and_then(|v| v.as_integer()),
+            Some(rank as i128 + 1)
+        );
+        assert!(empire.get("production").is_some() && empire.get("prev-production").is_some());
+    }
+    let _ = fs::remove_dir_all(&target);
 }

@@ -853,6 +853,33 @@ names, owners, or strengths. This is the map every player starts with, so
 it is safe to post for all players. It writes `ECMAP-GALAXY-Y<year>.TXT`
 and `.CSV`.
 
+== Posting the Rankings
+
+Classic ECMAINT wrote a `RANKINGS.TXT` file on every run, for the sysop to
+copy into the board's bulletins. NC writes the rankings only when you ask:
+
+```sh
+nc-sysop rankings-export --dir /path/to/mygame
+```
+
+It writes `RANKINGS-Y<year>.kdl` in `<game_dir>/exports`, or in the folder
+you name with `--out-dir <path>`. Run it after maintenance, from the same
+event script, to keep a bulletin or web page current. The file is KDL, so a
+script can turn it into whatever your board shows:
+
+```kdl
+rankings year=3021 {
+    empire 3 rank=1 name="Vorlon Reach" planets=14 production=1210 prev-planets=13 prev-production=1150
+    empire 1 rank=2 name="Empire of Foo" planets=11 production=980 prev-planets=11 prev-production=940
+}
+```
+
+Empires are listed by production, as the in-game rankings screen lists
+them. Each line gives the empire's number, its rank, its name, its planets
+and production now, and its planets and production a year ago (`prev-`).
+Every player can already see these numbers in the game, so the file is safe
+to post for all.
+
 == Checking a Player's Economy
 
 To see one empire's economy for the current year, use:
@@ -920,6 +947,9 @@ Logging flags come before the subcommand:
   `-DETAILS.CSV` files. Without `--player`, write the galaxy map with no
   empire's intel as `ECMAP-GALAXY-Y<year>` `.TXT` and `.CSV`. Default
   folder: `<game_dir>/exports`.
+- *`rankings-export --dir <game_dir> [--out-dir <path>]`:* Write the year's
+  empire rankings as `RANKINGS-Y<year>.kdl`. Default folder:
+  `<game_dir>/exports`. Maintenance does not write rankings on its own.
 - *`economy-report --dir <game_dir> --player <N>`:* Print one empire's
   economy for the current year: totals, ranks, and each planet it owns.
 - *`check --dir <game_dir>`:* Check that `ncgame.db` is intact, its latest

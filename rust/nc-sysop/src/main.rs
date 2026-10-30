@@ -1,6 +1,7 @@
 mod ai_seats;
 mod check;
 mod map_export;
+mod rankings_export;
 mod usage;
 
 use std::env;
@@ -85,6 +86,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 map_export::export_galaxy_map(&dir, &out_dir)
             }
+        }
+        "rankings-export" => {
+            init_logging(&parsed, false)?;
+            if rest.iter().any(|arg| arg == "--help" || arg == "-h") {
+                usage::print_rankings_export_usage();
+                return Ok(());
+            }
+            tracing::info!("running nc-sysop rankings-export");
+            let dir = parse_required_dir_flag(&rest)?;
+            let out_dir = parse_optional_path_flag_anywhere(&rest, "--out-dir")?
+                .unwrap_or_else(|| dir.join("exports"));
+            rankings_export::export_rankings(&dir, &out_dir)
         }
         "check" => {
             init_logging(&parsed, false)?;

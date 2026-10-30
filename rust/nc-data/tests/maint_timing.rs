@@ -1,7 +1,7 @@
 use nc_data::Mission;
 use nc_engine::maint::timing::{
-    TimingCode, apply_timing_offset, event_base_week, format_rankings_stardate,
-    format_report_first_line, format_stardate, timing_code_offset,
+    TimingCode, apply_timing_offset, event_base_week, format_report_first_line, format_stardate,
+    timing_code_offset,
 };
 
 #[test]
@@ -49,11 +49,6 @@ fn base_week_one_year_speed3_is_around_30() {
 fn format_stardate_zero_pads_week() {
     assert_eq!(format_stardate(32, 3001), "Stardate: 32/3001");
     assert_eq!(format_stardate(1, 3010), "Stardate: 01/3010");
-}
-
-#[test]
-fn format_rankings_stardate_uses_ad_suffix() {
-    assert_eq!(format_rankings_stardate(3001), "Stardate: 3001 A.D.");
 }
 
 #[test]

@@ -3923,6 +3923,7 @@ dependencies = [
 name = "nc-sysop"
 version = "1.0.0-beta.5"
 dependencies = [
+ "kdl 6.5.0",
  "nc-ai-onnx",
  "nc-compat",
  "nc-data",

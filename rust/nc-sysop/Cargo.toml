@@ -9,6 +9,7 @@ name = "nc-sysop"
 path = "src/main.rs"
 
 [dependencies]
+kdl = "6"
 nc-ai-onnx = { path = "../nc-ai-onnx" }
 nc-data = { path = "../nc-data" }
 nc-engine = { path = "../nc-engine" }
@@ -19,5 +20,6 @@ tracing = "0.1"
 winresource = "0.1"
 
 [dev-dependencies]
+kdl = "6"
 nc-compat = { path = "../nc-compat" }
 nc-data = { path = "../nc-data" }

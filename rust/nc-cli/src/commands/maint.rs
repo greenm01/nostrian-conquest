@@ -10,8 +10,7 @@ use nc_data::{
     CampaignStore, CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents,
 };
 use nc_engine::{
-    CampaignMaintenance, DiplomacyConfig, DiplomacyDirective, build_rankings_text,
-    validate_maintenance_state,
+    CampaignMaintenance, DiplomacyConfig, DiplomacyDirective, validate_maintenance_state,
 };
 
 use crate::commands::runtime::import_directory_if_store_empty;
@@ -152,13 +151,10 @@ pub fn run_rust_maintenance_with_options(
         start_year, maintenance.game_data.conquest.game_year
     );
 
-    // Saving consumes the run, so the rankings are read before it.
-    let rankings_text = build_rankings_text(&maintenance.game_data);
     let player_count = maintenance.game_data.conquest.player_count;
     maintenance.save(run.store())?;
     drop(run);
 
-    fs::write(dir.join("RANKINGS.TXT"), rankings_text.as_bytes())?;
     save_diplomacy_overrides_if_needed(dir, player_count, &diplomacy_overrides)?;
 
     // Remove Move.Tok crash marker after successful run.
