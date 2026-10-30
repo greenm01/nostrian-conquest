@@ -99,7 +99,10 @@ fn repelled(events: &MaintenanceEvents, kind: Mission) -> bool {
         event.fleet_idx == 0
             && event.kind == kind
             && event.outcome == MissionOutcome::Aborted
-            && event.abort_reason == Some(MissionAbortReason::OrbitBlocked)
+            && matches!(
+                event.abort_reason,
+                Some(MissionAbortReason::OrbitBlocked | MissionAbortReason::RoeDeclined(_))
+            )
     })
 }
 

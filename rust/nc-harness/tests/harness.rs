@@ -300,7 +300,7 @@ fn fleet_destroyed_preview_surfaces_both_destroyed_and_survivor_wording() {
         defender
             .reports
             .iter()
-            .any(|report| report.contains("ALERT: Fleet contact lost!"))
+            .any(|report| report.contains("We lost all contact with the"))
     );
 }
 

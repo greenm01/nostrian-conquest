@@ -120,15 +120,11 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
         1,
         "destroyed fleet should suppress generic battle: {texts:?}"
     );
-    let before_forces = texts[0]
-        .split("Our forces:")
-        .next()
-        .expect("expected Our forces section");
-    assert!(before_forces.ends_with("\n\n"), "{:?}", texts[0]);
-    assert!(texts[0].contains("Last contact:"));
-    assert!(texts[0].contains("destroyed while intercepting"));
-    assert!(texts[0].contains("ALERT: Fleet contact lost!"));
-    assert!(!texts[0].contains("Interception successful."));
+    let text = texts[0].split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(text.contains("We lost all contact with the"), "{text}");
+    assert!(text.contains("shortly after it intercepted"), "{text}");
+    assert!(text.contains("burnt flight recorder"), "{text}");
+    assert!(!text.contains("Interception successful."), "{text}");
 }
 
 #[test]

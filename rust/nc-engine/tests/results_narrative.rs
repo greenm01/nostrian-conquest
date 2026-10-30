@@ -106,7 +106,7 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         .expect("merged contact report should exist");
     let destroyed_idx = texts
         .iter()
-        .position(|text| text.contains("ALERT: Fleet contact lost!"))
+        .position(|text| text.contains("We lost all contact with the"))
         .expect("lost-contact report should exist");
     assert!(
         contact_idx < destroyed_idx,
@@ -268,9 +268,13 @@ fn destroyed_reporting_fleet_uses_telemetry_report_even_if_side_holds_field() {
     });
 
     let rows = build_results_report_blocks(&game_data, &events);
-    let text = viewer_report_texts(1, &rows).join(" ");
+    let text = viewer_report_texts(1, &rows)
+        .join(" ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(text.contains("From your Fleet Command Center:"));
-    assert!(text.contains("ALERT: Fleet contact lost!"));
+    assert!(text.contains("We lost all contact with the"), "{text}");
     assert!(!text.contains("From your 15th Fleet"));
     assert!(!text.contains("Interception successful."));
 }
@@ -1011,7 +1015,12 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
         .join(" ")
         .replace('\n', " ");
-    assert!(text.contains("Hostile return fire destroyed the bombardment force."));
+    // A lost bomber sends nothing; its loss report tells the incident.
+    assert!(!text.contains("Bombing damage"), "{text}");
+    assert!(
+        text.contains("We lost all contact with the 10th Fleet"),
+        "{text}"
+    );
 }
 
 #[test]
@@ -1779,14 +1788,13 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
         1,
         "starbase-only defense should not emit duplicate battle + telemetry reports: {texts:?}"
     );
-    let before_forces = texts[0]
-        .split("Alien forces:")
-        .next()
-        .expect("expected Alien forces section");
-    assert!(before_forces.ends_with("\n\n"), "{:?}", texts[0]);
-    assert!(texts[0].contains("Last contact:     destroyed by"));
-    assert!(texts[0].contains("ALERT: Starbase contact lost!"));
-    assert!(texts[0].contains("Alien forces:     BB1 CA3 TT*11 TT3"));
+    let text = texts[0].split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(text.contains("We lost all contact with Starbase"), "{text}");
+    assert!(text.contains("shortly after it was attacked by"), "{text}");
+    assert!(
+        text.contains("the alien force initially contained BB1 CA3 TT*11 TT3"),
+        "{text}"
+    );
 }
 
 #[test]
@@ -1935,7 +1943,7 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
         "expected contact and destroyed-starbase reports: {texts:?}"
     );
     assert!(texts[0].contains("We have located and identified an alien fleet"));
-    assert!(texts[1].contains("ALERT: Starbase contact lost!"));
+    assert!(texts[1].contains("We lost all contact with Starbase"));
 }
 
 /// A starbase's sighting report ends with what the base makes of the fleet,

@@ -414,8 +414,8 @@ fn maint_rust_fleet_battle_generates_results_report_from_battle_events() {
     let text = String::from_utf8_lossy(&results);
     assert!(
         text.contains("ALERT: Enemy fleet contact!")
-            || text.contains("ALERT: Fleet contact lost!")
-            || text.contains("ALERT: Starbase contact lost!")
+            || text.contains("We lost all contact with the")
+            || text.contains("We lost all contact with Starbase")
     );
     assert!(text.contains("<end of transmission>"));
     assert!(text.contains("System("));
@@ -791,10 +791,10 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar() {
     let text = String::from_utf8_lossy(&results);
     assert!(
         text.contains("ALERT: Enemy fleet contact!")
-            || text.contains("ALERT: Fleet contact lost!")
-            || text.contains("ALERT: Starbase contact lost!")
+            || text.contains("We lost all contact with the")
+            || text.contains("We lost all contact with Starbase")
     );
-    assert!(text.contains("ALERT: Fleet contact lost!") || text.contains("held the field"));
+    assert!(text.contains("We lost all contact with the") || text.contains("held the field"));
 
     let diplomacy_sidecar = target.join("diplomacy.kdl");
     assert!(
@@ -900,8 +900,8 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar_for_large_games() {
     let text = String::from_utf8_lossy(&results);
     assert!(
         text.contains("ALERT: Enemy fleet contact!")
-            || text.contains("ALERT: Fleet contact lost!")
-            || text.contains("ALERT: Starbase contact lost!")
+            || text.contains("We lost all contact with the")
+            || text.contains("We lost all contact with Starbase")
     );
 
     let diplomacy_sidecar = target.join("diplomacy.kdl");
@@ -1136,7 +1136,7 @@ fn maint_rust_without_enemy_declaration_reports_contact_without_forcing_battle()
     let text = String::from_utf8_lossy(&results);
     assert!(text.contains("Sensor contact") || text.contains("contact shows"));
     assert!(!text.contains("ALERT: Enemy fleet contact!"));
-    assert!(!text.contains("ALERT: Fleet contact lost!"));
+    assert!(!text.contains("We lost all contact with the"));
 
     cleanup_dir(&target);
 }
@@ -1249,7 +1249,7 @@ fn maint_rust_invalidated_scout_mission_reports_abort_before_contact_loss() {
     assert!(text.contains("lacks the required scout ship"));
     assert!(text.contains("withdrawing toward"), "{text}");
     assert!(!text.contains("flight recorder"));
-    assert!(!text.contains("ALERT: Fleet contact lost!"));
+    assert!(!text.contains("We lost all contact with the"));
     assert!(!text.contains("Scout mission report: We were attacked by"));
     assert!(!text.contains("Scout mission report: We successfully intercepted"));
 
@@ -1357,8 +1357,8 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
     assert!(text.contains("From your Fleet Command Center"));
-    assert!(text.contains("ALERT: Starbase contact lost!"));
-    assert!(text.contains("Enemy losses:"));
+    assert!(text.contains("We lost all contact with Starbase"));
+    assert!(text.contains("The flight recorder recorded"));
 
     let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(game_data.players[0].bases_first.0, 0);
@@ -1612,8 +1612,13 @@ fn maint_rust_view_world_generates_results_and_database_intel() {
     // The fleet climbs back out after viewing, as classic's View does, and
     // that Move report follows the viewing report.
     let viewing = text.find("Viewing mission report").unwrap();
-    let moved = text.find("Move mission report").expect("the climb out is reported");
-    assert!(viewing < moved, "the climb-out report comes after the viewing");
+    let moved = text
+        .find("Move mission report")
+        .expect("the climb out is reported");
+    assert!(
+        viewing < moved,
+        "the climb-out report comes after the viewing"
+    );
     // Strings near the 75-byte chunk boundary may be split across records in the new Stardate
     // header format. Check for unambiguous early-body content instead.
     assert!(text.contains("entered System(15,13)") || text.contains("long range"));
@@ -1821,6 +1826,15 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
 fn maint_rust_bombardment_generates_attacker_side_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-bombard-report");
     copy_fixture_dir("fixtures/ecmaint-bombard-arrive/v1.5", &target);
+    // Without batteries the world cannot destroy the bombers, which then
+    // report the run themselves; a lost force has only its loss report.
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    for planet in &mut game_data.planets {
+        if planet.sector == Coords::new(15, 13) {
+            planet.ground_batteries = 0;
+        }
+    }
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2880,8 +2894,8 @@ fn maint_rust_blitz_clears_hostile_empty_transports_in_orbit() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let attacker_report = joined_report_containing(&results, "ALERT: Enemy fleet contact!");
     assert!(attacker_report.contains("The aliens were completely destroyed."));
-    let defender_report = joined_report_containing(&results, "ALERT: Fleet contact lost!");
-    assert!(defender_report.contains("Fleet lost:"));
+    let defender_report = joined_report_containing(&results, "We lost all contact with the");
+    assert!(defender_report.contains("burnt flight recorder"));
 
     let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let defender = reloaded
@@ -3198,7 +3212,7 @@ fn maint_rust_battle_abort_scout_report_mentions_retreat_destination() {
             || text.contains("we withdrew toward")
             || text.contains("withdrawing toward")
             || text.contains("holding position")
-            || text.contains("ALERT: Fleet contact lost!"),
+            || text.contains("We lost all contact with the"),
         "{text}"
     );
     assert!(text.contains("planet \"") || text.contains("System("));
@@ -3250,25 +3264,18 @@ fn maint_rust_destroyed_fleet_report_separates_last_contact_from_force_rows() {
         .find(|(_, lines)| {
             lines
                 .iter()
-                .any(|line| line == "ALERT: Fleet contact lost!")
+                .any(|line| line.contains("We lost all contact with the"))
         })
         .expect("expected fleet contact lost report");
-    let report = report_lines.join("\n");
+    let report = report_lines.join(" ");
 
     assert!(
-        report_lines
-            .iter()
-            .any(|line| line.starts_with("Last contact:"))
-    );
-    assert!(
-        report.contains("destroyed by") || report.contains("destroyed while intercepting"),
+        report.contains("shortly after it was attacked by")
+            || report.contains("shortly after it intercepted"),
         "{report}"
     );
-    let our_forces_idx = report_lines
-        .iter()
-        .position(|line| line.starts_with("Our forces:"))
-        .expect("expected Our forces section");
-    assert_eq!(report_lines[our_forces_idx - 1], "", "{report}");
+    assert!(report.contains("Records show the"), "{report}");
+    assert!(report.contains("burnt flight recorder"), "{report}");
 
     cleanup_dir(&target);
 }
@@ -3963,7 +3970,7 @@ fn maint_rust_destroyed_fleet_abort_is_suppressed() {
 
     // Fleet destruction report must appear.
     assert!(
-        text.contains("ALERT: Fleet contact lost!"),
+        text.contains("We lost all contact with the"),
         "expected fleet destroyed report, got: {text}"
     );
     // No separate abort report for the destroyed fleet.
@@ -4019,23 +4026,10 @@ fn maint_rust_bombard_destruction_emits_lost_contact_telemetry() {
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
-    assert!(text.contains("ALERT: Fleet contact lost!"), "{text}");
-    assert!(
-        text.contains("Alien forces:     15 ground batteries and 25 armies"),
-        "{text}"
-    );
-    assert!(
-        text.contains("ALERT: Orbital bombardment underway!"),
-        "{text}"
-    );
-    assert!(
-        text.contains("Hostile return fire destroyed the bombardment force."),
-        "{text}"
-    );
-    assert!(
-        !text.contains("We are maintaining bombardment position and will continue next turn."),
-        "{text}"
-    );
+    // As in classic, the lost force's only report is its loss report.
+    assert!(text.contains("We lost all contact with the"), "{text}");
+    assert!(text.contains("15 ground batteries and 25 armies"), "{text}");
+    assert!(!text.contains("Hostile return fire destroyed"), "{text}");
 
     cleanup_dir(&target);
 }
@@ -4080,16 +4074,10 @@ fn maint_rust_invasion_destruction_emits_lost_contact_telemetry() {
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
-    assert!(text.contains("ALERT: Fleet contact lost!"), "{text}");
-    assert!(
-        text.contains("Alien forces:     15 ground batteries and 25 armies"),
-        "{text}"
-    );
-    assert!(
-        text.contains("ALERT: Planetary invasion blocked!")
-            || text.contains("ALERT: Planetary invasion repulsed!"),
-        "{text}"
-    );
+    // As in classic, the lost force's only report is its loss report.
+    assert!(text.contains("We lost all contact with the"), "{text}");
+    assert!(text.contains("15 ground batteries and 25 armies"), "{text}");
+    assert!(!text.contains("ALERT: Planetary invasion"), "{text}");
 
     cleanup_dir(&target);
 }
@@ -4186,16 +4174,10 @@ fn maint_rust_blitz_destruction_emits_lost_contact_telemetry() {
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
-    assert!(text.contains("ALERT: Fleet contact lost!"), "{text}");
-    assert!(
-        text.contains("Alien forces:     15 ground batteries and 25 armies"),
-        "{text}"
-    );
-    assert!(
-        text.contains("ALERT: Blitz assault blocked!")
-            || text.contains("ALERT: Blitz assault failed!"),
-        "{text}"
-    );
+    // As in classic, the lost force's only report is its loss report.
+    assert!(text.contains("We lost all contact with the"), "{text}");
+    assert!(text.contains("15 ground batteries and 25 armies"), "{text}");
+    assert!(!text.contains("ALERT: Blitz assault"), "{text}");
 
     cleanup_dir(&target);
 }

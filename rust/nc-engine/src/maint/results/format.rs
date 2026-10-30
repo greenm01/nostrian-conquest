@@ -294,14 +294,6 @@ pub fn structured_fleet_battle_alert() -> &'static str {
     "ALERT: Enemy fleet contact!"
 }
 
-pub fn structured_fleet_destroyed_alert() -> &'static str {
-    "ALERT: Fleet contact lost!"
-}
-
-pub fn structured_starbase_destroyed_alert() -> &'static str {
-    "ALERT: Starbase contact lost!"
-}
-
 pub fn structured_bombardment_alert() -> &'static str {
     "ALERT: Orbital bombardment underway!"
 }

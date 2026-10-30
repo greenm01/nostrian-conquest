@@ -155,43 +155,22 @@ pub fn push_combat_entries(
         {
             let source = "From your Fleet Command Center:";
             let header = report_header(source, event.stardate_week, year);
-            let context_rows = vec![
-                StructuredBodyItem::Label {
-                    label: "Fleet lost:".to_string(),
-                    value: fleet_label(event.reporting_fleet_number.unwrap_or(0)),
-                },
-                StructuredBodyItem::Label {
-                    label: LABEL_LAST_CONTACT.to_string(),
-                    value: fleet_command_last_contact_value(
-                        &enemy,
-                        [x, y],
-                        matches!(event.perspective, FleetBattlePerspective::Intercepted),
-                    ),
-                },
-            ];
-            let force_rows = vec![
-                StructuredBodyItem::Label {
-                    label: LABEL_OUR_FORCES.to_string(),
-                    value: friendly_initial,
-                },
-                StructuredBodyItem::Label {
-                    label: LABEL_ALIEN_FORCES.to_string(),
-                    value: enemy_initial,
-                },
-            ];
-            let mut outcome_rows = Vec::new();
-            outcome_rows.extend(surprise_sentence(event).map(StructuredBodyItem::Text));
-            outcome_rows.push(StructuredBodyItem::Label {
-                label: LABEL_ENEMY_LOSSES.to_string(),
-                value: combat_losses_value(event.enemy_losses, event.enemy_starbases_destroyed),
-            });
-            let items = structured_combat_body(
-                structured_fleet_destroyed_alert(),
-                context_rows,
-                force_rows,
-                outcome_rows,
+            let fleet = fleet_label(event.reporting_fleet_number.unwrap_or(0));
+            let verb = if matches!(event.perspective, FleetBattlePerspective::Intercepted) {
+                "intercepted"
+            } else {
+                "was attacked by"
+            };
+            let surprise = surprise_sentence(event)
+                .map(|sentence| format!(" {sentence}"))
+                .unwrap_or_default();
+            let text = format!(
+                "{header} We lost all contact with the {fleet} shortly after it {verb} {enemy} in System({x},{y}). Records show the {fleet} was composed of {friendly_initial}. According to a burnt flight recorder we recovered, the alien force initially contained {enemy_initial}.{surprise} {}",
+                flight_recorder_casualties(&combat_losses_value(
+                    event.enemy_losses,
+                    event.enemy_starbases_destroyed,
+                )),
             );
-            let text = structured_report_text(&header, items);
             entries.push(ReportEntry {
                 text,
                 kind: 0x06,
@@ -288,40 +267,18 @@ pub fn push_combat_entries(
             .unwrap_or_else(|| "an alien fleet".to_string());
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
-        let context_rows = vec![
-            StructuredBodyItem::Label {
-                label: "Fleet lost:".to_string(),
-                value: fleet_label(event.fleet_number),
-            },
-            StructuredBodyItem::Label {
-                label: LABEL_LAST_CONTACT.to_string(),
-                value: fleet_command_last_contact_value(&enemy, [x, y], event.was_intercepting),
-            },
-        ];
-        let force_rows = vec![
-            StructuredBodyItem::Label {
-                label: LABEL_OUR_FORCES.to_string(),
-                value: fleet_force_summary(
-                    event.friendly_initial,
-                    event.friendly_loaded_armies_initial,
-                ),
-            },
-            StructuredBodyItem::Label {
-                label: LABEL_ALIEN_FORCES.to_string(),
-                value: destroyed_fleet_enemy_force_value(event),
-            },
-        ];
-        let outcome_rows = vec![StructuredBodyItem::Label {
-            label: LABEL_ENEMY_LOSSES.to_string(),
-            value: destroyed_fleet_enemy_losses_value(event),
-        }];
-        let items = structured_combat_body(
-            structured_fleet_destroyed_alert(),
-            context_rows,
-            force_rows,
-            outcome_rows,
+        let fleet = fleet_label(event.fleet_number);
+        let verb = if event.was_intercepting {
+            "intercepted"
+        } else {
+            "was attacked by"
+        };
+        let text = format!(
+            "{header} We lost all contact with the {fleet} shortly after it {verb} {enemy} in System({x},{y}). Records show the {fleet} was composed of {}. According to a burnt flight recorder we recovered, the alien force initially contained {}. {}",
+            fleet_force_summary(event.friendly_initial, event.friendly_loaded_armies_initial),
+            destroyed_fleet_enemy_force_value(event),
+            flight_recorder_casualties(&destroyed_fleet_enemy_losses_value(event)),
         );
-        let text = structured_report_text(&header, items);
         entries.push(ReportEntry {
             text,
             kind: 0x06,
@@ -331,7 +288,8 @@ pub fn push_combat_entries(
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
-            narrative_phase: NarrativePhase::BattleResolution,
+            // A loss notice follows the battle or assault that caused it.
+            narrative_phase: NarrativePhase::CombatFollowOn,
         });
     }
 
@@ -347,31 +305,12 @@ pub fn push_combat_entries(
             .unwrap_or_else(|| "an alien fleet".to_string());
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
-        let context_rows = vec![
-            StructuredBodyItem::Label {
-                label: "Starbase lost:".to_string(),
-                value: format!("Starbase {}", event.starbase_id),
-            },
-            StructuredBodyItem::Label {
-                label: LABEL_LAST_CONTACT.to_string(),
-                value: fleet_command_last_contact_value(&enemy, [x, y], false),
-            },
-        ];
-        let force_rows = vec![StructuredBodyItem::Label {
-            label: LABEL_ALIEN_FORCES.to_string(),
-            value: fleet_force_summary(event.enemy_initial, event.enemy_loaded_armies_initial),
-        }];
-        let outcome_rows = vec![StructuredBodyItem::Label {
-            label: LABEL_ENEMY_LOSSES.to_string(),
-            value: ship_loss_summary(event.enemy_losses),
-        }];
-        let items = structured_combat_body(
-            structured_starbase_destroyed_alert(),
-            context_rows,
-            force_rows,
-            outcome_rows,
+        let text = format!(
+            "{header} We lost all contact with Starbase {} shortly after it was attacked by {enemy} in System({x},{y}). According to a burnt flight recorder we recovered, the alien force initially contained {}. {}",
+            event.starbase_id,
+            fleet_force_summary(event.enemy_initial, event.enemy_loaded_armies_initial),
+            flight_recorder_casualties(&ship_loss_summary(event.enemy_losses)),
         );
-        let text = structured_report_text(&header, items);
         entries.push(ReportEntry {
             text,
             kind: 0x06,
@@ -381,7 +320,8 @@ pub fn push_combat_entries(
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
-            narrative_phase: NarrativePhase::BattleResolution,
+            // A loss notice follows the battle or assault that caused it.
+            narrative_phase: NarrativePhase::CombatFollowOn,
         });
     }
 
@@ -390,6 +330,13 @@ pub fn push_combat_entries(
         let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
+        // An assault force lost in the attack sends nothing; its loss
+        // report, as in classic, tells the whole incident.
+        let attacker_lost = event.attacker_fleet_number.is_some_and(|fleet_number| {
+            events.fleet_destroyed_events.iter().any(|lost| {
+                lost.fleet_number == fleet_number && lost.reporting_empire == event.attacker_empire
+            })
+        });
         let [x, y] = planet.sector.to_array();
         let attacker_force = assault_attacker_force_summary(event);
         let source =
@@ -496,7 +443,7 @@ pub fn push_combat_entries(
             outcome_rows,
         );
         let text = structured_report_text(&header, items);
-        entries.push(ReportEntry {
+        let attacker_entry = ReportEntry {
             text,
             kind: 0x0c,
             tail: RESULTS_TAIL_INVASION,
@@ -506,7 +453,10 @@ pub fn push_combat_entries(
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
             narrative_phase: NarrativePhase::AttackerAftermath,
-        });
+        };
+        if !attacker_lost {
+            entries.push(attacker_entry);
+        }
 
         if event.defender_empire == 0 || event.outcome == MissionOutcome::Succeeded {
             continue;
@@ -611,5 +561,15 @@ pub fn push_combat_entries(
             stardate_week: event.stardate_week,
             narrative_phase: NarrativePhase::DefenderAftermath,
         });
+    }
+}
+
+/// The loss report's last line: what the lost unit took with it.
+fn flight_recorder_casualties(losses: &str) -> String {
+    match losses {
+        "none" | "no ship losses" => {
+            "The flight recorder recorded no alien casualties.".to_string()
+        }
+        losses => format!("The flight recorder recorded alien casualties of {losses}."),
     }
 }

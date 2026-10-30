@@ -365,13 +365,21 @@ fn nc_sysop_maint_persists_bombardment_report_and_runtime_damage() {
         runtime
             .report_block_rows
             .iter()
-            .any(|row| row.decoded_text.contains("Our forces:"))
+            .any(|row| row.decoded_text.contains("Attacking force:"))
     );
     assert!(
         runtime
             .report_block_rows
             .iter()
-            .any(|row| row.decoded_text.contains("World defenses:"))
+            .any(|row| row.decoded_text.contains("Our defenses:"))
+    );
+    // The bombers die to the return fire; as in classic, their owner hears
+    // only that contact was lost.
+    assert!(
+        runtime
+            .report_block_rows
+            .iter()
+            .any(|row| row.decoded_text.contains("burnt flight recorder"))
     );
     // The fixture's 3 cruisers and 5 destroyers (159 AS) cannot cripple
     // one of the four batteries on the bombardment table (t202), but the

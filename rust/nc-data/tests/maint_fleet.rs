@@ -2428,10 +2428,14 @@ fn test_tt_only_blitz_blocked_by_starbase_clears_order() {
         .find(|event| event.kind == Mission::BlitzWorld && event.outcome == MissionOutcome::Aborted)
         .expect("blocked TT*-only blitz should emit an aborted mission event");
 
-    assert_eq!(
-        abort.abort_reason,
-        Some(MissionAbortReason::OrbitBlocked),
-        "transports alone cannot fight the base: the orbit is blocked"
+    assert!(
+        matches!(
+            abort.abort_reason,
+            Some(MissionAbortReason::RoeDeclined(force))
+                if force.empire == 2 && force.starbases == 1
+        ),
+        "transports alone cannot fight the base, which the report names: {:?}",
+        abort.abort_reason
     );
     assert!(
         events.fleet_battle_events.is_empty(),
@@ -2766,5 +2770,78 @@ fn test_join_host_is_named_by_fleet_number_not_record_id() {
     assert_eq!(
         game_data.fleets[0].ships.cruisers,
         empire_1_fleet_1_cruisers
+    );
+}
+
+/// Empire 1's reports from `events`, in the order it reads them, each on
+/// one line.
+fn empire_one_reports(
+    game_data: &CoreGameData,
+    events: &nc_data::MaintenanceEvents,
+) -> Vec<String> {
+    nc_engine::build_results_report_blocks(game_data, events)
+        .into_iter()
+        .filter(|row| row.viewer_empire_id == 1)
+        .map(|row| {
+            row.decoded_text
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .collect()
+}
+
+#[test]
+fn an_roe_declined_bombardment_names_the_force_that_blocked_it() {
+    let (mut game_data, target_idx, _) =
+        hostile_on_station_ready(Order::BombardWorld, (0, 0, 1, 0, 0, 0));
+    game_data.fleets[0].rules_of_engagement = 6;
+    let enemy = &mut game_data.fleets[1];
+    enemy.owner.0 = 2;
+    enemy.sector = game_data.planets[target_idx].sector;
+    enemy.order = Order::HoldPosition;
+    enemy.speed = 0;
+    set_troop_transports(enemy, 0);
+    enemy.ships.battleships = 0;
+    enemy.ships.cruisers = 1;
+    enemy.ships.destroyers = 0;
+    enemy.ships.scouts = 0;
+    enemy.ships.etacs = 0;
+    set_fleet_at_rest(enemy);
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
+    let report = empire_one_reports(&game_data, &events)
+        .into_iter()
+        .find(|text| text.contains("Bombardment mission report"))
+        .expect("a bombardment report");
+    assert!(report.contains("We encountered"), "{report}");
+    assert!(
+        report.contains("The alien force contained CA1."),
+        "{report}"
+    );
+    assert!(
+        report.contains("In accordance with our ROE, we did not engage."),
+        "{report}"
+    );
+}
+
+#[test]
+fn a_fleet_lost_bombarding_sends_one_classic_loss_report() {
+    let (mut game_data, target_idx, _) =
+        hostile_on_station_ready(Order::BombardWorld, (0, 0, 1, 0, 0, 0));
+    game_data.fleets[0].rules_of_engagement = 10;
+    game_data.planets[target_idx].ground_batteries = 20;
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
+    let reports = empire_one_reports(&game_data, &events);
+    assert_eq!(reports.len(), 1, "{reports:#?}");
+    assert!(
+        reports[0].contains("We lost all contact with the 1st Fleet shortly after it"),
+        "{reports:#?}"
+    );
+    assert!(
+        reports[0]
+            .contains("the alien force initially contained 20 ground batteries and 10 armies"),
+        "{reports:#?}"
     );
 }

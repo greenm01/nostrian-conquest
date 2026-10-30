@@ -83,6 +83,42 @@ fn hostile_assault_abort_text(
     }
 }
 
+/// A mission its fleet's ROE would not fight through: who stood in the
+/// way and with what, so the owner learns the force that turned it back.
+fn roe_declined_report_body(
+    game_data: &CoreGameData,
+    fleet: &nc_data::Fleet,
+    event: &nc_data::MissionEvent,
+    force: &nc_data::BlockingForce,
+) -> String {
+    let ships = force.ships;
+    let enemy = nc_data::ShipLosses {
+        destroyers: u32::from(ships.destroyers),
+        cruisers: u32::from(ships.cruisers),
+        battleships: u32::from(ships.battleships),
+        scouts: u32::from(ships.scouts),
+        transports: u32::from(ships.empty_transports) + u32::from(ships.loaded_transports),
+        etacs: u32::from(ships.etacs),
+    };
+    let own = fleet.ships;
+    let reason = if own.battleships + own.cruisers + own.destroyers == 0 {
+        "With no warships to fight it"
+    } else {
+        "In accordance with our ROE"
+    };
+    format!(
+        "{} We encountered {}. The alien force contained {}. {reason}, we did not engage. We are aborting the mission and {}.",
+        mission_report_prefix(event.kind),
+        classic_enemy_reference(game_data, force.fleet_number, force.empire),
+        fleet_force_summary_with_starbases(
+            enemy,
+            u32::from(ships.loaded_transports),
+            force.starbases,
+        ),
+        aborted_event_follow_on_text(game_data, fleet, event),
+    )
+}
+
 fn merged_roe_abort_report_body(
     game_data: &CoreGameData,
     event: &nc_data::MissionEvent,
@@ -180,7 +216,9 @@ pub fn push_mission_entries(
                 batched_abort_indices.insert(ev_idx);
                 continue;
             }
-            if matching_roe_abort_disposition_index(events, event).is_some() {
+            if matching_roe_abort_disposition_index(events, event).is_some()
+                || matches!(event.abort_reason, Some(MissionAbortReason::RoeDeclined(_)))
+            {
                 continue;
             }
             let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
@@ -251,6 +289,14 @@ pub fn push_mission_entries(
         if batched_abort_indices.contains(&ev_idx) {
             continue;
         }
+        // A fleet lost in its bombing run sends nothing; its loss report,
+        // as in classic, tells the whole incident.
+        if event.kind == Mission::BombardWorld
+            && event.outcome == MissionOutcome::Succeeded
+            && mission_event_has_fleet_destroyed(game_data, events, event)
+        {
+            continue;
+        }
         let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
             continue;
         };
@@ -268,10 +314,15 @@ pub fn push_mission_entries(
                     .get(idx)
                     .map(|disp| (idx, disp))
             });
-        let (kind, tail, source, body) = if let Some((disposition_idx, disposition)) =
-            merged_roe_abort_disposition
-        {
+        let roe_body = if let Some((disposition_idx, disposition)) = merged_roe_abort_disposition {
             consumed_roe_disposition_indices.insert(disposition_idx);
+            Some(merged_roe_abort_report_body(game_data, event, disposition))
+        } else if let Some(MissionAbortReason::RoeDeclined(force)) = &event.abort_reason {
+            Some(roe_declined_report_body(game_data, fleet, event, force))
+        } else {
+            None
+        };
+        let (kind, tail, source, body) = if let Some(roe_body) = roe_body {
             let tail = match event.kind {
                 Mission::BombardWorld => RESULTS_TAIL_BOMBARD,
                 Mission::InvadeWorld | Mission::BlitzWorld => RESULTS_TAIL_INVASION,
@@ -292,11 +343,7 @@ pub fn push_mission_entries(
                 kind,
                 tail,
                 source_clause.clone(),
-                MissionReportBody::Narrative(merged_roe_abort_report_body(
-                    game_data,
-                    event,
-                    disposition,
-                )),
+                MissionReportBody::Narrative(roe_body),
             )
         } else {
             match (event.kind, event.outcome) {

@@ -74,19 +74,6 @@ pub fn enemy_starbase_outcome_line(starbases_destroyed: u32) -> Option<String> {
     }
 }
 
-pub fn fleet_command_last_contact_value(
-    enemy: &str,
-    coords: [u8; 2],
-    was_intercepting: bool,
-) -> String {
-    let [x, y] = coords;
-    if was_intercepting {
-        format!("destroyed while intercepting {enemy} in System({x},{y})")
-    } else {
-        format!("destroyed by {enemy} in System({x},{y})")
-    }
-}
-
 pub fn contact_fleet_description(event: &nc_data::ScoutContactEvent) -> String {
     let summary = contact_size_summary_from_counts(
         event.small_vessels,

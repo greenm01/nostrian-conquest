@@ -1627,6 +1627,10 @@ ROE also decides when your fleet breaks off a battle. After the compulsory
 first exchange it checks the same odds after every exchange and leaves as
 soon as they fail (see Withdrawal and Retreat).
 
+When a fleet's ROE will not let it fight a force that blocks its mission, the
+fleet aborts without firing and heads for your nearest world. Its report names
+the force that turned it back and lists the ships and starbases it held.
+
 The full ROE threshold table follows below.
 
 Non-combat fleets (scouts, transports, and ETACs only) count as ROE 0 on their own. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*). A fleet that Detach creates starts at ROE 6, or at 0 when it has no warships, whatever the donor's ROE is.

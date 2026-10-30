@@ -78,7 +78,10 @@ fn reported_abort(events: &nc_data::MaintenanceEvents) -> Option<u8> {
         .find(|event| {
             event.fleet_idx == 0
                 && event.outcome == MissionOutcome::Aborted
-                && event.abort_reason == Some(MissionAbortReason::OrbitBlocked)
+                && matches!(
+                    event.abort_reason,
+                    Some(MissionAbortReason::OrbitBlocked | MissionAbortReason::RoeDeclined(_))
+                )
         })
         .map(|event| event.stardate_week.expect("the abort is dated"))
 }

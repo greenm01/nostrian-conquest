@@ -95,7 +95,7 @@ pub use intel::{
     latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
 };
 pub use maintenance_types::{
-    AssaultReportEvent, BombardEvent, CampaignOutcomeEvent, CampaignOutlookEvent,
+    AssaultReportEvent, BlockingForce, BombardEvent, CampaignOutcomeEvent, CampaignOutlookEvent,
     CivilDisorderEvent, ColonizationResolvedEvent, ContactReportSource, DiplomacyOverride,
     DiplomaticEscalationEvent, EmpireEliminationCause, EmpireEliminationEvent,
     EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent, FleetDefectionEvent,

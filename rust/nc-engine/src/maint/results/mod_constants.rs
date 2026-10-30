@@ -16,4 +16,3 @@ pub const LABEL_OUR_LOSSES: &str = "Our losses:";
 pub const LABEL_INHERITED: &str = "Inherited:";
 pub const LABEL_ENEMY_LOSSES: &str = "Enemy losses:";
 pub const LABEL_TARGET_WORLD: &str = "Target world:";
-pub const LABEL_LAST_CONTACT: &str = "Last contact:";

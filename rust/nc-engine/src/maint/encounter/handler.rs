@@ -2,9 +2,9 @@
 //! dispatch, and the strike a hostile order makes when its test passes.
 
 use nc_data::{
-    Coords, DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason, GameRng, Mission,
-    MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent, has_any_force,
-    troop_transports,
+    BlockingForce, Coords, DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason,
+    GameRng, Mission, MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent,
+    has_any_force, troop_transports,
 };
 
 use super::rules::{
@@ -234,7 +234,8 @@ impl Year<'_> {
         let defence = self.roster_strength(game_data, &defenders);
         let volunteers = self.volunteers(game_data, unit, defence);
         if !volunteers.contains(&unit) {
-            self.abort_mission(game_data, fleet_idx, AbortFallback::Hold, Some(tick));
+            let force = self.blocking_force(game_data, &defenders);
+            self.abort_mission(game_data, fleet_idx, AbortFallback::Hold, Some(tick), force);
             self.movement.reload(fleet_idx);
             return false;
         }
@@ -404,6 +405,33 @@ impl Year<'_> {
             }
         }
         roster
+    }
+
+    /// What the fleet's owner learns of `roster`, a force its ROE would not
+    /// fight: one empire's fleets and starbases in one place.
+    fn blocking_force(&self, game_data: &CoreGameData, roster: &Roster) -> Option<BlockingForce> {
+        let first = roster.fleets.iter().chain(&roster.bases).next()?;
+        let mut ships = nc_data::ShipCounts::default();
+        for &unit in &roster.fleets {
+            let fleet = &game_data.fleets[self.units[unit].index];
+            ships.battleships += fleet.ships.battleships;
+            ships.cruisers += fleet.ships.cruisers;
+            ships.destroyers += fleet.ships.destroyers;
+            ships.scouts += fleet.ships.scouts;
+            ships.empty_transports += fleet.ships.empty_transports;
+            ships.loaded_transports += fleet.ships.loaded_transports;
+            ships.etacs += fleet.ships.etacs;
+        }
+        let fleet_number = match roster.fleets[..] {
+            [unit] => Some(game_data.fleets[self.units[unit].index].fleet_number.0 as u8),
+            _ => None,
+        };
+        Some(BlockingForce {
+            empire: self.units[*first].owner,
+            fleet_number,
+            ships,
+            starbases: roster.bases.len() as u32,
+        })
     }
 
     /// A roster's assembled strength: each fleet's warships at their attack
@@ -665,7 +693,14 @@ impl Year<'_> {
                     if verdict == Verdict::Aborted {
                         // A re-check's report is discarded, as in classic.
                         let report = identify.then_some(tick);
-                        self.abort_mission(game_data, fleet_idx, AbortFallback::ClimbOut, report);
+                        let force = self.blocking_force(game_data, &roster);
+                        self.abort_mission(
+                            game_data,
+                            fleet_idx,
+                            AbortFallback::ClimbOut,
+                            report,
+                            force,
+                        );
                         facts = self.fleet_facts(game_data, fleet_idx);
                     }
                     verdict.attacks().then_some((volunteers, roster))
@@ -693,7 +728,14 @@ impl Year<'_> {
                     let verdict = decide_vs_base(&facts, own, enemy, declared);
                     if verdict == Verdict::Aborted {
                         let report = (aware <= 1).then_some(tick);
-                        self.abort_mission(game_data, fleet_idx, AbortFallback::Hold, report);
+                        let force = self.blocking_force(game_data, &roster);
+                        self.abort_mission(
+                            game_data,
+                            fleet_idx,
+                            AbortFallback::Hold,
+                            report,
+                            force,
+                        );
                         facts = self.fleet_facts(game_data, fleet_idx);
                     }
                     verdict.attacks().then_some((volunteers, roster))
@@ -865,6 +907,7 @@ impl Year<'_> {
         fleet_idx: usize,
         fallback: AbortFallback,
         report: Option<u8>,
+        force: Option<BlockingForce>,
     ) {
         game_data.release_starbase_escort(fleet_idx);
         let fleet = &game_data.fleets[fleet_idx];
@@ -895,7 +938,7 @@ impl Year<'_> {
             }
         }
         if let Some(tick) = report {
-            self.push_orbit_blocked_abort(game_data, fleet_idx, kind, tick);
+            self.push_orbit_blocked_abort(game_data, fleet_idx, kind, tick, force);
         }
     }
 
@@ -908,6 +951,7 @@ impl Year<'_> {
         fleet_idx: usize,
         kind: Option<Mission>,
         tick: u8,
+        force: Option<BlockingForce>,
     ) {
         let Some(kind) = kind else {
             return;
@@ -919,7 +963,10 @@ impl Year<'_> {
             owner_empire: fleet.owner.0,
             kind,
             outcome: MissionOutcome::Aborted,
-            abort_reason: Some(MissionAbortReason::OrbitBlocked),
+            abort_reason: Some(force.map_or(
+                MissionAbortReason::OrbitBlocked,
+                MissionAbortReason::RoeDeclined,
+            )),
             planet_idx: game_data
                 .planets
                 .iter()

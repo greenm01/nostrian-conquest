@@ -487,6 +487,19 @@ pub enum MissionOutcome {
 pub enum MissionAbortReason {
     CapabilityLost,
     OrbitBlocked,
+    /// The fleet's ROE would not let it fight the force in its way.
+    RoeDeclined(BlockingForce),
+}
+
+/// A force a fleet's ROE declined to fight: what the abort report tells
+/// its owner about it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BlockingForce {
+    pub empire: u8,
+    /// Set when the force is a single fleet.
+    pub fleet_number: Option<u8>,
+    pub ships: crate::ShipCounts,
+    pub starbases: u32,
 }
 
 /// Mission kinds that currently participate in typed maintenance reporting.
