@@ -644,12 +644,15 @@ fn capture_report_lists_the_goods_ships_and_work_the_world_passed_on() {
         },
         queued_work: 60,
         scorched: true,
+        garrison: 12,
     });
     assert!(scorched.contains("The defenders scorched the world before it fell."));
     assert!(scorched.contains("Inherited:"));
     assert!(
         scorched.contains("200 stored production; docked BB1 DD3 SB1; 60 points of queued work")
     );
+    // Classic: "After the smoke cleared, we had N armies enforcing control".
+    assert!(scorched.contains("Garrison: 12 armies"), "{scorched}");
 
     let empty = report(InheritedAssets::default());
     assert!(empty.contains("Inherited:"));

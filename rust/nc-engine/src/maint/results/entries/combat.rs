@@ -442,6 +442,13 @@ pub fn push_combat_entries(
                 label: LABEL_INHERITED.to_string(),
                 value: inherited_assets_value(inherited),
             });
+            outcome_rows.push(StructuredBodyItem::Label {
+                label: LABEL_GARRISON.to_string(),
+                value: match inherited.garrison {
+                    1 => "1 army".to_string(),
+                    armies => format!("{armies} armies"),
+                },
+            });
         }
         let items = structured_combat_body(
             structured_assault_alert(event.kind, event.outcome),

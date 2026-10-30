@@ -165,7 +165,7 @@ def snapshot(directory: Path, year: int, target: tuple[int, int]) -> dict:
     return row
 
 
-def build_classic(case: Case, directory: Path, human: bool = False) -> None:
+def build_classic(case: Case, directory: Path, humans: tuple[int, ...] = ()) -> None:
     mission = case.spec
     if directory.exists():
         shutil.rmtree(directory)
@@ -179,9 +179,9 @@ def build_classic(case: Case, directory: Path, human: bool = False) -> None:
         nc("fleet-order", directory, 3, 0, 5, *HOME, 1, 0)
     nc("fleet-ships", directory, 1, *mission.ships)
     nc("fleet-location", directory, 1, *case.start())
-    if human:
-        # Neither engine reports to an empire in civil disorder.
-        nc("player-name", directory, 1, "probe", "Probe Empire")
+    for empire in humans:
+        # Neither engine sends mission reports to an empire in civil disorder.
+        nc("player-name", directory, empire, f"probe{empire}", f"Probe Empire {empire}")
     nc("db-export", directory, directory)
     shutil.copy2(ORIGINAL / "ECMAINT.EXE", directory / "ECMAINT.EXE")
     tx, ty = mission.target

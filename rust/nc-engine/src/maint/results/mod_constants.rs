@@ -14,5 +14,6 @@ pub const LABEL_WORLD_DEFENSES: &str = "World defenses:";
 pub const LABEL_ATTACKING_FORCE: &str = "Attacking force:";
 pub const LABEL_OUR_LOSSES: &str = "Our losses:";
 pub const LABEL_INHERITED: &str = "Inherited:";
+pub const LABEL_GARRISON: &str = "Garrison:";
 pub const LABEL_ENEMY_LOSSES: &str = "Enemy losses:";
 pub const LABEL_TARGET_WORLD: &str = "Target world:";

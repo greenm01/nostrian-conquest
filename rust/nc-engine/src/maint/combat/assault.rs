@@ -411,6 +411,7 @@ fn capture_planet(
         docked: stardock_summary(planet),
         queued_work: planet.build_queue.iter().map(|slot| slot.points_owed).sum(),
         scorched,
+        garrison: planet.armies,
     }
 }
 

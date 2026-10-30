@@ -2189,7 +2189,7 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
 }
 
 #[test]
-fn maint_rust_invasion_reports_arrival_and_execution_on_separate_turns() {
+fn maint_rust_invasion_is_silent_until_it_strikes_the_next_year() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-arrival-delay");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
     configure_delayed_invade_arrival_directory(&target);
@@ -2199,8 +2199,8 @@ fn maint_rust_invasion_reports_arrival_and_execution_on_separate_turns() {
 
     let first_results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let first_text = decode_chunked_report(&first_results);
-    assert!(first_text.contains("preparing"), "{first_text}");
-    assert!(first_text.contains("invasion"), "{first_text}");
+    // As in classic, reaching the target sector sends no report.
+    assert!(!first_text.contains("Invasion mission report"), "{first_text}");
     assert!(!first_text.contains("Target world:"), "{first_text}");
 
     let stdout = run_maint_rust_with_export(&target, 1);

@@ -266,12 +266,7 @@ pub fn narrative_phase_for_report_text(text: &str) -> NarrativePhase {
         || text.contains("Invasion mission report")
         || text.contains("Blitz mission report")
     {
-        if text.contains("preparing for bombardment")
-            || text.contains("preparing to begin the invasion")
-            || text.contains("preparing to launch the assault")
-        {
-            NarrativePhase::MovementPrelude
-        } else if text.contains("Hostile action stripped us")
+        if text.contains("Hostile action stripped us")
             || text.contains("Enemy ground batteries prevented a landing")
         {
             NarrativePhase::CombatFollowOn

@@ -129,6 +129,7 @@ fn an_invasion_wrecks_most_of_the_industry_and_a_blitz_keeps_it() {
                     },
                     queued_work: 60,
                     scorched: false,
+                    garrison: planet.armies,
                 },
                 "{order:?}"
             );
@@ -203,6 +204,7 @@ fn a_scorched_world_that_falls_is_halved_and_its_dock_emptied() {
                 docked: EmpireUnitSummary::default(),
                 queued_work: 60,
                 scorched: true,
+                garrison: planet.armies,
             },
             "{order:?}"
         );

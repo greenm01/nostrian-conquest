@@ -453,33 +453,6 @@ pub fn push_mission_entries(
                     " Seek-Home mission report: We have arrived at our destination and are awaiting new orders.".to_string(),
                 ),
             ),
-            (Mission::BombardWorld, MissionOutcome::Arrived) => (
-                // Arrival-only notice (Rust-only; original ECMAINT bombards
-                // on the same turn the fleet arrives). Use kind=0x05 to
-                // avoid blank padding — the text is only ~3 lines.
-                0x05,
-                RESULTS_TAIL_BOMBARD,
-                source_clause.clone(),
-                MissionReportBody::Narrative(
-                    " Bombardment mission report: We have arrived at our target world and are preparing for bombardment.".to_string(),
-                ),
-            ),
-            (Mission::InvadeWorld, MissionOutcome::Arrived) => (
-                0x05,
-                RESULTS_TAIL_INVASION,
-                source_clause.clone(),
-                MissionReportBody::Narrative(
-                    " Invasion mission report: We have arrived at our target world and are preparing to begin the invasion.".to_string(),
-                ),
-            ),
-            (Mission::BlitzWorld, MissionOutcome::Arrived) => (
-                0x05,
-                RESULTS_TAIL_INVASION,
-                source_clause.clone(),
-                MissionReportBody::Narrative(
-                    " Blitz mission report: We have arrived at our target world and are preparing to launch the assault.".to_string(),
-                ),
-            ),
             (Mission::MoveOnly, MissionOutcome::Aborted) => {
                 let destination = fleet.target.to_array();
                 let [dx, dy] = destination;

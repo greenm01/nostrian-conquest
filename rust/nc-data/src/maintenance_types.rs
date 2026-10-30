@@ -70,6 +70,8 @@ pub struct InheritedAssets {
     pub queued_work: u32,
     /// The defenders had set Scorch Earth, so the capture halved the world.
     pub scorched: bool,
+    /// Armies the attackers left holding the world.
+    pub garrison: u16,
 }
 
 /// A ground-assault event for invade/blitz mission reporting.

@@ -8,7 +8,8 @@ compares:
 
 - the fleet's motion state: sector, in-sector fractions, depth, speed, order,
   target, aux bytes and ROE, byte for byte;
-- empire 1's reports in order: sender, stardate week and full text.
+- every empire's reports in order: recipient, sender, stardate week and
+  full text.
 
 Classic saves only at year end, so the fractions and depth pin each year's
 motion to the week, and the report weeks and order show the in-year
@@ -22,13 +23,14 @@ nix shell nixpkgs#dosbox-x -c python3 tools/ncmaint_stardate_audit.py --years 10
 
 ## Results (2026-10-30)
 
-41 of 60 cases match classic exactly for all 10 years. Fleet motion matches
-in every case up to combat. The other 19 differ only where NC changes
-classic on purpose:
+Fleet motion matches in every case up to combat, and Bombard, Invade and
+Blitz strike in the same week as classic. The remaining differences are
+NC's on purpose:
 
 | orders | classic | NC |
 |---|---|---|
-| Bombard, Invade, Blitz (6–8) | No report in the year the fleet reaches its target; the strike and its reports come in week 5 of the next year, in both engines. | Adds an "arrived at our target world and are preparing…" report in the arrival week. |
+| Bombard, Invade, Blitz (6–8) | One prose mission report to the attacker and one to a human defender, in the strike week. | The same reports in the same week, as structured briefings (`nc-reports.md`). |
+| Bombard (6) | The fleet holds after one bombing run. | The fleet bombards again every year (player manual, Hostile Missions). |
 | Join (13) | The joining fleet reports "We have joined the 2nd Fleet and are now merging with them." in the week it joins. | One Fleet Command Center "Join mission summary" in week 1 (`nc-reports.md`, Compact Join Summary). |
 | Rendezvous (14) | "We have arrived at the our rendezvous point…" | Drops classic's stray "the". |
 
@@ -42,6 +44,14 @@ Fixed by this audit:
   "We are in extended orbit around the world in System(x,y). The world is
   unowned but has a potential value of N points."
 - View World over an unowned world says "unowned but has a potential".
+- Bombard, Invade and Blitz send no report in the year the fleet enters the
+  target sector, as in classic. Reaching orbit takes about half a year at
+  speed 3, so the strike often lands the next year.
+- A capture report gives the garrison, as classic's "After the smoke
+  cleared, we had N armies" does.
+
+Open: classic sends no reports to an empire in civil disorder; NC still
+sends such an empire a planet's alert when its world is attacked.
 
 Probe setup matters: the order's world flag (mission aux 0) must be set as
 ECGAME sets it (`Order::targets_world`). With it clear, classic's world

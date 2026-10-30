@@ -9,7 +9,8 @@ first fleet), this runs both engines year by year and compares:
 
 - the fleet's motion state: sector, fractions, depth, speed, order, target,
   aux bytes, ROE;
-- empire 1's reports of the year, in order: sender, stardate and text.
+- every empire's reports of the year, in order: recipient, sender,
+  stardate and text.
 
 Combat dice are not reproducible in classic, so a combat report keeps its
 place and week but its numbers are masked. Run under DOSBox-X:
@@ -24,6 +25,7 @@ import argparse
 import json
 import re
 import sys
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -32,6 +34,7 @@ from ncmaint_oracle import run_ecmaint
 
 DEFAULT_WORK_ROOT = Path("/tmp/ecmaint-stardate-audit")
 RECORD = 84
+PLAYER_RECORD, RESULTS_FIRST, NEXT_HEADER = 110, 0x38, 78
 TEXT_START, TEXT_SIZE = 2, 72
 REPORT = re.compile(
     r"(?P<sender>[^\n]*?)\s*Stardate:\s*(?P<week>\d+)/(?P<year>\d+)\s*"
@@ -42,48 +45,74 @@ COMBAT = re.compile(r"battle|combat|bombard|attack|destroyed|casualt|invasion|in
 MOTION = ("pos", "x_frac", "y_frac", "tuple_c", "speed", "order", "target", "aux", "roe")
 
 
-def results_text(path: Path) -> str:
-    """RESULTS.DAT's report text, one line per record (classic's and Rust's)."""
+def header_viewers(directory: Path, data: bytes) -> dict[int, int]:
+    """0-based header record -> empire, walking each empire's report chain
+    from its PLAYER.DAT first-header pointer."""
+    players = (directory / "PLAYER.DAT").read_bytes()
+    count = len(data) // RECORD
+    viewers = {}
+    for empire, offset in enumerate(range(0, len(players), PLAYER_RECORD), 1):
+        header = int.from_bytes(players[offset + RESULTS_FIRST:offset + RESULTS_FIRST + 2], "little")
+        while 0 < header <= count and header - 1 not in viewers:
+            viewers[header - 1] = empire
+            start = (header - 1) * RECORD + NEXT_HEADER
+            header = int.from_bytes(data[start:start + 2], "little")
+    return viewers
+
+
+def results_text(directory: Path) -> dict[int, str]:
+    """Each empire's RESULTS.DAT report text, one line per record (classic's
+    and Rust's). A header's body records follow it."""
+    path = directory / "RESULTS.DAT"
     data = path.read_bytes() if path.exists() else b""
-    out = []
-    for i in range(0, len(data) - RECORD + 1, RECORD):
+    viewers = header_viewers(directory, data)
+    out: dict[int, list[bytes]] = {}
+    viewer = 0
+    for record, i in enumerate(range(0, len(data) - RECORD + 1, RECORD)):
+        viewer = viewers.get(record, viewer)
         chunk = data[i:i + RECORD]
         used = chunk[1]
         # Byte 1 is the record's text length; classic leaves stale bytes after it.
         if used <= TEXT_SIZE:
-            out.append(chunk[TEXT_START:TEXT_START + used] + b"\n")
+            text = chunk[TEXT_START:TEXT_START + used]
         else:
-            out.append(chunk[1:76].split(b"\0", 1)[0] + b"\n")
-    return b"".join(out).decode("cp437", "replace")
+            text = chunk[1:76].split(b"\0", 1)[0]
+        out.setdefault(viewer, []).append(text + b"\n")
+    return {v: b"".join(lines).decode("cp437", "replace") for v, lines in sorted(out.items())}
 
 
-def reports(path: Path, year: int) -> list[str]:
-    """The year's reports in order, as `week sender: text`."""
+def reports(directory: Path, year: int) -> list[str]:
+    """The year's reports, each empire's in order, as `E<n> week sender: text`."""
     out = []
-    for match in REPORT.finditer(results_text(path)):
-        if int(match["year"]) != year:
-            continue  # classic keeps unread reports of earlier years
-        sender = " ".join(match["sender"].split()).rstrip(":")
-        body = " ".join(match["body"].split())
-        if COMBAT.search(body):
-            body = "[combat] " + re.sub(r"\d+", "#", body)
-        out.append(f"{int(match['week']):2d} {sender}: {body}")
+    for viewer, text in results_text(directory).items():
+        for match in REPORT.finditer(text):
+            if int(match["year"]) != year:
+                continue  # classic keeps unread reports of earlier years
+            sender = " ".join(match["sender"].split()).rstrip(":")
+            body = " ".join(match["body"].split())
+            if COMBAT.search(body):
+                body = "[combat] " + re.sub(r"\d+", "#", body)
+            out.append(f"E{viewer} {int(match['week']):2d} {sender}: {body}")
     return out
 
 
-def state(directory: Path, results: Path, year: int, case: Case) -> dict:
+def state(directory: Path, year: int, case: Case) -> dict:
     row = snapshot(directory, 0, case.spec.target)
-    return {"motion": {k: row.get(k) for k in MOTION}, "reports": reports(results, year)}
+    return {"motion": {k: row.get(k) for k in MOTION}, "reports": reports(directory, year)}
 
 
 def game_year(directory: Path) -> int:
     return int(re.search(r"conquest\.game_year=(\d+)", nc("core-report", directory))[1])
 
 
-def run_case(case: Case, work_root: Path) -> dict:
+def run_case(case: Case, work_root: Path, humans: tuple[int, ...] = (1,),
+             prepare: Callable[[Path], None] | None = None) -> dict:
+    """`prepare` may patch the classic directory before Rust copies it."""
     root = work_root / case.name
     classic, rust, export = root / "classic", root / "rust", root / "rust-export"
-    build_classic(case, classic, human=True)
+    build_classic(case, classic, humans)
+    if prepare:
+        prepare(classic)
     build_rust(case, classic, rust)
     first = game_year(rust)
     years = []
@@ -94,8 +123,7 @@ def run_case(case: Case, work_root: Path) -> dict:
         nc("maint-rust", rust, 1)
         nc("db-export", rust, export)
         stamp = first + year - 1
-        years.append({"classic": state(classic, classic / "RESULTS.DAT", stamp, case),
-                      "rust": state(export, export / "RESULTS.DAT", stamp, case)})
+        years.append({"classic": state(classic, stamp, case), "rust": state(export, stamp, case)})
     return {"case": case.name, "years": years}
 
 

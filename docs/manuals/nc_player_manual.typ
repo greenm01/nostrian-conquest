@@ -843,7 +843,11 @@ the world, and which to choose, is in @attacking-worlds; the exact rules are
 in @appendix-combat. Here is what you need to know about getting there.
 
 *The fleet attacks the year it reaches orbit.* A fleet already in orbit that
-is told to attack the world attacks at the next maintenance.
+is told to attack the world attacks at the next maintenance. Reaching orbit
+takes time. Once the fleet enters the world's sector, it still has to fly to
+the system and dive into it. That takes about half a year at speed 3 and more
+than a year and a half at speed 1, so a fleet that enters the sector late in
+the year attacks the next year.
 
 *It must first win the orbit.* The owner's starbase and any fleet of his with
 warships there fight your fleet the week it arrives, whether they had spotted
