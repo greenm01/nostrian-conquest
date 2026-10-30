@@ -5556,3 +5556,28 @@ fn fleet_order_seek_home_picks_the_nearest_owned_world_not_the_first() {
     assert_eq!(fleet.order.code(), 2);
     assert_eq!(fleet.target.to_array(), near);
 }
+
+#[test]
+fn fleet_order_move_y_defaults_to_the_known_world_in_the_entered_column() {
+    let fixture_dir = temp_game_copy();
+    let (fleet_number, home) = park_player_1_fleet_away(&fixture_dir, 2);
+    let mut app = load_player_1_app(&fixture_dir);
+    open_order_mission_picker_from_fleet_menu(&mut app, Some(fleet_number));
+    submit_mission_code(&mut app, "1");
+    for ch in home[0].to_string().chars() {
+        apply_action(&mut app, Action::Fleet(FleetAction::AppendOrderChar(ch)));
+    }
+    assert_eq!(
+        apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder)),
+        AppOutcome::Continue
+    );
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("move target y prompt should render");
+    assert!(
+        line_containing(&terminal, "Target YY [")
+            .contains(&format!("Target YY [{:02}] <Q> ->", home[1])),
+        "{:?}",
+        terminal.lines
+    );
+}

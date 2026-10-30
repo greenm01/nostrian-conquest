@@ -183,7 +183,20 @@ pub fn recommended_coordinate_target_candidates(
     selected_records: &BTreeSet<usize>,
 ) -> Vec<[u8; 2]> {
     match mission_code {
-        0 | 1 | 3 => vec![anchor],
+        0 => vec![anchor],
+        // Stay put by default; an entered X picks the nearest known world in
+        // that column.
+        1 | 3 => {
+            let mut coords = vec![anchor];
+            coords.extend(filtered_planet_database_targets_from(
+                game_data,
+                snapshots,
+                viewer_empire_id,
+                anchor,
+                |_| true,
+            ));
+            coords
+        }
         4 => default_starbase_target(game_data, viewer_empire_id, anchor)
             .into_iter()
             .map(|row| row.coords)
