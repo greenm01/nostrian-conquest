@@ -66,6 +66,13 @@ pub fn push_combat_entries(
         if let Some(line) = crippled_batteries_line(event.defender_batteries_crippled) {
             outcome_rows.push(StructuredBodyItem::Text(line));
         }
+        // Only batteries fire back, so there are losses to report only when there were batteries.
+        if event.defender_batteries_initial > 0 {
+            outcome_rows.push(StructuredBodyItem::Label {
+                label: LABEL_ENEMY_LOSSES.to_string(),
+                value: assault_friendly_losses_summary(event.attacker_losses, 0, 0),
+            });
+        }
         outcome_rows.extend(
             bombardment_collateral_damage_lines(
                 event.stardock_items_destroyed,

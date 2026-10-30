@@ -332,6 +332,61 @@ fn bombardment_defender_report_uses_first_person_loss_wording() {
 }
 
 #[test]
+fn bombardment_defender_report_counts_the_ships_our_batteries_destroyed() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3001)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    seed_target_world(&mut game_data, [5, 13], "Target");
+    let mut event = BombardEvent {
+        planet_idx: 0,
+        attacker_empire: 2,
+        attacker_fleet_number: Some(2),
+        defender_empire: 1,
+        attacker_initial: ShipLosses {
+            cruisers: 54,
+            destroyers: 194,
+            ..ShipLosses::default()
+        },
+        attacker_loaded_armies_initial: 0,
+        defender_batteries_initial: 14,
+        defender_armies_initial: 41,
+        attacker_losses: ShipLosses {
+            cruisers: 3,
+            destroyers: 12,
+            ..ShipLosses::default()
+        },
+        defender_battery_losses: 14,
+        defender_batteries_crippled: 0,
+        defender_army_losses: 41,
+        breakthrough: true,
+        docked_losses: nc_data::EmpireUnitSummary::default(),
+        stardock_items_destroyed: 0,
+        stored_goods_destroyed: 0,
+        factories_destroyed: 0,
+        stardate_week: Some(33),
+    };
+    let report = |event: &BombardEvent| {
+        let mut events = MaintenanceEvents::default();
+        events.bombard_events.push(event.clone());
+        let rows = build_results_report_blocks(&game_data, &events);
+        viewer_report_texts(1, &rows).join(" ").replace('\n', " ")
+    };
+
+    let text = report(&event);
+    assert!(text.contains("Enemy losses: CA3 DD12"), "{text}");
+
+    event.attacker_losses = ShipLosses::default();
+    assert!(report(&event).contains("Enemy losses: none"));
+
+    // With no batteries nothing fires back, so the line is left out.
+    event.defender_batteries_initial = 0;
+    event.defender_battery_losses = 0;
+    assert!(!report(&event).contains("Enemy losses"));
+}
+
+#[test]
 fn blitz_report_distinguishes_total_army_losses_from_transport_losses() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)
@@ -1165,7 +1220,9 @@ fn scout_system_report_puts_one_space_after_each_label() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events)).join("\n");
     let lines: Vec<&str> = text.lines().collect();
     assert!(
-        lines.iter().any(|line| line.starts_with("Owned by: Empire")),
+        lines
+            .iter()
+            .any(|line| line.starts_with("Owned by: Empire")),
         "{text}"
     );
     assert!(lines.contains(&"Number of armies: 7"), "{text}");
