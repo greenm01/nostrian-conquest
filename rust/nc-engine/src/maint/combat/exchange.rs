@@ -35,9 +35,10 @@ pub(super) const COMBAT_KIND_ALLOCATION: u64 = 11;
 pub(super) const COMBAT_KIND_CAPTURE: u64 = 12;
 
 /// Planetary combat's ratio CRT: one row per d10 value and one column per
-/// force-ratio band, in quarters. Ships firing at dug-in ground targets read
-/// it in twelfths, a third of its strength; the batteries' fire at ships
-/// reads it in full (t202).
+/// force-ratio band, in quarters. Ships firing at the batteries and the
+/// batteries' fire at ships read it in full; ships firing at the garrison and
+/// the batteries' fire at descending transports read it in twelfths, a third
+/// of its strength (t202).
 const CRT_MULTIPLIER_X12: [[u8; 5]; 10] = [
     [0, 1, 2, 3, 4],
     [1, 2, 3, 4, 5],
@@ -350,7 +351,7 @@ pub(super) fn resolve_landing_exchange(
 }
 
 /// Planetary combat's ratio-CRT exchange for ships' orbital fire at the
-/// batteries: bombardment and invasion suppression, at a third (t202).
+/// batteries: bombardment and invasion suppression, at full strength.
 pub(super) fn resolve_orbital_exchange(
     campaign_seed: u64,
     game_year: u16,
@@ -373,7 +374,7 @@ pub(super) fn resolve_orbital_exchange(
         target_empire,
         our_as,
         column,
-        12,
+        4,
     )
 }
 

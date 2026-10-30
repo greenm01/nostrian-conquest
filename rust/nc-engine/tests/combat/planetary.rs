@@ -308,18 +308,18 @@ fn the_dock_is_exposed_once_the_batteries_are_gone() {
 }
 
 /// `tools/combat-model/collateral_t202.py` (`assault_collateral.py` under the
-/// t202 rules, the batteries firing at full strength, each round's hits
+/// t202 rules, ships and batteries firing at full strength, each round's hits
 /// pouring down the target order), case `BB4-B2`: the
 /// exact expected losses of one bombardment turn of four battleships against
 /// two two-step batteries, ten armies, and
 /// a docked battleship, in cost points (BB 45), batteries destroyed, armies,
 /// and points of production.
 const SHIELD_MODEL: [(&str, f64); 5] = [
-    ("ship cost lost", 19.156),
-    ("dock cost lost", 36.759),
-    ("batteries lost", 1.94),
-    ("armies lost", 7.983),
-    ("production lost", 6.112),
+    ("ship cost lost", 13.5),
+    ("dock cost lost", 45.0),
+    ("batteries lost", 2.0),
+    ("armies lost", 10.0),
+    ("production lost", 94.142),
 ];
 
 #[test]
@@ -375,11 +375,11 @@ fn a_bombardment_turn_costs_what_the_shield_model_says() {
 fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
     // One ship bombards a world with nothing in orbit, no battery, and no
     // garrison: all three rounds reach the economy. On the overwhelming
-    // column of the bombardment table (t202) each round's point count is
+    // column of the bombardment table each round's point count is
     // `floor(hits / 10)`; exact enumeration over the rolls
-    // (`collateral_t202.py`) gives a cruiser (bombardment AS 33) 4.8 points
-    // and a battleship (90) 14.7, and 25 goods a point makes a cruiser raid
-    // about 120 goods and a battleship raid about 368.
+    // (`collateral_t202.py`) gives a cruiser (bombardment AS 33) 15.9 points
+    // and a battleship (90) 45.6, and 25 goods a point makes a cruiser raid
+    // about 400 goods and a battleship raid about 1,140.
     const TRIALS: u64 = 2000;
     for (name, ships, mean_points) in [
         (
@@ -388,7 +388,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 ca: 1,
                 ..Ships::default()
             },
-            4.8,
+            15.9,
         ),
         (
             "battleship",
@@ -396,7 +396,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 bb: 1,
                 ..Ships::default()
             },
-            14.7,
+            45.6,
         ),
     ] {
         let mut game_data = assault_on_system(Order::BombardWorld, ships, 0, 0);

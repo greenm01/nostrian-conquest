@@ -142,3 +142,36 @@ and the bombard weights of
 [6vqrcldx](6vqrcldx-hulls-follow-a-punch-ladder.md). Evidence: the
 [hull balance investigation](../investigations/yqg056tf-nc-hull-balance-against-vbam-and-empire-of-the-sun.md)
 and the model above.
+
+## Amendment (2026-10-30): ships fire at the batteries at full strength
+
+The owner rejected the third-strength orbital fire after a live game: a
+fleet of BB2 CA17 DD2 (about 1.8 times the batteries' cost) bombarded a
+10-battery world, crippled three batteries, and was destroyed. A battery
+costs 20 and fires like a 45-point battleship, so the batteries already hold
+a strong price advantage; cutting the ships' fire to a third on top of it
+made fortresses nearly unbreakable.
+
+Ships' fire at the batteries (bombardment and invasion suppression) now
+reads the bombardment table in quarters, as the batteries' return fire
+does. Fire at the garrison (invasion softening, blitz cover fire) and the
+batteries' fire at descending transports stay at a third. Hits that pass the
+last battery still flow to the dock, armies, goods and factories, so an
+unopposed raid now costs about three times as much: one battleship destroys
+about 46 production points a year, a cruiser about 16.
+
+Engine siege table (`nc-fuzz` `siege_odds`, 400 trials a case, 10 batteries,
+battleships only; force is the fleet's cost over the batteries'):
+
+| Force | Third (t202) | Half | Full (now) |
+| --- | --- | --- | --- |
+| 1.5x | 0% | 0% | 15% in year 1 |
+| 2x | 0% | 7% | 55% in year 1, loses 1.5x |
+| 3x | 74% in 1.8 years, loses 1.7x | 95% | 100% in year 1, loses 0.8x |
+| 1x + 1x a year | 9% in 15 years, loses 13x | 100% in 9.3 years | 100% in 4.7 years, loses 3.5x |
+
+Other battery counts (2 to 50) follow the same pattern. Bombard then invade
+against 8 batteries with 10 battleships (2.8x) went from 77% captured for 263
+ship points lost to 100% for 112; blitz is unchanged. Results:
+`tools/combat-model/nc_siege_engine_orbital_d{12,8,4}.json`. The collateral
+model (`collateral_t202.py`) and the planetary tests now use full strength.

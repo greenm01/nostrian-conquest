@@ -449,11 +449,12 @@ Overwhelming ratios still guarantee victory.
 ### Planetary Support Fire CRT
 
 Bombardment, invasion suppression and return fire, softening, and blitz cover
-and landing fire use the ratio CRT. Ships' fire at ground targets and
+and landing fire use the ratio CRT. Ships' fire at the batteries (bombardment
+and invasion suppression) and batteries' return fire at ships in orbit read
+it in quarters (`ceil(AS x entry / 4)`), full strength (amended 2026-10-30).
+Ships' fire at the garrison (invasion softening, blitz cover fire) and
 batteries' fire at descending transports read it in twelfths of the firing AS
-(`hits = ceil(AS x entry / 12)`), a third of its strength; batteries' return
-fire at ships in orbit reads it in quarters (`ceil(AS x entry / 4)`), full
-strength (t202). The column comes from the force ratio:
+(`hits = ceil(AS x entry / 12)`), a third of its strength (t202). The column comes from the force ratio:
 - **Disadvantaged**: Ratio < 0.5
 - **Pressed**: Ratio 0.5 – 1.0
 - **Even**: Ratio 1.0 – 1.5

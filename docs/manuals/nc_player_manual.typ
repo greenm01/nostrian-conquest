@@ -1714,9 +1714,9 @@ transports turn for home.
 
 Each bombardment turn resolves three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield everything behind them. Once the last battery falls, the rest of that round's hits flow on down the line. A world with no batteries takes your fire on its stardock and armies from the first round.
 
-Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Orbital fire is far less effective than ship-to-ship fire: ships firing at dug-in guns read the bombardment table at a third of fleet strength. Guns firing at ships in orbit read it at full strength. A lone cruiser cannot level a fortified world in a single volley.
+Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 
-Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in a year or so. Twice their cost, kept on station and reinforced, takes it in two or three years. A force no larger than the batteries' cost is destroyed. Build batteries to buy time; bring heavy fleets to break through faster.
+Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in one year and loses less than the batteries cost. Twice their cost wins about half the time in the first year, and kept on station and reinforced it takes the world in about three. A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. Build batteries to buy time; bring heavy fleets to break through faster.
 
 @missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The bombardment table, the two-step battery rule, the batteries-only return-fire rule, and the other combat tables follow below.
 
@@ -1915,10 +1915,11 @@ invasion softening, blitz cover fire, the batteries' return fire, and blitz
 landing fire. Each entry is a share of the firing side's AS, in twelfths for
 fire that hits poorly and in quarters for fire that does not:
 
-- Ships firing at dug-in guns and armies, and batteries firing at descending
-  transports, read it in *twelfths*: a third of its strength.
-- Batteries firing at ships in orbit read it in *quarters*: full strength.
-  Big guns on the ground rarely miss large ships overhead.
+- Ships firing at the batteries (bombardment and invasion suppression) and
+  batteries firing at ships in orbit read it in *quarters*: full strength.
+- Ships firing at dug-in armies (invasion softening and blitz cover fire),
+  and batteries firing at descending transports, read it in *twelfths*: a
+  third of its strength.
 
 #figure(
   table(

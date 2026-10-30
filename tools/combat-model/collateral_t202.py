@@ -1,8 +1,8 @@
 """assault_collateral.py's exact bombardment model under the t202 rules:
 the t200 hulls, plain bombard AS (12 / 33 / 90, half crippled), two-step
 batteries (66 hits to cripple, 66 more to destroy; 90 AS, 45 crippled), and
-the ships' orbital fire on the planetary table read in twelfths and the
-batteries' return fire on it in full, hits rounded up. The
+the ships' orbital fire and the batteries' return fire both on the
+planetary table in full (quarters), hits rounded up. The
 batteries shield the dock and the armies (the `delayed` order, as today).
 
 Usage: python3 -I -B tools/combat-model/collateral_t202.py
@@ -35,7 +35,7 @@ def battery_as(batteries):
     return 90 * healthy + 45 * crippled
 
 
-def shot(attack, defense, roll, divisor=12):
+def shot(attack, defense, roll, divisor=4):
     if not attack:
         return 0, False
     return -(-attack * CRT_X4[roll][base_column(attack, defense)] // divisor), roll == 9
@@ -76,7 +76,7 @@ def solve(start, planet):
                     world[2], world[3], world[4], float(any(side[0])), world[0][1])
         ours, theirs = bombard_as(side), battery_as(world[0])
         shots = Counter(shot(ours, max(1, theirs), die) for die in range(10))
-        returns = Counter(shot(theirs, max(1, ours), die, 4) for die in range(10))
+        returns = Counter(shot(theirs, max(1, ours), die) for die in range(10))
         result = [0.] * 8
         for (hits, crit), ka in shots.items():
             after = damage(world, hits + crit, r)

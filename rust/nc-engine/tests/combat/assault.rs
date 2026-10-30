@@ -157,11 +157,11 @@ fn breakthrough_hits_reach_industry_on_the_ten_times_scale() {
     let bombard = &events.bombard_events[0];
     assert!(bombard.breakthrough);
     assert!(
-        bombard.factories_destroyed <= 1,
-        "a destroyer deals at most 14 hits, one factory on the 10x scale: {}",
+        bombard.factories_destroyed <= 9,
+        "a destroyer deals at most 30 hits a round, nine factories a year on the 10x scale: {}",
         bombard.factories_destroyed
     );
-    assert!(bombard.stored_goods_destroyed <= 25);
+    assert!(bombard.stored_goods_destroyed <= 225);
 }
 
 #[test]
