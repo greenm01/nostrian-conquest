@@ -87,6 +87,8 @@ pub fn default_host_fleet_target(
     owned_fleet_targets(game_data, owner_empire_id)
         .into_iter()
         .filter(|row| !excluded_records.contains(&row.fleet_record_index_1_based))
+        // A fleet on its way to be salvaged is no host.
+        .filter(|row| row.order_code != nc_data::Order::Salvage.code())
         .min_by_key(|row| sector_distance_sq(anchor, row.coords))
 }
 
