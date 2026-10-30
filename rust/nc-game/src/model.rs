@@ -134,10 +134,9 @@ impl MainMenuSummary {
             .map(|record| nc_data::has_results_chain(&record) || (record.messages_last != 0))
             .unwrap_or(false)
             || results_present;
-        let pending_messages = player_record
-            .map(|record| record.messages_first != 0)
-            .unwrap_or(false)
-            || runtime_messages_present;
+        // Maintenance sets the classic message pointers whenever reports
+        // wait, for ECGAME's login; only real mail counts as messages here.
+        let pending_messages = runtime_messages_present;
 
         Self {
             game_year: game_data.conquest.game_year,
