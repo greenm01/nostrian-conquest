@@ -1,7 +1,7 @@
 use nc_data::{CoreGameData, Order, Real48};
 
 use super::motion::{ArrivalRule, Course, Motion, run_year, target_depth};
-use super::{FleetEtaEstimate, plan_route, plan_route_to_destination};
+use super::{FleetEtaEstimate, plan_route_to_destination};
 
 /// Years after which a replayed trip counts as never arriving.
 const ETA_YEAR_LIMIT: u16 = 1000;
@@ -17,7 +17,8 @@ pub(super) fn estimate_fleet_eta(game_data: &CoreGameData, fleet_idx: usize) -> 
         fleet.max_speed
     };
     estimate_eta(
-        plan_route(game_data, fleet_idx).is_some(),
+        // Bombard, Invade and the like fly straight in; only reachability matters here.
+        plan_route_to_destination(game_data, fleet_idx, fleet.target.to_array()).is_some(),
         Motion::of_fleet(fleet),
         fleet.speed,
         max_speed,

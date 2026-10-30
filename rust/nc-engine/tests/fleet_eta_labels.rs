@@ -29,3 +29,19 @@ fn a_move_in_the_sector_has_arrived() {
     let game_data = fleet_in_target_sector(Order::MoveOnly, 0);
     assert_eq!(fleet_list_eta_label(&game_data, 0), "0");
 }
+
+#[test]
+fn every_moving_order_counts_years_to_a_distant_target() {
+    for code in 1..=15 {
+        let order = Order::from_code(code);
+        let mut game_data = fleet_in_target_sector(order, u8::from(order.targets_world()));
+        let fleet = &mut game_data.fleets[0];
+        let [x, y] = fleet.sector.to_array();
+        fleet.target = nc_data::Coords::from_array([x, if y > 6 { y - 6 } else { y + 6 }]);
+        let label = fleet_list_eta_label(&game_data, 0);
+        assert!(
+            label.parse::<u16>().is_ok_and(|years| years > 1),
+            "{order:?}: {label}"
+        );
+    }
+}
