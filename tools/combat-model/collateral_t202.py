@@ -48,21 +48,23 @@ def battery_hits(batteries, hits):
     crippled += k
     hits -= k * BATTERY_DS
     if healthy == 0:
-        crippled -= min(crippled, hits // BATTERY_DS)
-    return healthy, crippled
+        destroyed = min(crippled, hits // BATTERY_DS)
+        crippled -= destroyed
+        hits -= destroyed * BATTERY_DS
+    return (healthy, crippled), hits
 
 
 def damage(planet, hits, round_):
     batteries, dock, armies, goods, production = planet
+    batteries, hits = battery_hits(batteries, hits)
     if sum(batteries):
-        return battery_hits(batteries, hits), dock, armies, goods, production
+        return batteries, dock, armies, goods, production
     dock, hits = AC.dock_damage(dock, hits)
-    if round_ == 3:
-        loss = min(armies, hits // 10)
-        armies -= loss
-        hits -= 10 * loss
-        production = max(0, production - hits // 10)
-        goods = max(0, goods - 100 * (hits // 10))
+    loss = min(armies, hits // 10)
+    armies -= loss
+    hits -= 10 * loss
+    production = max(0, production - hits // 10)
+    goods = max(0, goods - 100 * (hits // 10))
     return batteries, dock, armies, goods, production
 
 
