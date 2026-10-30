@@ -135,11 +135,11 @@ pub fn push_intel_entries(
                     event.target_empire,
                 ) {
                     format!(
-                        " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We had {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
+                        " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We have {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
                     )
                 } else {
                     format!(
-                        " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We had {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
+                        " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We have {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
                         classic_empire_clause(game_data, event.target_empire),
                     )
                 };
@@ -168,11 +168,11 @@ pub fn push_intel_entries(
                     event.target_empire,
                 ) {
                     format!(
-                        " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We had {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
+                        " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We have {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
                     )
                 } else {
                     format!(
-                        " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We had {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
+                        " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We have {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
                         classic_empire_clause(game_data, event.target_empire),
                     )
                 };

@@ -740,7 +740,7 @@ pub fn push_roe_entries(
                         _ => "In accordance to our ROE, we are avoiding this enemy fleet...",
                     };
                     format!(
-                        "{prefix} We had {}. We have located and identified the alien fleet in System({},{}) {} Their fleet contains {fleet_desc}. {outcome}",
+                        "{prefix} We have {}. We have located and identified the alien fleet in System({},{}) {} Their fleet contains {fleet_desc}. {outcome}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         coords[0],
                         coords[1],

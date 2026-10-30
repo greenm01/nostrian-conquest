@@ -410,7 +410,7 @@ fn no_engagement_report_includes_reporting_fleet_composition() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
         .join(" ")
         .replace('\n', " ");
-    assert!(text.contains("We had CA1 DD1."));
+    assert!(text.contains("We have CA1 DD1."));
     assert!(text.contains("Their fleet contains"));
 }
 
@@ -441,7 +441,7 @@ fn fleet_contact_report_includes_reporting_fleet_composition() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
         .join(" ")
         .replace('\n', " ");
-    assert!(text.contains("We had SC1."));
+    assert!(text.contains("We have SC1."));
     assert!(text.contains("Their fleet contains"));
 }
 
