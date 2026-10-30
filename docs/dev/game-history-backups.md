@@ -20,7 +20,9 @@ stood on 30 October 2026. Use lowercase, and hyphens only. A game name holds
 no hyphen-separated date of its own, so the last three fields are always the
 date.
 
-A copy taken twice on one day replaces that day's file. Each database holds
+A copy taken twice on one day replaces that day's file. So a new game
+never reuses a finished game's directory name: the crunch lab's second AI
+game is `ai2`, not a reset `ai`. Each database holds
 every year's snapshot, so the latest copy of a game is its full history; the
 dated copies keep a game that is later reset or deleted.
 
