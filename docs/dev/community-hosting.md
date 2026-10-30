@@ -292,6 +292,8 @@ agent `net.greenm01.nc-community-backup`, and logs to
 `~/Library/Logs/nc-community-backup.log`. To recover, `restic restore` a
 snapshot, then `nc-admin backup verify` and `backup restore` the game's
 backup folder as above.
+Copies of played games kept for history and AI training follow
+[game history backups](game-history-backups.md).
 
 If a turn stops with state `maintenance` because its process died, the next
 `due` check (the turns timer, every minute) replays it under its own request
