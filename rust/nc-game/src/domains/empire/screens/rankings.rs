@@ -18,7 +18,7 @@ const RANKINGS_COLUMNS: [TableColumn<'static>; 7] = [
     TableColumn::right("ID", 3),
     TableColumn::right("Planets", 7),
     TableColumn::right("Prev Planets", 12),
-    TableColumn::right("Production", 10),
+    TableColumn::right("Prod", 5),
     TableColumn::right("Prev Prod", 9),
     TableColumn::right("State", 8),
 ];
