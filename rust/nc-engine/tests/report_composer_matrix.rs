@@ -1092,3 +1092,53 @@ fn no_engagement_composer_path_still_emits_a_viewer_report() {
 
     assert_viewers_have_reports(&game_data, &events, &[1]);
 }
+
+#[test]
+fn join_summary_is_dated_no_earlier_than_the_host_loss_it_reports() {
+    // A summary of only lost hosts once fell back to week 1, so it was
+    // dated before the battle that destroyed the host.
+    let mut game_data = seeded_game_data();
+    configure_fleet(&mut game_data, 0, 1, 2, [7, 10]);
+    configure_fleet(&mut game_data, 3, 1, 13, [7, 7]);
+
+    let mut events = MaintenanceEvents::default();
+    events.fleet_destroyed_events.push(FleetDestroyedEvent {
+        reporting_empire: 1,
+        fleet_number: 2,
+        coords: [7, 10],
+        was_intercepting: false,
+        friendly_initial: ShipLosses {
+            cruisers: 1,
+            ..ShipLosses::default()
+        },
+        friendly_loaded_armies_initial: 0,
+        enemy_initial: ShipLosses::default(),
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_ground_batteries_initial: 0,
+        enemy_ground_armies_initial: 0,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        enemy_ground_battery_losses: 0,
+        enemy_ground_army_losses: 0,
+        primary_enemy_empire: Some(2),
+        primary_enemy_fleet_number: None,
+        assault: None,
+        stardate_week: Some(33),
+    });
+    events
+        .join_host_events
+        .push(JoinMissionHostEvent::HostDestroyed {
+            fleet_idx: 3,
+            owner_empire: 1,
+            destroyed_host_fleet_number: Some(2),
+            coords: [7, 7],
+        });
+
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events));
+    let summary = texts
+        .iter()
+        .find(|text| text.contains("Join mission summary"))
+        .expect("a join summary");
+    assert!(summary.contains("Stardate: 33/"), "{summary}");
+}

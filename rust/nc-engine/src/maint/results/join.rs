@@ -117,15 +117,25 @@ pub fn build_join_summary_entries(
                 ..
             } => {
                 if let Some(fleet_number) = fleet_number_from_idx(game_data, fleet_idx) {
-                    by_empire
-                        .entry(owner_empire)
-                        .or_default()
+                    let summary = by_empire.entry(owner_empire).or_default();
+                    summary
                         .lost_hosts
                         .entry(
                             destroyed_host_fleet_number.filter(|fleet_number| *fleet_number != 0),
                         )
                         .or_default()
                         .push(fleet_number);
+                    // The summary cannot be dated before the battle that lost the host.
+                    let lost_week = events
+                        .fleet_destroyed_events
+                        .iter()
+                        .filter(|lost| {
+                            lost.reporting_empire == owner_empire
+                                && Some(lost.fleet_number) == destroyed_host_fleet_number
+                        })
+                        .filter_map(|lost| lost.stardate_week)
+                        .max();
+                    summary.summary_week = summary.summary_week.max(lost_week);
                 }
             }
         }
