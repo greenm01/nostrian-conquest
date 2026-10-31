@@ -95,17 +95,17 @@ pub use intel::{
     latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
 };
 pub use maintenance_types::{
-    AssaultReportEvent, BlockingForce, BombardEvent, CampaignOutcomeEvent, CampaignOutlookEvent,
-    CivilDisorderEvent, ColonizationResolvedEvent, ContactDecision, ContactReportSource,
-    DiplomacyOverride,
-    DiplomaticEscalationEvent, EmpireEliminationCause, EmpireEliminationEvent,
-    EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent, FleetDefectionEvent,
-    FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InheritedAssets,
-    InvalidPlayerStateEvent, JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission,
-    MissionAbortReason, MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent,
-    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, RecoveredUnit,
-    SalvageResolvedEvent, ScoutContactEvent, ShipLosses, ShipsRecoveredEvent, StarbaseAlert,
-    StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent, StarbaseSightingEvent,
+    AssaultLoss, AssaultReportEvent, BlockingForce, BombardEvent, CampaignOutcomeEvent,
+    CampaignOutlookEvent, CivilDisorderEvent, ColonizationResolvedEvent, ContactDecision,
+    ContactReportSource, DiplomacyOverride, DiplomaticEscalationEvent, EmpireEliminationCause,
+    EmpireEliminationEvent, EncounterDispositionEvent, EncounterDispositionReason,
+    FleetBattleEvent, FleetDefectionEvent, FleetDestroyedEvent, FleetMergeEvent,
+    GameVictoryNoticeEvent, InheritedAssets, InvalidPlayerStateEvent, JoinMissionHostEvent,
+    LostWorldResponse, MaintenanceEvents, Mission, MissionAbortReason, MissionEvent,
+    MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
+    PlanetOwnershipChangeEvent, PlanetScorchEvent, RecoveredUnit, SalvageResolvedEvent,
+    ScoutContactEvent, ShipLosses, ShipsRecoveredEvent, StarbaseAlert, StarbaseDestroyedEvent,
+    StarbaseReport, StarbaseReportEvent, StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{
@@ -113,10 +113,10 @@ pub use map_export::{
     STARMAP_TEXT_FILE_NAME, build_galaxy_map_export_data, build_player_map_export_data,
 };
 pub use model::{
-    BuildSlot, CONTACT_MEMORY_YEARS, Conquest, Contact, Coords, CrippledHulls, CrippledShips, DiplomaticRelation, EmpireId,
-    EscapeEpisode, Fleet, FleetId, HullClass, Ipbm, MaintenanceDays, Order, Planet, Player,
-    PlayerMode, ProductionItemKind, RECOVERY_TURNS, RecordNumber, Recovered, Setup, ShipCounts,
-    Sighting, SightingMemory, Starbase, StarbaseId, Stardock,
+    BuildSlot, CONTACT_MEMORY_YEARS, Conquest, Contact, Coords, CrippledHulls, CrippledShips,
+    DiplomaticRelation, EmpireId, EscapeEpisode, Fleet, FleetId, HullClass, Ipbm, MaintenanceDays,
+    Order, Planet, Player, PlayerMode, ProductionItemKind, RECOVERY_TURNS, RecordNumber, Recovered,
+    Setup, ShipCounts, Sighting, SightingMemory, Starbase, StarbaseId, Stardock,
 };
 pub use motion::{set_fleet_at_rest, set_starbase_at_rest};
 pub use names::{

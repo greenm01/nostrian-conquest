@@ -217,7 +217,8 @@ impl TurnFleetRefs {
         for event in &mut self.mission_retarget_events {
             match event {
                 MissionRetargetEvent::Retargeted { fleet_idx, .. }
-                | MissionRetargetEvent::Abandoned { fleet_idx, .. } => {
+                | MissionRetargetEvent::Abandoned { fleet_idx, .. }
+                | MissionRetargetEvent::TargetWorldOwned { fleet_idx, .. } => {
                     remap.report_index(fleet_idx)
                 }
             }

@@ -2,7 +2,7 @@
 
 use crate::{
     DiplomaticRelation, EmpireUnitSummary, FleetOrderValidationError,
-    FleetPlayerInputValidationError, PlanetIntelSnapshot, PlanetPlayerInputValidationError,
+    FleetPlayerInputValidationError, Order, PlanetIntelSnapshot, PlanetPlayerInputValidationError,
     PlayerDiplomacyValidationError,
 };
 
@@ -252,8 +252,22 @@ pub struct FleetDestroyedEvent {
     pub primary_enemy_empire: Option<u8>,
     /// Hostile fleet number if one specific enemy fleet can be named.
     pub primary_enemy_fleet_number: Option<u8>,
+    /// The fleet died assaulting a world.
+    pub assault: Option<AssaultLoss>,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
+}
+
+/// The assault a fleet died in, for classic's "began its bombing run" report.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AssaultLoss {
+    /// Bombard, Invade or Blitz.
+    pub mission: Mission,
+    pub planet_idx: usize,
+    /// Shares of the world's factories and stored goods the assault
+    /// destroyed, in percent; 0 when there were none to destroy.
+    pub factories_percent: u8,
+    pub goods_percent: u8,
 }
 
 /// A starbase was completely destroyed and command lost all contact with it.
@@ -489,6 +503,24 @@ pub enum MissionRetargetEvent {
         /// As for `Retargeted`.
         in_system: bool,
         /// Tick (1-52) when this event occurred; None for events from before the year's ticks.
+        stardate_week: Option<u8>,
+    },
+    /// The order's target world is the fleet's own empire's, so the order
+    /// ends: assaults guard it or move to it, View moves to its sector,
+    /// Colonize and Scout System hold.
+    TargetWorldOwned {
+        fleet_idx: usize,
+        /// Player-visible fleet number captured when the event was created.
+        reporting_fleet_number: Option<u8>,
+        owner_empire: u8,
+        mission: Mission,
+        target_coords: [u8; 2],
+        coords: [u8; 2],
+        /// As for `Retargeted`.
+        in_system: bool,
+        /// The order the fleet takes instead.
+        follow_on: Order,
+        /// Tick (1-52) when this event occurred.
         stardate_week: Option<u8>,
     },
 }

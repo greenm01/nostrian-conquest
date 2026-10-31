@@ -109,28 +109,52 @@ Matching classic:
 - Three fleets at a rendezvous: same weeks and hosts; wording as above.
 - The full matrix (orders 0–15, speeds 1–6, offsets d3, d6, s3 and s6; 384
   cases, 64 skipped as too fast) adds no new kind of difference. Bombard,
-  Invade and Blitz differ only once combat dice diverge. Classic's lost-fleet
-  report says "shortly after it began its bombardment"; NC's says "shortly
-  after it was attacked". Join and Rendezvous differ in wording only.
+  Invade and Blitz differ only once combat dice diverge. Join and Rendezvous
+  differ in wording only.
 
 Dice, not a bug: a guard escorting a base whose move is refused ends the
 year at depth 51/52 or 1.0 depending on the unit order. Classic splits
 about evenly over six runs at each speed.
 
-NC is wrong. Classic checks the target world's owner during the year;
-NC does not:
+Fixed (t220). Classic checks the target world's owner during the year, in
+the fleet's dispatch after its step (`movement/target_world.rs`); NC did
+not. Every case below now matches classic week by week:
 
-| order and target | classic | NC |
+| order and target | classic, and now NC | NC before |
 |---|---|---|
-| View our own world | Week 1: "Since we now own the world in System(x,y), we are aborting our viewing mission…", then a Move to that sector. | Keeps viewing. |
-| Scout System our own world | On arrival: "Since we now control System(x,y), we are aborting our scouting mission…", then Hold. | Scouts every year. |
-| Colonize our own world | Week 1: "Since we now own the world in System(x,y), we are holding our current position…", then Hold. | Flies on. |
-| Colonize an occupied world | Reports in the week it enters the system, then turns to a Move and climbs out to the sector. | Reports on reaching orbit, and stays there. |
-| Bombard, Invade, Blitz our own world | Flies on as Guard/Blockade, or as a Move if unarmed (`ec-battle-spec.md` §2.1). | Cancels to Hold at the start of the year. |
+| View our own world | Week 1: "Since we now own the world in System(x,y), we are aborting our viewing mission…", then a Move to that sector. | Kept viewing. |
+| Scout System our own world | On arrival: "Since we now control System(x,y), we are aborting our scouting mission…", then Hold. | Scouted every year. |
+| Colonize our own world | Week 1, before its first step: "Since we now own the world in System(x,y), we are holding our current position…", then Hold. | Flew on. |
+| Colonize an occupied world | Reports in the week it enters the system, then turns to a Move and climbs out to the sector. | Reported on reaching orbit, and stayed there. |
+| Bombard, Invade, Blitz our own world | Flies on as Guard/Blockade, or as a Move if unarmed or at ROE 0 (`ec-battle-spec.md` §2.1). | Cancelled to Hold at the start of the year. |
 
-Information gap: classic's View report names an owned world (`planet
-"Name"`); NC's says "the world found within". NC's "Estimated production"
-for classic's "Estimated present production" is deliberate (7bd10af9).
+The check runs every tick, so a bombarding fleet whose sister fleet takes
+the world guards it from the next tick. A Move that ends in orbit now
+reports from "System(x,y)", as classic does. NC drops classic's
+"posistion" typo.
+
+Reports matched to classic at the owner's request (2026-10-31):
+
+- The View report names an owned world (`analysis of planet "Name".`) and
+  keeps "the world found within" for an unowned one.
+- A fleet lost in its own assault gets classic's report: "We have lost all
+  contact with the 1st Fleet shortly after it began its bombing run against
+  planet "N" in System(x,y), currently owned by E. According to the fleet's
+  last report, the target world was defended by … We have confirmed that
+  they managed to destroy … Records show that the 1st Fleet was composed of
+  …, with all hands presumed lost." Blitz reads "blitz attempt" and "owned
+  by". Invade follows the spec ("invasion", §4); no classic run has shown
+  it yet. The fleet's make-up stays in NC's notation (CA1).
+
+Re-audit after the fix (mini, 2026-10-31): the 64 default cases give only
+the differences listed above, and Hold matches in all four. The `home`
+variant for orders 5–9, 11 and 12 matches in every case except for the
+"posistion" typo. The `enemy` variant matches apart from combat dice. When
+the attacker dies, the lost-fleet report matches classic word for word,
+except for the force notation and the masked damage.
+
+NC's "Estimated production" for classic's "Estimated present production"
+is deliberate (7bd10af9).
 
 Probe artifact: `fleet-location` keeps orbit depth, so a start in an empty
 sector sits at depth 1 and reports "System(x,y)". Both engines see the same

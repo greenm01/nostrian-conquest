@@ -280,12 +280,19 @@ pub fn push_combat_entries(
         } else {
             "was attacked by"
         };
-        let text = format!(
-            "{header} We lost all contact with the {fleet} shortly after it {verb} {enemy} in System({x},{y}). Records show the {fleet} was composed of {}. According to a burnt flight recorder we recovered, the alien force initially contained {}. {}",
-            fleet_force_summary(event.friendly_initial, event.friendly_loaded_armies_initial),
-            destroyed_fleet_enemy_force_value(event),
-            flight_recorder_casualties(&destroyed_fleet_enemy_losses_value(event)),
-        );
+        let text = if let Some(assault) = event.assault {
+            format!(
+                "{header} {}",
+                assault_loss_text(game_data, event, assault, &fleet)
+            )
+        } else {
+            format!(
+                "{header} We lost all contact with the {fleet} shortly after it {verb} {enemy} in System({x},{y}). Records show the {fleet} was composed of {}. According to a burnt flight recorder we recovered, the alien force initially contained {}. {}",
+                fleet_force_summary(event.friendly_initial, event.friendly_loaded_armies_initial),
+                destroyed_fleet_enemy_force_value(event),
+                flight_recorder_casualties(&destroyed_fleet_enemy_losses_value(event)),
+            )
+        };
         entries.push(ReportEntry {
             text,
             kind: 0x06,
@@ -579,6 +586,65 @@ pub fn push_combat_entries(
 }
 
 /// The loss report's last line: what the lost unit took with it.
+/// Classic's report of a fleet lost in its own assault (`ec-battle-spec.md`
+/// §4): the world it struck, its defenses, the damage confirmed, and the
+/// fleet.
+fn assault_loss_text(
+    game_data: &CoreGameData,
+    event: &nc_data::FleetDestroyedEvent,
+    assault: nc_data::AssaultLoss,
+    fleet: &str,
+) -> String {
+    let [x, y] = event.coords;
+    let (attempt, owned) = match assault.mission {
+        Mission::BombardWorld => ("bombing run", "currently owned by"),
+        Mission::InvadeWorld => ("invasion", "owned by"),
+        _ => ("blitz attempt", "owned by"),
+    };
+    let world = game_data
+        .planets
+        .get(assault.planet_idx)
+        .map_or(String::new(), |planet| planet.name.trim().to_string());
+    let owner = event
+        .primary_enemy_empire
+        .map_or("no one".to_string(), |empire| {
+            classic_empire_clause(game_data, empire)
+        });
+    let defenses = match ground_force_summary(
+        event.enemy_ground_batteries_initial,
+        event.enemy_ground_armies_initial,
+    ) {
+        Some(defenses) => format!("the target world was defended by {defenses}"),
+        None => "the target world had no planetary defenses".to_string(),
+    };
+    let mut damage = Vec::new();
+    damage.extend(ground_losses_summary(
+        event.enemy_ground_battery_losses,
+        event.enemy_ground_army_losses,
+    ));
+    if assault.factories_percent > 0 {
+        damage.push(format!("{}% of the factories", assault.factories_percent));
+    }
+    if assault.goods_percent > 0 {
+        damage.push(format!(
+            "{}% of the stored goods (production points)",
+            assault.goods_percent
+        ));
+    }
+    let confirmed = if damage.is_empty() {
+        "We have been unable to confirm any alien casualties.".to_string()
+    } else {
+        format!(
+            "We have confirmed that they managed to destroy {}.",
+            join_report_parts(&damage)
+        )
+    };
+    format!(
+        "We have lost all contact with the {fleet} shortly after it began its {attempt} against planet \"{world}\" in System({x},{y}), {owned} {owner}. According to the fleet's last report, {defenses}. {confirmed} Records show that the {fleet} was composed of {}, with all hands presumed lost.",
+        fleet_force_summary(event.friendly_initial, event.friendly_loaded_armies_initial),
+    )
+}
+
 fn flight_recorder_casualties(losses: &str) -> String {
     match losses {
         "none" | "no ship losses" => {

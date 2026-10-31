@@ -20,8 +20,8 @@ use super::state::{
     ship_losses_from_states, warship_attack_as,
 };
 use nc_data::{
-    GameRng, InheritedAssets, Real48, has_any_force, present_production_points, set_armies_aboard,
-    stardock_slot_kind, stored_production_points,
+    AssaultLoss, GameRng, InheritedAssets, Real48, has_any_force, present_production_points,
+    set_armies_aboard, stardock_slot_kind, stored_production_points,
 };
 
 #[derive(Debug, Default)]
@@ -99,6 +99,7 @@ fn push_assault_destroyed_fleet_event(
     enemy_ground_battery_losses: u8,
     enemy_ground_army_losses: u8,
     primary_enemy_empire: u8,
+    assault: AssaultLoss,
 ) {
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
         reporting_empire: game_data.fleets[fleet_indices[0]].owner.0,
@@ -118,8 +119,19 @@ fn push_assault_destroyed_fleet_event(
         enemy_ground_army_losses,
         primary_enemy_empire: (primary_enemy_empire != 0).then_some(primary_enemy_empire),
         primary_enemy_fleet_number: None,
+        assault: Some(assault),
         stardate_week: None,
     });
+}
+
+/// The share of `before` an assault destroyed, as classic reports it:
+/// `Round((1 - after/before) * 100)`, at most 99, and 0 unless `before` is
+/// above `floor` (`ec-battle-spec.md` §4).
+fn destroyed_percent(before: f64, after: f64, floor: f64) -> u8 {
+    if before <= floor {
+        return 0;
+    }
+    ((1.0 - after / before) * 100.0).round().clamp(0.0, 99.0) as u8
 }
 
 fn fleet_still_ready_for_assault(game_data: &CoreGameData, fleet_idx: usize, order: Order) -> bool {
@@ -641,6 +653,8 @@ pub(crate) fn resolve_strike(
                 u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX);
             let pre_stored_goods = stored_production_points(&game_data.planets[planet_idx]);
             let pre_factories = present_production_points(&game_data.planets[planet_idx]);
+            let pre_production = game_data.planets[planet_idx].production.to_f64();
+            let pre_goods = game_data.planets[planet_idx].stored_goods.to_f64();
             let pre_stardock_items: u32 = (0..STARDOCK_SLOT_COUNT)
                 .map(|s| {
                     u16::try_from(game_data.planets[planet_idx].stardock[s]).unwrap_or(u16::MAX)
@@ -768,6 +782,20 @@ pub(crate) fn resolve_strike(
                     ),
                     pre_armies.saturating_sub(u8::try_from(post_planet.armies).unwrap_or(u8::MAX)),
                     defender_empire,
+                    AssaultLoss {
+                        mission: kind,
+                        planet_idx,
+                        factories_percent: destroyed_percent(
+                            pre_production,
+                            post_planet.production.to_f64(),
+                            1.0,
+                        ),
+                        goods_percent: destroyed_percent(
+                            pre_goods,
+                            post_planet.stored_goods.to_f64(),
+                            0.1,
+                        ),
+                    },
                 );
             }
             events
@@ -937,6 +965,12 @@ pub(crate) fn resolve_strike(
                             defender_battery_losses,
                             defender_army_losses,
                             previous_owner,
+                            AssaultLoss {
+                                mission: kind,
+                                planet_idx,
+                                factories_percent: 0,
+                                goods_percent: 0,
+                            },
                         );
                     }
                 } else {
@@ -978,6 +1012,12 @@ pub(crate) fn resolve_strike(
                             defender_battery_losses,
                             defender_army_losses,
                             previous_owner,
+                            AssaultLoss {
+                                mission: kind,
+                                planet_idx,
+                                factories_percent: 0,
+                                goods_percent: 0,
+                            },
                         );
                     }
                 }
@@ -1024,6 +1064,12 @@ pub(crate) fn resolve_strike(
                         ),
                         0,
                         previous_owner,
+                        AssaultLoss {
+                            mission: kind,
+                            planet_idx,
+                            factories_percent: 0,
+                            goods_percent: 0,
+                        },
                     );
                 }
             }
@@ -1172,6 +1218,12 @@ pub(crate) fn resolve_strike(
                         defender_battery_losses,
                         defender_army_losses,
                         previous_owner,
+                        AssaultLoss {
+                            mission: kind,
+                            planet_idx,
+                            factories_percent: 0,
+                            goods_percent: 0,
+                        },
                     );
                 }
             } else {
@@ -1212,6 +1264,12 @@ pub(crate) fn resolve_strike(
                         defender_battery_losses,
                         defender_army_losses,
                         previous_owner,
+                        AssaultLoss {
+                            mission: kind,
+                            planet_idx,
+                            factories_percent: 0,
+                            goods_percent: 0,
+                        },
                     );
                 }
             }

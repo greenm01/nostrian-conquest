@@ -78,7 +78,6 @@ pub(super) fn sanitize_invalid_player_inputs(
                                     | FleetOrderValidationError::MissingEtac
                                     | FleetOrderValidationError::MissingLoadedTroopTransports
                                     | FleetOrderValidationError::InvalidJoinHost
-                                    | FleetOrderValidationError::TargetOwnedByFleetEmpire
                             );
                         if !should_sanitize
                             || ecmaint_leaves_unarmed_guard_alone(game_data, fleet_idx, reason)

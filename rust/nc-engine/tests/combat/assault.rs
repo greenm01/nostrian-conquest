@@ -230,10 +230,12 @@ fn bombard_fleet_is_not_folded_into_a_same_turn_invasion() {
     );
     let bombard_fleet = &game_data.fleets[1];
     assert_eq!(bombard_fleet.ships.loaded_transports, 3);
-    assert_eq!(bombard_fleet.order, Order::BombardWorld);
     // Both strike on tick 1 in the year's unit order: the bomber either
-    // bombarded first or found the world already its own. Either way it
-    // keeps its order and its armies, in orbit.
+    // bombarded first or found the world already its own. Once the world is
+    // its own it guards it, as classic does; either way it keeps its armies,
+    // in orbit.
+    assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
+    assert_eq!(bombard_fleet.order, Order::GuardBlockadeWorld);
     assert_eq!(bombard_fleet.depth, nc_data::Real48::ONE);
     assert_eq!(game_data.fleets[0].ships.loaded_transports, 0);
 }
@@ -337,7 +339,9 @@ fn assault_fleets_of_different_classes_strike_in_tick_order() {
         Some(DIVE_TICK)
     );
     assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
-    assert_eq!(game_data.fleets[0].order, Order::BombardWorld);
+    // From the tick after the capture the bomber finds the world its own
+    // and guards it, as classic does.
+    assert_eq!(game_data.fleets[0].order, Order::GuardBlockadeWorld);
     assert_eq!(game_data.fleets[1].order, Order::HoldPosition);
 }
 

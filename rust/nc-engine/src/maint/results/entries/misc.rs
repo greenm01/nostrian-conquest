@@ -602,6 +602,12 @@ pub fn push_misc_entries(
                 coords,
                 in_system,
                 ..
+            }
+            | nc_data::MissionRetargetEvent::TargetWorldOwned {
+                reporting_fleet_number,
+                coords,
+                in_system,
+                ..
             } => mission_retarget_source(reporting_fleet_number, coords, in_system),
         };
         let (recipient, body) = match *event {
@@ -680,10 +686,21 @@ pub fn push_misc_entries(
                     coords[0], coords[1]
                 ),
             ),
+            nc_data::MissionRetargetEvent::TargetWorldOwned {
+                owner_empire,
+                mission,
+                target_coords,
+                follow_on,
+                ..
+            } => (
+                owner_empire,
+                target_world_owned_text(mission, target_coords, follow_on),
+            ),
             _ => continue,
         };
         let (nc_data::MissionRetargetEvent::Retargeted { stardate_week, .. }
-        | nc_data::MissionRetargetEvent::Abandoned { stardate_week, .. }) = *event;
+        | nc_data::MissionRetargetEvent::Abandoned { stardate_week, .. }
+        | nc_data::MissionRetargetEvent::TargetWorldOwned { stardate_week, .. }) = *event;
         let header = report_header(&source, stardate_week, year);
         entries.push(ReportEntry {
             text: format!("{header}{body}"),
@@ -694,6 +711,34 @@ pub fn push_misc_entries(
             stardate_week,
             narrative_phase: narrative_phase_for_report_text(&body),
         });
+    }
+}
+
+/// Classic's report when an order's target world is the fleet's own.
+fn target_world_owned_text(mission: Mission, [x, y]: [u8; 2], follow_on: nc_data::Order) -> String {
+    let assault = |label: &str, verb: &str| {
+        let next = if follow_on == nc_data::Order::GuardBlockadeWorld {
+            "we are taking the initiative to guard this new world"
+        } else {
+            "we are simply going to move to this new world"
+        };
+        format!(
+            " {label} mission report: Since we now own the world in System({x},{y}), we are aborting our mission to {verb} it. Until ordered otherwise, {next}."
+        )
+    };
+    match mission {
+        Mission::BombardWorld => assault("Bombardment", "bombard"),
+        Mission::InvadeWorld => assault("Invasion", "invade"),
+        Mission::BlitzWorld => assault("Blitz", "blitz"),
+        Mission::ViewWorld => format!(
+            " Viewing mission report: Since we now own the world in System({x},{y}), we are aborting our viewing mission. Until ordered otherwise, we are simply going to proceed to Sector({x},{y}) and then await new orders."
+        ),
+        Mission::ColonizeWorld => format!(
+            " Colonization mission report: Since we now own the world in System({x},{y}), we are holding our current position and are awaiting new orders."
+        ),
+        _ => format!(
+            " Scouting mission report: Since we now control System({x},{y}), we are aborting our scouting mission. Until ordered otherwise, we will be simply holding our position and awaiting new orders."
+        ),
     }
 }
 

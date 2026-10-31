@@ -4,7 +4,7 @@ use super::super::{
 };
 use super::salvage::queue_salvage_resolution;
 use crate::{CoreGameData, Order};
-use nc_data::build_runtime_planet_intel_snapshot;
+use nc_data::{MissionRetargetEvent, build_runtime_planet_intel_snapshot};
 
 fn queue_local_intrusion_escalation(
     movement_events: &mut MovementEvents,
@@ -58,6 +58,26 @@ pub(super) fn handle_fleet_arrival(
                 .planets
                 .iter()
                 .position(|planet| planet.sector.to_array() == coords);
+            if planet_idx.is_some_and(|idx| game_data.planets[idx].owner.0 == owner_empire) {
+                // ECMAINT's scout has nothing to learn at its own world: it
+                // holds (`0000:5c18`).
+                let fleet = &mut game_data.fleets[fleet_idx];
+                fleet.order = Order::HoldPosition;
+                movement_events
+                    .retargets
+                    .push(MissionRetargetEvent::TargetWorldOwned {
+                        fleet_idx,
+                        reporting_fleet_number: Some(fleet.fleet_number.0 as u8),
+                        owner_empire,
+                        mission: Mission::ScoutSolarSystem,
+                        target_coords: coords,
+                        coords: fleet.sector.to_array(),
+                        in_system: fleet.depth.round() == 1,
+                        follow_on: Order::HoldPosition,
+                        stardate_week: None,
+                    });
+                return Ok(());
+            }
             let intel_event = planet_idx.map(|planet_idx| PlanetIntelEvent {
                 planet_idx,
                 viewer_empire: owner_empire,

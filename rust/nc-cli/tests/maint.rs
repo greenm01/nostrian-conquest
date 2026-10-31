@@ -4075,8 +4075,16 @@ fn maint_rust_bombard_destruction_emits_lost_contact_telemetry() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
     // As in classic, the lost force's only report is its loss report.
-    assert!(text.contains("We lost all contact with the"), "{text}");
-    assert!(text.contains("15 ground batteries and 25 armies"), "{text}");
+    assert!(
+        text.contains("We have lost all contact with the 1st Fleet shortly after it began"),
+        "{text}"
+    );
+    // RESULTS.DAT records split words, so compare without spaces.
+    assert!(
+        text.replace(char::is_whitespace, "")
+            .contains("defendedby15groundbatteriesand25armies"),
+        "{text}"
+    );
     assert!(!text.contains("Hostile return fire destroyed"), "{text}");
 
     cleanup_dir(&target);
@@ -4124,8 +4132,16 @@ fn maint_rust_invasion_destruction_emits_lost_contact_telemetry() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
     // As in classic, the lost force's only report is its loss report.
-    assert!(text.contains("We lost all contact with the"), "{text}");
-    assert!(text.contains("15 ground batteries and 25 armies"), "{text}");
+    assert!(
+        text.contains("We have lost all contact with the 1st Fleet shortly after it began"),
+        "{text}"
+    );
+    // RESULTS.DAT records split words, so compare without spaces.
+    assert!(
+        text.replace(char::is_whitespace, "")
+            .contains("defendedby15groundbatteriesand25armies"),
+        "{text}"
+    );
     assert!(!text.contains("ALERT: Planetary invasion"), "{text}");
 
     cleanup_dir(&target);
@@ -4226,8 +4242,16 @@ fn maint_rust_blitz_destruction_emits_lost_contact_telemetry() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
     // As in classic, the lost force's only report is its loss report.
-    assert!(text.contains("We lost all contact with the"), "{text}");
-    assert!(text.contains("15 ground batteries and 25 armies"), "{text}");
+    assert!(
+        text.contains("We have lost all contact with the 1st Fleet shortly after it began"),
+        "{text}"
+    );
+    // RESULTS.DAT records split words, so compare without spaces.
+    assert!(
+        text.replace(char::is_whitespace, "")
+            .contains("defendedby15groundbatteriesand25armies"),
+        "{text}"
+    );
     assert!(!text.contains("ALERT: Blitz assault"), "{text}");
 
     cleanup_dir(&target);

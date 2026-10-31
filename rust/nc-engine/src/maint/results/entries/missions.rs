@@ -305,9 +305,12 @@ pub fn push_mission_entries(
             .unwrap_or_else(|| fleet.sector.to_array());
         let [x, y] = coords;
         // A guard follows its base's depth; with the base in deep space,
-        // classic reports from the sector.
+        // classic reports from the sector. A Move that ends in orbit reports
+        // from the system.
         let mission_location = if event.kind == Mission::GuardStarbase && fleet.depth.is_zero() {
             format!("Sector({x},{y})")
+        } else if event.kind == Mission::MoveOnly && fleet.depth.round() == 1 {
+            format!("System({x},{y})")
         } else {
             mission_location_phrase(event.kind, coords)
         };
@@ -496,8 +499,13 @@ pub fn push_mission_entries(
                 let body = if let Some(intel_event) = matching_planet_intel_event(events, event) {
                     if let Some(snapshot) = intel_event.observed_snapshot.as_ref() {
                         let owner_clause = owner_clause_from_snapshot(snapshot, game_data);
+                        let subject = viewed_world_subject(
+                            game_data,
+                            event.planet_idx,
+                            snapshot.known_owner_empire_id.unwrap_or(0),
+                        );
                         format!(
-                            " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {owner_clause} {} has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
+                            " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of {subject}. The world is {owner_clause} {} has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
                             view_joiner(&owner_clause),
                             snapshot.known_potential_production.unwrap_or(0),
                         )
@@ -514,8 +522,10 @@ pub fn push_mission_entries(
                                     )
                                 )
                             };
+                            let subject =
+                                viewed_world_subject(game_data, Some(planet_idx), planet.owner.0);
                             format!(
-                                " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {owner_clause} {} has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
+                                " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of {subject}. The world is {owner_clause} {} has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
                                 view_joiner(&owner_clause),
                                 u16::from(planet.potential_production),
                             )
@@ -864,5 +874,14 @@ fn view_joiner(owner_clause: &str) -> &'static str {
         "but"
     } else {
         "and"
+    }
+}
+
+/// What a View report says it analysed: classic names an owned world and
+/// calls an unowned one "the world found within".
+fn viewed_world_subject(game_data: &CoreGameData, planet_idx: Option<usize>, owner: u8) -> String {
+    match planet_idx.and_then(|idx| game_data.planets.get(idx)) {
+        Some(planet) if owner != 0 => format!("planet \"{}\"", planet.name.trim()),
+        _ => "the world found within".to_string(),
     }
 }

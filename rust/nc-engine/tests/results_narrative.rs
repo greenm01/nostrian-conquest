@@ -1,7 +1,7 @@
 use nc_compat::load_classic_core_files;
 use nc_data::{
-    AssaultReportEvent, BombardEvent, ContactReportSource, Coords, EmpireEliminationCause,
-    EmpireEliminationEvent, EmpireUnitSummary, EncounterDispositionEvent,
+    AssaultLoss, AssaultReportEvent, BombardEvent, ContactReportSource, Coords,
+    EmpireEliminationCause, EmpireEliminationEvent, EmpireUnitSummary, EncounterDispositionEvent,
     EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError,
     GameStateBuilder, GameVictoryNoticeEvent, InheritedAssets, InvalidPlayerStateEvent,
     MaintenanceEvents, Mission, MissionEvent, MissionOutcome, Planet, PlanetIntelEvent,
@@ -99,6 +99,7 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         enemy_ground_army_losses: 0,
         primary_enemy_empire: Some(3),
         primary_enemy_fleet_number: Some(4),
+        assault: None,
         stardate_week: Some(2),
     });
 
@@ -116,6 +117,62 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         contact_idx < destroyed_idx,
         "contact should precede lost-contact: {texts:?}"
     );
+}
+
+#[test]
+fn a_fleet_lost_in_its_bombing_run_reports_the_run_as_classic_does() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3001)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [5, 13];
+    seed_target_world(&mut game_data, coords, "Target");
+    game_data.planets[0].owner.0 = 2;
+
+    let mut events = MaintenanceEvents::default();
+    events.fleet_destroyed_events.push(FleetDestroyedEvent {
+        reporting_empire: 1,
+        fleet_number: 1,
+        coords,
+        was_intercepting: false,
+        friendly_initial: ShipLosses {
+            cruisers: 1,
+            ..ShipLosses::default()
+        },
+        friendly_loaded_armies_initial: 0,
+        enemy_initial: ShipLosses::default(),
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_ground_batteries_initial: 4,
+        enemy_ground_armies_initial: 10,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        enemy_ground_battery_losses: 0,
+        enemy_ground_army_losses: 1,
+        primary_enemy_empire: Some(2),
+        primary_enemy_fleet_number: None,
+        assault: Some(AssaultLoss {
+            mission: Mission::BombardWorld,
+            planet_idx: 0,
+            factories_percent: 1,
+            goods_percent: 49,
+        }),
+        stardate_week: Some(26),
+    });
+
+    let rows = build_results_report_blocks(&mut game_data, &events);
+    let text = viewer_report_texts(1, &rows).join(" ").replace('\n', " ");
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        text.contains("We have lost all contact with the 1st Fleet shortly after it began its bombing run against planet \"Target\" in System(5,13), currently owned by"),
+        "{text}"
+    );
+    assert!(
+        text.contains("According to the fleet's last report, the target world was defended by 4 ground batteries and 10 armies. We have confirmed that they managed to destroy 1 army, 1% of the factories and 49% of the stored goods (production points). Records show that the 1st Fleet was composed of"),
+        "{text}"
+    );
+    assert!(text.contains("with all hands presumed lost."), "{text}");
 }
 
 #[test]
@@ -1064,6 +1121,7 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
         enemy_ground_army_losses: 0,
         primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: None,
+        assault: None,
         stardate_week: Some(3),
     };
     events.fleet_destroyed_events.push(escort_destroyed.clone());

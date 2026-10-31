@@ -1108,6 +1108,7 @@ pub(super) fn fight_encounter_with_dice(
                 enemy_ground_army_losses: 0,
                 primary_enemy_empire: primary_enemy_empire(),
                 primary_enemy_fleet_number: primary_enemy_fleet_number(),
+                assault: None,
                 stardate_week: None,
             });
         }

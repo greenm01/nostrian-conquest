@@ -5,6 +5,7 @@ mod merges;
 mod salvage;
 mod starbase;
 mod stepper;
+mod target_world;
 
 use super::{FleetRemovalRemapInfo, MovementEvents};
 use crate::{CoreGameData, Mission, Order, VisibleHazardIntel};
@@ -97,7 +98,9 @@ impl<'a> YearMovement<'a> {
             }
             return Ok(TickEnd::Underway);
         }
-        if self.check_home_world(game_data, fleet_idx) {
+        if self.check_home_world(game_data, fleet_idx)
+            || self.check_target_world(game_data, fleet_idx)
+        {
             marks.stamp(&mut self.events, tick);
             return Ok(TickEnd::Underway);
         }
@@ -226,7 +229,8 @@ impl EventMarks {
         }
         for event in &mut events.retargets[self.retargets..] {
             let (nc_data::MissionRetargetEvent::Retargeted { stardate_week, .. }
-            | nc_data::MissionRetargetEvent::Abandoned { stardate_week, .. }) = event;
+            | nc_data::MissionRetargetEvent::Abandoned { stardate_week, .. }
+            | nc_data::MissionRetargetEvent::TargetWorldOwned { stardate_week, .. }) = event;
             *stardate_week = Some(tick);
         }
         for event in &mut events.diplomatic_escalation_events[self.escalations..] {

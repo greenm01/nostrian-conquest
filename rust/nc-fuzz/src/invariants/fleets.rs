@@ -189,6 +189,12 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
             reporting_fleet_number,
             owner_empire,
             ..
+        }
+        | MissionRetargetEvent::TargetWorldOwned {
+            fleet_idx,
+            reporting_fleet_number,
+            owner_empire,
+            ..
         }) = *event;
         let mut fleet_claim = FleetClaim::owned(fleet_idx, owner_empire);
         fleet_claim.fleet_number = reporting_fleet_number;

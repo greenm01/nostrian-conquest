@@ -111,6 +111,7 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
         enemy_ground_army_losses: 0,
         primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: Some(7),
+        assault: None,
         stardate_week: Some(1),
     });
 
@@ -370,6 +371,7 @@ fn destroyed_fleet_telemetry_reports_starbase_only_opponent() {
         enemy_ground_army_losses: 0,
         primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: None,
+        assault: None,
         stardate_week: Some(2),
     });
 
@@ -759,6 +761,7 @@ fn fleet_destruction_events_still_cover_both_viewers() {
         enemy_ground_army_losses: 0,
         primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: Some(7),
+        assault: None,
         stardate_week: Some(1),
     });
     events.fleet_battle_events.push(FleetBattleEvent {

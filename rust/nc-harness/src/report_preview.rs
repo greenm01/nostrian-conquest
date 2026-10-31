@@ -777,6 +777,7 @@ fn build_fleet_destroyed_preview(
             enemy_ground_army_losses: 0,
             primary_enemy_empire: Some(ATTACKER_EMPIRE),
             primary_enemy_fleet_number: Some(ATTACKER_FLEET_NUMBER),
+            assault: None,
             stardate_week: week,
         });
     world.events.fleet_battle_events.push(FleetBattleEvent {

@@ -20,7 +20,7 @@ fn reinforcements_join_strike_forces_under_way() {
         ..Weights::TUNED
     };
     let mut joins = 0;
-    for map_seed in 0..2 {
+    for map_seed in 0..4 {
         let mut game = seated_game(PLAYERS, map_seed);
         let start_year = game.play.built.game_data.conquest.game_year;
         for _ in 0..60 {

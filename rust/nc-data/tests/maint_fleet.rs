@@ -2854,12 +2854,13 @@ fn a_fleet_lost_bombarding_sends_one_classic_loss_report() {
     let reports = empire_one_reports(&game_data, &events);
     assert_eq!(reports.len(), 1, "{reports:#?}");
     assert!(
-        reports[0].contains("We lost all contact with the 1st Fleet shortly after it"),
+        reports[0].contains(
+            "We have lost all contact with the 1st Fleet shortly after it began its bombing run"
+        ),
         "{reports:#?}"
     );
     assert!(
-        reports[0]
-            .contains("the alien force initially contained 20 ground batteries and 10 armies"),
+        reports[0].contains("the target world was defended by 20 ground batteries and 10 armies"),
         "{reports:#?}"
     );
 }
