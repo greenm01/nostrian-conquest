@@ -93,6 +93,7 @@ pub struct PlanetBuildMenuView {
     pub row: EmpirePlanetEconomyRow,
     pub committed_points: u32,
     pub budget: u32,
+    pub treasury_left: u32,
     pub points_left: u32,
     pub building_count: u32,
     pub docked_count: u32,
@@ -171,8 +172,6 @@ impl PlanetBuildScreen {
             ),
         );
 
-        let spent = view.committed_points.min(view.budget);
-
         draw_menu_row(&mut buffer, 2, &ROW_1);
         draw_menu_row(&mut buffer, 3, &ROW_2);
         draw_menu_row(&mut buffer, 4, &ROW_3);
@@ -230,8 +229,8 @@ impl PlanetBuildScreen {
                 lower_block_row + 2,
                 LEFT_WINDOW_PAD_COL,
                 &format!(
-                    "Spent: {} of {} PP.  Budget remaining: {}.",
-                    spent, view.budget, view.points_left
+                    "Treasury: {} PP.  Build capacity: {} PP.  Budget remaining: {}.",
+                    view.treasury_left, view.row.build_capacity, view.points_left
                 ),
                 classic::status_value_style(),
             );
@@ -431,7 +430,7 @@ impl PlanetBuildScreen {
             .collect::<Vec<_>>();
         let entries = planet_build_specify_entries(view.points_left, &shared_orders);
         let (table_metrics, table_col) =
-            draw_specify_table(&mut buffer, view.points_left, &entries);
+            draw_specify_table(&mut buffer, view.treasury_left, view.points_left, &entries);
         let max_unit_num = planet_build_max_selectable_unit_number(&entries);
         draw_table_footer(
             &mut buffer,
@@ -468,7 +467,7 @@ impl PlanetBuildScreen {
             .collect::<Vec<_>>();
         let entries = planet_build_specify_entries(view.points_left, &shared_orders);
         let (table_metrics, table_col) =
-            draw_specify_table(&mut buffer, view.points_left, &entries);
+            draw_specify_table(&mut buffer, view.treasury_left, view.points_left, &entries);
 
         let prompt = format!(
             "How many new {} to build (0 - {}) ",
@@ -790,6 +789,7 @@ impl Screen for PlanetBuildScreen {
 // and render_quantity_prompt.
 fn draw_specify_table(
     buffer: &mut PlayfieldBuffer,
+    treasury_left: u32,
     points_left: u32,
     entries: &[nc_engine::PlanetBuildSpecifyEntry],
 ) -> (crate::screen::table::TableRenderMetrics, usize) {
@@ -841,7 +841,7 @@ fn draw_specify_table(
     let table_width = table_render_width(&table_columns);
     let table_col = centered_table_start_col(buffer.width(), &table_columns);
     draw_table_title(buffer, 1, table_col, title);
-    let points_left_label = format!("BUDGET: {}", points_left);
+    let points_left_label = format!("TREASURY: {treasury_left}  BUDGET: {points_left}");
     let points_left_col = table_col + table_width - TABLE_TEXT_INSET - points_left_label.len();
     debug_assert!(
         points_left_col >= table_col + TABLE_TEXT_INSET + title.len() + 1,

@@ -29,6 +29,7 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
         },
         committed_points: 10,
         budget: 50,
+        treasury_left: 40,
         points_left: 40,
         building_count: 5,
         docked_count: 3,
@@ -52,7 +53,7 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
     );
     assert_eq!(
         buffer.plain_line(15),
-        " Spent: 10 of 50 PP.  Budget remaining: 40."
+        " Treasury: 40 PP.  Build capacity: 100 PP.  Budget remaining: 40."
     );
     assert_eq!(buffer.plain_line(16), "");
     assert_eq!(buffer.plain_line(17), " Building: 5   Docked: 3");
@@ -79,6 +80,7 @@ fn abort_confirmation_says_cancelling_releases_only_unpaid_points() {
         },
         committed_points: 45,
         budget: 50,
+        treasury_left: 50,
         points_left: 5,
         building_count: 1,
         docked_count: 0,
@@ -124,6 +126,7 @@ fn build_list_renders_queue_columns_without_dock() {
         },
         committed_points: 10,
         budget: 50,
+        treasury_left: 50,
         points_left: 40,
         building_count: 2,
         docked_count: 0,
@@ -200,6 +203,7 @@ fn build_list_confirmation_renders_delete_question_below_command_row() {
         },
         committed_points: 10,
         budget: 50,
+        treasury_left: 50,
         points_left: 40,
         building_count: 2,
         docked_count: 0,
@@ -268,6 +272,7 @@ fn empty_build_list_keeps_table_frame_and_shows_notice_below_command_row() {
         },
         committed_points: 0,
         budget: 50,
+        treasury_left: 50,
         points_left: 50,
         building_count: 0,
         docked_count: 0,
@@ -348,6 +353,7 @@ fn build_list_delete_prompts_keep_table_width_stable() {
         },
         committed_points: 10,
         budget: 50,
+        treasury_left: 50,
         points_left: 40,
         building_count: 2,
         docked_count: 0,
@@ -468,6 +474,7 @@ fn build_specify_table_is_centered_and_footer_tracks_table_inset() {
         },
         committed_points: 0,
         budget: 50,
+        treasury_left: 50,
         points_left: 50,
         building_count: 0,
         docked_count: 0,
@@ -495,7 +502,7 @@ fn build_specify_table_is_centered_and_footer_tracks_table_inset() {
         .find("SPECIFY BUILD ORDERS:")
         .expect("title col");
     let border_col = buffer.plain_line(1).find('┌').expect("table col");
-    let points_left = "BUDGET: 50";
+    let points_left = "TREASURY: 50  BUDGET: 50";
     let points_left_col = buffer
         .plain_line(0)
         .find(points_left)
@@ -544,6 +551,7 @@ fn build_specify_title_shows_current_points_left_after_partial_commit() {
         },
         committed_points: 20,
         budget: 50,
+        treasury_left: 50,
         points_left: 30,
         building_count: 0,
         docked_count: 0,
@@ -577,6 +585,7 @@ fn build_quantity_prompt_keeps_points_left_visible_in_title_row() {
         },
         committed_points: 20,
         budget: 50,
+        treasury_left: 50,
         points_left: 30,
         building_count: 0,
         docked_count: 0,
@@ -617,6 +626,7 @@ fn build_specify_qty_column_fits_large_queued_counts_in_the_same_table() {
         },
         committed_points: 0,
         budget: 50,
+        treasury_left: 50,
         points_left: 50,
         building_count: 0,
         docked_count: 0,

@@ -138,11 +138,8 @@ fn planet_list_auto_commission_prompt_and_report_return_to_list() {
     app.render(&mut terminal)
         .expect("planet list mass-commission prompt should render");
     assert!(
-        line_containing(
-            &terminal,
-            "Commission all ships and starbases? [Y]/N ->",
-        )
-        .contains("Commission all ships and starbases? [Y]/N ->"),
+        line_containing(&terminal, "Commission all ships and starbases? [Y]/N ->",)
+            .contains("Commission all ships and starbases? [Y]/N ->"),
         "expected inline mass-commission prompt on planet list"
     );
     assert!(
@@ -1218,7 +1215,7 @@ fn planet_build_menu_matches_verified_v15_command_layout() {
     );
     assert_eq!(
         terminal.line(15).trim_end(),
-        " Spent: 0 of 50 PP.  Budget remaining: 50."
+        " Treasury: 50 PP.  Build capacity: 100 PP.  Budget remaining: 50."
     );
     assert_eq!(terminal.lines[17].trim_end(), " Building: 0   Docked: 0");
 }
@@ -2740,6 +2737,7 @@ fn planet_build_specify_uses_bottom_command_line_default_prompt() {
         },
         committed_points: 10,
         budget: 40,
+        treasury_left: 40,
         points_left: 30,
         building_count: 1,
         docked_count: 0,
@@ -2787,6 +2785,7 @@ fn planet_build_quantity_uses_bottom_command_line_default_prompt() {
         },
         committed_points: 10,
         budget: 40,
+        treasury_left: 40,
         points_left: 30,
         building_count: 1,
         docked_count: 0,
@@ -2841,6 +2840,7 @@ fn planet_build_specify_renders_success_as_notice_not_error() {
         },
         committed_points: 10,
         budget: 40,
+        treasury_left: 40,
         points_left: 30,
         building_count: 1,
         docked_count: 0,

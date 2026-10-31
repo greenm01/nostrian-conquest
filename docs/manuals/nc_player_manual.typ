@@ -1347,7 +1347,10 @@ keep the full build capacity but share what is left of the treasury. A second
 base at the same world follows the standard rules.
 
 The BUDGET field on the build screen shows how many points remain after the
-committed queue entries are subtracted. Maintenance deducts only the build
+committed queue entries are subtracted. TREASURY beside it shows the treasury
+left after those entries, and the build menu also lists the build capacity.
+When a first starbase takes its points from the treasury, BUDGET can fall by
+less or more than the base's cost; TREASURY shows why. Maintenance deducts only the build
 points it processes that year. Any remaining build cost stays queued for later
 turns, and blocked builds do not touch the treasury. Aborting the queue
 releases the points still unpaid, not points already spent.

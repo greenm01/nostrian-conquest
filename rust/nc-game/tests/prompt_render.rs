@@ -624,6 +624,7 @@ fn build_menu_inline_abort_uses_standard_confirm_layout() {
         },
         committed_points: 50,
         budget: 50,
+        treasury_left: 50,
         points_left: 0,
         building_count: 2,
         docked_count: 3,
