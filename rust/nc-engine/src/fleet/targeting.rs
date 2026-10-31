@@ -3,7 +3,8 @@ use std::collections::BTreeSet;
 
 use nc_data::{
     CoreGameData, PlanetIntelSnapshot, PlayerStarmapWorld,
-    build_player_starmap_projection_from_snapshots, has_any_force,
+    build_player_starmap_projection_from_snapshots, has_any_force, has_combat_ships,
+    starship_count,
 };
 
 use crate::navigation::sector_distance_sq;
@@ -84,11 +85,25 @@ pub fn default_host_fleet_target(
     anchor: [u8; 2],
     excluded_records: &BTreeSet<usize>,
 ) -> Option<OwnedFleetTarget> {
+    // The excluded fleets are the ones joining.
+    let joiners_fight = excluded_records.iter().any(|&record| {
+        game_data
+            .fleets
+            .get(record.wrapping_sub(1))
+            .is_some_and(has_combat_ships)
+    });
+    let scouts_only = |fleet: &nc_data::Fleet| {
+        fleet.ships.scouts > 0 && starship_count(fleet) == u32::from(fleet.ships.scouts)
+    };
     owned_fleet_targets(game_data, owner_empire_id)
         .into_iter()
         .filter(|row| !excluded_records.contains(&row.fleet_record_index_1_based))
         // A fleet on its way to be salvaged is no host.
         .filter(|row| row.order_code != nc_data::Order::Salvage.code())
+        // Warships don't join a lone scout by default: scouts search alone.
+        .filter(|row| {
+            !(joiners_fight && scouts_only(&game_data.fleets[row.fleet_record_index_1_based - 1]))
+        })
         .min_by_key(|row| sector_distance_sq(anchor, row.coords))
 }
 
