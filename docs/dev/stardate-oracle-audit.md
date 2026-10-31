@@ -49,6 +49,8 @@ Fixed by this audit:
   speed 3, so the strike often lands the next year.
 - A capture report gives the garrison, as classic's "After the smoke
   cleared, we had N armies" does.
+- A guard joining a starbase that has climbed out to deep space reports
+  from the sector (`--deep-base`), as classic does.
 
 Open: classic sends no reports to an empire in civil disorder; NC still
 sends such an empire a planet's alert when its world is attacked.
@@ -57,6 +59,32 @@ Probe setup matters: the order's world flag (mission aux 0) must be set as
 ECGAME sets it (`Order::targets_world`). With it clear, classic's world
 orders stop in the sector and report from there.
 
-Not covered: Guard Starbase's base over a non-friendly world (the sweep's
-`--deep-base`), colonizing an occupied world, encounters with other fleets,
-and the NC routing extensions in `ec-movement-spec.md`.
+Join (13): both engines merge the joining fleet in the same year. Classic
+merges it in the week it reaches its host; NC merges after the year's
+movement and dates the summary week 1.
+
+Not covered: colonizing an occupied world, rendezvous merges of several
+fleets, and the NC routing extensions in `ec-movement-spec.md`.
+
+## Encounters (2026-10-30)
+
+`tools/ncmaint_encounter_audit.py` sends empire 1's fleet through a sector
+where empire 2's fleet patrols, under each pairing of diplomacy and ROE, and
+tallies both engines' report sequences over many runs. Sightings are rolls,
+so compare rates and weeks, not single runs. Classic seeds its rolls from
+the clock: runs started together roll alike, so the tool runs them one at a
+time. Each Rust run gets its own campaign seed.
+
+- Motion matches in every run until a battle.
+- Sighting rates and weeks agree: a patrol sights a lone cruiser crossing
+  its sector in about 3 runs in 10 in both engines, in any week the cruiser
+  is there (NC 18 of 64 seeds; classic 5 of 16).
+- Once a sighting happens, both send the same sequence in the same week:
+  contact, identification, then the interception or battle reports. NC
+  sends contact and identification as one "Sensor contact -- detected and
+  identified" report where classic sends two ("Sensor contact shows an alien
+  fleet … Closing to check it out…", then "We have located and
+  identified…"), and its battle reports are structured briefings.
+- Classic aborts a Patrol that has no warships, with "Since we have lost all
+  of our warships in combat, we must abort our mission"; NC lets such a
+  fleet keep patrolling.
