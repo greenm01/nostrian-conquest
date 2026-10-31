@@ -86,7 +86,18 @@ time. Each Rust run gets its own campaign seed.
   sends contact and identification as one "Sensor contact -- detected and
   identified" report where classic sends two ("Sensor contact shows an alien
   fleet … Closing to check it out…", then "We have located and
-  identified…"), and its battle reports are structured briefings.
+  identified…"), and its battle reports are structured briefings. The one
+  report carries what classic's two do: the alien's speed ("a translight
+  speed of 3", or "sublight speed" at rest), whose fleet it is, its size,
+  and the decision ("Ignoring alien fleet.", "Accelerating to engage the
+  enemy.", or the ROE-avoidance report in its place).
+- A fleet that is not closing (ROE 0 on an ordinary order, or Guard
+  Starbase at its post) only reaches contact, as in classic: its report
+  gives the speed but not the owner or size ("We could not identify it.").
+  A later sighting by a closing fleet of the same empire sends the
+  identification in its own week. NC has no sighting numbers, so it drops
+  classic's "designating this sighting as FS-n". "Sublight" for a fleet at
+  rest fits both classic captures; the rule itself is not in the RE notes.
 - Patrol needs warships, as in classic. A patrol that has none, or loses
   its last one in battle, aborts and holds position: "Since we have lost
   all of our warships in combat, we must abort our mission of patrolling

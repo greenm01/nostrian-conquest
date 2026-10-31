@@ -2,9 +2,9 @@
 //! dispatch, and the strike a hostile order makes when its test passes.
 
 use nc_data::{
-    BlockingForce, Coords, DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason,
-    GameRng, Mission, MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent,
-    has_any_force, troop_transports,
+    BlockingForce, ContactDecision, Coords, DiplomacyOverride, DiplomaticRelation,
+    EncounterDispositionReason, GameRng, Mission, MissionAbortReason, Order, Real48, StarbaseAlert,
+    StarbaseSightingEvent, has_any_force, troop_transports,
 };
 
 use super::rules::{
@@ -547,6 +547,7 @@ impl Year<'_> {
                         unit.index,
                         sector,
                         tick,
+                        true,
                     );
                 }
                 UnitKind::Base => {
@@ -623,9 +624,11 @@ impl Year<'_> {
                         continue;
                     }
                     self.note_sighting(game_data, observer, unit.owner);
-                    let mut level = aware.max(1);
-                    let mut identify = false;
-                    if aware == 0 {
+                    let identify = aware <= 1 && (scouting || closing);
+                    let level = if identify { 2 } else { aware.max(1) };
+                    // Classic's contact report, and its identification in
+                    // the same week or, from a contact, a later one.
+                    let contact = (aware == 0 || identify).then(|| {
                         push_fleet_contact(
                             &mut self.events.scout_contact_events,
                             &mut self.events.planet_intel_events,
@@ -634,15 +637,11 @@ impl Year<'_> {
                             unit.index,
                             facts.sector,
                             tick,
+                            identify,
                         );
-                    }
-                    let decides = if aware <= 1 && (scouting || closing) {
-                        identify = true;
-                        level = 2;
-                        true
-                    } else {
-                        aware >= 2 && !scouting
-                    };
+                        self.events.scout_contact_events.len() - 1
+                    });
+                    let decides = identify || (aware >= 2 && !scouting);
                     if scouting && aware == 0 {
                         // Classic stops closing on further contacts for the
                         // rest of a scout's scan this tick.
@@ -677,6 +676,13 @@ impl Year<'_> {
                         Verdict::Escaped => Some(EncounterDispositionReason::InterceptFailed),
                         _ => None,
                     };
+                    if let (Some(contact), true) = (contact, identify) {
+                        self.events.scout_contact_events[contact].decision = match verdict {
+                            Verdict::Ignored => Some(ContactDecision::Ignore),
+                            Verdict::Engaged => Some(ContactDecision::Engage),
+                            _ => None,
+                        };
+                    }
                     if let (true, Some(reason)) = (identify, reason) {
                         push_no_engagement(
                             &mut self.events.encounter_disposition_events,

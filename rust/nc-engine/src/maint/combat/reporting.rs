@@ -17,7 +17,8 @@ pub(crate) enum ContactObserver {
 }
 
 /// The report of an observer sighting alien fleet `target_fleet_idx` at
-/// `coords` in week `tick`.
+/// `coords` in week `tick`; `identified` when it made out whose fleet it is.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn push_fleet_contact(
     scout_contact_events: &mut Vec<ScoutContactEvent>,
     planet_intel_events: &mut Vec<PlanetIntelEvent>,
@@ -26,6 +27,7 @@ pub(crate) fn push_fleet_contact(
     target_fleet_idx: usize,
     coords: [u8; 2],
     tick: u8,
+    identified: bool,
 ) {
     let target = &game_data.fleets[target_fleet_idx];
     let target_empire = target.owner.0;
@@ -33,35 +35,37 @@ pub(crate) fn push_fleet_contact(
         &fleet_state_from_records(game_data, &[target_fleet_idx], &[]),
     );
     let target_fleet_number = single_named_fleet_number(game_data, &[target_fleet_idx]);
-    let (viewer_empire, source, reporting_fleet_number, reporting_initial, armies) = match observer
-    {
-        ContactObserver::Fleet(idx) => {
-            let fleet = &game_data.fleets[idx];
-            let source = contact_reporting_kind(fleet.order)
-                .map(ContactReportSource::FleetMission)
-                .unwrap_or(ContactReportSource::Fleet(fleet.fleet_number.0 as u8));
-            (
-                fleet.owner.0,
-                source,
-                Some(fleet.fleet_number.0 as u8),
-                ship_counts_from_fleet(fleet),
-                u32::from(fleet.ships.loaded_transports),
-            )
-        }
-        ContactObserver::Base(idx, alert) => {
-            let base = &game_data.bases[idx];
-            (
-                base.owner.0,
-                ContactReportSource::Starbase {
-                    id: base.base_id.0,
-                    alert,
-                },
-                None,
-                ShipLosses::default(),
-                0,
-            )
-        }
-    };
+    let (viewer_empire, source, reporting_fleet_number, reporting_initial, armies, in_system) =
+        match observer {
+            ContactObserver::Fleet(idx) => {
+                let fleet = &game_data.fleets[idx];
+                let source = contact_reporting_kind(fleet.order)
+                    .map(ContactReportSource::FleetMission)
+                    .unwrap_or(ContactReportSource::Fleet(fleet.fleet_number.0 as u8));
+                (
+                    fleet.owner.0,
+                    source,
+                    Some(fleet.fleet_number.0 as u8),
+                    ship_counts_from_fleet(fleet),
+                    u32::from(fleet.ships.loaded_transports),
+                    fleet.depth.round() == 1,
+                )
+            }
+            ContactObserver::Base(idx, alert) => {
+                let base = &game_data.bases[idx];
+                (
+                    base.owner.0,
+                    ContactReportSource::Starbase {
+                        id: base.base_id.0,
+                        alert,
+                    },
+                    None,
+                    ShipLosses::default(),
+                    0,
+                    base.depth.round() == 1,
+                )
+            }
+        };
     scout_contact_events.push(ScoutContactEvent {
         viewer_empire,
         source,
@@ -74,6 +78,10 @@ pub(crate) fn push_fleet_contact(
         small_vessels,
         medium_vessels,
         large_vessels,
+        target_speed: target.speed,
+        in_system,
+        identified,
+        decision: None,
         stardate_week: Some(tick),
     });
     push_civil_disorder_contact_intel(

@@ -67,6 +67,10 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         small_vessels: 2,
         medium_vessels: 2,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: false,
+        identified: true,
+        decision: None,
         stardate_week: Some(2),
     });
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
@@ -141,6 +145,10 @@ fn results_reports_battle_before_bombard_aftermath() {
         small_vessels: 1,
         medium_vessels: 1,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: true,
+        identified: true,
+        decision: None,
         stardate_week: Some(2),
     });
     events.fleet_battle_events.push(FleetBattleEvent {
@@ -1978,6 +1986,10 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
         small_vessels: 31,
         medium_vessels: 19,
         large_vessels: 2,
+        target_speed: 0,
+        in_system: true,
+        identified: true,
+        decision: None,
         stardate_week: Some(2),
     });
     events
@@ -2049,6 +2061,10 @@ fn starbase_sighting_report_ends_with_the_bases_alert() {
             small_vessels: 0,
             medium_vessels: 1,
             large_vessels: 0,
+            target_speed: 0,
+            in_system: true,
+            identified: true,
+            decision: None,
             stardate_week: Some(3),
         });
         let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
@@ -2132,6 +2148,10 @@ fn results_projection_is_pure_until_reviewable_flags_are_applied() {
         small_vessels: 2,
         medium_vessels: 0,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: false,
+        identified: true,
+        decision: None,
         stardate_week: Some(2),
     });
 
@@ -2431,4 +2451,115 @@ fn reports_skip_an_empire_without_a_player_unless_it_fell_this_year() {
             stardate_week: Some(52),
         });
     assert_eq!(patrol_reports(&game_data, &events), 1);
+}
+
+fn patrol_contact(
+    identified: bool,
+    decision: Option<nc_data::ContactDecision>,
+) -> ScoutContactEvent {
+    ScoutContactEvent {
+        viewer_empire: 1,
+        source: ContactReportSource::FleetMission(Mission::PatrolSector),
+        reporting_fleet_number: Some(5),
+        reporting_initial: ShipLosses {
+            cruisers: 3,
+            ..ShipLosses::default()
+        },
+        reporting_loaded_armies_initial: 0,
+        coords: [11, 11],
+        target_empire: 2,
+        target_fleet_number: Some(1),
+        small_vessels: 0,
+        medium_vessels: 1,
+        large_vessels: 0,
+        target_speed: 3,
+        in_system: false,
+        identified,
+        decision,
+        stardate_week: Some(34),
+    }
+}
+
+fn empire_one_text(events: &MaintenanceEvents) -> String {
+    let game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3001)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    viewer_report_texts(1, &build_results_report_blocks(&game_data, events))
+        .join(" ")
+        .replace('\n', " ")
+}
+
+#[test]
+fn a_contact_gives_speed_but_not_whose_fleet_it_is() {
+    let mut events = MaintenanceEvents::default();
+    events
+        .scout_contact_events
+        .push(patrol_contact(false, None));
+    let text = empire_one_text(&events);
+    assert!(
+        text.contains("Sensor contact -- detected an alien fleet in Sector(11,11) traveling at a translight speed of 3. We have CA3. We could not identify it."),
+        "{text}"
+    );
+    assert!(!text.contains("Empire #2"), "{text}");
+    assert!(!text.contains("vessel"), "{text}");
+}
+
+#[test]
+fn an_identification_gives_speed_owner_and_decision() {
+    let mut events = MaintenanceEvents::default();
+    events
+        .scout_contact_events
+        .push(patrol_contact(false, None));
+    events.scout_contact_events.push(ScoutContactEvent {
+        stardate_week: Some(40),
+        ..patrol_contact(true, Some(nc_data::ContactDecision::Engage))
+    });
+    let text = empire_one_text(&events);
+    assert!(text.contains("We could not identify it."), "{text}");
+    assert!(
+        text.contains("detected and identified an alien fleet in Sector(11,11) traveling at a translight speed of 3."),
+        "{text}"
+    );
+    assert!(
+        text.contains("Their fleet contains 1 medium vessel(s) of unknown type. Accelerating to engage the enemy."),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_fleet_avoiding_an_enemy_in_deep_space_reports_from_the_sector() {
+    let mut events = MaintenanceEvents::default();
+    events.scout_contact_events.push(patrol_contact(true, None));
+    events
+        .encounter_disposition_events
+        .push(EncounterDispositionEvent::NoEngagement {
+            fleet_idx: 0,
+            owner_empire: 1,
+            mission: Some(Mission::PatrolSector),
+            coords: [11, 11],
+            friendly_initial: ShipLosses {
+                cruisers: 3,
+                ..ShipLosses::default()
+            },
+            friendly_loaded_armies_initial: 0,
+            target_empire: 2,
+            target_fleet_number: Some(1),
+            small_vessels: 0,
+            medium_vessels: 1,
+            large_vessels: 0,
+            reason: EncounterDispositionReason::RoeDeclined,
+            stardate_week: Some(34),
+        });
+    let text = empire_one_text(&events);
+    assert!(
+        text.contains("We have located and identified the alien fleet in Sector(11,11) traveling at a translight speed of 3. It "),
+        "{text}"
+    );
+    assert!(text.contains("we are avoiding this enemy fleet"), "{text}");
+    assert!(
+        !text.contains("Sensor contact"),
+        "the avoidance report replaces it: {text}"
+    );
 }

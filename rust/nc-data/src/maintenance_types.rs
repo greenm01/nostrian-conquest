@@ -384,8 +384,26 @@ pub struct ScoutContactEvent {
     pub medium_vessels: u32,
     /// Aggregate "large vessel" count in the detected force.
     pub large_vessels: u32,
+    /// The detected fleet's speed at the sighting; 0 is sublight.
+    pub target_speed: u8,
+    /// The observer was inside the world's system, not in deep space.
+    pub in_system: bool,
+    /// The observer identified the fleet. A fleet that is not closing only
+    /// reaches contact; a later sighting may identify it.
+    pub identified: bool,
+    /// What the identifying fleet decided, when the report states it.
+    pub decision: Option<ContactDecision>,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
+}
+
+/// What a fleet decided about an alien fleet it identified.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContactDecision {
+    /// Not hostile: "Ignoring alien fleet".
+    Ignore,
+    /// Closing to attack.
+    Engage,
 }
 
 /// A friendly merge result for join/rendezvous style orders.

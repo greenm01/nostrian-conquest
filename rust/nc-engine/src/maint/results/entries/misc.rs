@@ -1,6 +1,7 @@
 use nc_data::{CoreGameData, MaintenanceEvents, Mission, MissionOutcome};
 
 use crate::maint::results::combat::*;
+use crate::maint::results::entries::intel::{contact_location, contact_speed_text};
 use crate::maint::results::entries::{
     ReportEntry, ReportTarget, narrative_phase_for_report_text, occupied_result_viewers,
 };
@@ -739,12 +740,26 @@ pub fn push_roe_entries(
                         }
                         _ => "In accordance to our ROE, we are avoiding this enemy fleet...",
                     };
+                    // The sighting that led here gives the layer and speed.
+                    let contact = events.scout_contact_events.iter().find(|contact| {
+                        contact.identified
+                            && contact.viewer_empire == owner_empire
+                            && contact.target_empire == target_empire
+                            && contact.coords == coords
+                    });
+                    let location = contact.map(contact_location).unwrap_or_else(|| {
+                        mission
+                            .map(|mission| mission_location_phrase(mission, coords))
+                            .unwrap_or_else(|| format!("Sector({},{})", coords[0], coords[1]))
+                    });
+                    let speed = contact
+                        .map(|contact| {
+                            format!(" traveling at {}", contact_speed_text(contact.target_speed))
+                        })
+                        .unwrap_or_default();
                     format!(
-                        "{prefix} We have {}. We have located and identified the alien fleet in System({},{}) {} Their fleet contains {fleet_desc}. {outcome}",
+                        "{prefix} We have {}. We have located and identified the alien fleet in {location}{speed}. {enemy} Their fleet contains {fleet_desc}. {outcome}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
-                        coords[0],
-                        coords[1],
-                        enemy,
                     )
                 },
             ),

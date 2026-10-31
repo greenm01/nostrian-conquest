@@ -844,6 +844,10 @@ fn build_scout_contact_preview(
         small_vessels: small,
         medium_vessels: medium,
         large_vessels: large,
+        target_speed: 0,
+        in_system: true,
+        identified: true,
+        decision: None,
         stardate_week: Some(sample_week(sample_index)),
     });
     world.viewers = vec![

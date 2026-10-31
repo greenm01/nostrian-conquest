@@ -86,7 +86,7 @@ pub fn push_intel_entries(
     events: &MaintenanceEvents,
     year: u16,
 ) {
-    let mut seen_contacts: std::collections::HashSet<(u8, u8, [u8; 2])> = {
+    let mut seen_contacts: std::collections::HashSet<(u8, u8, [u8; 2], bool)> = {
         let mut set = std::collections::HashSet::new();
         for event in &events.encounter_disposition_events {
             let (owner, target, coords) = match *event {
@@ -109,7 +109,8 @@ pub fn push_intel_entries(
                     ..
                 } => (owner_empire, target_empire, coords),
             };
-            set.insert((owner, target, coords));
+            // Their reports name the fleet; an earlier contact still stands.
+            set.insert((owner, target, coords, true));
         }
         set
     };
@@ -121,7 +122,12 @@ pub fn push_intel_entries(
         // Deduplicate fleet-source contacts; starbase contacts always pass through
         // as they carry unique intelligence about the starbase's detection.
         if !matches!(event.source, ContactReportSource::Starbase { .. }) {
-            let contact_key = (event.viewer_empire, event.target_empire, event.coords);
+            let contact_key = (
+                event.viewer_empire,
+                event.target_empire,
+                event.coords,
+                event.identified,
+            );
             if !seen_contacts.insert(contact_key) {
                 continue;
             }
@@ -129,62 +135,20 @@ pub fn push_intel_entries(
         let [x, y] = event.coords;
         let fleet_description = contact_fleet_description(event);
         match event.source {
-            ContactReportSource::FleetMission(kind) => {
-                let label = mission_report_label(kind);
-                let location = mission_location_phrase(kind, event.coords);
+            ContactReportSource::FleetMission(_) | ContactReportSource::Fleet(_) => {
+                let label = match event.source {
+                    ContactReportSource::FleetMission(kind) => {
+                        format!(" {}:", mission_report_label(kind))
+                    }
+                    _ => String::new(),
+                };
+                let location = contact_location(event);
                 let source = owned_fleet_source_clause(event.reporting_fleet_number, &location);
-                let reporting_force = fleet_force_summary(
-                    event.reporting_initial,
-                    event.reporting_loaded_armies_initial,
-                );
                 let header = report_header(&source, event.stardate_week, year);
-                let body = if let Some(enemy) = known_hostile_fleet_label(
-                    game_data,
-                    event.target_fleet_number,
-                    event.target_empire,
-                ) {
-                    format!(
-                        " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We have {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
-                    )
-                } else {
-                    format!(
-                        " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We have {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
-                        classic_empire_clause(game_data, event.target_empire),
-                    )
-                };
-                entries.push(ReportEntry {
-                    text: format!("{header}{body}"),
-                    kind: 0x06,
-                    tail: RESULTS_TAIL_SCOUTING,
-                    target: ReportTarget::Both {
-                        recipient: event.viewer_empire,
-                    },
-                    repeat_next_pointer: false,
-                    stardate_week: event.stardate_week,
-                    narrative_phase: narrative_phase_for_report_text(&body),
-                });
-            }
-            ContactReportSource::Fleet(fleet_id) => {
-                let source = owned_fleet_source_clause(Some(fleet_id), &format!("System({x},{y})"));
-                let reporting_force = fleet_force_summary(
-                    event.reporting_initial,
-                    event.reporting_loaded_armies_initial,
+                let body = format!(
+                    "{label} {}",
+                    fleet_contact_body(game_data, event, &location, &fleet_description)
                 );
-                let header = report_header(&source, event.stardate_week, year);
-                let body = if let Some(enemy) = known_hostile_fleet_label(
-                    game_data,
-                    event.target_fleet_number,
-                    event.target_empire,
-                ) {
-                    format!(
-                        " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We have {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
-                    )
-                } else {
-                    format!(
-                        " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We have {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
-                        classic_empire_clause(game_data, event.target_empire),
-                    )
-                };
                 entries.push(ReportEntry {
                     text: format!("{header}{body}"),
                     kind: 0x06,
@@ -368,4 +332,62 @@ pub fn push_intel_entries(
             narrative_phase: NarrativePhase::DefenderAftermath,
         });
     }
+}
+
+/// The layer the observer was in when it made the sighting.
+pub fn contact_location(event: &nc_data::ScoutContactEvent) -> String {
+    let [x, y] = event.coords;
+    if event.in_system {
+        format!("System({x},{y})")
+    } else {
+        format!("Sector({x},{y})")
+    }
+}
+
+/// "a translight speed of N", or "sublight speed" for a fleet at rest.
+pub fn contact_speed_text(speed: u8) -> String {
+    if speed == 0 {
+        "sublight speed".to_string()
+    } else {
+        format!("a translight speed of {speed}")
+    }
+}
+
+/// A fleet's sighting of an alien fleet: its speed and, once identified,
+/// whose it is, what it holds and what the fleet decided.
+fn fleet_contact_body(
+    game_data: &CoreGameData,
+    event: &nc_data::ScoutContactEvent,
+    location: &str,
+    fleet_description: &str,
+) -> String {
+    let speed = contact_speed_text(event.target_speed);
+    let force = fleet_force_summary(
+        event.reporting_initial,
+        event.reporting_loaded_armies_initial,
+    );
+    if !event.identified {
+        return format!(
+            "Sensor contact -- detected an alien fleet in {location} traveling at {speed}. We have {force}. We could not identify it."
+        );
+    }
+    let owner = match known_hostile_fleet_label(
+        game_data,
+        event.target_fleet_number,
+        event.target_empire,
+    ) {
+        Some(enemy) => format!("It is {enemy}."),
+        None => format!(
+            "It belongs to {}.",
+            classic_empire_clause(game_data, event.target_empire)
+        ),
+    };
+    let decision = match event.decision {
+        Some(nc_data::ContactDecision::Ignore) => " Ignoring alien fleet.",
+        Some(nc_data::ContactDecision::Engage) => " Accelerating to engage the enemy.",
+        None => "",
+    };
+    format!(
+        "Sensor contact -- detected and identified an alien fleet in {location} traveling at {speed}. We have {force}. {owner} Their fleet contains {fleet_description}.{decision}"
+    )
 }

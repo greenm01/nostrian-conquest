@@ -75,6 +75,10 @@ fn patrol_contact_events() -> MaintenanceEvents {
         small_vessels: 2,
         medium_vessels: 0,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: false,
+        identified: true,
+        decision: None,
         stardate_week: Some(52),
     });
     events

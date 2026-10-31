@@ -96,7 +96,8 @@ pub use intel::{
 };
 pub use maintenance_types::{
     AssaultReportEvent, BlockingForce, BombardEvent, CampaignOutcomeEvent, CampaignOutlookEvent,
-    CivilDisorderEvent, ColonizationResolvedEvent, ContactReportSource, DiplomacyOverride,
+    CivilDisorderEvent, ColonizationResolvedEvent, ContactDecision, ContactReportSource,
+    DiplomacyOverride,
     DiplomaticEscalationEvent, EmpireEliminationCause, EmpireEliminationEvent,
     EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent, FleetDefectionEvent,
     FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InheritedAssets,

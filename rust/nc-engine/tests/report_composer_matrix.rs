@@ -436,6 +436,10 @@ fn fleet_contact_report_includes_reporting_fleet_composition() {
         small_vessels: 2,
         medium_vessels: 0,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: false,
+        identified: true,
+        decision: None,
         stardate_week: Some(52),
     });
 
@@ -620,6 +624,10 @@ fn mirrored_contact_events_cover_both_viewers() {
         small_vessels: 2,
         medium_vessels: 0,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: false,
+        identified: true,
+        decision: None,
         stardate_week: Some(52),
     });
     events.scout_contact_events.push(ScoutContactEvent {
@@ -637,6 +645,10 @@ fn mirrored_contact_events_cover_both_viewers() {
         small_vessels: 1,
         medium_vessels: 0,
         large_vessels: 0,
+        target_speed: 0,
+        in_system: true,
+        identified: true,
+        decision: None,
         stardate_week: Some(52),
     });
 

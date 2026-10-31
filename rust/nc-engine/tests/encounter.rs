@@ -17,3 +17,6 @@ mod aborts;
 
 #[path = "encounter/memory.rs"]
 mod memory;
+
+#[path = "encounter/contacts.rs"]
+mod contacts;
