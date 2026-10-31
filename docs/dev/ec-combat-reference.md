@@ -191,7 +191,9 @@ Rust matches classic's odds, not its random sequence.
   fire (destroyers, starbases, batteries) and shoots the combat line first.
   Classic shooters pick one target and keep it; batteries only ever target
   warships, except in a blitz landing; and the larger side holds part of its
-  force back each round.
+  force back each round. Dropping that last rule turned NC into square-law
+  combat that rewards doom stacks; see
+  [e1w4xpes](../notes/investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md).
 - Rounds. NC fights one compulsory exchange, then lets every fleet check
   its own ROE after every exchange, shares a side's losses among its
   fleets, lets a side that stays pursue each fleet of one that breaks off
