@@ -204,3 +204,38 @@ time. Each Rust run gets its own campaign seed.
   its last one in battle, aborts and holds position: "Since we have lost
   all of our warships in combat, we must abort our mission of patrolling
   Sector(x,y). We are holding position and awaiting orders."
+
+## Alerts (2026-10-31)
+
+Scratch probes at empire 1's home (16,13), 30 classic runs one at a time
+and 30 to 40 NC runs on their own seeds, after the question of what a
+starbase's or a fleet's alert does for the other fleets in the system. The
+answer is the same in both engines: the sighting raises the empire's
+awareness of that alien to "identified", so the other fleets skip their own
+contact roll and go straight to interception when their own sighting roll
+succeeds. No order changes. Earlier parallel classic runs shared a clock
+seed and overstated the differences; the serial runs show these.
+
+- Response after an alert agrees. A Hold fleet (DD4, ROE 6) in orbit
+  attacks a bombarding cruiser 0 to 3 weeks after the starbase's alert in
+  both engines (classic gaps 0:9 1:6 2:9 3:4 5:1 of 29; NC 0:5 1:7 2:12
+  3:3 and four of 6 to 8 of 33), and the same after a Guard fleet's alert
+  instead. With the cruiser holding in orbit and the base alerting, the
+  gap is longer in both, classic median 4 weeks, NC 3.
+- Chasing a faster raider agrees. A Guard/Blockade fleet (CA3 DD2, max 5)
+  beside the base intercepts a bombarding destroyer (max 6) in classic
+  28 of 30 runs and NC 36 of 40, in the same weeks. The battle's end
+  differs, classic kills the destroyer in 16 of 28 and NC in 36 of 36,
+  which is combat resolution and outside this audit.
+- A raider's abort against a Hold fleet is NC's orbital gate
+  (`ec-combat-reference.md`, "The orbital gate"): the owner's fleet with
+  warships in orbit fights the attacker at the strike tick, and a raider
+  whose ROE refuses the fight seeks home without a shot. Classic lets only
+  the starbase block: the cruiser fights the destroyers in the encounter
+  loop and bombards anyway in 29 of 30 runs (its own batteries then destroy
+  it). NC bombards in 0 of 40. This is the one real difference, and it is
+  the documented rule, not a bug.
+- A Patrol fleet (DD4, ROE 0) and a starbase watching a cruiser move into
+  orbit first report it in the same weeks: the base in week 33 (classic)
+  or 34 (NC) at the median, the patrol in 4 (classic) and 7 (NC) of 30
+  runs before the base does.
