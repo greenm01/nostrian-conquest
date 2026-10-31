@@ -61,9 +61,13 @@ Probe setup matters: the order's world flag (mission aux 0) must be set as
 ECGAME sets it (`Order::targets_world`). With it clear, classic's world
 orders stop in the sector and report from there.
 
-Join (13): both engines merge the joining fleet in the same year. Classic
-merges it in the week it reaches its host; NC merges after the year's
-movement and dates the summary week 1.
+Join (13) and Rendezvous: both merge in the week the fleets come
+together, as in classic, so from that week on the joiner fights as part
+of its host. NC still sends one report a year (owner, 2026-10-30): the Join
+summary is dated by the first join and gives each join's week ("Fleets 3
+and 4 merged into Fleet 2 (week 14)."), and the Rendezvous report names
+each arrival's week when they differ. A join that waits on a host that
+merged away is retargeted after the ticks and merges at year end.
 
 Not covered: colonizing an occupied world, rendezvous merges of several
 fleets, and the NC routing extensions in `ec-movement-spec.md`.

@@ -52,9 +52,10 @@ struct MovementEvents {
     diplomatic_escalation_events: Vec<DiplomaticEscalationEvent>,
     /// Starbase arrival and lost-world reports.
     starbase_reports: Vec<nc_data::StarbaseReportEvent>,
-    /// Guards merged into another guard of their base; the flag marks an
-    /// arriving guard's merge, which it reports.
-    guard_merges: Vec<(FleetMergeEvent, bool)>,
+    /// Merges in the year's ticks: guards into another guard of their base,
+    /// joiners into their hosts, and fleets meeting at a rendezvous. The
+    /// flag marks a merge that is reported.
+    tick_merges: Vec<(FleetMergeEvent, bool)>,
     /// Guards whose base was destroyed, and Seek Home and Salvage fleets
     /// that lost their world, during the year.
     retargets: Vec<MissionRetargetEvent>,
@@ -385,10 +386,10 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     refs.movement_events = year.movement_events;
     refs.encounter_events = year.encounter_events;
     refs.assault_events = year.assault_events;
-    let guard_merges: Vec<(FleetMergeEvent, bool)> =
-        std::mem::take(&mut refs.movement_events.guard_merges);
+    let tick_merges: Vec<(FleetMergeEvent, bool)> =
+        std::mem::take(&mut refs.movement_events.tick_merges);
     refs.merge_events.extend(
-        guard_merges
+        tick_merges
             .iter()
             .filter(|(_, reported)| *reported)
             .map(|(event, _)| *event),
@@ -401,9 +402,9 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             .destroyed_join_host_fleet_numbers
             .clone(),
     );
-    if !guard_merges.is_empty() {
-        // Join missions follow a host that merged into another guard.
-        let merges: Vec<FleetMergeEvent> = guard_merges.iter().map(|(event, _)| *event).collect();
+    if !tick_merges.is_empty() {
+        // Join missions follow a host that merged into another fleet.
+        let merges: Vec<FleetMergeEvent> = tick_merges.iter().map(|(event, _)| *event).collect();
         let join_host_events = merging::process_join_host_updates(
             game_data,
             &merges,

@@ -82,6 +82,14 @@ impl Year<'_> {
                     self.units[unit].active = false;
                     self.departed.push(Presence::of(&self.units[unit]));
                 }
+                for fleet_idx in self.movement.take_merged() {
+                    if let Some(merged) = self.fleet_unit(fleet_idx)
+                        && self.units[merged].active
+                    {
+                        self.departed.push(Presence::of(&self.units[merged]));
+                        self.units[merged].active = false;
+                    }
+                }
             }
             UnitKind::Fleet => {}
             UnitKind::Base => self.movement.dispatch_base(game_data, index, tick),

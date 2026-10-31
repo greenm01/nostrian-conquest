@@ -957,11 +957,13 @@ fn test_joiner_merges_same_turn_after_host_merges_into_surviving_fleet() {
             && event.absorbed_fleet_number == 2
             && event.host_fleet_number == 1
     }));
+    // Merges run in the tick's unit order: Fleet 3 merges into Fleet 2 when
+    // it moves first, else into Fleet 1 once Fleet 2 has gone.
     assert!(events.fleet_merge_events.iter().any(|event| {
         event.kind == Mission::JoinAnotherFleet
             && !event.survivor_side
             && event.absorbed_fleet_number == 3
-            && event.host_fleet_number == 1
+            && matches!(event.host_fleet_number, 1 | 2)
     }));
     assert!(!events.invalid_player_state_events.iter().any(|event| {
         matches!(
@@ -2859,5 +2861,108 @@ fn a_fleet_lost_bombarding_sends_one_classic_loss_report() {
         reports[0]
             .contains("the alien force initially contained 20 ground batteries and 10 armies"),
         "{reports:#?}"
+    );
+}
+
+/// Seat empire 1 so it gets reports, with fleet 0 at rest and fleets 1
+/// and 2 a sector west of it, arriving at speeds 3 and 2.
+fn converging_fleets(order: Order) -> (CoreGameData, [u8; 2]) {
+    let mut game_data = load_fixture("ecmaint-post");
+    game_data.players[0].mode = PlayerMode::Human;
+    game_data.players[0].autopilot = false;
+    let coords = game_data.fleets[0].sector.to_array();
+    let host_number = game_data.fleets[0].fleet_number.0;
+    let host_layer = u8::from(game_data.fleets[0].depth.round() == 1);
+    game_data.fleets[0].order = order;
+    game_data.fleets[0].target = Coords::from_array(coords);
+    game_data.fleets[0].speed = 0;
+    for (idx, speed) in [(1, 3), (2, 2)] {
+        let fleet = &mut game_data.fleets[idx];
+        fleet.sector = Coords::new(coords[0].saturating_sub(1), coords[1]);
+        fleet.order = order;
+        fleet.target = Coords::from_array(coords);
+        fleet.target_depth = host_layer;
+        fleet.mission_target = if order == Order::JoinAnotherFleet {
+            host_number
+        } else {
+            0
+        };
+        fleet.speed = speed;
+        fleet.x_fraction = Real48::HALF;
+        fleet.depth = Real48::ZERO;
+    }
+    if order == Order::JoinAnotherFleet {
+        game_data.fleets[0].order = Order::HoldPosition;
+    }
+    (game_data, coords)
+}
+
+#[test]
+fn test_joins_merge_in_the_week_each_joiner_reaches_its_host() {
+    let (mut game_data, _) = converging_fleets(Order::JoinAnotherFleet);
+    let fleet_count_before = game_data.fleets.len();
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert_eq!(game_data.fleets.len(), fleet_count_before - 2);
+    let weeks: Vec<u8> = events
+        .fleet_merge_events
+        .iter()
+        .filter(|event| event.kind == Mission::JoinAnotherFleet)
+        .filter_map(|event| event.stardate_week)
+        .collect();
+    assert_eq!(weeks.len(), 2, "{:?}", events.fleet_merge_events);
+    assert!(weeks.iter().all(|&week| week > 1), "{weeks:?}");
+    assert_ne!(
+        weeks[0], weeks[1],
+        "different speeds arrive in different weeks"
+    );
+    let reports = empire_one_reports(&game_data, &events);
+    let summaries: Vec<_> = reports
+        .iter()
+        .filter(|report| report.contains("Join mission summary"))
+        .collect();
+    assert_eq!(summaries.len(), 1, "one summary for the year: {reports:?}");
+    let first = *weeks.iter().min().unwrap();
+    assert!(
+        summaries[0].contains(&format!("Stardate: {first:02}/")),
+        "dated by the first join: {summaries:?}"
+    );
+    for week in &weeks {
+        assert!(
+            summaries[0].contains(&format!("(week {week})")),
+            "{summaries:?}"
+        );
+    }
+}
+
+#[test]
+fn test_rendezvous_merges_in_the_week_each_fleet_arrives() {
+    let (mut game_data, _) = converging_fleets(Order::RendezvousSector);
+    let fleet_count_before = game_data.fleets.len();
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert_eq!(game_data.fleets.len(), fleet_count_before - 2);
+    let weeks: Vec<u8> = events
+        .fleet_merge_events
+        .iter()
+        .filter(|event| event.kind == Mission::RendezvousSector && !event.survivor_side)
+        .filter_map(|event| event.stardate_week)
+        .collect();
+    assert_eq!(weeks.len(), 2, "{:?}", events.fleet_merge_events);
+    assert!(weeks.iter().all(|&week| week > 1), "{weeks:?}");
+    assert_ne!(weeks[0], weeks[1]);
+    let reports = empire_one_reports(&game_data, &events);
+    let rendezvous: Vec<_> = reports
+        .iter()
+        .filter(|report| {
+            report.contains("Rendezvous mission report") && report.contains("absorbing")
+        })
+        .collect();
+    assert_eq!(rendezvous.len(), 1, "{reports:?}");
+    let (early, late) = (weeks[0].min(weeks[1]), weeks[0].max(weeks[1]));
+    assert!(
+        rendezvous[0].contains(&format!("in week {early} and"))
+            && rendezvous[0].contains(&format!("in week {late}.")),
+        "{rendezvous:?}"
     );
 }

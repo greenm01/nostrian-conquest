@@ -19,7 +19,8 @@ enum JoinSummaryCompression {
 
 #[derive(Debug, Default)]
 struct JoinSummaryData {
-    completed_by_host: BTreeMap<u8, Vec<u8>>,
+    /// Joiners by (week, host).
+    completed_by_host: BTreeMap<(u8, u8), Vec<u8>>,
     retargeted_joiners: BTreeSet<u8>,
     lost_hosts: BTreeMap<Option<u8>, Vec<u8>>,
     summary_week: Option<u8>,
@@ -84,7 +85,7 @@ pub fn build_join_summary_entries(
         let summary = by_empire.entry(event.owner_empire).or_default();
         summary
             .completed_by_host
-            .entry(event.host_fleet_number)
+            .entry((event.stardate_week.unwrap_or(1), event.host_fleet_number))
             .or_default()
             .push(event.absorbed_fleet_number);
         summary.summary_week = match (summary.summary_week, event.stardate_week) {
@@ -181,11 +182,10 @@ pub fn build_join_summary_entries(
                 }
             };
             let mut completed_lines = Vec::new();
-            for (host_fleet_number, absorbed_numbers) in &summary.completed_by_host {
+            for ((week, host_fleet_number), absorbed_numbers) in &summary.completed_by_host {
                 completed_lines.push(format!(
-                    "{} merged into Fleet {}.",
+                    "{} merged into Fleet {host_fleet_number} (week {week}).",
                     fleet_numbers_subject(absorbed_numbers, completed_subject_compression),
-                    host_fleet_number
                 ));
             }
             lines.extend(join_summary_section_lines(

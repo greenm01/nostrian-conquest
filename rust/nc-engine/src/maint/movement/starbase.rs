@@ -155,7 +155,7 @@ impl YearMovement<'_> {
             survivor_side: false,
             stardate_week: Some(tick),
         };
-        self.events.guard_merges.push((event, reported));
+        self.events.tick_merges.push((event, reported));
     }
 
     /// The base's arrival test and friendly-world check after its step and

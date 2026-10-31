@@ -523,7 +523,7 @@ fn join_summary_combines_completed_retargeted_and_lost_hosts() {
     let text = &texts[0];
     assert!(text.contains("From your Fleet Command Center:"));
     assert!(text.contains("Join mission summary"));
-    assert!(text.contains("Completed joins: Fleet 8 merged into Fleet 3."));
+    assert!(text.contains("Completed joins: Fleet 8 merged into Fleet 3 (week 2)."));
     assert!(text.contains("Retargeted to follow host: Fleet 11."));
     assert!(text.contains("Lost hosts: Fleet 13 lost host Fleet 2 and is holding position."));
 }
@@ -586,7 +586,7 @@ fn join_summary_uses_compact_fleet_lists_for_multi_fleet_sections() {
         .join(" ")
         .replace('\n', " ");
     assert!(
-        text.contains("Completed joins: Fleets 5, 7, and 11 merged into Fleet 3."),
+        text.contains("Completed joins: Fleets 5, 7, and 11 merged into Fleet 3 (week 1)."),
         "{text}"
     );
     assert!(

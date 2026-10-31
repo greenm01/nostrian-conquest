@@ -7,6 +7,7 @@ use super::{ColonizationEvent, ColonizationResolvedEvent, FleetMergeEvent, JoinM
 use crate::{CoreGameData, maint::FleetRemovalRemapInfo};
 
 pub(super) use helpers::merge_fits;
+pub(super) use mission::{merge_join, merge_rendezvous, on_rendezvous_station};
 
 /// Merge fleet `donor`'s ships into `host` (ECMAINT `2895:4a6b`). The
 /// caller removes `donor`.

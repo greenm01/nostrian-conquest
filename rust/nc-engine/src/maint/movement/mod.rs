@@ -1,6 +1,7 @@
 mod arrivals;
 mod guard;
 mod home;
+mod merges;
 mod salvage;
 mod starbase;
 mod stepper;
@@ -26,6 +27,8 @@ pub(super) struct YearMovement<'a> {
     start: Vec<[u8; 2]>,
     entered_target: Vec<bool>,
     to_remove: Vec<bool>,
+    /// Fleets merged away this tick, for the encounter loop to retire.
+    merged_away: Vec<usize>,
     events: MovementEvents,
 }
 
@@ -45,6 +48,7 @@ impl<'a> YearMovement<'a> {
                 .collect(),
             entered_target: vec![false; fleet_count],
             to_remove: vec![false; fleet_count],
+            merged_away: Vec::new(),
             events: MovementEvents {
                 fleet_travel_speeds: vec![0; fleet_count],
                 ..MovementEvents::default()
@@ -124,8 +128,14 @@ impl<'a> YearMovement<'a> {
                 target,
             )?;
         }
+        self.dispatch_merges(game_data, fleet_idx, order_kind, tick);
         marks.stamp(&mut self.events, tick);
         Ok(end)
+    }
+
+    /// The fleets merged away since the last call.
+    pub(super) fn take_merged(&mut self) -> Vec<usize> {
+        std::mem::take(&mut self.merged_away)
     }
 
     /// The fleet left the game this tick (salvaged).

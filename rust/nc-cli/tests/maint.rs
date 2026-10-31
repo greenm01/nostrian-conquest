@@ -3603,7 +3603,7 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
     assert!(text.contains("From your Fleet Command Center:"), "{text}");
     assert!(text.contains("Join mission summary"), "{text}");
     assert!(
-        text.contains("Completed joins: Fleet 2 merged into Fleet 1."),
+        text.contains("Completed joins: Fleet 2 merged into Fleet 1 (week 1)."),
         "{text}"
     );
     assert!(

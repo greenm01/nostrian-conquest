@@ -14,118 +14,26 @@ pub(super) fn process_mission_fleet_merging(
 
     let mut to_remove = vec![false; fleet_count];
     let mut merge_events = Vec::new();
-
-    // ECMAINT finds the host by owner and fleet number (the 0x00 word).
-    let fleet_lookup: std::collections::HashMap<(u8, u16), usize> = game_data
-        .fleets
-        .iter()
-        .enumerate()
-        .map(|(idx, fleet)| ((fleet.owner.0, fleet.fleet_number.0), idx))
-        .collect();
-
     for joiner_idx in 0..fleet_count {
-        if to_remove[joiner_idx] {
-            continue;
-        }
-        let joiner = &game_data.fleets[joiner_idx];
-        if joiner.order != Order::JoinAnotherFleet {
-            continue;
-        }
-        let host_number = joiner.mission_target;
-        let joiner_owner = joiner.owner.0;
-        let joiner_fleet_id = joiner.record.0;
-        let joiner_coords = joiner.sector.to_array();
-        let Some(&host_idx) = fleet_lookup.get(&(joiner_owner, host_number)) else {
-            continue;
-        };
-        // A host destroyed this year keeps its empty record until next
-        // turn's cull; joining it would revive its number and its order.
-        if host_idx == joiner_idx
-            || to_remove[host_idx]
-            || !has_any_force(&game_data.fleets[host_idx])
-        {
-            continue;
-        }
-        let same_coords = game_data.fleets[host_idx].sector.to_array() == joiner_coords;
-        // The join resolves when the joiner settles at its target depth in
-        // the host's sector, as ECMAINT's join arrival test requires.
-        let joiner = &game_data.fleets[joiner_idx];
-        let settled = joiner.depth == target_depth(joiner.target_depth);
-        if !same_coords || !settled || !merge_fits_host(game_data, host_idx, joiner_idx) {
-            continue;
-        }
-
-        merge_one_fleet_into_host(game_data, host_idx, joiner_idx);
-        to_remove[joiner_idx] = true;
-        merge_events.push(FleetMergeEvent {
-            fleet_idx: joiner_idx,
-            owner_empire: joiner_owner,
-            kind: Mission::JoinAnotherFleet,
-            host_fleet_id: game_data.fleets[host_idx].record.0,
-            absorbed_fleet_id: joiner_fleet_id,
-            host_fleet_number: game_data.fleets[host_idx].fleet_number.0 as u8,
-            absorbed_fleet_number: game_data.fleets[joiner_idx].fleet_number.0 as u8,
-            coords: joiner_coords,
-            survivor_side: false,
-            stardate_week: None,
-        });
+        merge_events.extend(merge_join(game_data, joiner_idx, &mut to_remove, None));
     }
-
-    let mut rendezvous_groups: std::collections::BTreeMap<(u8, [u8; 2]), Vec<usize>> =
-        std::collections::BTreeMap::new();
-    for (idx, fleet) in game_data.fleets.iter().enumerate() {
-        if to_remove[idx] || fleet.order != Order::RendezvousSector {
-            continue;
-        }
-        let coords = fleet.sector.to_array();
-        if fleet.target.to_array() != coords {
-            continue;
-        }
-        rendezvous_groups
-            .entry((fleet.owner.0, coords))
-            .or_default()
-            .push(idx);
-    }
-
-    for ((_owner, coords), mut group) in rendezvous_groups {
-        if group.len() < 2 {
-            continue;
-        }
-        group.sort_by_key(|idx| game_data.fleets[*idx].record.0);
-        let survivor_idx = group[0];
-        for &absorbed_idx in group.iter().skip(1) {
-            if to_remove[absorbed_idx] || !merge_fits_host(game_data, survivor_idx, absorbed_idx) {
-                continue;
-            }
-            let absorbed_id = game_data.fleets[absorbed_idx].record.0;
-            let owner_empire = game_data.fleets[absorbed_idx].owner.0;
-            merge_one_fleet_into_host(game_data, survivor_idx, absorbed_idx);
-            to_remove[absorbed_idx] = true;
-            merge_events.push(FleetMergeEvent {
-                fleet_idx: absorbed_idx,
-                owner_empire,
-                kind: Mission::RendezvousSector,
-                host_fleet_id: game_data.fleets[survivor_idx].record.0,
-                absorbed_fleet_id: absorbed_id,
-                host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
-                absorbed_fleet_number: game_data.fleets[absorbed_idx].fleet_number.0 as u8,
-                coords,
-                survivor_side: false,
-                stardate_week: None,
-            });
-            merge_events.push(FleetMergeEvent {
-                fleet_idx: survivor_idx,
-                owner_empire,
-                kind: Mission::RendezvousSector,
-                host_fleet_id: game_data.fleets[survivor_idx].record.0,
-                absorbed_fleet_id: absorbed_id,
-                host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
-                absorbed_fleet_number: game_data.fleets[absorbed_idx].fleet_number.0 as u8,
-                coords,
-                survivor_side: true,
-                stardate_week: None,
-            });
-        }
+    let stations: std::collections::BTreeSet<(u8, [u8; 2])> = (0..fleet_count)
+        .filter(|&idx| on_rendezvous_station(game_data, idx, &to_remove))
+        .map(|idx| {
+            (
+                game_data.fleets[idx].owner.0,
+                game_data.fleets[idx].sector.to_array(),
+            )
+        })
+        .collect();
+    for (owner, coords) in stations {
+        merge_events.extend(merge_rendezvous(
+            game_data,
+            owner,
+            coords,
+            &mut to_remove,
+            None,
+        ));
     }
 
     let remap_info = if to_remove.iter().any(|remove| *remove) {
@@ -135,6 +43,119 @@ pub(super) fn process_mission_fleet_merging(
     };
 
     Ok((merge_events, remap_info))
+}
+
+/// Merge Join fleet `joiner_idx` into its host once it has settled at its
+/// target depth in the host's sector, as ECMAINT's join arrival test
+/// requires. `removed` marks the fleets out of play and gains the joiner.
+pub(in crate::maint) fn merge_join(
+    game_data: &mut CoreGameData,
+    joiner_idx: usize,
+    removed: &mut [bool],
+    week: Option<u8>,
+) -> Option<FleetMergeEvent> {
+    let joiner = &game_data.fleets[joiner_idx];
+    if removed[joiner_idx] || joiner.order != Order::JoinAnotherFleet {
+        return None;
+    }
+    let (owner, host_number, coords) = (
+        joiner.owner.0,
+        joiner.mission_target,
+        joiner.sector.to_array(),
+    );
+    // ECMAINT finds the host by owner and fleet number (the 0x00 word); the
+    // last record wins.
+    let host_idx = game_data
+        .fleets
+        .iter()
+        .rposition(|fleet| fleet.owner.0 == owner && fleet.fleet_number.0 == host_number)?;
+    // A host destroyed this year keeps its empty record until next turn's
+    // cull; joining it would revive its number and its order.
+    let settled = joiner.depth == target_depth(joiner.target_depth);
+    if host_idx == joiner_idx
+        || removed[host_idx]
+        || !has_any_force(&game_data.fleets[host_idx])
+        || game_data.fleets[host_idx].sector.to_array() != coords
+        || !settled
+        || !merge_fits_host(game_data, host_idx, joiner_idx)
+    {
+        return None;
+    }
+    let joiner_fleet_id = joiner.record.0;
+    merge_one_fleet_into_host(game_data, host_idx, joiner_idx);
+    removed[joiner_idx] = true;
+    Some(FleetMergeEvent {
+        fleet_idx: joiner_idx,
+        owner_empire: owner,
+        kind: Mission::JoinAnotherFleet,
+        host_fleet_id: game_data.fleets[host_idx].record.0,
+        absorbed_fleet_id: joiner_fleet_id,
+        host_fleet_number: game_data.fleets[host_idx].fleet_number.0 as u8,
+        absorbed_fleet_number: game_data.fleets[joiner_idx].fleet_number.0 as u8,
+        coords,
+        survivor_side: false,
+        stardate_week: week,
+    })
+}
+
+/// Fleet `idx` is in play on Rendezvous at its rendezvous sector.
+pub(in crate::maint) fn on_rendezvous_station(
+    game_data: &CoreGameData,
+    idx: usize,
+    removed: &[bool],
+) -> bool {
+    let fleet = &game_data.fleets[idx];
+    !removed[idx]
+        && fleet.order == Order::RendezvousSector
+        && fleet.target.to_array() == fleet.sector.to_array()
+}
+
+/// Merge `owner`'s Rendezvous fleets on station at `coords` into the one
+/// with the lowest record. `removed` marks the fleets out of play and gains
+/// the absorbed ones.
+pub(in crate::maint) fn merge_rendezvous(
+    game_data: &mut CoreGameData,
+    owner: u8,
+    coords: [u8; 2],
+    removed: &mut [bool],
+    week: Option<u8>,
+) -> Vec<FleetMergeEvent> {
+    let mut group: Vec<usize> = (0..game_data.fleets.len())
+        .filter(|&idx| {
+            on_rendezvous_station(game_data, idx, removed)
+                && game_data.fleets[idx].owner.0 == owner
+                && game_data.fleets[idx].sector.to_array() == coords
+        })
+        .collect();
+    let mut merge_events = Vec::new();
+    if group.len() < 2 {
+        return merge_events;
+    }
+    group.sort_by_key(|idx| game_data.fleets[*idx].record.0);
+    let survivor_idx = group[0];
+    for &absorbed_idx in group.iter().skip(1) {
+        if !merge_fits_host(game_data, survivor_idx, absorbed_idx) {
+            continue;
+        }
+        let absorbed_id = game_data.fleets[absorbed_idx].record.0;
+        merge_one_fleet_into_host(game_data, survivor_idx, absorbed_idx);
+        removed[absorbed_idx] = true;
+        let event = |fleet_idx, survivor_side| FleetMergeEvent {
+            fleet_idx,
+            owner_empire: owner,
+            kind: Mission::RendezvousSector,
+            host_fleet_id: game_data.fleets[survivor_idx].record.0,
+            absorbed_fleet_id: absorbed_id,
+            host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
+            absorbed_fleet_number: game_data.fleets[absorbed_idx].fleet_number.0 as u8,
+            coords,
+            survivor_side,
+            stardate_week: week,
+        };
+        merge_events.push(event(absorbed_idx, false));
+        merge_events.push(event(survivor_idx, true));
+    }
+    merge_events
 }
 
 /// Retarget or abandon join missions after one fleet-record compaction.

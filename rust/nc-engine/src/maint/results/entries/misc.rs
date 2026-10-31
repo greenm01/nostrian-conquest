@@ -498,9 +498,11 @@ pub fn push_misc_entries(
             .map(|e| e.fleet_idx)
             .collect();
 
-        let mut rendezvous_groups: std::collections::BTreeMap<(u8, [u8; 2], u8), Vec<u8>> =
-            std::collections::BTreeMap::new();
-        let mut rendezvous_meta: std::collections::HashMap<(u8, [u8; 2], u8), (usize, Option<u8>)> =
+        let mut rendezvous_groups: std::collections::BTreeMap<
+            (u8, [u8; 2], u8),
+            std::collections::BTreeMap<u8, Vec<u8>>,
+        > = std::collections::BTreeMap::new();
+        let mut rendezvous_meta: std::collections::HashMap<(u8, [u8; 2], u8), usize> =
             std::collections::HashMap::new();
         for event in events
             .fleet_merge_events
@@ -511,19 +513,35 @@ pub fn push_misc_entries(
             rendezvous_groups
                 .entry(key)
                 .or_default()
+                .entry(event.stardate_week.unwrap_or(1))
+                .or_default()
                 .push(event.absorbed_fleet_number);
-            rendezvous_meta
-                .entry(key)
-                .or_insert((event.fleet_idx, event.stardate_week));
+            rendezvous_meta.entry(key).or_insert(event.fleet_idx);
         }
 
-        for (key, absorbed_numbers) in &rendezvous_groups {
+        for (key, absorbed_by_week) in &rendezvous_groups {
             let (owner_empire, coords, host_fleet_number) = *key;
             let [x, y] = coords;
-            let (host_fleet_idx, stardate_week) = rendezvous_meta[key];
+            let host_fleet_idx = rendezvous_meta[key];
+            // Dated by the first arrival; the weeks are named when they differ.
+            let stardate_week = absorbed_by_week.keys().next().copied();
             let source =
                 owned_fleet_source_clause(Some(host_fleet_number), &format!("Sector({x},{y})"));
-            let absorbed_text = compact_fleet_number_list(absorbed_numbers);
+            let absorbed_text = if absorbed_by_week.len() == 1 {
+                compact_fleet_number_list(absorbed_by_week.values().next().unwrap())
+            } else {
+                let parts: Vec<String> = absorbed_by_week
+                    .iter()
+                    .map(|(week, numbers)| {
+                        format!("{} in week {week}", compact_fleet_number_list(numbers))
+                    })
+                    .collect();
+                match parts.split_last() {
+                    Some((last, [])) => last.clone(),
+                    Some((last, rest)) => format!("{} and {last}", rest.join(", ")),
+                    None => String::new(),
+                }
+            };
             let arrived_this_turn = rendezvous_arrived.contains(&host_fleet_idx);
             let body = if arrived_this_turn {
                 format!(
