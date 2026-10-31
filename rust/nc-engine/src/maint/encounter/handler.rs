@@ -187,19 +187,17 @@ impl Year<'_> {
         }
     }
 
-    /// The orbital gate, classic's starbase gate (`110a:67bd`) extended to
-    /// the owner's fleets: before fleet unit `unit` assaults, everything the
-    /// world's owner has in orbit fights it, sighted or not. That is his
-    /// starbases there and his fleets there with warships, less any fleet
-    /// already leaving on Seek Home (beaten earlier, or recalled). The
-    /// attacker's empire's other fleets in orbit volunteer under their own
-    /// ROE, and ROE decides for the attacker as for a base blocking the
-    /// path, weighing its side's assembled attack strength against the
-    /// defenders' (a starbase at 100); a fleet unwilling to fight them
-    /// aborts as it does before a base, without a shot: classic's gate runs
-    /// the base decision (`1b05:1277`) itself. Only the holder of the field
-    /// assaults: a beaten attacker has retreated with its battle, and a
-    /// battle the round cap left unresolved gives no permission either.
+    /// The orbital gate, classic's starbase gate (`110a:67bd`): before fleet
+    /// unit `unit` assaults, the world owner's starbases in orbit fight it,
+    /// sighted or not, each with the guard fleet at rest beside it. His
+    /// other fleets there meet the attacker only through the encounter loop
+    /// (ADR bd8trz18). ROE decides for the attacker as for a base blocking
+    /// the path, weighing its own attack strength against the defenders' (a
+    /// starbase at 100); a fleet unwilling to fight them aborts as it does
+    /// before a base, without a shot: classic's gate runs the base decision
+    /// (`1b05:1277`) itself. Only the holder of the field assaults: a beaten
+    /// attacker has retreated with its battle, and a battle the round cap
+    /// left unresolved gives no permission either.
     fn holds_orbit(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) -> bool {
         let Unit {
             index: fleet_idx,
@@ -215,26 +213,19 @@ impl Year<'_> {
         let mut defenders = Roster::default();
         for other in 0..self.units.len() {
             let u = self.units[other];
-            if !(u.active && u.owner == world_owner && u.sector == sector && u.layer == 1) {
-                continue;
-            }
-            match u.kind {
-                UnitKind::Base => defenders.bases.push(other),
-                UnitKind::Fleet => {
-                    let fleet = &game_data.fleets[u.index];
-                    if (fleet.ships.destroyers > 0
-                        || fleet.ships.cruisers > 0
-                        || fleet.ships.battleships > 0)
-                        && !(fleet.order == Order::SeekHome && fleet.speed > 0)
-                    {
-                        defenders.fleets.push(other);
-                    }
-                }
+            if u.kind == UnitKind::Base
+                && u.active
+                && u.owner == world_owner
+                && u.sector == sector
+                && u.layer == 1
+            {
+                defenders.bases.push(other);
             }
         }
-        if defenders.fleets.is_empty() && defenders.bases.is_empty() {
+        if defenders.bases.is_empty() {
             return true;
         }
+        self.add_guards(game_data, &mut defenders, owner);
         let order = game_data.fleets[fleet_idx].order;
         let defence = self.roster_strength(game_data, &defenders);
         let volunteers = self.volunteers(game_data, unit, defence);
@@ -373,44 +364,48 @@ impl Year<'_> {
         }
     }
 
-    /// The units of `target`'s empire that would defend it: its empire's
-    /// fleets in the sector and layer, less those escaping from a battle
-    /// there that `attacker` has already caught once (they have got away
-    /// from it), and the starbases the target rule brings in, defenders
-    /// only: the target itself when it is a base, and the base each guard
-    /// fleet at rest among them guards.
+    /// The units that would defend `target`, classic's pairing (decision
+    /// 7): a fleet with the base it guards at rest, or a base with the guard
+    /// fleets at rest beside it, less a guard escaping from a battle here
+    /// that `attacker` has already caught once (it has got away from it).
+    /// Nobody else of its empire joins.
     fn defender_roster(&self, game_data: &CoreGameData, target: usize, attacker: u8) -> Roster {
-        let t = self.units[target];
         let mut roster = Roster::default();
-        for unit in 0..self.units.len() {
-            let u = self.units[unit];
-            if !(u.kind == UnitKind::Fleet
-                && u.active
-                && u.owner == t.owner
-                && u.sector == t.sector
-                && u.layer == t.layer)
-            {
-                continue;
+        match self.units[target].kind {
+            UnitKind::Fleet => {
+                roster.fleets.push(target);
+                if let Some(base) = self.guarded_base_of(game_data, target) {
+                    roster.bases.push(base);
+                }
             }
-            let got_away = unit != target
-                && game_data.fleets[u.index]
-                    .escape
-                    .is_some_and(|escape| escape.pursued_by(attacker));
-            if !got_away {
-                roster.fleets.push(unit);
-            }
-        }
-        if t.kind == UnitKind::Base {
-            roster.bases.push(target);
-        }
-        for &fleet in &roster.fleets {
-            if let Some(base) = self.guarded_base_of(game_data, fleet)
-                && !roster.bases.contains(&base)
-            {
-                roster.bases.push(base);
+            UnitKind::Base => {
+                roster.bases.push(target);
+                self.add_guards(game_data, &mut roster, attacker);
             }
         }
         roster
+    }
+
+    /// Add to `roster` the guard fleets at rest beside its bases, less any
+    /// escaping from a battle here that `attacker` has already caught once.
+    fn add_guards(&self, game_data: &CoreGameData, roster: &mut Roster, attacker: u8) {
+        for unit in 0..self.units.len() {
+            let u = self.units[unit];
+            if u.kind != UnitKind::Fleet || !u.active {
+                continue;
+            }
+            let got_away = game_data.fleets[u.index]
+                .escape
+                .is_some_and(|escape| escape.pursued_by(attacker));
+            if !got_away
+                && self
+                    .guarded_base_of(game_data, unit)
+                    .is_some_and(|base| roster.bases.contains(&base))
+                && !roster.fleets.contains(&unit)
+            {
+                roster.fleets.push(unit);
+            }
+        }
     }
 
     /// What the fleet's owner learns of `roster`, a force its ROE would not
@@ -454,34 +449,15 @@ impl Year<'_> {
         fleets.chain(bases).sum()
     }
 
-    /// The fleets of `observer`'s empire in its sector and layer that
-    /// volunteer to attack a side of strength `enemy`: each with ROE above 0
-    /// and warships, admitted by its own ROE against the volunteers'
-    /// assembled strength, recomputed until none refuses. The observer is
-    /// among them only when it is willing itself.
+    /// The attacking side against a side of strength `enemy`: `observer`
+    /// alone, when it has ROE above 0 and warships and its ROE accepts its
+    /// own strength against the enemy's (ADR bd8trz18: no other fleet of its
+    /// empire joins), else nobody.
     fn volunteers(&self, game_data: &CoreGameData, observer: usize, enemy: u32) -> Vec<usize> {
-        let o = self.units[observer];
-        let candidates: Vec<usize> = (0..self.units.len())
-            .filter(|&unit| {
-                let u = self.units[unit];
-                u.kind == UnitKind::Fleet
-                    && u.active
-                    && u.owner == o.owner
-                    && u.sector == o.sector
-                    && u.layer == o.layer
-            })
-            .collect();
-        let facts: Vec<(u8, u32)> = candidates
-            .iter()
-            .map(|&unit| {
-                let fleet = self.fleet_facts(game_data, self.units[unit].index);
-                (fleet.roe, strength(&fleet))
-            })
-            .collect();
-        candidates
+        let fleet = self.fleet_facts(game_data, self.units[observer].index);
+        admitted(&[(fleet.roe, strength(&fleet))], enemy)
             .into_iter()
-            .zip(admitted(&facts, enemy))
-            .filter_map(|(unit, stays)| stays.then_some(unit))
+            .filter_map(|stays| stays.then_some(observer))
             .collect()
     }
 
@@ -816,9 +792,8 @@ impl Year<'_> {
     }
 
     /// Fleet unit `attacker`'s empire attacks `defender_empire`: the two
-    /// sides are the attacker's `volunteers` and the defenders' `roster`,
-    /// each side its empire's units in the sector and layer; nobody else
-    /// joins. Every unit of each side becomes known (3, fought) to the
+    /// sides are the attacker's `volunteers` and the defenders' `roster`;
+    /// nobody else joins. Every unit of each side becomes known (3, fought) to the
     /// other empire, and each empire remembers the other here. The attack
     /// is a surprise when the defending empire has no starbase in this
     /// sector and had not sighted the attacking one anywhere in it, decided

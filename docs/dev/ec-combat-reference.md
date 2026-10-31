@@ -169,10 +169,11 @@ and the ROE table, the intercept roll, the two-empire battle, the lost tick of
 movement, and unchanged diplomacy (classic's one exception, the Rogues
 conversion, is an economy rule, below). Three differences by choice: a sector
 with no world is nobody's system, where classic reads a garbage owner; the
-strength a fleet weighs is NC attack strength (combat decision 2); and each
-side of a battle is an empire's fleets in the sector and layer, volunteers
-admitted on the assembled odds, with no first-identification bypass (combat
-decision 6, [gzly58c5](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md)).
+strength a fleet weighs is NC attack strength (combat decision 2); and first
+contact obeys ROE, with no first-identification bypass (combat decision 6,
+[gzly58c5](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md),
+item 4). Battles pair one fleet with one target as in classic
+([bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)).
 Rust matches classic's odds, not its random sequence.
 
 **Different.**
@@ -215,19 +216,18 @@ Rust matches classic's odds, not its random sequence.
   then one exchange of the surviving batteries against the fleet,
   transports first, then destroyers, cruisers, and battleships, then the
   ground battle; a capture keeps the batteries that survived. The owner's
-  starbase or a fleet of his with warships in orbit blocks it. Classic fires
-  no cover fire: the transports descend and withdraw under fire from every
-  battery, and only the owner's starbase blocks it.
+  starbase blocks it. Classic fires no cover fire: the transports descend
+  and withdraw under fire from every battery, and only the owner's starbase
+  blocks it.
 - Arrival. Both resolve each fleet in its own dispatch slot, in the tick it
   reaches orbit, so a world can change hands more than once in a year.
-- The orbital gate. Classic makes the attacker beat the owner's starbase in
-  the strike tick before it touches the world, sighted or not, and leaves
-  the owner's fleets to the encounter loop. NC runs the same gate
-  (`holds_orbit` in `encounter/handler.rs`) and extends it, by choice, to
-  the owner's fleets with warships in orbit: all of them fight the attacker
-  at the strike tick in one battle, an attacker whose ROE refuses the fight
-  seeks home without a shot, and only the holder of the field strikes. A
-  transport-only blitz passes only an empty orbit.
+- The orbital gate. Classic makes the attacker beat the owner's starbase,
+  with its guard, in the strike tick before it touches the world, sighted
+  or not, and leaves the owner's other fleets to the encounter loop. NC runs
+  the same gate (`holds_orbit` in `encounter/handler.rs`,
+  [bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)): an attacker whose ROE refuses the
+  fight seeks home without a shot, and only the holder of the field
+  strikes. A transport-only blitz passes any orbit without a starbase.
 - Failed attacks. NC resolves invade and blitz, and the fleet holds. Classic
   resurrects a destroyed assault fleet (B1) and attacks again next year.
 - Damage. NC writes only destroyed hulls back. Classic has no damage state

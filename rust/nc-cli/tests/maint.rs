@@ -2752,7 +2752,7 @@ fn maint_rust_dominant_invalidated_invade_report_retreats_after_capability_loss(
     // destroy each other, leaving the invader only its transport; both are
     // rolls of the campaign seed, so pin one where they happen.
     seat_humans(&target);
-    let stdout = run_maint_rust_with_export_and_seed(&target, 1, 2);
+    let stdout = run_maint_rust_with_export_and_seed(&target, 1, 10);
     assert!(stdout.contains("Rust maintenance complete."));
 
     let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");

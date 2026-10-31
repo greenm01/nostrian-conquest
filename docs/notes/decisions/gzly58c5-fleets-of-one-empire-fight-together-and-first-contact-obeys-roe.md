@@ -7,6 +7,12 @@ tags: [adr, combat, participation, engagement, roe]
 ---
 # Fleets of one empire fight together and first contact obeys ROE
 
+> **Superseded in part (2026-10-31).** Items 1 to 3 (joined sides) and the
+> t080 orbital-gate extension were reversed by
+> [bd8trz18](bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md):
+> battles pair one fleet with one target as classic does. Item 4, first
+> contact obeys ROE, stands.
+
 ## Context
 
 Classic's encounter loop pairs one observer with one target, so an

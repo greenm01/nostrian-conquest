@@ -630,8 +630,8 @@ clean.
 == Attacking Worlds <attacking-worlds>
 
 You attack a world with one of three missions. First the fleet must win the
-orbit. The owner's starbase and warships there fight it before it can strike,
-and a fleet that loses is driven off (see @missions).
+orbit. The owner's starbase there, with its guards, fights it before it can
+strike, and a fleet that loses is driven off (see @missions).
 
 *Bombard* wears a world down. Each year the fleet stays in orbit, it fires
 three rounds. Its hits go to the ground batteries first. Only when none are
@@ -688,8 +688,10 @@ about twice your armies to be confident, and a world with none falls to a
 single transport. At 2 points each, they are cheap insurance for any world
 worth taking.
 
-*A starbase and warships in orbit* fight every hostile fleet before it can
-strike. A starbase adds 1 to your die and never retreats. An attacker that
+*A starbase in orbit* and its guards fight every hostile fleet before it can
+strike. Your other fleets in orbit fight it only if they spot it first, so
+put warships on Guard Starbase to make them part of that defence. A
+starbase adds 1 to your die and never retreats. An attacker that
 loses the orbit is driven off without bombarding or landing. A starbase
 denies every attacker a surprise there. Once your fleets in the sector have
 spotted an empire, keeping one there denies that empire a surprise attack.
@@ -849,11 +851,13 @@ the system and dive into it. That takes about half a year at speed 3 and more
 than a year and a half at speed 1, so a fleet that enters the sector late in
 the year attacks the next year.
 
-*It must first win the orbit.* The owner's starbase and any fleet of his with
-warships there fight your fleet the week it arrives, whether they had spotted
+*It must first win the orbit.* The owner's starbase there, with the fleets
+guarding it, fights your fleet the week it arrives, whether they had spotted
 it or not. If your fleet's ROE will not take them on, it turns for home
 without a shot. If it loses, it is driven off. Only a fleet that holds the
-orbit attacks. Bring enough to win that fight, or clear the orbit first.
+orbit attacks. His other fleets in orbit fight it only by spotting and
+catching it, as anywhere else. Bring enough to win, or clear the orbit
+first.
 
 *An attack on your own world becomes a guard.* If the target world is yours,
 or becomes yours while the fleet is on the way, the fleet gives up the attack
@@ -877,8 +881,8 @@ it and attack it, and set its ROE to match.
 Only destroyers, cruisers, and battleships fire at a world. Scouts,
 transports, and ETACs carry no guns. Invade needs loaded transports and
 warships. Blitz needs loaded transports. It can go in without warships, but
-then it brings no fire of its own, and if the owner has a starbase or a
-warship fleet in orbit, the transports turn for home.
+then it brings no fire of its own, and if the owner has a starbase in
+orbit, the transports turn for home.
 
 #pagebreak()
 
@@ -1571,14 +1575,14 @@ these odds each warship counts its attack strength (a destroyer 12, a cruiser
 with. Scouts, transports, and ETACs count nothing, and a fleet without
 warships never attacks, whatever its ROE.
 
-The odds are those of the sides as they would fight. Your fleets in the same
-sector and layer fight together, so each of them weighs all of them against
-all of the enemy's there. Two fleets of five cruisers at ROE 6 would each
-refuse ten cruisers alone, and take them on together. Each of your fleets
-there volunteers under its own ROE. One that refuses the combined odds stays
-out, and the others check again without it. If the fleet that spotted the
-enemy is the one that refuses, there is no attack that week. Another willing
-fleet of yours attacks only when it spots and catches the enemy itself.
+The odds are those of the sides as they would fight: your fleet alone
+against the fleet it spotted, with the starbase that fleet guards, or
+against a starbase with its guards. Your other fleets in the sector do not
+join, and neither do the enemy's. Each of them fights only when it spots
+and catches an enemy itself, or is spotted and caught. Two fleets of five
+cruisers fight ten cruisers one at a time, so join them first if you want
+them to fight together. If the fleet that spotted the enemy refuses the
+odds, there is no attack that week.
 
 *Intercept.* A fleet with a higher maximum speed always catches its target.
 Otherwise the target may notice the attack and run. A stopped target cannot
@@ -1586,12 +1590,12 @@ run. A moving one escapes more often the faster it moves and the slower its
 pursuer. A target that already knows the attacker rarely notices it coming,
 and then it stays to fight only if its own ROE accepts the odds.
 
-*Battle.* Every battle is between two empires. Your side is your fleets in
-the sector and layer that volunteered. The enemy's side is all of his fleets
-there, whatever their ROE (a fleet that is attacked fights, ROE 0 included),
-plus the starbase that was attacked or that a guard fleet among them guards.
-Nobody else joins: not a third empire, not allies, not fleets that arrive
-later in the week. The fleet that started the attack spends the week fighting
+*Battle.* Every battle is between two empires and pairs one fleet with
+one target. Your side is the fleet that attacked. The enemy's side is the
+fleet it caught, whatever its ROE (a fleet that is attacked fights, ROE 0
+included), with the starbase it guards, or the starbase attacked with the
+fleets guarding it. Nobody else joins: not your other fleets or his, not a
+third empire, not allies, not fleets that arrive later in the week. The fleet that started the attack spends the week fighting
 instead of moving. A fight does not change the empires' diplomacy.
 
 *Surprise.* Your empire remembers, in each sector where it has a fleet or a
@@ -1720,20 +1724,19 @@ A fleet that breaks off or loses a battle before it reaches its target keeps its
 When fleets attack planets by bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall. While they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships (destroyers, cruisers, and battleships) add bombardment firepower. Scouts, transports, and ETACs do not.
 
 *Winning the orbit.* Before a fleet on a bombard, invade, or blitz mission can
-strike, it must get past whatever the owner keeps in orbit. His starbase and
-his fleets there with warships fight it the week it reaches orbit, spotted or
-not, and your other fleets in that orbit join it under their own ROE. If its
-ROE will not take them on with the side it has, it turns for home without a
-shot. If it loses, it is driven off, and the batteries do not fire on it as it
+strike, it must get past the owner's starbase in orbit. The base and the
+fleets guarding it fight the attacker the week it reaches orbit, spotted or
+not, and the attacker fights alone. His other fleets there fight it only by
+spotting and catching it. If its ROE will not take the base on, it turns
+for home without a shot. If it loses, it is driven off, and the batteries do not fire on it as it
 goes. Only a fleet that holds the orbit attacks, in that same week. Your
 fleets in orbit there under Bombard join it and bombard as one force, once a
 year. An invading or blitzing fleet attacks on its own as it arrives, and a
 second one need not fight defenders the first has beaten. A fleet told to
 attack the world it already orbits attacks at the next maintenance. A fleet of
 loaded transports may try a blitz without warships, but then it brings no
-orbital fire of its own. The owner's ships without warships do not stop it,
-but his starbase or any fleet of his with warships in orbit does, and the
-transports turn for home.
+orbital fire of its own. The owner's fleets do not stop it, but his
+starbase in orbit does, and the transports turn for home.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 

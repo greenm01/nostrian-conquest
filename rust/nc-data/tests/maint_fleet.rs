@@ -2826,6 +2826,14 @@ fn an_roe_declined_bombardment_names_the_force_that_blocked_it() {
     enemy.ships.scouts = 0;
     enemy.ships.etacs = 0;
     set_fleet_at_rest(enemy);
+    // Only a starbase blocks the strike: the cruiser guards one in orbit.
+    enemy.order = Order::GuardStarbase;
+    enemy.mission_target = 1;
+    let coords = game_data.planets[target_idx].sector.to_array();
+    add_active_starbase(&mut game_data, 2, coords);
+    let base = game_data.bases.last_mut().expect("just added");
+    base.depth = Real48::ONE;
+    base.target_depth = 1;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
     let report = empire_one_reports(&game_data, &events)
@@ -2834,7 +2842,7 @@ fn an_roe_declined_bombardment_names_the_force_that_blocked_it() {
         .expect("a bombardment report");
     assert!(report.contains("We encountered"), "{report}");
     assert!(
-        report.contains("The alien force contained CA1."),
+        report.contains("The alien force contained CA1 SB1."),
         "{report}"
     );
     assert!(

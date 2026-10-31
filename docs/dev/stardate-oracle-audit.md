@@ -233,8 +233,10 @@ seed and overstated the differences; the serial runs show these.
   whose ROE refuses the fight seeks home without a shot. Classic lets only
   the starbase block: the cruiser fights the destroyers in the encounter
   loop and bombards anyway in 29 of 30 runs (its own batteries then destroy
-  it). NC bombards in 0 of 40. This is the one real difference, and it is
-  the documented rule, not a bug.
+  it). NC bombards in 0 of 40. This was the one real difference. The
+  owner then chose classic's gate and pairing
+  ([bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md),
+  t226): only the starbase and its guards block a strike now.
 - A Patrol fleet (DD4, ROE 0) and a starbase watching a cruiser move into
   orbit first report it in the same weeks: the base in week 33 (classic)
   or 34 (NC) at the median, the patrol in 4 (classic) and 7 (NC) of 30

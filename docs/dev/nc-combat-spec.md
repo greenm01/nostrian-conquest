@@ -62,8 +62,9 @@ is the exception: the defenders fire first.
 Rules of Engagement decide whether a fleet attacks (see Contact and
 Engagement) and, once a battle starts, when it breaks off. Both decisions
 weigh the same yardstick, NC attack strength, and both weigh the sides as
-they would fight: an empire's fleets in the sector and layer together, not
-the one fleet alone (combat decision 6). Inside the battle ROE does not
+they would fight: the attacking fleet alone against its target with the
+base it guards, or a base with its guards
+([bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)). Inside the battle ROE does not
 inject randomness.
 
 #### One Compulsory Exchange
@@ -165,37 +166,35 @@ system (classic reads a garbage owner there). The strength a fleet weighs is
 NC's, so classic decides who may meet whom and when, and NC decides whether a
 fleet agrees to fight
 ([decision 2](../notes/decisions/kiswrzos-withdrawal-pursuit-and-one-strength-yardstick.md)).
-And the sides are assembled and first contact obeys ROE
-([decision 6](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md)):
+And first contact obeys ROE
+([decision 6](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md),
+item 4; its joined sides were reversed by [bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)):
 encounter parity with classic holds up to those decisions. Rust matches
 classic's odds, not its random sequence.
 
 ### Who Takes Part
 
-A battle is between two empires. Each side is assembled from its empire's
-units in the battle's sector and layer when the attack starts; nobody
-arriving later joins, and a third empire never joins either side.
+A battle is between two empires and pairs one attacker with one target, as
+classic does ([bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)). Time, sector and layer
+put units together; a unit's own sighting, or the enemy's sighting of it,
+puts it in a fight. Nobody arriving later joins, other fleets of either
+empire in the sector do not join, and a third empire never joins.
 
-**The defenders.** The target's empire's fleets there form a fixed roster,
-whatever their ROE: a fleet that is attacked fights the compulsory first
-exchange, ROE 0 included. A fleet escaping from a battle there that the
-attacking empire has already caught once is left out: it has got away from
-that empire. Starbases never volunteer to attack; they defend only under the
-target rule and the orbital gate: the base attacked, the base each guard
-fleet at rest on the roster guards, and at the gate every base the world's
-owner has in orbit.
+**The defenders.** The target fleet with the base it guards at rest, or the
+target base with the guard fleets at rest beside it. A fleet that is
+attacked fights the compulsory first exchange, ROE 0 included. A guard
+escaping from a battle there that the attacking empire has already caught
+once is left out: it has got away from that empire. Starbases never
+volunteer to attack; they defend only as a target, beside a guard that is
+one, and at the orbital gate, where the world owner's bases in orbit fight
+with their guards.
 
-**The attackers.** The observer's empire's fleets there volunteer under
-their own ROE: each candidate has ROE above 0 and warships, and each tests
-its ROE on the volunteers' assembled effective attack strength against the
-defenders' roster; whoever refuses is dropped and the rest re-test until
-none refuses, and a dropped fleet is not re-admitted. Two cruiser pairs at
-ROE 6 that would each refuse four cruisers take them on together. The
-observer's own decision is the same test: if admission removes the fleet
-whose sighting triggered the encounter, the trigger is cancelled, its
-sighting stands, and another willing fleet attacks only through its own
-contact and intercept check. The intercept's fallback, an unnoticed target
-choosing to fight, weighs the same assembled sides.
+**The attacker.** The observer alone, when it has ROE above 0 and warships
+and its ROE accepts its own effective attack strength against the
+defenders'. If it refuses, there is no attack: its sighting stands, and
+another fleet of its empire attacks only through its own contact and
+intercept check. The intercept's fallback, an unnoticed target choosing to
+fight, weighs the same two sides.
 
 Only the two sides fight. Only they can hold the field, be forced to
 retreat, lose their mission, or receive a battle report. Other fleets in the
@@ -472,7 +471,8 @@ A side fires and is fired on as one aggregate. Hit allocation chooses the
 class, the damage state (nominal or crippled), the recovery cohort, and the
 cargo subgroup it strikes; within that choice the losses are shared across
 the side's fleets in proportion to their eligible hulls by largest remainder
-(combat decision 6): fleets of 8 and 2 eligible cruisers share 3 losses as
+(combat decision 6; since bd8trz18 a side holds several fleets only as a
+base's guards): fleets of 8 and 2 eligible cruisers share 3 losses as
 2 and 1 (exact shares 2.4 and 0.6). Ties at the cutoff are broken by draws
 from the battle's seeded roll stream, without replacement, only when a tied
 group straddles the losses still to allocate; a completed allocation is

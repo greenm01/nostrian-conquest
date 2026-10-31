@@ -361,8 +361,8 @@ fn a_world_captured_mid_year_is_defended_by_its_new_owner() {
         0,
     );
     game_data.fleets[0].rules_of_engagement = 0;
-    // On ROE 10: the invasion fleet holds the orbit it took, and the orbital
-    // gate makes the bomber beat it at the strike tick (t054).
+    // The invasion fleet holding the orbit it took is no starbase: the
+    // bomber passes the gate (ADR bd8trz18).
     diving_on_system(
         &mut game_data,
         8,
@@ -381,13 +381,6 @@ fn a_world_captured_mid_year_is_defended_by_its_new_owner() {
     let capture = &events.ownership_change_events[0];
     assert_eq!(capture.stardate_week, Some(1));
     assert_eq!(capture.new_owner_empire, 1);
-    let gate = events
-        .fleet_battle_events
-        .iter()
-        .find(|event| event.reporting_empire == 3)
-        .expect("the new owner's fleet in orbit fights the bomber");
-    assert_eq!(gate.stardate_week, Some(DIVE_TICK));
-    assert_eq!(gate.enemy_empires, vec![1]);
     let bombard = &events.bombard_events[0];
     assert_eq!(bombard.stardate_week, Some(DIVE_TICK));
     assert_eq!(bombard.attacker_empire, 3);
@@ -506,10 +499,11 @@ fn an_unsighted_starbase_fights_an_invasion_before_it_lands() {
 }
 
 #[test]
-fn an_owners_fleet_in_orbit_fights_the_bomber_at_the_strike_tick() {
+fn an_owners_fleet_in_orbit_does_not_block_the_strike() {
     // Empire 2's destroyer holds in orbit on ROE 0 and never starts a fight,
-    // and empire 1's cruisers, neutral to it, would ignore it. The gate makes
-    // them fight at the strike tick; the winner bombards in the same tick.
+    // and empire 1's cruisers, neutral to it, ignore it. Only a starbase
+    // blocks the strike (ADR bd8trz18): the bombardment goes ahead in tick 1
+    // without a shot at the destroyer.
     let mut game_data = assault_on_system(
         Order::BombardWorld,
         Ships {
@@ -531,16 +525,42 @@ fn an_owners_fleet_in_orbit_fights_the_bomber_at_the_strike_tick() {
 
     let events = run_neutral(&mut game_data, 0);
 
-    let battle = events
+    assert!(events.fleet_battle_events.is_empty());
+    assert_eq!(game_data.fleets[4].ships.destroyers, 1);
+    assert_eq!(events.bombard_events[0].stardate_week, Some(1));
+}
+
+#[test]
+fn a_starbase_and_its_guard_fight_the_bomber_at_the_gate_and_nobody_else_does() {
+    // Empire 2's base has a guard destroyer beside it and a second destroyer
+    // holding in orbit. The gate pairs the bomber with the base and its
+    // guard, as classic's base battle does; the holding destroyer stays out.
+    let mut game_data = assault_on_system(Order::BombardWorld, four_battleships(), 0, 0);
+    place_starbase(&mut game_data, 2, SYSTEM);
+    for idx in [4, 5] {
+        holding_orbit(
+            &mut game_data,
+            idx,
+            2,
+            Ships {
+                dd: 1,
+                ..Ships::default()
+            },
+        );
+    }
+    game_data.fleets[4].order = Order::GuardStarbase;
+    game_data.fleets[4].mission_target = 1;
+
+    let events = run_neutral(&mut game_data, 0);
+
+    let gate = events
         .fleet_battle_events
         .iter()
-        .find(|event| event.reporting_empire == 1)
-        .expect("the owner's fleet fights the bomber");
-    assert_eq!(battle.stardate_week, Some(1));
-    assert_eq!(battle.enemy_initial.destroyers, 1);
-    assert!(battle.held_field);
-    assert_eq!(game_data.fleets[4].ships.destroyers, 0);
-    assert_eq!(events.bombard_events[0].stardate_week, Some(1));
+        .find(|event| event.reporting_empire == 1 && event.stardate_week == Some(1))
+        .expect("the base and its guard fight the bomber");
+    assert_eq!(gate.enemy_initial_starbases, 1);
+    assert_eq!(gate.enemy_initial.destroyers, 1, "the guard only");
+    assert_eq!(game_data.fleets[5].ships.destroyers, 1);
 }
 
 #[test]
@@ -685,10 +705,10 @@ fn a_beaten_attacker_retreats_repelled_by_the_orbital_defence() {
 }
 
 #[test]
-fn a_transport_only_blitz_passes_only_an_empty_orbit() {
-    // Loaded transports alone can fight nobody. They land when the owner has
-    // nothing in orbit, or only ships without warships there; his starbase
-    // or a fleet of his with a warship turns them for home.
+fn a_transport_only_blitz_passes_any_orbit_but_a_starbases() {
+    // Loaded transports alone can fight nobody. They land past the owner's
+    // fleets in orbit, warships or not, since only a starbase blocks the
+    // strike (ADR bd8trz18); his starbase turns them for home.
     let loaded = Ships {
         tt: 10,
         armies: 10,
@@ -716,6 +736,11 @@ fn a_transport_only_blitz_passes_only_an_empty_orbit() {
             holding_orbit(&mut game_data, 4, 2, scouts);
             game_data
         }),
+        ("destroyer in orbit", {
+            let mut game_data = blitz();
+            holding_orbit(&mut game_data, 4, 2, destroyer);
+            game_data
+        }),
     ] {
         let events = run_neutral(&mut game_data, 0);
         assert!(events.fleet_battle_events.is_empty(), "{name}");
@@ -732,18 +757,11 @@ fn a_transport_only_blitz_passes_only_an_empty_orbit() {
         assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1, "{name}");
     }
 
-    for (name, mut game_data) in [
-        ("starbase in orbit", {
-            let mut game_data = blitz();
-            place_starbase(&mut game_data, 2, SYSTEM);
-            game_data
-        }),
-        ("destroyer in orbit", {
-            let mut game_data = blitz();
-            holding_orbit(&mut game_data, 4, 2, destroyer);
-            game_data
-        }),
-    ] {
+    for (name, mut game_data) in [("starbase in orbit", {
+        let mut game_data = blitz();
+        place_starbase(&mut game_data, 2, SYSTEM);
+        game_data
+    })] {
         let events = run_neutral(&mut game_data, 0);
         assert!(events.fleet_battle_events.is_empty(), "{name}");
         assert!(events.assault_report_events.is_empty(), "{name}");

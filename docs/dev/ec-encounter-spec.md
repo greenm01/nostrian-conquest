@@ -310,9 +310,8 @@ So at first identification any ROE > 0 commits regardless of odds; later
 re-checks need the strength test. NC departs here (combat decision 6,
 [gzly58c5](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md)):
 `willing` is the strength test alone, in both modes, and the test weighs
-the sides as they would fight, O's empire's volunteers in the sector and
-layer against T's empire's fleets there with the bases the target rule
-brings (see section 5). `planet` = the world in O's sector (only looked up
+O alone against T's side as classic's battle forms it (see section 5;
+[bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md) reversed the joined sides). `planet` = the world in O's sector (only looked up
 when O is in layer 1; see the deep-space note).
 
 ### Strength `S(F)` `24a3:02b4` [C]
@@ -339,9 +338,8 @@ Transports, ETACs, scouts count 0. ECMAINT writes `S` to `+0x34`.
 `test_vs_base(F, B) = test(F, 30 + S(guard_fleet_of(B)) if any else 30)` (`0a0e`).
 NC's yardstick is effective attack strength
 ([decision 2](../notes/decisions/kiswrzos-withdrawal-pursuit-and-one-strength-yardstick.md)),
-and both tests weigh the assembled sides (decision 6): the base's side is
-the base, its guard, and its owner's other fleets there, against a declared
-enemy too, where classic weighed the base alone.
+and the base test weighs the base at 100 plus its guards, against a
+declared enemy too, where classic weighed the base alone.
 
 ### Fleet target, in this order
 
@@ -485,12 +483,8 @@ sector with no world belongs to no one and is nobody's system.
      layer; or, for a base target, the base plus `guard_fleet_of(B)`.
    No other fleets in the sector join (not allies, not other fleets of
    either empire). A second target is fought only in a later tick.
-   NC departs here (combat decision 6): the battle is still between the two
-   empires, but side A is the observer's empire's fleets in the sector and
-   layer that volunteer under their own ROE on the assembled odds (the
-   observer among them, or there is no attack), and side B is the target's
-   empire's fleets there, with the base the target is, or each guard fleet
-   at rest among them guards. Third empires still never join.
+   NC keeps this pairing ([bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md), which
+   reversed decision 6's joined sides).
 4. The battle starts at a separation distance of `5 + Random(20)` (the
    `Random(5)+5` surprise branch needs a flag that the encounter path always
    passes as 0; NC's surprise is another rule, see Sighting memory). The battle itself, with its retreat, scatter, and loss

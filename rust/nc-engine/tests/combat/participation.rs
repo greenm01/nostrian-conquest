@@ -1,9 +1,8 @@
-//! Who takes part in a battle (combat decision 6): an empire's fleets in
-//! the sector and layer fight together, volunteers are admitted on the
-//! assembled odds, a refused trigger is cancelled, starbases only defend,
-//! three empires still make two-empire battles, and first contact obeys
-//! ROE. Whole maintenance years over many seeds; the joined-force odds are
-//! checked against `tools/combat-model/participation_review.py`.
+//! Who takes part in a battle (ADR bd8trz18, classic's pairing): one fleet
+//! against one fleet, or a base with its guard, a refused trigger is
+//! cancelled, starbases only defend, three empires still make two-empire
+//! battles, and first contact obeys ROE. Whole maintenance years over many
+//! seeds.
 
 use nc_data::{
     CoreGameData, DiplomacyOverride, EncounterDispositionEvent, EncounterDispositionReason,
@@ -12,9 +11,6 @@ use nc_data::{
 use nc_engine::run_maintenance_turn_with_context_and_seed;
 
 use super::support::{DEEP_SPACE, Ships, diplomacy, empty_board, place_fleet, place_starbase};
-
-const COST_DD: u32 = 5;
-const COST_CA: u32 = 15;
 
 fn run(
     game_data: &mut CoreGameData,
@@ -46,19 +42,6 @@ fn deep_space_fleet(
     recompute_max_speed(fleet);
 }
 
-fn warships(game_data: &CoreGameData, empire: u8) -> (u32, u32) {
-    game_data
-        .fleets
-        .iter()
-        .filter(|fleet| fleet.owner.0 == empire && fleet.sector.to_array() == DEEP_SPACE)
-        .fold((0, 0), |(dd, ca), fleet| {
-            (
-                dd + u32::from(fleet.ships.destroyers),
-                ca + u32::from(fleet.ships.cruisers),
-            )
-        })
-}
-
 fn battles_at(events: &MaintenanceEvents, empire: u8) -> usize {
     events
         .fleet_battle_events
@@ -67,135 +50,40 @@ fn battles_at(events: &MaintenanceEvents, empire: u8) -> usize {
         .count()
 }
 
-/// Binomial check with one count of slack.
-fn assert_rate(label: &str, hits: usize, trials: usize, p: f64, sigmas: f64) {
-    let expected = p * trials as f64;
-    let sd = (trials as f64 * p * (1.0 - p)).sqrt();
-    assert!(
-        (hits as f64 - expected).abs() <= sigmas * sd + 1.0,
-        "{label}: {hits} of {trials}, expected {expected:.1} (p = {p:.4}, sd {sd:.1})"
-    );
-}
-
-/// The model's joined-force controls (`participation_review.py`, 20,000
-/// trials, ROE 10 both sides, no catch, t200 hulls under the engine-t206
-/// rules): two fleets of `half` against
-/// `opponent`, patrolling the same empty sector at war. Returns the
-/// attackers' win rate over the years with a battle and their mean loss in
-/// build points.
-fn joined_odds(half: Ships, opponent: Ships, seeds: std::ops::Range<u64>) -> (f64, f64, usize) {
+/// Classic's pairing (ADR bd8trz18): two 5 CA fleets of empire 1 patrolling
+/// the sector of empire 2's 10 CA, all at ROE 10 and at war, never fight
+/// together. Every battle sets one fleet of each side against the other.
+#[test]
+fn an_empires_fleets_in_one_sector_fight_one_at_a_time() {
+    let five = Ships {
+        ca: 5,
+        ..Ships::default()
+    };
+    let ten = Ships {
+        ca: 10,
+        ..Ships::default()
+    };
     let mut scenario = empty_board(0, 0);
-    deep_space_fleet(&mut scenario, 0, 1, Order::PatrolSector, half, 10);
-    deep_space_fleet(&mut scenario, 1, 1, Order::PatrolSector, half, 10);
-    deep_space_fleet(&mut scenario, 4, 2, Order::PatrolSector, opponent, 10);
+    deep_space_fleet(&mut scenario, 0, 1, Order::PatrolSector, five, 10);
+    deep_space_fleet(&mut scenario, 1, 1, Order::PatrolSector, five, 10);
+    deep_space_fleet(&mut scenario, 4, 2, Order::PatrolSector, ten, 10);
     let overrides = diplomacy(&[(1, 2)]);
-    let (mut fought, mut wins, mut lost) = (0usize, 0usize, 0u64);
-    for seed in seeds {
+    let mut fought = 0;
+    for seed in 0..100u64 {
         let mut game_data = scenario.clone();
         let events = run(&mut game_data, seed, &overrides);
-        if battles_at(&events, 1) == 0 {
-            continue;
+        for battle in &events.fleet_battle_events {
+            let (ours, theirs) = if battle.reporting_empire == 1 {
+                (&battle.friendly_initial, &battle.enemy_initial)
+            } else {
+                (&battle.enemy_initial, &battle.friendly_initial)
+            };
+            assert!(ours.cruisers <= 5, "seed {seed}: {ours:?}");
+            assert!(theirs.cruisers <= 10, "seed {seed}: {theirs:?}");
         }
-        fought += 1;
-        let (dd, ca) = warships(&game_data, 1);
-        let (enemy_dd, enemy_ca) = warships(&game_data, 2);
-        wins += usize::from(enemy_dd + enemy_ca == 0 && dd + ca > 0);
-        let initial_dd = 2 * u32::from(half.dd);
-        let initial_ca = 2 * u32::from(half.ca);
-        lost += u64::from((initial_dd - dd) * COST_DD + (initial_ca - ca) * COST_CA);
+        fought += battles_at(&events, 1);
     }
-    (
-        wins as f64 / fought as f64,
-        lost as f64 / fought as f64,
-        fought,
-    )
-}
-
-/// Two 5 CA fleets against 10 CA: the model wins 49.7% joined (93.0 build
-/// points lost) against 7.7% one at a time (145.8).
-#[test]
-fn two_five_cruiser_fleets_against_ten_fight_together() {
-    let half = Ships {
-        ca: 5,
-        ..Ships::default()
-    };
-    let ten = Ships {
-        ca: 10,
-        ..Ships::default()
-    };
-    let (win, lost, fought) = joined_odds(half, ten, 0..600);
-    eprintln!(
-        "two 5 CA vs 10 CA: win {win:.3}, lost {lost:.1} over {fought} battles (model joined 0.497, 93.0; sequential 0.077, 145.8)"
-    );
-    assert!(fought >= 500, "{fought} battles");
-    assert_rate(
-        "two 5 CA vs 10 CA",
-        (win * fought as f64) as usize,
-        fought,
-        0.4975,
-        4.0,
-    );
-    assert!(win > 0.3, "far from the one-at-a-time 8%");
-    assert!((lost - 93.0).abs() < 15.0, "lost {lost:.1}");
-}
-
-/// Two 6 CA fleets against 10 CA: 76.6% joined (64.7) against 38.4% one at
-/// a time (150.9).
-#[test]
-fn two_six_cruiser_fleets_against_ten_fight_together() {
-    let half = Ships {
-        ca: 6,
-        ..Ships::default()
-    };
-    let ten = Ships {
-        ca: 10,
-        ..Ships::default()
-    };
-    let (win, lost, fought) = joined_odds(half, ten, 0..600);
-    eprintln!(
-        "two 6 CA vs 10 CA: win {win:.3}, lost {lost:.1} over {fought} battles (model joined 0.766, 64.7; sequential 0.384, 150.9)"
-    );
-    assert!(fought >= 500, "{fought} battles");
-    assert_rate(
-        "two 6 CA vs 10 CA",
-        (win * fought as f64) as usize,
-        fought,
-        0.7661,
-        4.0,
-    );
-    assert!(win > 0.6, "far from the one-at-a-time 38%");
-    assert!((lost - 64.7).abs() < 15.0, "lost {lost:.1}");
-}
-
-/// Two fleets of 5 DD and 5 CA against 12 CA: 76.0% joined (73.4) against
-/// 37.7% one at a time (168.3) under the t206 rules, where the cruisers
-/// cover the destroyers and the destroyers finish cripples at half price
-/// (60.9% / 106.2 before them).
-#[test]
-fn two_mixed_fleets_against_twelve_cruisers_fight_together() {
-    let half = Ships {
-        dd: 5,
-        ca: 5,
-        ..Ships::default()
-    };
-    let twelve = Ships {
-        ca: 12,
-        ..Ships::default()
-    };
-    let (win, lost, fought) = joined_odds(half, twelve, 0..600);
-    eprintln!(
-        "two (5 DD + 5 CA) vs 12 CA: win {win:.3}, lost {lost:.1} over {fought} battles (model joined 0.760, 73.4; sequential 0.377, 168.3)"
-    );
-    assert!(fought >= 500, "{fought} battles");
-    assert_rate(
-        "two mixed vs 12 CA",
-        (win * fought as f64) as usize,
-        fought,
-        0.7601,
-        4.0,
-    );
-    assert!(win > 0.6, "far from the one-at-a-time 38%");
-    assert!((lost - 73.4).abs() < 15.0, "lost {lost:.1}");
+    assert!(fought >= 50, "{fought} battles");
 }
 
 /// A cautious fleet no longer attacks a stronger enemy because it
