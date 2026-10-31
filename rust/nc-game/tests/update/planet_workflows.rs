@@ -1215,7 +1215,7 @@ fn planet_build_menu_matches_verified_v15_command_layout() {
     );
     assert_eq!(
         terminal.line(15).trim_end(),
-        " Treasury: 50 PP.  Build capacity: 100 PP.  Budget remaining: 50."
+        " Treasury: 50 PP.  Build capacity: 100 PP.  Budget remaining: 50 PP."
     );
     assert_eq!(terminal.lines[17].trim_end(), " Building: 0   Docked: 0");
 }

@@ -53,7 +53,7 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
     );
     assert_eq!(
         buffer.plain_line(15),
-        " Treasury: 40 PP.  Build capacity: 100 PP.  Budget remaining: 40."
+        " Treasury: 40 PP.  Build capacity: 100 PP.  Budget remaining: 40 PP."
     );
     assert_eq!(buffer.plain_line(16), "");
     assert_eq!(buffer.plain_line(17), " Building: 5   Docked: 3");

@@ -229,7 +229,7 @@ impl PlanetBuildScreen {
                 lower_block_row + 2,
                 LEFT_WINDOW_PAD_COL,
                 &format!(
-                    "Treasury: {} PP.  Build capacity: {} PP.  Budget remaining: {}.",
+                    "Treasury: {} PP.  Build capacity: {} PP.  Budget remaining: {} PP.",
                     view.treasury_left, view.row.build_capacity, view.points_left
                 ),
                 classic::status_value_style(),
