@@ -4,7 +4,7 @@ use nc_compat::classic::{ClassicFile, without_ignored_bytes};
 use nc_compat::{
     import_directory_snapshot_with_seed, load_classic_core_files, save_classic_core_files,
 };
-use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation};
+use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation, PlayerMode};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -260,6 +260,17 @@ pub fn write_mutual_enemy_diplomacy(target: &Path, left: u8, right: u8) {
         left, right, right, left
     );
     fs::write(target.join("diplomacy.kdl"), text).unwrap();
+}
+
+/// Seat a human in every empire: maintenance reports only to empires with
+/// a player, and the fixtures leave their seats unjoined.
+pub fn seat_humans(target: &Path) {
+    let mut game_data = load_classic_core_files(target).unwrap();
+    for player in &mut game_data.players {
+        player.mode = PlayerMode::Human;
+        player.autopilot = false;
+    }
+    save_classic_core_files(target, &game_data).unwrap();
 }
 
 pub fn set_mutual_enemy_in_player_dat(target: &Path, left: u8, right: u8) {

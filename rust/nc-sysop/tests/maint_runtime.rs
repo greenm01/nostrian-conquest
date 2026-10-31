@@ -63,10 +63,17 @@ fn hold_all_fleets_in_place(game_data: &mut CoreGameData) {
     }
 }
 
+/// Seeds the store with every empire seated: maintenance reports only to
+/// empires with a player, and the fixtures leave their seats unjoined.
 fn seed_runtime_snapshot(dir: &Path, game_data: &CoreGameData) {
+    let mut game_data = game_data.clone();
+    for player in &mut game_data.players {
+        player.mode = nc_data::PlayerMode::Human;
+        player.autopilot = false;
+    }
     let store = CampaignStore::open_default_in_dir(dir).expect("open campaign store");
     store
-        .save_year(game_data.conquest.game_year, game_data, &[], &[])
+        .save_year(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("seed runtime snapshot");
 }
 
@@ -196,6 +203,7 @@ fn nc_sysop_maint_persists_view_world_reports_and_runtime_intel() {
 fn nc_sysop_maint_keeps_unread_reports_from_earlier_years() {
     let target = unique_temp_dir("nc-sysop-maint-unread-reports");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
+    game_data.players[0].mode = nc_data::PlayerMode::Human;
     let viewer = &mut game_data.fleets[0];
     viewer.order = Order::ViewWorld;
     viewer.target = Coords::new(15, 13);

@@ -85,10 +85,13 @@ pub(super) fn sanitize_invalid_player_inputs(
                         {
                             break;
                         }
-                        let retreat_target = capability_loss_requires_abort_and_seek_home(reason)
+                        // ECMAINT holds a patrol that has lost its warships.
+                        let seeks_home = capability_loss_requires_abort_and_seek_home(reason)
+                            && game_data.fleets[fleet_idx].order != Order::PatrolSector;
+                        let retreat_target = seeks_home
                             .then(|| super::combat::nearest_friendly_world(game_data, fleet_idx))
                             .flatten();
-                        if capability_loss_requires_abort_and_seek_home(reason) {
+                        if seeks_home {
                             super::combat::abort_mission_to_seek_home_or_hold(
                                 game_data,
                                 fleet_idx,

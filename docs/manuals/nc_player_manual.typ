@@ -825,7 +825,7 @@ your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 *Mission 0: Hold Position.* The default idle state. The fleet stays where it is and acts on its ROE if hostile fleets come near.
 
-*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom (see @appendix-combat) allow, as far as your ROE permits. The mission stays in force until you assign a new one.
+*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom (see @appendix-combat) allow, as far as your ROE permits. The mission stays in force until you assign a new one. A patrol needs warships. If it loses its last one, it gives up the patrol and holds position.
 
 *Mission 4: Guard a Starbase.* The fleet escorts a starbase and fights beside it. An attack on either one is a battle against both, and the base joins as a defender in any battle its guard is drawn into. A guard stays with its base and does not close on the contacts it spots. It attacks, or joins an attack by your other fleets there, when the ROE odds favor the fight.
 

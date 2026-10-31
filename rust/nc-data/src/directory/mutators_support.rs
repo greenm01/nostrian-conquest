@@ -46,7 +46,10 @@ pub(super) fn composition_invalidates_current_mission(
     record: &Fleet,
 ) -> Option<FleetOrderValidationError> {
     match record.order {
-        Order::GuardStarbase | Order::GuardBlockadeWorld | Order::BombardWorld
+        Order::PatrolSector
+        | Order::GuardStarbase
+        | Order::GuardBlockadeWorld
+        | Order::BombardWorld
             if !has_combat_ships(record) =>
         {
             Some(FleetOrderValidationError::MissingCombatShips)

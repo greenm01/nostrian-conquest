@@ -1295,6 +1295,8 @@ fn results_reports_named_hostile_fleet_with_empire_local_slot() {
 #[test]
 fn results_report_invalid_capability_loss_as_aborted_seek_home_mission() {
     let mut game_data = load_fixture("ecmaint-fleet-pre");
+    // Reports go only to a seated player.
+    game_data.players[0].mode = nc_data::PlayerMode::Human;
     game_data.fleets[0].ships.etacs = 0;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -2344,4 +2346,89 @@ fn battle_reports_say_when_the_attack_was_a_surprise() {
     ] {
         assert!(!text(battle(empire, perspective, false)).contains("surprise"));
     }
+}
+
+#[test]
+fn patrol_that_lost_its_warships_reports_holding_position() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3026)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [11, 11];
+    let fleet = &mut game_data.fleets[0];
+    fleet.owner.0 = 1;
+    fleet.sector = Coords::from_array(coords);
+    fleet.target = Coords::from_array(coords);
+    fleet.order = nc_data::Order::HoldPosition;
+    fleet.speed = 0;
+    let mut events = MaintenanceEvents::default();
+    events.mission_events.push(MissionEvent {
+        fleet_idx: 0,
+        owner_empire: 1,
+        kind: Mission::PatrolSector,
+        outcome: MissionOutcome::Aborted,
+        abort_reason: Some(nc_data::MissionAbortReason::CapabilityLost),
+        planet_idx: None,
+        location_coords: Some(coords),
+        target_coords: Some(coords),
+        stardate_week: Some(9),
+    });
+
+    let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+        .join(" ")
+        .replace('\n', " ");
+    assert!(
+        text.contains(
+            "Patrol mission report: Since we have lost all of our warships in combat, we must abort our mission of patrolling Sector(11,11). We are holding position and awaiting orders."
+        ),
+        "{text}"
+    );
+}
+
+#[test]
+fn reports_skip_an_empire_without_a_player_unless_it_fell_this_year() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3026)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    game_data.fleets[0].owner.0 = 1;
+    let mut events = MaintenanceEvents::default();
+    events.mission_events.push(MissionEvent {
+        fleet_idx: 0,
+        owner_empire: 1,
+        kind: Mission::PatrolSector,
+        outcome: MissionOutcome::Arrived,
+        abort_reason: None,
+        planet_idx: None,
+        location_coords: Some([11, 11]),
+        target_coords: Some([11, 11]),
+        stardate_week: Some(9),
+    });
+    let patrol_reports = |game_data: &nc_data::CoreGameData, events: &MaintenanceEvents| {
+        viewer_report_texts(1, &build_results_report_blocks(game_data, events))
+            .iter()
+            .filter(|text| text.contains("Patrol mission report"))
+            .count()
+    };
+
+    game_data.players[0].mode = nc_data::PlayerMode::Human;
+    assert_eq!(patrol_reports(&game_data, &events), 1);
+    for mode in [
+        nc_data::PlayerMode::CivilDisorder,
+        nc_data::PlayerMode::Rogue,
+    ] {
+        game_data.players[0].mode = mode;
+        assert_eq!(patrol_reports(&game_data, &events), 0, "{mode:?}");
+    }
+    game_data.players[0].mode = nc_data::PlayerMode::CivilDisorder;
+    events
+        .civil_disorder_events
+        .push(nc_data::CivilDisorderEvent {
+            reporting_empire: 1,
+            prior_label: "Probe Empire 1".to_string(),
+            stardate_week: Some(52),
+        });
+    assert_eq!(patrol_reports(&game_data, &events), 1);
 }

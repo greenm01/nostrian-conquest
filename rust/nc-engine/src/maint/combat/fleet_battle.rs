@@ -19,7 +19,8 @@ use super::reporting::{
     single_named_fleet_number,
 };
 use super::retreat::{
-    dominant_empire_after_battle, escape_fleet, resumes_mission, retreat_fleet, retreat_task_force,
+    dominant_empire_after_battle, escape_fleet, hold_in_place, resumes_mission, retreat_fleet,
+    retreat_task_force,
 };
 use super::state::{
     BattleRole, FleetCombatState, IDX_SB, IDX_TT, Member, Record, TaskForce, Transports,
@@ -360,7 +361,7 @@ fn is_ship_loss_abort_reason(order: Order, reason: FleetOrderValidationError) ->
     matches!(
         (order, reason),
         (
-            Order::BombardWorld,
+            Order::PatrolSector | Order::BombardWorld,
             FleetOrderValidationError::MissingCombatShips
         ) | (
             Order::InvadeWorld,
@@ -422,7 +423,12 @@ fn abort_invalid_dominant_missions_after_battle(
             if !mission_lost_its_ships(game_data, fleet_idx, order) {
                 continue;
             }
-            retreat_fleet(game_data, fleet_idx);
+            // ECMAINT holds a patrol that has lost its warships.
+            if order == Order::PatrolSector {
+                hold_in_place(&mut game_data.fleets[fleet_idx]);
+            } else {
+                retreat_fleet(game_data, fleet_idx);
+            }
             emit_aborted_mission_event(
                 game_data,
                 events,

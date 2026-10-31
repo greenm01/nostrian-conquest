@@ -52,8 +52,10 @@ Fixed by this audit:
 - A guard joining a starbase that has climbed out to deep space reports
   from the sector (`--deep-base`), as classic does.
 
-Open: classic sends no reports to an empire in civil disorder; NC still
-sends such an empire a planet's alert when its world is attacked.
+- Reports go only to empires with a human player, as in classic: none to
+  rogues or to an empire in civil disorder (every classic fixture without a
+  seated player has an empty RESULTS.DAT). An empire that falls or whose
+  crews defect that year still gets its final reports.
 
 Probe setup matters: the order's world flag (mission aux 0) must be set as
 ECGAME sets it (`Order::targets_world`). With it clear, classic's world
@@ -85,6 +87,7 @@ time. Each Rust run gets its own campaign seed.
   identified" report where classic sends two ("Sensor contact shows an alien
   fleet … Closing to check it out…", then "We have located and
   identified…"), and its battle reports are structured briefings.
-- Classic aborts a Patrol that has no warships, with "Since we have lost all
-  of our warships in combat, we must abort our mission"; NC lets such a
-  fleet keep patrolling.
+- Patrol needs warships, as in classic. A patrol that has none, or loses
+  its last one in battle, aborts and holds position: "Since we have lost
+  all of our warships in combat, we must abort our mission of patrolling
+  Sector(x,y). We are holding position and awaiting orders."

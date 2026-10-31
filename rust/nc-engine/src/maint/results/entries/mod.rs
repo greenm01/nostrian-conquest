@@ -67,7 +67,12 @@ pub(super) fn build_results_rows_with_review(
     game_data: &CoreGameData,
     events: &MaintenanceEvents,
 ) -> Vec<ReportBlockRow> {
-    let result_entries = generate_report_entries(game_data, events);
+    let mut result_entries = generate_report_entries(game_data, events);
+    let silent = silent_empires(game_data, events);
+    result_entries.retain(|entry| {
+        let ReportTarget::Both { recipient } = entry.target;
+        !silent.contains(&recipient)
+    });
     let year = report_year(game_data);
     let ResultsReviewPlan {
         viewer_entries,
@@ -81,6 +86,32 @@ pub(super) fn build_results_rows_with_review(
         row.viewer_empire_id == 0 || viewers_with_results.contains(&row.viewer_empire_id)
     }));
     rows
+}
+
+/// Classic reports only to empires with a human player: none to rogues or
+/// to an empire in civil disorder (the classic fixtures' RESULTS.DAT is empty
+/// without one). An empire that fell this year, or whose crews defected, is
+/// in civil disorder by now but still gets its final reports.
+fn silent_empires(game_data: &CoreGameData, events: &MaintenanceEvents) -> BTreeSet<u8> {
+    let fell = |empire: u8| {
+        events
+            .empire_elimination_events
+            .iter()
+            .any(|event| event.defeated_empire == empire)
+            || events
+                .civil_disorder_events
+                .iter()
+                .any(|event| event.reporting_empire == empire)
+            || events
+                .fleet_defection_events
+                .iter()
+                .any(|event| event.reporting_empire == empire)
+    };
+    (1..=game_data.players.len() as u8)
+        .filter(|&empire| {
+            game_data.players[usize::from(empire) - 1].mode != PlayerMode::Human && !fell(empire)
+        })
+        .collect()
 }
 
 pub(super) fn results_review_plan(result_entries: &[ReportEntry]) -> ResultsReviewPlan {

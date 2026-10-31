@@ -301,6 +301,32 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
             before_turn: no_turn_mutation,
             check: check_missing_blitz_troops_no_retreat_trace,
         },
+        TraceCase {
+            name: "patrol-sector missing combat ships holds even with a home to seek",
+            setup: build_missing_patrol_combat_trace,
+            fleet_idx: 0,
+            turns_to_run: 1,
+            expectations: &[
+                FleetTurnExpectation {
+                    turn: 0,
+                    coords: TRACE_START,
+                    target: TRACE_TARGET,
+                    order: Order::PatrolSector,
+                    speed: TRACE_SPEED,
+                    ready_flag: None,
+                },
+                FleetTurnExpectation {
+                    turn: 1,
+                    coords: TRACE_START,
+                    target: TRACE_START,
+                    order: Order::HoldPosition,
+                    speed: 0,
+                    ready_flag: None,
+                },
+            ],
+            before_turn: no_turn_mutation,
+            check: check_missing_patrol_combat_trace,
+        },
     ];
 
     for case in cases {
@@ -518,6 +544,18 @@ fn check_missing_bombard_combat_trace(run: &TraceRun) {
     check_invalidated_to_seek_home(
         run,
         Order::BombardWorld,
+        FleetOrderValidationError::MissingCombatShips,
+    );
+}
+
+fn build_missing_patrol_combat_trace() -> CoreGameData {
+    build_capability_invalidated_trace(Order::PatrolSector, MissingCapability::Combat, true)
+}
+
+fn check_missing_patrol_combat_trace(run: &TraceRun) {
+    check_invalidated_to_seek_home(
+        run,
+        Order::PatrolSector,
         FleetOrderValidationError::MissingCombatShips,
     );
 }

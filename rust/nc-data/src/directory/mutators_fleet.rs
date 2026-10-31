@@ -190,6 +190,11 @@ impl CoreGameData {
             .map(|planet| planet.owner.0);
 
         match order {
+            Order::PatrolSector => {
+                if !has_combat {
+                    return Err(FleetOrderValidationError::MissingCombatShips);
+                }
+            }
             Order::GuardStarbase => {
                 if !has_combat {
                     return Err(FleetOrderValidationError::MissingCombatShips);

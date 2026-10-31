@@ -451,6 +451,18 @@ pub fn push_mission_entries(
                     " Patrol mission report: We have arrived at our destination and are beginning our patrolling assignment.".to_string(),
                 ),
             ),
+            (Mission::PatrolSector, MissionOutcome::Aborted) => {
+                let [tx, ty] = event.target_coords.unwrap_or([x, y]);
+                (
+                    0x05,
+                    RESULTS_TAIL_FLEET,
+                    source_clause.clone(),
+                    MissionReportBody::Narrative(format!(
+                        " Patrol mission report: Since we have lost all of our warships in combat, we must abort our mission of patrolling Sector({tx},{ty}). We are {}.",
+                        aborted_event_follow_on_text(game_data, fleet, event)
+                    )),
+                )
+            }
             (Mission::SeekHome, MissionOutcome::Succeeded) => (
                 0x05,
                 RESULTS_TAIL_FLEET,
