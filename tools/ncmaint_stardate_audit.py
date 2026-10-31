@@ -17,6 +17,9 @@ place and week but its numbers are masked. Run under DOSBox-X:
 
     nix shell nixpkgs#dosbox-x -c python3 tools/ncmaint_stardate_audit.py \
         [--missions 1,2] [--speeds 1,3] [--offsets d3,d6] [--years 6]
+
+`--rendezvous` (mission 14) sends a second fleet to the rendezvous, so the
+two merge.
 """
 
 from __future__ import annotations
@@ -29,7 +32,9 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from ncmaint_mission_sweep import MISSIONS, NC_CLI_BIN, Case, build_classic, build_rust, nc, snapshot
+from ncmaint_mission_sweep import (
+    MISSIONS, NC_CLI_BIN, SECTOR, Case, build_classic, build_rust, nc, patch_fleet, snapshot,
+)
 from ncmaint_oracle import run_ecmaint
 
 DEFAULT_WORK_ROOT = Path("/tmp/ecmaint-stardate-audit")
@@ -127,6 +132,13 @@ def run_case(case: Case, work_root: Path, humans: tuple[int, ...] = (1,),
     return {"case": case.name, "years": years}
 
 
+def rendezvous_partner(directory: Path) -> None:
+    """Send fleet 2 from home to the Rendezvous sector at speed 2, so it
+    meets fleet 1 there in a different week."""
+    patch_fleet(directory, 2, {0x0A: 2, 0x1F: 14, 0x20: SECTOR[0], 0x21: SECTOR[1],
+                               0x22: 0, 0x23: 0})
+
+
 def diff(result: dict) -> list[str]:
     """Each mismatched year: the differing motion fields, then both report lists."""
     lines = []
@@ -152,14 +164,19 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--work-root", type=Path, default=DEFAULT_WORK_ROOT)
     parser.add_argument("--json", type=Path, help="write the raw results here")
+    parser.add_argument("--rendezvous", action="store_true",
+                        help="mission 14: fleet 2 also heads for the rendezvous")
     args = parser.parse_args()
+    if args.rendezvous and args.missions != "14":
+        raise SystemExit("--rendezvous applies to mission 14 only")
+    prepare = rendezvous_partner if args.rendezvous else None
     if not NC_CLI_BIN.exists():
         print(f"build nc-cli first: {NC_CLI_BIN}", file=sys.stderr)
         return 1
     cases = [Case(int(m), int(s), o, args.years) for m in args.missions.split(",")
              for s in args.speeds.split(",") for o in args.offsets.split(",")]
     with ThreadPoolExecutor(args.jobs) as pool:
-        results = list(pool.map(lambda c: run_case(c, args.work_root), cases))
+        results = list(pool.map(lambda c: run_case(c, args.work_root, prepare=prepare), cases))
     mismatched = 0
     for result in results:
         lines = diff(result)

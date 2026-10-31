@@ -69,6 +69,15 @@ and 4 merged into Fleet 2 (week 14)."), and the Rendezvous report names
 each arrival's week when they differ. A join that waits on a host that
 merged away is retargeted after the ticks and merges at year end.
 
+Re-audit 2026-10-31 (all 60 cases, plus `--missions 14 --rendezvous`,
+which sends fleet 2 to the rendezvous too): every merge lands in classic's
+week (join weeks 5 and 26; rendezvous y3w49 and y5w28). The remaining
+differences are wording only: NC's Join summary in place of classic's
+report, classic's "at the our rendezvous point" typo, NC's "absorbing fleet
+2" for classic's "absorbing the 2nd Fleet", and no separate "waiting"
+report when the first rendezvous fleet arrives in the same year the second
+merges. Bombard, Invade and Blitz at speed 3 differ only in combat dice.
+
 Not covered: colonizing an occupied world, rendezvous merges of several
 fleets, and the NC routing extensions in `ec-movement-spec.md`.
 
@@ -102,6 +111,11 @@ time. Each Rust run gets its own campaign seed.
   identification in its own week. NC has no sighting numbers, so it drops
   classic's "designating this sighting as FS-n". "Sublight" for a fleet at
   rest fits both classic captures; the rule itself is not in the RE notes.
+- Re-audit 2026-10-31 (16 runs a case): sighting rates and weeks still
+  agree, and the one report gives classic's speed wording ("a translight
+  speed of 3", "sublight speed") and decision lines. Classic's contact-only
+  report reads "We are designating this sighting as FS-16 and notifying all
+  other fleets in the area"; NC's says "We could not identify it."
 - Patrol needs warships, as in classic. A patrol that has none, or loses
   its last one in battle, aborts and holds position: "Since we have lost
   all of our warships in combat, we must abort our mission of patrolling

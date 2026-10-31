@@ -649,6 +649,8 @@ pub enum InvalidPlayerStateEvent {
         owner_empire: u8,
         order_code: u8,
         coords: [u8; 2],
+        /// The canceled order's target.
+        target: [u8; 2],
         reason: FleetOrderValidationError,
     },
     FleetInput {

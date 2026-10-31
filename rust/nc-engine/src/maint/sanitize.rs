@@ -105,6 +105,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                             owner_empire,
                             order_code,
                             coords,
+                            target,
                             reason,
                         });
                     }

@@ -385,16 +385,25 @@ pub fn push_misc_entries(
                 owner_empire,
                 order_code,
                 coords,
+                target,
                 reason,
             } => {
-                let order_name = nc_data::Order::from_code(order_code)
-                    .display_label()
-                    .to_lowercase();
-                let body = if capability_loss_invalid_order_reason(reason) {
+                let order = nc_data::Order::from_code(order_code);
+                let order_name = order.display_label().to_lowercase();
+                let follow_on =
+                    aborted_mission_follow_on_text_from_idx(game_data, fleet_idx, owner_empire);
+                let body = if order == nc_data::Order::PatrolSector
+                    && reason == nc_data::FleetOrderValidationError::MissingCombatShips
+                {
+                    format!(
+                        " Patrol mission report: Since we have lost all of our warships in combat, we must abort our mission of patrolling Sector({},{}). We are {follow_on}.",
+                        target[0], target[1]
+                    )
+                } else if capability_loss_invalid_order_reason(reason) {
                     format!(
                         " Hostile action forced us to abort the {order_name} mission because {}. The fleet is {}.",
                         fleet_order_validation_reason_text(reason),
-                        aborted_mission_follow_on_text_from_idx(game_data, fleet_idx, owner_empire)
+                        follow_on
                     )
                 } else {
                     format!(

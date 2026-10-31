@@ -2191,6 +2191,7 @@ fn invalid_fleet_mission_report_tolerates_removed_fleet_index() {
             owner_empire: 1,
             order_code: nc_data::Order::InvadeWorld.code(),
             coords: [9, 9],
+            target: [9, 9],
             reason: FleetOrderValidationError::MissingLoadedTroopTransports,
         });
 
@@ -2561,5 +2562,25 @@ fn a_fleet_avoiding_an_enemy_in_deep_space_reports_from_the_sector() {
     assert!(
         !text.contains("Sensor contact"),
         "the avoidance report replaces it: {text}"
+    );
+}
+
+#[test]
+fn a_patrol_found_without_warships_reports_as_classic() {
+    let mut events = MaintenanceEvents::default();
+    events
+        .invalid_player_state_events
+        .push(InvalidPlayerStateEvent::FleetMission {
+            fleet_idx: 99,
+            owner_empire: 1,
+            order_code: nc_data::Order::PatrolSector.code(),
+            coords: [9, 9],
+            target: [11, 11],
+            reason: FleetOrderValidationError::MissingCombatShips,
+        });
+    let text = empire_one_text(&events);
+    assert!(
+        text.contains("Patrol mission report: Since we have lost all of our warships in combat, we must abort our mission of patrolling Sector(11,11). We are holding position and awaiting orders."),
+        "{text}"
     );
 }
