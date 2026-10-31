@@ -1,3 +1,4 @@
+use super::super::FleetRemovalRemapInfo;
 use super::super::{
     CampaignOutcomeEvent, CampaignOutlookEvent, CivilDisorderEvent, EmpireEliminationCause,
     EmpireEliminationEvent, FleetDefectionEvent, GameVictoryNoticeEvent, MaintenanceEvents,
@@ -227,7 +228,7 @@ pub(super) fn apply_campaign_state_transitions(
 pub(super) fn apply_civil_disorder_fleet_defections(
     game_data: &mut CoreGameData,
     newly_defeated: &[EmpireEliminationEvent],
-) -> Result<Vec<FleetDefectionEvent>, Box<dyn std::error::Error>> {
+) -> Result<(Vec<FleetDefectionEvent>, FleetRemovalRemapInfo), Box<dyn std::error::Error>> {
     let mut to_remove = vec![false; game_data.fleets.len()];
     let mut events = Vec::new();
 
@@ -269,11 +270,13 @@ pub(super) fn apply_civil_disorder_fleet_defections(
         }
     }
 
-    if to_remove.iter().any(|remove| *remove) {
-        super::super::remove_selected_fleets(game_data, &to_remove);
-    }
+    let remap = if to_remove.iter().any(|remove| *remove) {
+        super::super::apply_fleet_removal_remap(game_data, &to_remove)
+    } else {
+        FleetRemovalRemapInfo::default()
+    };
 
-    Ok(events)
+    Ok((events, remap))
 }
 
 pub(super) fn apply_stored_diplomatic_escalations(

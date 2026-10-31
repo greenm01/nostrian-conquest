@@ -34,7 +34,7 @@ pub(super) fn campaign_outcome(
 pub(super) fn apply_civil_disorder_fleet_defections(
     game_data: &mut CoreGameData,
     newly_defeated: &[EmpireEliminationEvent],
-) -> Result<Vec<FleetDefectionEvent>, Box<dyn std::error::Error>> {
+) -> Result<(Vec<FleetDefectionEvent>, super::FleetRemovalRemapInfo), Box<dyn std::error::Error>> {
     state::apply_civil_disorder_fleet_defections(game_data, newly_defeated)
 }
 

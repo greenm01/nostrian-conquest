@@ -512,15 +512,24 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         initial_campaign_outcome,
     );
     let fleet_keys_before_defection = fleet_record_keys(game_data);
-    let fleet_defection_events = campaign::apply_civil_disorder_fleet_defections(
-        game_data,
-        &campaign_transition_events.empire_elimination_events,
-    )?;
+    let (fleet_defection_events, defection_removal) =
+        campaign::apply_civil_disorder_fleet_defections(
+            game_data,
+            &campaign_transition_events.empire_elimination_events,
+        )?;
     let defection_remap = FleetIndexRemap::from_survivors(
         &fleet_keys_before_defection,
         &fleet_record_keys(game_data),
     );
     refs.remap(&defection_remap);
+    // A defecting host leaves its joiners holding.
+    let defection_join_events = merging::process_join_host_updates(
+        game_data,
+        &[],
+        &defection_removal.destroyed_join_host_fleet_numbers,
+        &defection_removal,
+    );
+    refs.join_host_events.extend(defection_join_events);
     // What the pass removed after the ticks (colonizers, defectors) takes
     // its empire's sighting memory with it where nothing else of it stands.
     encounter::prune_sightings(game_data);
@@ -991,13 +1000,6 @@ fn apply_fleet_removal_remap(
     }
 
     remap_info
-}
-
-fn remove_selected_fleets(
-    game_data: &mut CoreGameData,
-    to_remove: &[bool],
-) -> std::collections::HashMap<u16, u8> {
-    apply_fleet_removal_remap(game_data, to_remove).destroyed_join_host_fleet_numbers
 }
 
 fn cull_empty_fleets(game_data: &mut CoreGameData) -> std::collections::HashMap<u16, u8> {

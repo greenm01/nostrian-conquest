@@ -410,3 +410,63 @@ fn joiners_hold_when_their_host_dies_bombarding() {
         }
     )));
 }
+
+#[test]
+fn joiners_hold_when_their_host_defects_in_civil_disorder() {
+    let mut game_data = baseline();
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
+        }
+    }
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
+        }
+    }
+    game_data.players[0].mode = nc_data::PlayerMode::CivilDisorder;
+    game_data.players[0].planet_count = 1;
+    // The fleet with the highest record defects; another waits to join it.
+    let host = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| fleet.owner.0 == 1 && has_any_force(fleet))
+        .max_by_key(|fleet| fleet.record.0)
+        .expect("empire 1 host")
+        .fleet_number
+        .0;
+    let joiner_idx = game_data
+        .fleets
+        .iter()
+        .position(|fleet| {
+            fleet.owner.0 == 1 && fleet.fleet_number.0 != host && has_any_force(fleet)
+        })
+        .expect("empire 1 joiner");
+    let joiner_number = game_data.fleets[joiner_idx].fleet_number.0;
+    let joiner = &mut game_data.fleets[joiner_idx];
+    joiner.order = Order::JoinAnotherFleet;
+    joiner.mission_target = host;
+    // Far off and slow, so it cannot reach its host this year.
+    joiner.sector = Coords::from_array([9, 9]);
+    joiner.target = Coords::from_array(HOME);
+    joiner.speed = 1;
+
+    let events = run_maintenance_turn(&mut game_data).expect("defection turn should succeed");
+
+    assert_eq!(events.fleet_defection_events.len(), 1);
+    assert_eq!(
+        u16::from(events.fleet_defection_events[0].fleet_number),
+        host
+    );
+    let joiner = fleet_by_number(&game_data, 1, joiner_number);
+    assert_eq!(joiner.order, Order::HoldPosition, "{joiner:?}");
+    assert!(
+        events
+            .join_host_events
+            .iter()
+            .any(|event| matches!(event, JoinMissionHostEvent::HostDestroyed { .. })),
+        "{:?}",
+        events.join_host_events
+    );
+}
