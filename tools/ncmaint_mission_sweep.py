@@ -20,7 +20,7 @@ import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from ncmaint_oracle import DEFAULT_BASELINE, ROOT, run_ecmaint
@@ -30,6 +30,7 @@ ORIGINAL = ROOT / "original" / "v1.5"
 DEFAULT_WORK_ROOT = Path("/tmp/ncmaint-mission-sweep")
 FLEET_RECORD = 54
 PLANET_RECORD = 97
+BASE_RECORD = 35
 
 HOME = (16, 13)  # empire 1's home world
 SECTOR = (13, 13)  # empty deep-space sector
@@ -54,6 +55,7 @@ class Mission:
 # Aux bytes as ECGAME writes them: 0x22 is 1 for a world target, 0x23 is the
 # guarded starbase id or the join host fleet id.
 MISSIONS = {
+    0: Mission("move", HOME, CRUISER, (1, 0)),  # Hold: the target is the fleet's start
     1: Mission("move", SECTOR, CRUISER, (0, 0)),
     2: Mission("move", HOME, CRUISER, (1, 0)),
     3: Mission("move", SECTOR, CRUISER, (0, 0)),
@@ -76,6 +78,17 @@ MISSIONS = {
 # the first year and its guards follow its depth (--deep-base).
 DEEP_BASE = Mission("move", WORLD, CRUISER, (1, 1), starbase=True)
 
+# Other targets for a mission (--variant): the same order aimed at empire 2's
+# world, at empire 1's home world, at the unowned world, or at deep space.
+TARGETS = {
+    "enemy": ("bombard", ENEMY),
+    "home": ("move", HOME),
+    "world": ("move", WORLD),
+    "sector": ("move", SECTOR),
+}
+# A starbase move (--base-move): BASES.DAT target and target depth.
+BASE_MOVES = {"world": (WORLD, 1), "sector": (SECTOR, 0)}
+
 
 @dataclass(frozen=True)
 class Case:
@@ -83,16 +96,23 @@ class Case:
     speed: int
     offset: str  # "d3" = 3 sectors diagonally, "s3" = 3 sectors in x
     years: int
-    deep_base: bool = False
+    variant: str = ""  # "deep" or a TARGETS key
+    base_move: str = ""  # a BASE_MOVES key
 
     @property
     def name(self) -> str:
-        suffix = "-deep" if self.deep_base else ""
+        suffix = "".join(f"-{s}" for s in (self.variant, self.base_move and "base" + self.base_move) if s)
         return f"m{self.mission:02d}-v{self.speed}-{self.offset}{suffix}"
 
     @property
     def spec(self) -> Mission:
-        return DEEP_BASE if self.deep_base else MISSIONS[self.mission]
+        if self.variant == "deep":
+            return DEEP_BASE
+        mission = MISSIONS[self.mission]
+        if self.variant:
+            scenario, target = TARGETS[self.variant]
+            mission = replace(mission, scenario=scenario, target=target)
+        return replace(mission, starbase=True) if self.base_move else mission
 
     def start(self) -> tuple[int, int]:
         tx, ty = self.spec.target
@@ -125,6 +145,19 @@ def patch_fleet(directory: Path, record: int, changes: dict[int, int]) -> None:
     for offset, value in changes.items():
         data[(record - 1) * FLEET_RECORD + offset] = value
     path.write_bytes(bytes(data))
+
+
+def patch_base(directory: Path, record: int, changes: dict[int, int]) -> None:
+    path = directory / "BASES.DAT"
+    data = bytearray(path.read_bytes())
+    for offset, value in changes.items():
+        data[(record - 1) * BASE_RECORD + offset] = value
+    path.write_bytes(bytes(data))
+
+
+def is_world(directory: Path, coords: tuple[int, int]) -> bool:
+    planets = (directory / "PLANETS.DAT").read_bytes()
+    return any(tuple(planets[i:i + 2]) == tuple(coords) for i in range(0, len(planets), PLANET_RECORD))
 
 
 def snapshot(directory: Path, year: int, target: tuple[int, int]) -> dict:
@@ -184,21 +217,28 @@ def build_classic(case: Case, directory: Path, humans: tuple[int, ...] = ()) -> 
         nc("player-name", directory, empire, f"probe{empire}", f"Probe Empire {empire}")
     nc("db-export", directory, directory)
     shutil.copy2(ORIGINAL / "ECMAINT.EXE", directory / "ECMAINT.EXE")
-    tx, ty = mission.target
+    tx, ty = case.start() if case.mission == 0 else mission.target
+    world = int(is_world(directory, (tx, ty))) if case.mission == 0 else mission.aux[0]
     changes = {
         0x0A: case.speed,
         0x1F: case.mission,
         0x20: tx,
         0x21: ty,
-        0x22: mission.aux[0],
+        0x22: world,
         0x23: mission.aux[1],
     }
+    if case.mission == 0 and not world:
+        # fleet-location keeps the home orbit's depth; a fleet holding in deep space is at depth 0.
+        changes.update(dict.fromkeys(range(0x19, 0x1F), 0))
     if mission.roe is not None:
         changes[0x25] = mission.roe
     if mission.scout:
         # One scout, no cruiser. Classic counts scouts at 0x32.
         changes.update({0x28: 0, 0x32: 1, 0x09: 6})
     patch_fleet(directory, 1, changes)
+    if case.base_move:
+        (bx, by), depth = BASE_MOVES[case.base_move]
+        patch_base(directory, 1, {0x1F: 1, 0x20: bx, 0x21: by, 0x22: depth})
 
 
 def build_rust(case: Case, classic: Path, directory: Path) -> None:
@@ -290,7 +330,7 @@ def parse_cases(args: argparse.Namespace) -> list[Case]:
     if args.deep_base and missions != [4]:
         raise SystemExit("--deep-base applies to mission 4 only")
     return [
-        Case(m, s, o, args.years, args.deep_base)
+        Case(m, s, o, args.years, "deep" if args.deep_base else "")
         for m in missions
         for s in speeds
         for o in offsets

@@ -18,8 +18,11 @@ place and week but its numbers are masked. Run under DOSBox-X:
     nix shell nixpkgs#dosbox-x -c python3 tools/ncmaint_stardate_audit.py \
         [--missions 1,2] [--speeds 1,3] [--offsets d3,d6] [--years 6]
 
-`--rendezvous` (mission 14) sends a second fleet to the rendezvous, so the
-two merge.
+`--rendezvous [N]` (mission 14) sends fleets 2..N to the rendezvous too, so
+they merge. `--variant` aims the order at another target (see
+`ncmaint_mission_sweep.TARGETS`), `--base-move` also orders the starbase to
+move, and `--retarget MISSION:X,Y[:YEAR]` changes fleet 1's order after a
+year, as a player would. Cases faster than the fleet's ships are skipped.
 """
 
 from __future__ import annotations
@@ -33,7 +36,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from ncmaint_mission_sweep import (
-    MISSIONS, NC_CLI_BIN, SECTOR, Case, build_classic, build_rust, nc, patch_fleet, snapshot,
+    BASE_MOVES, BASE_RECORD, MISSIONS, NC_CLI_BIN, SECTOR, TARGETS, Case,
+    build_classic, build_rust, is_world, nc, patch_fleet, snapshot, turbo_real,
 )
 from ncmaint_oracle import run_ecmaint
 
@@ -47,7 +51,7 @@ REPORT = re.compile(
     re.S,
 )
 COMBAT = re.compile(r"battle|combat|bombard|attack|destroyed|casualt|invasion|invad|blitz", re.I)
-MOTION = ("pos", "x_frac", "y_frac", "tuple_c", "speed", "order", "target", "aux", "roe")
+MOTION = ("pos", "x_frac", "y_frac", "tuple_c", "speed", "order", "target", "aux", "roe", "base")
 
 
 def header_viewers(directory: Path, data: bytes) -> dict[int, int]:
@@ -101,8 +105,19 @@ def reports(directory: Path, year: int) -> list[str]:
     return out
 
 
+def base_motion(directory: Path) -> list | None:
+    """The first starbase's sector, fractions, depth, moving flag and target."""
+    path = directory / "BASES.DAT"
+    data = path.read_bytes() if path.exists() else b""
+    if len(data) < BASE_RECORD:
+        return None
+    reals = [round(turbo_real(data[i:i + 6]), 6) for i in (0x0D, 0x13, 0x19)]
+    return [list(data[0x0B:0x0D]), *reals, data[0x1F], list(data[0x20:0x23])]
+
+
 def state(directory: Path, year: int, case: Case) -> dict:
     row = snapshot(directory, 0, case.spec.target)
+    row["base"] = base_motion(directory)
     return {"motion": {k: row.get(k) for k in MOTION}, "reports": reports(directory, year)}
 
 
@@ -111,11 +126,15 @@ def game_year(directory: Path) -> int:
 
 
 def run_case(case: Case, work_root: Path, humans: tuple[int, ...] = (1,),
-             prepare: Callable[[Path], None] | None = None) -> dict:
+             prepare: Callable[[Path], None] | None = None,
+             retarget: tuple[int, tuple[int, int], int] | None = None) -> dict:
     """`prepare` may patch the classic directory before Rust copies it."""
     root = work_root / case.name
     classic, rust, export = root / "classic", root / "rust", root / "rust-export"
     build_classic(case, classic, humans)
+    max_speed = (classic / "FLEETS.DAT").read_bytes()[0x09]
+    if case.speed > max_speed:
+        return {"case": case.name, "skipped": f"speed {case.speed} > max speed {max_speed}"}
     if prepare:
         prepare(classic)
     build_rust(case, classic, rust)
@@ -129,20 +148,42 @@ def run_case(case: Case, work_root: Path, humans: tuple[int, ...] = (1,),
         nc("db-export", rust, export)
         stamp = first + year - 1
         years.append({"classic": state(classic, stamp, case), "rust": state(export, stamp, case)})
+        if retarget and retarget[2] == year:
+            change_order(case, classic, rust, export, *retarget[:2])
     return {"case": case.name, "years": years}
 
 
-def rendezvous_partner(directory: Path) -> None:
-    """Send fleet 2 from home to the Rendezvous sector at speed 2, so it
-    meets fleet 1 there in a different week."""
-    patch_fleet(directory, 2, {0x0A: 2, 0x1F: 14, 0x20: SECTOR[0], 0x21: SECTOR[1],
-                               0x22: 0, 0x23: 0})
+def change_order(case: Case, classic: Path, rust: Path, export: Path,
+                 order: int, target: tuple[int, int]) -> None:
+    """Give fleet 1 a new order between years: classic gets the bytes ECGAME
+    writes, Rust gets `fleet-order`. Fails if `fleet-order` changes any motion
+    field the classic patch leaves alone."""
+    before = {"c": state(classic, 0, case)["motion"], "r": state(export, 0, case)["motion"]}
+    world = int(is_world(classic, target))
+    patch_fleet(classic, 1, {0x0A: case.speed, 0x1F: order, 0x20: target[0], 0x21: target[1], 0x22: world, 0x23: 0})
+    nc("fleet-order", rust, 1, case.speed, order, *target, world, 0)
+    nc("db-export", rust, export)
+    after = {"c": state(classic, 0, case)["motion"], "r": state(export, 0, case)["motion"]}
+    changed = {side: {k for k in MOTION if before[side][k] != after[side][k]} for side in "cr"}
+    wrong = changed["r"] - changed["c"] | {k for k in changed["c"] if after["c"][k] != after["r"][k]}
+    if wrong:
+        raise SystemExit(f"{case.name}: fleet-order and the classic patch differ in {sorted(wrong)}")
+
+
+def rendezvous_partners(count: int) -> Callable[[Path], None]:
+    """Send fleets 2..count from home to the Rendezvous sector at speeds 2, 1,
+    2, ..., so they meet fleet 1 there in different weeks."""
+    def prepare(directory: Path) -> None:
+        for fleet in range(2, count + 1):
+            patch_fleet(directory, fleet, {0x0A: 2 - fleet % 2, 0x1F: 14, 0x20: SECTOR[0],
+                                           0x21: SECTOR[1], 0x22: 0, 0x23: 0})
+    return prepare
 
 
 def diff(result: dict) -> list[str]:
     """Each mismatched year: the differing motion fields, then both report lists."""
     lines = []
-    for year, row in enumerate(result["years"], 1):
+    for year, row in enumerate(result.get("years", []), 1):
         c, r = row["classic"], row["rust"]
         fields = [k for k in MOTION if c["motion"][k] != r["motion"][k]]
         if fields:
@@ -164,21 +205,37 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--work-root", type=Path, default=DEFAULT_WORK_ROOT)
     parser.add_argument("--json", type=Path, help="write the raw results here")
-    parser.add_argument("--rendezvous", action="store_true",
-                        help="mission 14: fleet 2 also heads for the rendezvous")
+    parser.add_argument("--rendezvous", type=int, nargs="?", const=2, default=0, metavar="N",
+                        help="mission 14: fleets 2..N also head for the rendezvous (N=2)")
+    parser.add_argument("--variant", default="", choices=["", *TARGETS],
+                        help="aim the order at another target")
+    parser.add_argument("--base-move", default="", choices=["", *BASE_MOVES],
+                        help="also order the starbase (created at the target) to move")
+    parser.add_argument("--retarget", metavar="MISSION:X,Y[:YEAR]",
+                        help="change fleet 1's order after YEAR (default 1)")
     args = parser.parse_args()
     if args.rendezvous and args.missions != "14":
         raise SystemExit("--rendezvous applies to mission 14 only")
-    prepare = rendezvous_partner if args.rendezvous else None
+    prepare = rendezvous_partners(args.rendezvous) if args.rendezvous else None
+    retarget = None
+    if args.retarget:
+        order, coords, *after = args.retarget.split(":")
+        x, y = map(int, coords.split(","))
+        retarget = (int(order), (x, y), int(after[0]) if after else 1)
     if not NC_CLI_BIN.exists():
         print(f"build nc-cli first: {NC_CLI_BIN}", file=sys.stderr)
         return 1
-    cases = [Case(int(m), int(s), o, args.years) for m in args.missions.split(",")
+    cases = [Case(int(m), int(s), o, args.years, args.variant, args.base_move)
+             for m in args.missions.split(",")
              for s in args.speeds.split(",") for o in args.offsets.split(",")]
     with ThreadPoolExecutor(args.jobs) as pool:
-        results = list(pool.map(lambda c: run_case(c, args.work_root, prepare=prepare), cases))
+        results = list(pool.map(
+            lambda c: run_case(c, args.work_root, prepare=prepare, retarget=retarget), cases))
     mismatched = 0
     for result in results:
+        if "skipped" in result:
+            print(f"{result['case']}: skipped, {result['skipped']}")
+            continue
         lines = diff(result)
         mismatched += bool(lines)
         print(f"{result['case']}: {'MISMATCH' if lines else 'match'}")

@@ -21,6 +21,21 @@ once combat outcomes diverge. Run it on a machine with nix:
 nix shell nixpkgs#dosbox-x -c python3 tools/ncmaint_stardate_audit.py --years 10 --jobs 12
 ```
 
+On macOS, `brew install dosbox-x` (the formula; the cask is disabled) and
+run the script directly. Flags beyond the case matrix:
+
+- `--variant enemy|home|world|sector` aims the order at empire 2's world,
+  empire 1's home world, the unowned world or deep space;
+- `--base-move world|sector` creates a starbase at the target and orders it
+  to move;
+- `--retarget MISSION:X,Y[:YEAR]` gives fleet 1 a new order after a year,
+  as a player would; the case fails if `fleet-order` and the classic patch
+  change different motion fields;
+- `--rendezvous N` sends fleets 2..N to the rendezvous too.
+
+Cases faster than the fleet's ships are skipped. Hold (order 0) targets the
+fleet's start; offset `d0` starts it on its target.
+
 ## Results (2026-10-30)
 
 Fleet motion matches in every case up to combat, and Bombard, Invade and
@@ -78,8 +93,52 @@ report, classic's "at the our rendezvous point" typo, NC's "absorbing fleet
 report when the first rendezvous fleet arrives in the same year the second
 merges. Bombard, Invade and Blitz at speed 3 differ only in combat dice.
 
-Not covered: colonizing an occupied world, rendezvous merges of several
-fleets, and the NC routing extensions in `ec-movement-spec.md`.
+## Coverage audit (2026-10-31)
+
+Run on the Mac mini with Homebrew DOSBox-X.
+
+Matching classic:
+
+- Hold in orbit, in deep space, and with a speed left on the order.
+- Starbase moves to deep space, alone and with a guard, week by week.
+  A base ordered to a world its empire does not own refuses in week 1
+  ("Since we lost control of planet…"), in both engines.
+- Order changes mid-route: Move to a new sector, to Patrol, to Seek Home,
+  and a Move after a View.
+- Guard/Blockade at an enemy world.
+- Three fleets at a rendezvous: same weeks and hosts; wording as above.
+- The full matrix (orders 0–15, speeds 1–6, offsets d3, d6, s3 and s6; 384
+  cases, 64 skipped as too fast) adds no new kind of difference. Bombard,
+  Invade and Blitz differ only once combat dice diverge. Classic's lost-fleet
+  report says "shortly after it began its bombardment"; NC's says "shortly
+  after it was attacked". Join and Rendezvous differ in wording only.
+
+Dice, not a bug: a guard escorting a base whose move is refused ends the
+year at depth 51/52 or 1.0 depending on the unit order. Classic splits
+about evenly over six runs at each speed.
+
+NC is wrong. Classic checks the target world's owner during the year;
+NC does not:
+
+| order and target | classic | NC |
+|---|---|---|
+| View our own world | Week 1: "Since we now own the world in System(x,y), we are aborting our viewing mission…", then a Move to that sector. | Keeps viewing. |
+| Scout System our own world | On arrival: "Since we now control System(x,y), we are aborting our scouting mission…", then Hold. | Scouts every year. |
+| Colonize our own world | Week 1: "Since we now own the world in System(x,y), we are holding our current position…", then Hold. | Flies on. |
+| Colonize an occupied world | Reports in the week it enters the system, then turns to a Move and climbs out to the sector. | Reports on reaching orbit, and stays there. |
+| Bombard, Invade, Blitz our own world | Flies on as Guard/Blockade, or as a Move if unarmed (`ec-battle-spec.md` §2.1). | Cancels to Hold at the start of the year. |
+
+Information gap: classic's View report names an owned world (`planet
+"Name"`); NC's says "the world found within". NC's "Estimated production"
+for classic's "Estimated present production" is deliberate (7bd10af9).
+
+Probe artifact: `fleet-location` keeps orbit depth, so a start in an empty
+sector sits at depth 1 and reports "System(x,y)". Both engines see the same
+start, so the comparison holds, but the deep-space Hold cases start at depth
+0.
+
+Not covered: the NC routing extensions in `ec-movement-spec.md`, which
+classic does not have.
 
 ## Encounters (2026-10-30)
 
