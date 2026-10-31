@@ -304,7 +304,13 @@ pub fn push_mission_entries(
             .location_coords
             .unwrap_or_else(|| fleet.sector.to_array());
         let [x, y] = coords;
-        let mission_location = mission_location_phrase(event.kind, coords);
+        // A guard follows its base's depth; with the base in deep space,
+        // classic reports from the sector.
+        let mission_location = if event.kind == Mission::GuardStarbase && fleet.depth.is_zero() {
+            format!("Sector({x},{y})")
+        } else {
+            mission_location_phrase(event.kind, coords)
+        };
         let source_clause =
             owned_fleet_source_clause_from_idx(game_data, event.fleet_idx, &mission_location);
         let merged_roe_abort_disposition = matching_roe_abort_disposition_index(events, event)
