@@ -162,14 +162,20 @@ fn contacts_reported_to(events: &MaintenanceEvents, viewer: u8, year: u16) -> Ve
         .iter()
         .filter(|event| event.viewer_empire == viewer)
     {
-        contacts.push(sized(
-            event.coords,
-            event.target_empire,
-            ContactSource::Scout,
-            event.small_vessels,
-            event.medium_vessels,
-            event.large_vessels,
-        ));
+        // A sighting that was not identified tells the player only where an
+        // alien fleet is (empire 0 is unknown), and the seat no more.
+        contacts.push(if event.identified {
+            sized(
+                event.coords,
+                event.target_empire,
+                ContactSource::Scout,
+                event.small_vessels,
+                event.medium_vessels,
+                event.large_vessels,
+            )
+        } else {
+            sized(event.coords, 0, ContactSource::Scout, 0, 0, 0)
+        });
     }
     for event in &events.encounter_disposition_events {
         match *event {

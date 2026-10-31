@@ -206,3 +206,44 @@ fn a_new_seat_knows_its_own_worlds_and_no_others() {
         }
     }
 }
+
+/// A sighting the seat's fleet could not identify tells the seat what it
+/// tells a player: an alien fleet is there, not whose it is or its size.
+#[test]
+fn an_unidentified_sighting_names_no_owner_or_size() {
+    let game_data = nc_engine::GameStateBuilder::new()
+        .with_player_count(PLAYERS)
+        .with_year(3001)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let sighting = |identified| nc_data::ScoutContactEvent {
+        viewer_empire: 1,
+        source: nc_data::ContactReportSource::Fleet(1),
+        reporting_fleet_number: Some(1),
+        reporting_initial: nc_data::ShipLosses::default(),
+        reporting_loaded_armies_initial: 0,
+        coords: [5, 6],
+        target_empire: 2,
+        target_fleet_number: Some(3),
+        small_vessels: 0,
+        medium_vessels: 4,
+        large_vessels: 1,
+        target_speed: 2,
+        in_system: false,
+        identified,
+        decision: None,
+        stardate_week: Some(10),
+    };
+    for (identified, empire, medium) in [(false, 0, 0), (true, 2, 4)] {
+        let mut memory = nc_ai::SeatMemory::new(&game_data, 1);
+        let mut events = MaintenanceEvents::default();
+        events.scout_contact_events.push(sighting(identified));
+        memory.learn_year(&game_data, &events);
+        let contact = memory.contacts.last().expect("the sighting is remembered");
+        assert_eq!(contact.coords, [5, 6]);
+        assert_eq!(
+            (contact.empire, contact.medium, contact.large > 0),
+            (empire, medium, identified)
+        );
+    }
+}

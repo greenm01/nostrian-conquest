@@ -84,6 +84,10 @@ pub(crate) fn push_fleet_contact(
         decision: None,
         stardate_week: Some(tick),
     });
+    // Only an identified fleet says whose world this is.
+    if !identified {
+        return;
+    }
     push_civil_disorder_contact_intel(
         planet_intel_events,
         game_data,
