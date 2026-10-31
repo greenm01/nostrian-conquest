@@ -1730,6 +1730,7 @@ impl App {
                     budget: 0,
                     treasury_left: 0,
                     points_left: 0,
+                    starbase_points_left: 0,
                     building_count: 0,
                     docked_count: 0,
                 });
@@ -1742,6 +1743,7 @@ impl App {
             budget: view_stats.budget,
             treasury_left: view_stats.treasury_left,
             points_left: view_stats.points_left,
+            starbase_points_left: view_stats.starbase_points_left,
             building_count: view_stats.building_count,
             docked_count: view_stats.docked_count,
         })

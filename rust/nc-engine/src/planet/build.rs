@@ -14,6 +14,8 @@ pub struct PlanetBuildViewStats {
     pub budget: u32,
     pub treasury_left: u32,
     pub points_left: u32,
+    /// Points a starbase order may still use, with the first-base allowance.
+    pub starbase_points_left: u32,
     pub building_count: u32,
     pub docked_count: u32,
 }
@@ -124,6 +126,7 @@ pub fn planet_build_view(
             .stored_production_points
             .saturating_sub(committed_points),
         points_left: row_spend_left(planet, row).points_for(ProductionItemKind::Army),
+        starbase_points_left: row_spend_left(planet, row).points_for(ProductionItemKind::Starbase),
         building_count: planet_building_unit_count(planet),
         docked_count: planet_docked_unit_count(planet),
     })
@@ -219,6 +222,7 @@ pub fn planet_build_list_entries(planet: &Planet) -> Vec<PlanetBuildListEntry> {
 
 pub fn planet_build_specify_entries(
     points_left: u32,
+    starbase_points_left: u32,
     orders: &[PlanetBuildOrderLine],
 ) -> Vec<PlanetBuildSpecifyEntry> {
     BUILD_UNITS
@@ -240,7 +244,14 @@ pub fn planet_build_specify_entries(
                 label: unit.label,
                 cost: unit.cost,
                 queued_qty,
-                selectable: max_quantity(points_left, unit.cost) > 0,
+                selectable: max_quantity(
+                    if unit.kind == ProductionItemKind::Starbase {
+                        starbase_points_left
+                    } else {
+                        points_left
+                    },
+                    unit.cost,
+                ) > 0,
             }
         })
         .collect()

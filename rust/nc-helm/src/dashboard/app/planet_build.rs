@@ -14,6 +14,7 @@ use super::state::{ActiveOverlay, ActivePopup, DashApp, HelpContext, PlanetOverl
 pub(crate) struct PlanetBuildOverlayView {
     pub row: EmpirePlanetEconomyRow,
     pub points_left: u32,
+    pub starbase_points_left: u32,
 }
 
 impl DashApp {
@@ -28,6 +29,7 @@ impl DashApp {
         Some(PlanetBuildOverlayView {
             row,
             points_left: view.points_left,
+            starbase_points_left: view.starbase_points_left,
         })
     }
 
@@ -45,7 +47,11 @@ impl DashApp {
         let Some(view) = self.planet_build_view() else {
             return Vec::new();
         };
-        planet_build_specify_entries(view.points_left, &planet_build_orders_for_dash(self))
+        planet_build_specify_entries(
+            view.points_left,
+            view.starbase_points_left,
+            &planet_build_orders_for_dash(self),
+        )
     }
 
     pub(crate) fn open_planet_build_specify(&mut self) {

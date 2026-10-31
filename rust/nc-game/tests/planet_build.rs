@@ -31,6 +31,7 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
         budget: 50,
         treasury_left: 40,
         points_left: 40,
+        starbase_points_left: 40,
         building_count: 5,
         docked_count: 3,
     };
@@ -82,6 +83,7 @@ fn abort_confirmation_says_cancelling_releases_only_unpaid_points() {
         budget: 50,
         treasury_left: 50,
         points_left: 5,
+        starbase_points_left: 5,
         building_count: 1,
         docked_count: 0,
     };
@@ -128,6 +130,7 @@ fn build_list_renders_queue_columns_without_dock() {
         budget: 50,
         treasury_left: 50,
         points_left: 40,
+        starbase_points_left: 40,
         building_count: 2,
         docked_count: 0,
     };
@@ -205,6 +208,7 @@ fn build_list_confirmation_renders_delete_question_below_command_row() {
         budget: 50,
         treasury_left: 50,
         points_left: 40,
+        starbase_points_left: 40,
         building_count: 2,
         docked_count: 0,
     };
@@ -274,6 +278,7 @@ fn empty_build_list_keeps_table_frame_and_shows_notice_below_command_row() {
         budget: 50,
         treasury_left: 50,
         points_left: 50,
+        starbase_points_left: 50,
         building_count: 0,
         docked_count: 0,
     };
@@ -355,6 +360,7 @@ fn build_list_delete_prompts_keep_table_width_stable() {
         budget: 50,
         treasury_left: 50,
         points_left: 40,
+        starbase_points_left: 40,
         building_count: 2,
         docked_count: 0,
     };
@@ -476,6 +482,7 @@ fn build_specify_table_is_centered_and_footer_tracks_table_inset() {
         budget: 50,
         treasury_left: 50,
         points_left: 50,
+        starbase_points_left: 50,
         building_count: 0,
         docked_count: 0,
     };
@@ -553,6 +560,7 @@ fn build_specify_title_shows_current_points_left_after_partial_commit() {
         budget: 50,
         treasury_left: 50,
         points_left: 30,
+        starbase_points_left: 30,
         building_count: 0,
         docked_count: 0,
     };
@@ -587,6 +595,7 @@ fn build_quantity_prompt_keeps_points_left_visible_in_title_row() {
         budget: 50,
         treasury_left: 50,
         points_left: 30,
+        starbase_points_left: 30,
         building_count: 0,
         docked_count: 0,
     };
@@ -628,6 +637,7 @@ fn build_specify_qty_column_fits_large_queued_counts_in_the_same_table() {
         budget: 50,
         treasury_left: 50,
         points_left: 50,
+        starbase_points_left: 50,
         building_count: 0,
         docked_count: 0,
     };

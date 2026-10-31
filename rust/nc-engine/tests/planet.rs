@@ -72,6 +72,7 @@ fn planet_build_view_budget_capped_by_treasury_not_revenue() {
 fn build_specify_entries_include_all_build_choices_and_blank_unaffordable_rows() {
     let entries = planet_build_specify_entries(
         10,
+        10,
         &[nc_engine::PlanetBuildOrderLine {
             kind: ProductionItemKind::GroundBattery,
             points_remaining: 20,
@@ -156,4 +157,36 @@ fn default_transport_fleet_prefers_highest_eligible_capacity() {
         default_fleet_transport_fleet_number(&game_data, 1, ArmyTransportMode::Load, &rows);
 
     assert_eq!(fleet_number, Some(2));
+}
+
+#[test]
+fn a_first_starbase_past_the_build_capacity_is_offered() {
+    let game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .build_initialized_baseline()
+        .expect("baseline");
+    // Barsville in play: no base, capacity 46, treasury 86.
+    let row = {
+        let mut row = game_data.empire_planet_economy_rows(1).remove(0);
+        row.stored_production_points = 86;
+        row.build_capacity = 46;
+        row.has_friendly_starbase = false;
+        row
+    };
+    assert_eq!(
+        game_data.planets[row.planet_record_index_1_based - 1]
+            .stardock
+            .starbases,
+        0
+    );
+
+    let view = planet_build_view(&game_data, &row).expect("view");
+    let entries = planet_build_specify_entries(view.points_left, view.starbase_points_left, &[]);
+
+    assert_eq!(view.points_left, 46);
+    let starbase = entries
+        .iter()
+        .find(|entry| entry.kind == ProductionItemKind::Starbase)
+        .expect("starbase row");
+    assert!(starbase.selectable);
 }

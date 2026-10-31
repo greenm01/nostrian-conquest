@@ -2739,6 +2739,7 @@ fn planet_build_specify_uses_bottom_command_line_default_prompt() {
         budget: 40,
         treasury_left: 40,
         points_left: 30,
+        starbase_points_left: 30,
         building_count: 1,
         docked_count: 0,
     };
@@ -2787,6 +2788,7 @@ fn planet_build_quantity_uses_bottom_command_line_default_prompt() {
         budget: 40,
         treasury_left: 40,
         points_left: 30,
+        starbase_points_left: 30,
         building_count: 1,
         docked_count: 0,
     };
@@ -2842,6 +2844,7 @@ fn planet_build_specify_renders_success_as_notice_not_error() {
         budget: 40,
         treasury_left: 40,
         points_left: 30,
+        starbase_points_left: 30,
         building_count: 1,
         docked_count: 0,
     };

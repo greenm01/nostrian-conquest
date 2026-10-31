@@ -626,6 +626,7 @@ fn build_menu_inline_abort_uses_standard_confirm_layout() {
         budget: 50,
         treasury_left: 50,
         points_left: 0,
+        starbase_points_left: 0,
         building_count: 2,
         docked_count: 3,
     };

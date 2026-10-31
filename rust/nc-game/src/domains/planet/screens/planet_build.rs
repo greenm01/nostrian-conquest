@@ -95,6 +95,7 @@ pub struct PlanetBuildMenuView {
     pub budget: u32,
     pub treasury_left: u32,
     pub points_left: u32,
+    pub starbase_points_left: u32,
     pub building_count: u32,
     pub docked_count: u32,
 }
@@ -428,7 +429,11 @@ impl PlanetBuildScreen {
                 points_remaining: order.points_remaining,
             })
             .collect::<Vec<_>>();
-        let entries = planet_build_specify_entries(view.points_left, &shared_orders);
+        let entries = planet_build_specify_entries(
+            view.points_left,
+            view.starbase_points_left,
+            &shared_orders,
+        );
         let (table_metrics, table_col) =
             draw_specify_table(&mut buffer, view.treasury_left, view.points_left, &entries);
         let max_unit_num = planet_build_max_selectable_unit_number(&entries);
@@ -465,7 +470,11 @@ impl PlanetBuildScreen {
                 points_remaining: order.points_remaining,
             })
             .collect::<Vec<_>>();
-        let entries = planet_build_specify_entries(view.points_left, &shared_orders);
+        let entries = planet_build_specify_entries(
+            view.points_left,
+            view.starbase_points_left,
+            &shared_orders,
+        );
         let (table_metrics, table_col) =
             draw_specify_table(&mut buffer, view.treasury_left, view.points_left, &entries);
 

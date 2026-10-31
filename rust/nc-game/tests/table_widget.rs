@@ -1538,6 +1538,7 @@ fn planet_build_specify_screen_uses_split_table() {
         budget: 50,
         treasury_left: 50,
         points_left: 40,
+        starbase_points_left: 40,
         building_count: 2,
         docked_count: 3,
     };
