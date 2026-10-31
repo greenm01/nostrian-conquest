@@ -43,8 +43,9 @@ use std::collections::BTreeMap;
 
 use nc_data::{
     CoreGameData, DiplomaticRelation, Fleet, FleetDetachSelection, FleetTurnAction, FleetTurnBlock,
-    Order, PlanetTurnAction, PlanetTurnBlock, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective,
-    TurnSubmission, has_combat_ships, is_support_only, starship_count,
+    Order, PlanetTurnAction, PlanetTurnBlock, ProductionItemKind, STARDOCK_SLOT_COUNT,
+    TurnDiplomacyDirective, TurnSubmission, has_combat_ships, is_support_only, stardock_slot_kind,
+    starship_count,
 };
 use nc_engine::{BUILD_UNITS, fleet_record_supports_mission_code, production_item_kind_code};
 
@@ -227,7 +228,8 @@ pub struct DecodedTurn {
 }
 
 /// A submission that commissions every unit in `empire`'s stardocks, or
-/// `None` when no stardock holds one.
+/// `None` when no stardock holds one. Each world's scouts commission as a
+/// fleet of their own, so none rides with the warships built beside them.
 pub fn commission_submission(game_data: &CoreGameData, empire: u8) -> Option<TurnSubmission> {
     let owned: Vec<usize> = owned_records(
         game_data.planets.iter().map(|planet| planet.owner.0),
@@ -239,15 +241,33 @@ pub fn commission_submission(game_data: &CoreGameData, empire: u8) -> Option<Tur
         (0..STARDOCK_SLOT_COUNT).any(|slot| dock[slot] > 0)
     });
     let first = *owned.first()?;
+    let mut planets: Vec<PlanetTurnBlock> = owned
+        .iter()
+        .filter_map(|&record| {
+            let planet = &game_data.planets[record - 1];
+            let scouts: Vec<PlanetTurnAction> = (0..STARDOCK_SLOT_COUNT)
+                .filter(|&slot| {
+                    planet.stardock[slot] > 0
+                        && stardock_slot_kind(planet, slot) == ProductionItemKind::Scout
+                })
+                .map(|slot_0_based| PlanetTurnAction::Commission { slot_0_based })
+                .collect();
+            (!scouts.is_empty()).then_some(PlanetTurnBlock {
+                planet_record_index_1_based: record,
+                actions: scouts,
+            })
+        })
+        .collect();
+    planets.push(PlanetTurnBlock {
+        planet_record_index_1_based: first,
+        actions: vec![PlanetTurnAction::AutoCommission],
+    });
     waiting.then(|| TurnSubmission {
         player_record_index_1_based: usize::from(empire),
         year: game_data.conquest.game_year,
         tax_rate: None,
         diplomacy: Vec::new(),
-        planets: vec![PlanetTurnBlock {
-            planet_record_index_1_based: first,
-            actions: vec![PlanetTurnAction::AutoCommission],
-        }],
+        planets,
         fleets: Vec::new(),
         messages: Vec::new(),
     })

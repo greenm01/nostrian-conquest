@@ -6,7 +6,8 @@ use common::seated_game;
 use nc_ai::{
     Detach, Weights, commission_submission, decode_action, detach_choice, plan_turn, seat_masks,
 };
-use nc_data::has_combat_ships;
+use nc_data::{ProductionItemKind, has_combat_ships, stardock_slot_for_kind};
+use nc_engine::production_item_kind_code;
 
 const PLAYERS: u8 = 4;
 
@@ -47,4 +48,41 @@ fn scouts_built_together_split_up() {
         }
     }
     assert!(splits > 0, "some scouts should commission together");
+}
+
+/// Scouts never ride with a strike force: a world's scouts commission as a
+/// fleet of their own, even when warships come out of the same stardock.
+#[test]
+fn scouts_commission_apart_from_warships() {
+    let mut game = seated_game(PLAYERS, 0);
+    let game_data = &mut game.play.built.game_data;
+    let home = game_data
+        .planets
+        .iter()
+        .position(|planet| planet.owner.0 == 1)
+        .expect("empire 1 has a world");
+    for (kind, count) in [
+        (ProductionItemKind::Cruiser, 3),
+        (ProductionItemKind::Scout, 2),
+    ] {
+        let slot = stardock_slot_for_kind(production_item_kind_code(kind)).expect("a dock slot");
+        game_data.planets[home].stardock[slot] = count;
+    }
+    let before = game_data.fleets.len();
+
+    let commission = commission_submission(game_data, 1).expect("ships wait in dock");
+    game.submit_turn(&commission).expect("commissioning");
+
+    let fleets = &game.play.built.game_data.fleets[before..];
+    assert_eq!(fleets.len(), 2, "{fleets:?}");
+    assert!(
+        fleets
+            .iter()
+            .any(|fleet| fleet.ships.scouts == 2 && !has_combat_ships(fleet))
+    );
+    assert!(
+        fleets
+            .iter()
+            .any(|fleet| fleet.ships.cruisers == 3 && fleet.ships.scouts == 0)
+    );
 }
