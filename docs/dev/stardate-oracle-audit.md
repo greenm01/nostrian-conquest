@@ -144,7 +144,8 @@ Reports matched to classic at the owner's request (2026-10-31):
   they managed to destroy … Records show that the 1st Fleet was composed of
   …, with all hands presumed lost." Blitz reads "blitz attempt" and "owned
   by". Invade follows the spec ("invasion", §4); no classic run has shown
-  it yet. The fleet's make-up stays in NC's notation (CA1).
+  it yet. The fleet's make-up stays in NC's notation (CA1), by the
+  owner's choice (2026-10-31).
 
 Re-audit after the fix (mini, 2026-10-31): the 64 default cases give only
 the differences listed above, and Hold matches in all four. The `home`
