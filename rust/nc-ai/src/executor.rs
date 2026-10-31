@@ -15,7 +15,8 @@
 //!   their garrison;
 //! - sends ETAC fleets at ROE 0 to colonize the most valuable world not
 //!   known to be owned, one fleet per world;
-//! - sends scouts, and during the land grab lone destroyers as pickets, to
+//! - splits scouts that commissioned together in half each year, and sends
+//!   them, and during the land grab lone destroyers as pickets, to
 //!   the world it knows least about;
 //! - gathers warships and transports at home by Rendezvous, loads armies
 //!   there, and strikes the best known enemy world once the home force is
@@ -1552,10 +1553,16 @@ fn plan_fleets(
             }
 
             let scout = !has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0;
+            // Scouts that commissioned together split in half each year to search alone.
+            let half = detach_choice(Detach::HalfWarships);
+            let split = |choice: FleetChoice| FleetChoice {
+                detach: if scout && mask.detach[half] { half } else { 0 },
+                ..choice
+            };
             if weights.doctrine.watch && !grabbing && (scout || picket(fleet)) {
                 let watching = matches!(fleet.order, Order::ScoutSector | Order::PatrolSector);
                 if watching && watched.contains(&fleet.target.to_array()) {
-                    return keep;
+                    return split(keep);
                 }
                 if let Some((sector, rival)) = approach(game_data, memory, &watched) {
                     let look = if scout {
@@ -1565,10 +1572,10 @@ fn plan_fleets(
                     };
                     if let Some(choice) = order(look, rival) {
                         watched.push(sector);
-                        return FleetChoice {
+                        return split(FleetChoice {
                             station: Some(sector),
                             ..choice
-                        };
+                        });
                     }
                 }
             }
@@ -1576,7 +1583,7 @@ fn plan_fleets(
                 if matches!(fleet.order, Order::ScoutSolarSystem | Order::ViewWorld)
                     && fleet.sector != fleet.target
                 {
-                    return keep;
+                    return split(keep);
                 }
                 let year = game_data.conquest.game_year;
                 return best_world(game_data, memory, fleet, |idx, intel| {
@@ -1597,7 +1604,7 @@ fn plan_fleets(
                     scouted.push(idx);
                     Some(choice)
                 })
-                .unwrap_or(keep);
+                .map_or(split(keep), split);
             }
 
             // Warships and transports.
