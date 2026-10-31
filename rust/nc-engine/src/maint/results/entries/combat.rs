@@ -264,6 +264,14 @@ pub fn push_combat_entries(
 
     // ----- Fleet destroyed events -----
     for event in &events.fleet_destroyed_events {
+        // A guard lost beside its starbase is named in the base's notice.
+        if events
+            .starbase_destroyed_events
+            .iter()
+            .any(|base| lost_beside(base, event))
+        {
+            continue;
+        }
         let [x, y] = event.coords;
         let enemy = event
             .primary_enemy_empire
@@ -308,7 +316,29 @@ pub fn push_combat_entries(
     }
 
     // ----- Starbase destroyed events -----
-    for event in &events.starbase_destroyed_events {
+    for (position, event) in events.starbase_destroyed_events.iter().enumerate() {
+        // A guard that survived the battle reports the base's loss in its own
+        // battle or withdrawal report.
+        let reported_by_guard = events.fleet_battle_events.iter().any(|battle| {
+            battle.friendly_starbases_lost > 0
+                && (
+                    battle.reporting_empire,
+                    battle.coords,
+                    battle.stardate_week,
+                    battle.enemy_initial,
+                ) == (
+                    event.reporting_empire,
+                    event.coords,
+                    event.stardate_week,
+                    event.enemy_initial,
+                )
+                && battle.reporting_fleet_number.is_some_and(|fleet_number| {
+                    suppression_plan.fleet_survives(battle.reporting_empire, fleet_number)
+                })
+        });
+        if reported_by_guard {
+            continue;
+        }
         let [x, y] = event.coords;
         let enemy = event
             .primary_enemy_empire
@@ -319,9 +349,44 @@ pub fn push_combat_entries(
             .unwrap_or_else(|| "an alien fleet".to_string());
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
+        // The guards lost in the same battle, named once, with the battle's
+        // first lost base.
+        let first_base = events.starbase_destroyed_events[..position]
+            .iter()
+            .all(|earlier| !same_battle(earlier, event));
+        let guards: Vec<&nc_data::FleetDestroyedEvent> = events
+            .fleet_destroyed_events
+            .iter()
+            .filter(|fleet| first_base && lost_beside(event, fleet))
+            .collect();
+        let lost = std::iter::once(format!("Starbase {}", event.starbase_id))
+            .chain(
+                guards
+                    .iter()
+                    .map(|fleet| format!("the {}", fleet_label(fleet.fleet_number))),
+            )
+            .collect::<Vec<_>>();
+        let records: String = guards
+            .iter()
+            .map(|fleet| {
+                format!(
+                    " Records show the {} was composed of {}.",
+                    fleet_label(fleet.fleet_number),
+                    fleet_force_summary(
+                        fleet.friendly_initial,
+                        fleet.friendly_loaded_armies_initial
+                    ),
+                )
+            })
+            .collect();
+        let pronoun = if guards.is_empty() {
+            "it was"
+        } else {
+            "they were"
+        };
         let text = format!(
-            "{header} We lost all contact with Starbase {} shortly after it was attacked by {enemy} in System({x},{y}). According to a burnt flight recorder we recovered, the alien force initially contained {}. {}",
-            event.starbase_id,
+            "{header} We lost all contact with {} shortly after {pronoun} attacked by {enemy} in System({x},{y}).{records} According to a burnt flight recorder we recovered, the alien force initially contained {}. {}",
+            join_report_parts(&lost),
             fleet_force_summary(event.enemy_initial, event.enemy_loaded_armies_initial),
             flight_recorder_casualties(&ship_loss_summary(event.enemy_losses)),
         );
@@ -652,4 +717,43 @@ fn flight_recorder_casualties(losses: &str) -> String {
         }
         losses => format!("The flight recorder recorded alien casualties of {losses}."),
     }
+}
+
+/// Whether starbase loss `a` and `b` come from the same battle.
+fn same_battle(a: &nc_data::StarbaseDestroyedEvent, b: &nc_data::StarbaseDestroyedEvent) -> bool {
+    (
+        a.reporting_empire,
+        a.coords,
+        a.stardate_week,
+        a.primary_enemy_fleet_number,
+        a.enemy_initial,
+    ) == (
+        b.reporting_empire,
+        b.coords,
+        b.stardate_week,
+        b.primary_enemy_fleet_number,
+        b.enemy_initial,
+    )
+}
+
+/// Whether `fleet` was lost defending beside `base`, in the same battle.
+fn lost_beside(
+    base: &nc_data::StarbaseDestroyedEvent,
+    fleet: &nc_data::FleetDestroyedEvent,
+) -> bool {
+    fleet.assault.is_none()
+        && !fleet.was_intercepting
+        && (
+            fleet.reporting_empire,
+            fleet.coords,
+            fleet.stardate_week,
+            fleet.primary_enemy_fleet_number,
+            fleet.enemy_initial,
+        ) == (
+            base.reporting_empire,
+            base.coords,
+            base.stardate_week,
+            base.primary_enemy_fleet_number,
+            base.enemy_initial,
+        )
 }

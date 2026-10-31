@@ -238,7 +238,11 @@ pub fn crippled_batteries_line(crippled: u8) -> Option<String> {
     (crippled > 0).then(|| {
         format!(
             "{crippled} ground {} left crippled.",
-            if crippled == 1 { "battery" } else { "batteries" }
+            if crippled == 1 {
+                "battery"
+            } else {
+                "batteries"
+            }
         )
     })
 }
@@ -478,4 +482,42 @@ pub fn fleet_force_summary_with_starbases(
 
 pub fn is_starbase_only_force(losses: ShipLosses, loaded_armies: u32, starbases: u32) -> bool {
     losses == ShipLosses::default() && loaded_armies == 0 && starbases > 0
+}
+
+/// The starbases `empire` lost in the battle at `coords` in week `week`
+/// against a force that began as `enemy_initial`: the bases its guard
+/// fought beside, which the guard's own report names.
+pub fn starbases_lost_beside(
+    events: &MaintenanceEvents,
+    empire: u8,
+    coords: [u8; 2],
+    week: Option<u8>,
+    enemy_initial: ShipLosses,
+) -> Vec<u16> {
+    events
+        .starbase_destroyed_events
+        .iter()
+        .filter(|base| {
+            (
+                base.reporting_empire,
+                base.coords,
+                base.stardate_week,
+                base.enemy_initial,
+            ) == (empire, coords, week, enemy_initial)
+        })
+        .map(|base| base.starbase_id)
+        .collect()
+}
+
+/// " Starbase 5 was destroyed." for the bases a guard's report names, or
+/// nothing.
+pub fn starbases_lost_sentence(ids: &[u16]) -> String {
+    match ids {
+        [] => String::new(),
+        [id] => format!(" Starbase {id} was destroyed."),
+        _ => format!(
+            " Starbases {} were destroyed.",
+            join_report_parts(&ids.iter().map(u16::to_string).collect::<Vec<_>>())
+        ),
+    }
 }

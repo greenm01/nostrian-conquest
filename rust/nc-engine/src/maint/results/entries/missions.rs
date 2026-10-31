@@ -121,12 +121,14 @@ fn roe_declined_report_body(
 
 fn merged_roe_abort_report_body(
     game_data: &CoreGameData,
+    events: &nc_data::MaintenanceEvents,
     event: &nc_data::MissionEvent,
     disposition: &nc_data::EncounterDispositionEvent,
 ) -> String {
     let prefix = mission_report_prefix(event.kind);
     match disposition {
         nc_data::EncounterDispositionEvent::Retreated {
+            coords,
             friendly_initial,
             friendly_loaded_armies_initial,
             target_empire,
@@ -136,9 +138,10 @@ fn merged_roe_abort_report_body(
             losses_sustained,
             enemy_losses_inflicted,
             reason,
+            stardate_week,
             ..
         } => format!(
-            "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we withdrew toward {} {}. {} {}",
+            "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we withdrew toward {} {}. {}{} {}",
             classic_enemy_reference(game_data, *target_fleet_number, *target_empire),
             fleet_force_summary(*friendly_initial, *friendly_loaded_armies_initial),
             fleet_force_summary(*enemy_initial, 0),
@@ -146,9 +149,18 @@ fn merged_roe_abort_report_body(
             nearest_owned_destination_text(game_data, event.owner_empire, *retreat_target_coords),
             roe_retreat_loss_clause(*losses_sustained),
             enemy_losses_sentence(*enemy_losses_inflicted),
+            starbases_lost_sentence(&starbases_lost_beside(
+                events,
+                event.owner_empire,
+                *coords,
+                *stardate_week,
+                *enemy_initial
+            )),
             roe_abort_outcome_text(event.kind),
         ),
         nc_data::EncounterDispositionEvent::PursuitFire {
+            coords,
+            stardate_week,
             friendly_initial,
             friendly_loaded_armies_initial,
             enemy_initial,
@@ -160,7 +172,7 @@ fn merged_roe_abort_report_body(
             reason,
             ..
         } => format!(
-            "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {} while withdrawing toward {} {}. {} {}",
+            "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {} while withdrawing toward {} {}. {}{} {}",
             fleet_force_summary(*friendly_initial, *friendly_loaded_armies_initial),
             withdrawal_reason_clause(*reason),
             classic_enemy_reference(game_data, *target_fleet_number, *target_empire),
@@ -168,6 +180,13 @@ fn merged_roe_abort_report_body(
             nearest_owned_destination_text(game_data, event.owner_empire, *retreat_target_coords),
             roe_retreat_loss_clause(*losses_sustained),
             enemy_losses_sentence(*enemy_losses_inflicted),
+            starbases_lost_sentence(&starbases_lost_beside(
+                events,
+                event.owner_empire,
+                *coords,
+                *stardate_week,
+                *enemy_initial
+            )),
             roe_abort_outcome_text(event.kind),
         ),
         _ => unreachable!("only ROE retreat dispositions should reach merged abort text"),
@@ -325,7 +344,12 @@ pub fn push_mission_entries(
             });
         let roe_body = if let Some((disposition_idx, disposition)) = merged_roe_abort_disposition {
             consumed_roe_disposition_indices.insert(disposition_idx);
-            Some(merged_roe_abort_report_body(game_data, event, disposition))
+            Some(merged_roe_abort_report_body(
+                game_data,
+                events,
+                event,
+                disposition,
+            ))
         } else if let Some(MissionAbortReason::RoeDeclined(force)) = &event.abort_reason {
             Some(roe_declined_report_body(game_data, fleet, event, force))
         } else {

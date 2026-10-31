@@ -3,11 +3,11 @@
 
 use nc_data::{
     Coords, CoreGameData, CrippledHulls, MaintenanceEvents, Mission, MissionAbortReason,
-    MissionOutcome, Order, Real48, has_any_force, set_fleet_at_rest,
+    MissionOutcome, Order, PlayerMode, Real48, has_any_force, set_fleet_at_rest,
 };
 use nc_engine::{
-    run_maintenance_turn, run_maintenance_turn_with_context,
-    run_maintenance_turn_with_context_and_seed,
+    FleetEtaEstimate, build_results_report_blocks, fleet_target_eta_estimate, run_maintenance_turn,
+    run_maintenance_turn_with_context, run_maintenance_turn_with_context_and_seed,
 };
 
 use super::support::{
@@ -705,6 +705,122 @@ fn a_beaten_attacker_retreats_repelled_by_the_orbital_defence() {
 }
 
 #[test]
+fn a_starbase_lost_with_its_guard_sends_one_loss_notice() {
+    // The guard fights beside its base, so both die in one battle: one
+    // notice names them together, not two that read as two engagements.
+    let mut game_data = assault_on_system(
+        Order::BombardWorld,
+        Ships {
+            bb: 40,
+            ..Ships::default()
+        },
+        0,
+        0,
+    );
+    place_starbase(&mut game_data, 2, SYSTEM);
+    holding_orbit(
+        &mut game_data,
+        4,
+        2,
+        Ships {
+            dd: 1,
+            ..Ships::default()
+        },
+    );
+    game_data.fleets[4].order = Order::GuardStarbase;
+    game_data.fleets[4].mission_target = 1;
+    game_data.players[1].mode = PlayerMode::Human;
+    game_data.players[1].autopilot = false;
+
+    let events = run_neutral(&mut game_data, 0);
+    assert!(game_data.bases.iter().all(|base| base.base_id.0 == 0));
+    assert_eq!(game_data.fleets[4].ships.destroyers, 0);
+
+    let notices: Vec<String> = build_results_report_blocks(&game_data, &events)
+        .into_iter()
+        .filter(|row| row.viewer_empire_id == 2 && row.decoded_text.contains("lost all contact"))
+        .map(|row| row.decoded_text)
+        .collect();
+    assert_eq!(notices.len(), 1, "{notices:#?}");
+    let notice = notices[0].split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        notice.contains("We lost all contact with Starbase 1 and the 1st Fleet"),
+        "{notice}"
+    );
+    assert!(
+        notice.contains("Records show the 1st Fleet was composed of DD1."),
+        "{notice}"
+    );
+}
+
+#[test]
+fn a_starbase_and_its_guard_get_one_battle_report_whatever_the_outcome() {
+    // The base and its guard fight one battle, so the owner gets one report
+    // of it: the guard's when it holds or withdraws (naming a lost base),
+    // or one loss notice for both. The base's sighting and the world's
+    // bombardment report are not battle reports.
+    for (label, bb, guard_dd, base_lost) in [
+        ("they win", 1, 30, false),
+        ("the guard withdraws", 3, 1, true),
+        ("both are lost", 40, 1, true),
+    ] {
+        let mut game_data = assault_on_system(
+            Order::BombardWorld,
+            Ships {
+                bb,
+                ..Ships::default()
+            },
+            0,
+            0,
+        );
+        game_data.fleets[0].rules_of_engagement = 10;
+        place_starbase(&mut game_data, 2, SYSTEM);
+        holding_orbit(
+            &mut game_data,
+            4,
+            2,
+            Ships {
+                dd: guard_dd,
+                ..Ships::default()
+            },
+        );
+        game_data.fleets[4].order = Order::GuardStarbase;
+        game_data.fleets[4].mission_target = 1;
+        game_data.players[1].mode = PlayerMode::Human;
+        game_data.players[1].autopilot = false;
+
+        let events = run_neutral(&mut game_data, 0);
+
+        let battle_reports: Vec<String> = build_results_report_blocks(&game_data, &events)
+            .into_iter()
+            .filter(|row| row.viewer_empire_id == 2)
+            .map(|row| {
+                row.decoded_text
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .filter(|text| {
+                !text.starts_with("From Starbase 1, located") && !text.starts_with("From planet")
+            })
+            .collect();
+        assert_eq!(battle_reports.len(), 1, "{label}: {battle_reports:#?}");
+        assert_eq!(
+            game_data.bases.iter().all(|base| base.base_id.0 == 0),
+            base_lost,
+            "{label}"
+        );
+        if base_lost {
+            assert!(
+                battle_reports[0].contains("Starbase 1"),
+                "{label}: {}",
+                battle_reports[0]
+            );
+        }
+    }
+}
+
+#[test]
 fn a_transport_only_blitz_passes_any_orbit_but_a_starbases() {
     // Loaded transports alone can fight nobody. They land past the owner's
     // fleets in orbit, warships or not, since only a starbase blocks the
@@ -850,4 +966,43 @@ fn a_bombardment_with_more_starbases_than_fleets_finds_its_companions() {
     }
     let events = run_neutral(&mut game_data, 0);
     assert_eq!(events.bombard_events.len(), 1);
+}
+
+#[test]
+fn a_bombardments_eta_counts_the_dive_into_orbit() {
+    // The ETA shown when the order is given is the year the fleet reaches
+    // orbit and strikes, the dive from deep space included, at every
+    // distance and speed, starting in the target's own sector too.
+    for (offset, speed) in [(0u8, 1u8), (0, 3), (1, 1), (2, 1), (3, 3), (5, 2), (8, 4)] {
+        let mut game_data = empty_board(0, 0);
+        let start = [SYSTEM[0] - offset, SYSTEM[1]];
+        place_fleet(
+            &mut game_data,
+            0,
+            1,
+            start,
+            Order::BombardWorld,
+            SYSTEM,
+            cruiser(),
+            10,
+        );
+        let fleet = &mut game_data.fleets[0];
+        nc_data::recompute_max_speed(fleet);
+        fleet.depth = Real48::ZERO;
+        fleet.target_depth = 1;
+        fleet.speed = speed;
+        let eta = fleet_target_eta_estimate(&game_data, 1, Order::BombardWorld.code(), SYSTEM);
+        let FleetEtaEstimate::Years(years) = eta else {
+            panic!("offset {offset} speed {speed}: {eta:?}");
+        };
+        let struck = (1..=years + 2)
+            .find(|_| {
+                !run_maintenance_turn(&mut game_data)
+                    .expect("maintenance should succeed")
+                    .bombard_events
+                    .is_empty()
+            })
+            .unwrap_or(0);
+        assert_eq!(struck, years, "offset {offset} speed {speed}");
+    }
 }

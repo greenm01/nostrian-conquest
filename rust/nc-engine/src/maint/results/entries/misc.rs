@@ -864,7 +864,7 @@ pub fn push_roe_entries(
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
-                        "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we {} {}. {}",
+                        "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we {} {}. {}{}",
                         classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         fleet_force_summary(enemy_initial, 0),
@@ -872,6 +872,13 @@ pub fn push_roe_entries(
                         withdrawal_heading(game_data, retreat_target_coords, resumed),
                         loss_clause,
                         enemy_losses_sentence(enemy_losses_inflicted),
+                        starbases_lost_sentence(&starbases_lost_beside(
+                            events,
+                            owner_empire,
+                            coords,
+                            stardate_week,
+                            enemy_initial
+                        )),
                     )
                 },
             ),
@@ -904,7 +911,7 @@ pub fn push_roe_entries(
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
-                        "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We {} {}. {}",
+                        "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We {} {}. {}{}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         withdrawal_reason_clause(reason),
                         classic_enemy_reference(game_data, target_fleet_number, target_empire),
@@ -912,6 +919,13 @@ pub fn push_roe_entries(
                         withdrawal_heading(game_data, retreat_target_coords, resumed),
                         loss_clause,
                         enemy_losses_sentence(enemy_losses_inflicted),
+                        starbases_lost_sentence(&starbases_lost_beside(
+                            events,
+                            owner_empire,
+                            coords,
+                            stardate_week,
+                            enemy_initial
+                        )),
                     )
                 },
             ),
