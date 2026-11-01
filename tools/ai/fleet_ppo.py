@@ -103,6 +103,10 @@ the random states, the next training map and the league's shares.
 stopped from the iteration after the last one saved. Games sampled on the
 GPU draw from its own generator, which is not saved, so a resumed run is
 not bitwise the run that would have gone on.
+
+``--update-cmd CMD`` keeps self-play here and runs each optimizer update in
+``CMD``'s ``remote_update.py`` worker, such as another machine's GPU; see
+that file.
 """
 
 import argparse
@@ -120,6 +124,7 @@ from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, trim_row
                           load_fleet_agent)
 from policy import HEADS, device, goals_for, save
 from ppo import advantages, pad_cat
+from remote_update import update_remotely
 
 PLAYERS = 4
 FAMILIES = ("colonize", "scout", "strike", "convoy")
@@ -767,6 +772,9 @@ def main():
     parser.add_argument("--limit-credit", type=float, default=1.0,
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
+    parser.add_argument("--update-cmd",
+                        help="run each optimizer update in this shell command's worker "
+                             "(remote_update.py), e.g. on another machine's GPU")
     args = parser.parse_args()
     if unknown := set(args.free_heads) - set(FLEET_HEADS) - set(BUILD_HEADS):
         parser.error(f"unknown fleet heads {sorted(unknown)}")
@@ -879,10 +887,15 @@ def main():
                 steps.append(sample)
             done = step["done"].copy()
         played = time.perf_counter() - started
-        (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
-                                      advantages(steps, args.gamma, args.lam), kl_coef, free_coef,
-                                      teach_coef, mission_coef, args, dev,
-                                      upgo_advantages(steps, args.gamma) if args.upgo else None)
+        advs = advantages(steps, args.gamma, args.lam)
+        upgo = upgo_advantages(steps, args.gamma) if args.upgo else None
+        coefs = (kl_coef, free_coef, teach_coef, mission_coef)
+        if args.update_cmd:
+            (pl, vl, kl, ent), n = update_remotely(args.update_cmd, model, ref, optimizer, steps,
+                                                   advs, coefs, args, upgo)
+        else:
+            (pl, vl, kl, ent), n = update(model, ref, optimizer, steps, advs, *coefs, args, dev,
+                                          upgo)
         wins = sum(s["win"].sum() for s in steps) / max((learning == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an
