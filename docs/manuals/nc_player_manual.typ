@@ -1753,7 +1753,7 @@ starbase in orbit does, and the transports turn for home.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 
-Each bombardment turn resolves three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield everything behind them. Once the last battery falls, the rest of that round's hits flow on down the line. A world with no batteries takes your fire on its stardock and armies from the first round.
+Each bombardment turn resolves three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield what lies behind them, except for the extra fire described next. Once the last battery falls, the rest of that round's hits flow on down the line. A world with no batteries takes your fire on its stardock and armies from the first round.
 
 No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. Hits the dock cannot spend pass to the armies, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, they destroy 10 points of production and 250 goods.
 
@@ -2061,10 +2061,27 @@ the same order of targets:
 + Stored goods and factories.
 
 A hit goes to the highest target still standing. While any battery stands,
-the hits it cannot take are lost, so nothing below the batteries is touched.
-Once the last battery falls, the rest of the round's hits go on to the
-stardock and below in the same round. Batteries fire back each round they
-stand.
+the hits it cannot take are lost. Once the last battery falls, the rest of
+the round's hits go on to the stardock and below in the same round.
+Batteries fire back each round they stand.
+
+In a round that begins with a battery standing, extra hits also get past
+the batteries, on top of the hits they take:
+
+#align(left)[
+  #stack(
+    dir: ttb,
+    spacing: 0.45em,
+    [#text(font: "IBM Plex Mono")[share = (0.10 + 0.30 \* (potential - 10) / 140) \* (d10 + 1) / 5.5]],
+    [#text(font: "IBM Plex Mono")[extra_hits = round(hits \* share)]],
+  )
+]
+
+Potential is the world's Potential Production, counted as 10 below 10 and
+150 above 150. The `d10` is the round's own roll. Two fifths of the extra
+hits, rounded down, strike the stardock, and a tenth, rounded down, the
+armies. The rest strike stored goods and factories. Hits a target cannot
+spend pass to the next one. A world with no batteries takes no extra hits.
 
 Invasion suppresses for up to three rounds, as a bombardment does, but its
 hits strike the batteries only and never the stardock, armies, or industry. It
