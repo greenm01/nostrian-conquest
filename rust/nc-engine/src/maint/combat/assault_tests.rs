@@ -228,12 +228,60 @@ fn hits_left_after_the_last_battery_falls_pour_down_the_hierarchy() {
 
     // 400 hits against two batteries: 132 cripple both and 132 destroy them.
     // The other 136 go on: 110 destroy the docked battleship (DS 110), and
-    // 26 destroy two armies (10 each).
-    apply_planet_bombardment_damage(&mut planet, 400);
+    // 26 destroy two armies (10 each). The leak past the standing batteries
+    // (36 at potential 10 and roll 4) destroys one more army.
+    apply_planet_bombardment_damage(&mut planet, 400, 4);
     assert_eq!(planet.ground_batteries, 0);
     assert_eq!(planet.crippled_batteries, 0);
     assert_eq!(planet.stardock.battleships, 0);
-    assert_eq!(planet.armies, 8);
+    assert_eq!(planet.armies, 7);
+}
+
+#[test]
+fn some_fire_gets_past_standing_batteries_to_the_industry() {
+    let mut planet = world(10, 0, 0, 0);
+    planet.potential_production = 150;
+
+    // 131 hits cripple one of ten batteries. A big world on the best roll
+    // leaks 40% x 10/5.5 of them, 95 hits, on top: the empty dock and
+    // garrison pass them all to industry, 9 points and 225 goods.
+    apply_planet_bombardment_damage(&mut planet, 131, 9);
+    assert_eq!(
+        (planet.ground_batteries, planet.crippled_batteries),
+        (10, 1)
+    );
+    assert_eq!(planet.production.to_f64(), 91.0);
+    assert_eq!(planet.stored_goods.to_f64(), 275.0);
+}
+
+#[test]
+fn bigger_worlds_and_better_rolls_leak_more() {
+    let industry_lost = |potential: u8, roll: u8| {
+        let mut planet = world(10, 0, 0, 0);
+        planet.potential_production = potential;
+        apply_planet_bombardment_damage(&mut planet, 300, roll);
+        100.0 - planet.production.to_f64()
+    };
+    // 300 hits at roll 4: 27 leak at potential 10 and 109 at 150.
+    assert_eq!(industry_lost(10, 4), 2.0);
+    assert_eq!(industry_lost(150, 4), 10.0);
+    // At potential 150: 22 leak on a 0 and 218 on a 9.
+    assert_eq!(industry_lost(150, 0), 2.0);
+    assert_eq!(industry_lost(150, 9), 21.0);
+}
+
+#[test]
+fn leaked_hits_strike_the_dock_and_armies_before_the_industry() {
+    let mut planet = world(5, 10, 5, 0);
+    planet.potential_production = 150;
+
+    // 100 hits at roll 4 leak 36: 14 at the dock destroy two destroyers
+    // (DS 7), 3 at the armies destroy none and pass on, and the other 22
+    // reach industry as 2 points.
+    apply_planet_bombardment_damage(&mut planet, 100, 4);
+    assert_eq!(planet.stardock.destroyers, 3);
+    assert_eq!(planet.armies, 10);
+    assert_eq!(planet.production.to_f64(), 98.0);
 }
 
 #[test]
@@ -241,7 +289,7 @@ fn an_undefended_world_with_an_empty_dock_loses_armies_at_once() {
     let mut planet = world(0, 22, 0, 0);
 
     // A lone cruiser's round: 19 hits, one army and 9 to spare.
-    apply_planet_bombardment_damage(&mut planet, 19);
+    apply_planet_bombardment_damage(&mut planet, 19, 4);
     assert_eq!(planet.armies, 21);
 }
 
@@ -251,7 +299,7 @@ fn hits_short_of_the_last_battery_do_not_spill_onto_the_dock() {
 
     // 131 hits cripple one battery; the other 65 expire. Spilled onto the
     // dock they would have destroyed all five docked destroyers (DS 7).
-    apply_planet_bombardment_damage(&mut planet, 131);
+    apply_planet_bombardment_damage(&mut planet, 131, 4);
     assert_eq!(planet.ground_batteries, 3);
     assert_eq!(planet.crippled_batteries, 1);
     assert_eq!(planet.stardock.destroyers, 5);
@@ -262,10 +310,10 @@ fn batteries_are_all_crippled_before_any_is_destroyed() {
     let mut planet = world(3, 0, 0, 0);
 
     // 250 hits: 198 cripple all three, then 52 fall short of finishing one.
-    apply_planet_bombardment_damage(&mut planet, 250);
+    apply_planet_bombardment_damage(&mut planet, 250, 4);
     assert_eq!((planet.ground_batteries, planet.crippled_batteries), (3, 3));
     // Crippled batteries are finished for 66 hits each: two of three.
-    apply_planet_bombardment_damage(&mut planet, 140);
+    apply_planet_bombardment_damage(&mut planet, 140, 4);
     assert_eq!((planet.ground_batteries, planet.crippled_batteries), (1, 1));
 }
 
@@ -275,7 +323,7 @@ fn an_unshielded_dock_takes_the_hits_before_the_armies_behind_it() {
 
     // The round-3 breakthrough: 120 hits, 110 for the docked battleship and
     // 10 for one army.
-    apply_planet_bombardment_damage(&mut planet, 120);
+    apply_planet_bombardment_damage(&mut planet, 120, 4);
     assert_eq!(planet.stardock.battleships, 0);
     assert_eq!(planet.armies, 19);
 }
@@ -286,13 +334,13 @@ fn bombardment_destroys_only_positive_goods_and_keeps_their_fraction() {
     let mut planet = world(0, 0, 0, 0);
     planet.stored_goods = Real48::from_f64(100.75);
     planet.production = Real48::from_f64(50.25);
-    apply_planet_bombardment_damage(&mut planet, 20);
+    apply_planet_bombardment_damage(&mut planet, 20, 4);
     assert_eq!(planet.stored_goods.to_f64(), 50.75);
     assert_eq!(planet.production.to_f64(), 48.25);
 
     // More than the world holds leaves 0, not a debt.
     planet.stored_goods = Real48::from_f64(10.5);
-    apply_planet_bombardment_damage(&mut planet, 20);
+    apply_planet_bombardment_damage(&mut planet, 20, 4);
     assert_eq!(planet.stored_goods.to_f64(), 0.0);
 }
 
@@ -300,7 +348,7 @@ fn bombardment_destroys_only_positive_goods_and_keeps_their_fraction() {
 fn bombarding_a_world_in_debt_leaves_the_debt() {
     let mut planet = world(0, 0, 0, 0);
     planet.stored_goods = Real48::from_f64(-40.5);
-    apply_planet_bombardment_damage(&mut planet, 20);
+    apply_planet_bombardment_damage(&mut planet, 20, 4);
     assert_eq!(planet.stored_goods.to_f64(), -40.5);
     assert_eq!(planet.production.to_f64(), 98.0, "production still burns");
 }

@@ -636,6 +636,9 @@ strike, and a fleet that loses is driven off (see @missions).
 *Bombard* wears a world down. Each year the fleet stays in orbit, it fires
 three rounds. Its hits go to the ground batteries first. Only when none are
 left do they reach docked ships, then armies, stored goods, and factories.
+Some fire always gets past standing batteries, though, and more of it on a
+large world, so a siege the batteries can hold still wears down what lies
+behind them.
 Bombardment therefore destroys what you might later capture. Use it to break a
 world's defenses or to ruin a world you cannot hold. All your fleets
 bombarding the same world fire together as one force. A siege kept up grinds
@@ -1731,7 +1734,7 @@ A fleet that breaks off or loses a battle before it reaches its target keeps its
 
 == Planetary Combat
 
-When fleets attack planets by bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall. While they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships (destroyers, cruisers, and battleships) add bombardment firepower. Scouts, transports, and ETACs do not.
+When fleets attack planets by bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall. While they stand, they draw orbital fire and shoot back, and they protect most of the stardock, armies, production, and industry behind them. Only combat ships (destroyers, cruisers, and battleships) add bombardment firepower. Scouts, transports, and ETACs do not.
 
 *Winning the orbit.* Before a fleet on a bombard, invade, or blitz mission can
 strike, it must get past the owner's starbase in orbit. The base and the
@@ -1751,6 +1754,8 @@ starbase in orbit does, and the transports turn for home.
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 
 Each bombardment turn resolves three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield everything behind them. Once the last battery falls, the rest of that round's hits flow on down the line. A world with no batteries takes your fire on its stardock and armies from the first round.
+
+No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. Hits the dock cannot spend pass to the armies, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, they destroy 10 points of production and 250 goods.
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 

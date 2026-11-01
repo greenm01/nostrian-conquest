@@ -207,8 +207,9 @@ Rust matches classic's odds, not its random sequence.
   fleets.
 - Bombard. NC fires three rounds per turn behind a battery shield, with hit
   costs per target, and persists each year until the player changes the
-  order. Classic runs one battle, collateral damage, and up to 20 random
-  passes, then goes to Hold.
+  order. Extra fire leaks past standing batteries, growing with the world's
+  potential and split as classic's passes are (t234). Classic runs one
+  battle, collateral damage, and up to 20 random passes, then goes to Hold.
 - Invade. NC runs one suppression exchange and a softening that hits armies
   only, at most half of them, with a defender column bonus and no draws.
   Classic runs the full battle, lands only when every battery is dead,

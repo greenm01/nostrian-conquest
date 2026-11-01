@@ -282,21 +282,56 @@ fn apply_capped_invasion_soften_damage(
 /// One bombardment exchange. Every hit goes to the highest target still
 /// standing: batteries -> stardock -> armies -> stored goods and factories.
 /// While any battery stands, the hits it does not take expire, so batteries
-/// shield everything behind them. Units cost their DS in hits; hits reaching
-/// goods and factories are scaled down from the 10x combat scale before the
-/// per-unit conversion.
-pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
+/// shield everything behind them, but some fire always gets past them (t234):
+/// [`bombardment_leak`] lands on top of the hits the batteries take. Units
+/// cost their DS in hits; hits reaching goods and factories are scaled down
+/// from the 10x combat scale before the per-unit conversion.
+pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32, roll: u8) {
+    let leak = if planet.ground_batteries > 0 {
+        bombardment_leak(planet, hits, roll)
+    } else {
+        0
+    };
     let hits = apply_battery_hits(planet, hits);
+    apply_leak(planet, leak);
     if planet.ground_batteries > 0 {
         return;
     }
-    let mut hits = reduce_stardock(planet, hits);
+    let hits = reduce_stardock(planet, hits);
+    let hits = hit_armies(planet, hits);
+    hit_industry(planet, hits);
+}
 
+/// The extra hits that get past standing batteries: a share of the round's
+/// hits that grows with the world's potential, from 10% at 10 to 40% at 150,
+/// times the round's d10 as `(roll + 1) / 5.5`, which averages one.
+fn bombardment_leak(planet: &nc_data::Planet, hits: u32, roll: u8) -> u32 {
+    let potential = f64::from(planet.potential_production.clamp(10, 150));
+    let base = 0.10 + 0.30 * (potential - 10.0) / 140.0;
+    let share = base * f64::from(roll + 1) / 5.5;
+    (f64::from(hits) * share).round() as u32
+}
+
+/// Leaked hits split as classic's passes do: 40% at the dock, 10% at the
+/// armies, the rest at goods and factories. What a target cannot take
+/// passes down to the next.
+fn apply_leak(planet: &mut nc_data::Planet, leak: u32) {
+    let dock = leak * 2 / 5;
+    let armies = leak / 10;
+    let rest = reduce_stardock(planet, dock);
+    let rest = hit_armies(planet, armies + rest);
+    hit_industry(planet, leak - dock - armies + rest);
+}
+
+/// Armies cost their DS in hits. Returns the hits left over.
+fn hit_armies(planet: &mut nc_data::Planet, hits: u32) -> u32 {
     let army_loss =
         (hits / GROUND_DS_ARMY).min(u8::try_from(planet.armies).unwrap_or(u8::MAX) as u32);
     planet.armies = u16::from(u8::try_from(planet.armies).unwrap_or(u8::MAX) - army_loss as u8);
-    hits -= army_loss * GROUND_DS_ARMY;
+    hits - army_loss * GROUND_DS_ARMY
+}
 
+fn hit_industry(planet: &mut nc_data::Planet, hits: u32) {
     let hits = hits / 10;
     if hits > 0 {
         // Only positive goods burn, fraction and all; a debt is left alone.
@@ -726,7 +761,11 @@ pub(crate) fn resolve_strike(
                 }
 
                 let hits = scalar_hits_with_critical(attacker_exchange);
-                apply_planet_bombardment_damage(&mut game_data.planets[planet_idx], hits);
+                apply_planet_bombardment_damage(
+                    &mut game_data.planets[planet_idx],
+                    hits,
+                    attacker_exchange.roll,
+                );
                 breakthrough |= game_data.planets[planet_idx].ground_batteries == 0;
             }
 

@@ -541,6 +541,21 @@ below in the same round
 amended 2026-10-30). Batteries fire back each round they stand. A world with
 no batteries takes all three rounds on its stardock and armies.
 
+**Some fire gets past the batteries (t234).** In a round that starts with a
+battery standing, `round(hits · share)` extra hits land behind the batteries,
+on top of the hits the batteries take.
+- `share = (0.10 + 0.30 · (P − 10) / 140) · (roll + 1) / 5.5`, where `P` is
+  the world's potential clamped to 10–150 and `roll` is the round's `d10`.
+- `2/5` of the extra hits, rounded down, go to the stardock, `1/10`, rounded
+  down, to the armies, and the rest to goods and factories.
+- What the dock cannot spend passes to the armies, and what the armies
+  cannot spend passes to goods and factories.
+
+Battery outcomes, the attacker's losses and worlds without batteries are
+unchanged
+([e1w4xpes](../notes/investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md#simulation-bombardment-leak)).
+Invasion suppression and blitz cover fire take no leak.
+
 #### Planetary Hit Costs
 Orbital hits are on the same 10x scale as fleet combat, so each target costs
 its defense strength:

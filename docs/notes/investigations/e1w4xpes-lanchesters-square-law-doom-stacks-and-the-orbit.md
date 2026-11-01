@@ -468,6 +468,71 @@ to about it, the same place destroyer fleets already were. The engine's
 final rules reproduce this table and the orbital sweep's target-rich table
 exactly.
 
+## Simulation: bombardment leak
+
+**Question (owner, 2026-11-01).** Bombardment strikes batteries first. Fire
+reaches the dock, armies and industry only in a round after the last battery
+falls. Can a world that rebuilds batteries every year keep its industry
+untouched? Classic gave its bombers random passes behind the battle,
+weighted 40% dock, 30% goods, 20% factories and 10% armies, whether or not
+the batteries survived.
+
+**Rule tested (t234).** In a round that starts with a battery standing,
+`round(hits · share)` hits leak behind the batteries. `share = base ·
+(roll + 1) / 5.5`, where `base` grows evenly with potential from `lo` at 10
+to `hi` at 150 and `roll` is the round's `d10`. The leak splits 40% dock,
+10% armies and 50% goods and factories, and whatever a target can't spend
+passes down.
+
+Two variants were tested:
+- **Diverted:** the batteries take `hits − leak`.
+- **Additive:** the batteries take every hit, and the leak comes on top.
+
+Additive ran at `lo–hi` of 5–25%, 10–40% and 15–55%; diverted at 10–40%.
+
+**Setup.** The empty-board fixture, with 10 armies, production equal to
+potential, and goods of five times potential. All fleets were on Bombard at
+ROE 10, and every variant ran on the same seeds. The harness and the rule
+switch were temporary, run on bean-void.
+- **One year:** 0 or 10 batteries; potential 10, 80 or 150; destroyers,
+  cruisers, battleships or the AI's 3:1 mix; `r` from 1 to 25; 500 seeds.
+- **Ten-year siege:** 10 batteries to start. Each year the defender spent
+  50% or 100% of production on new batteries. The AI mix or battleships at
+  `r` of 1, 1.5 or 3; 300 seeds.
+
+**Findings.**
+1. **Additive leaves combat alone.** In all 168 one-year cases and all 36
+   siege cases, battery break rates, attacker losses and the year the
+   batteries fall match the current rules exactly. Worlds with no batteries
+   match exactly under every variant.
+2. **Diverted fails.** At `r ≥ 1.5`, first-year break rates fall to 0.87,
+   and attacker losses rise up to 45%. A battleship siege of a potential-150
+   world at `r = 1` breaks the batteries within ten years in 19% of games,
+   against 88% now. It makes big fortresses tougher, the opposite of the
+   aim.
+3. **The shield matters only to an undersized siege.** At `r ≥ 1.5` the
+   batteries fall in year one and production goes to 0 that year, however
+   much the defender rebuilds. At `r = 1` with the AI's mix, the siege
+   breaks the batteries in 27% of games, loses about 90% of its fleet over
+   ten years, and leaves the world with this much of its production:
+
+| Potential | Now | Additive 5–25% | Additive 10–40% | Additive 15–55% | Diverted 10–40% |
+|---|---|---|---|---|---|
+| 30 | 78% | 68% | 59% | 49% | 64% |
+| 80 | 81% | 71% | 63% | 55% | 72% |
+| 150 | 88% | 74% | 65% | 57% | 75% |
+
+   (Defender spending all its production on batteries. At half, the figures
+   are within 4 points of these.) The scaling with potential evens out the
+   damage as a share of production: the same hits are a smaller share of a
+   big world's industry.
+
+**Resolution.** The owner chose additive at 10–40% on 2026-11-01. The final
+engine reproduces both of its tables exactly.
+
+**Outside t234.** A fortress that falls loses all its production within the
+same year of bombardment. This is unchanged and not measured further.
+
 ## Validation and remaining work
 
 - Deterministic: the orbital sweep (500 seeds per case) and the fleet
