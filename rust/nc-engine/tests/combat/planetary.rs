@@ -309,7 +309,8 @@ fn the_dock_is_exposed_once_the_batteries_are_gone() {
 
 /// `tools/combat-model/collateral_t236.py` (`collateral_t202.py` with the
 /// t234 leak past standing batteries, half-strength fire at armies and
-/// industry, and no rounds once the batteries fall), case `BB4-B2`: the
+/// industry, no rounds once the batteries fall, the 1.0 floor and the
+/// sixth to the armies past the dock), case `BB4-B2`: the
 /// exact expected losses of one bombardment turn of four battleships against
 /// two two-step batteries, ten armies, and
 /// a docked battleship, in cost points (BB 45), batteries destroyed, armies,
@@ -318,8 +319,8 @@ const SHIELD_MODEL: [(&str, f64); 5] = [
     ("ship cost lost", 13.5),
     ("dock cost lost", 36.0),
     ("batteries lost", 2.0),
-    ("armies lost", 7.3),
-    ("production lost", 8.1),
+    ("armies lost", 3.8),
+    ("production lost", 11.6),
 ];
 
 #[test]

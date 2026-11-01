@@ -278,9 +278,11 @@ fn bombardment_armies_without_batteries_do_not_inflict_orbital_losses() {
     let mut game_data = configured_assault_state(Order::BombardWorld.code());
     configure_bombard_target_world(&mut game_data, 0, 6, 0, 0);
 
+    // Four cruisers: even their lowest roll sends a sixth of their
+    // half-strength fire, 11 hits, at the armies.
     let attacker = &mut game_data.fleets[0];
     attacker.ships.destroyers = 0;
-    attacker.ships.cruisers = 1;
+    attacker.ships.cruisers = 4;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -291,7 +293,7 @@ fn bombardment_armies_without_batteries_do_not_inflict_orbital_losses() {
     assert_eq!(bombard.attacker_losses, nc_data::ShipLosses::default());
 
     let attacker = &game_data.fleets[0];
-    assert_eq!(attacker.ships.cruisers, 1);
+    assert_eq!(attacker.ships.cruisers, 4);
     assert_eq!(attacker.ships.destroyers, 0);
 
     let target = &game_data.planets[13];

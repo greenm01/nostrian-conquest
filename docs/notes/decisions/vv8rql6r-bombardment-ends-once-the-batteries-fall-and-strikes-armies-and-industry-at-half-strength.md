@@ -66,3 +66,21 @@ The owner asked to match classic's production floor. Bombardment never
 takes a world's production below 1.0. A world already under 1.0 keeps
 what it has, where classic raises it to 1.0. A world kept at 1.0 regrows
 from there once the siege lifts, rather than from nothing.
+
+## Amendment (t238, 2026-11-01)
+
+Under the strict order, armies shielded the factories. An army costs 2 and
+soaked 20 half-strength hits, so a world could stack cheap armies to keep
+its industry. The owner chose to split the main fire that passes the dock
+as the leak does: a sixth to the armies, the rest to goods and factories.
+
+Simulated over five years at a potential-80 world with no batteries, under
+10 cruisers, the defender spending half its production on armies:
+- **Strict order:** starting with 50 armies, the world kept 100%, 96% and
+  80% of its production after years 1, 3 and 5. With 100 it kept all of
+  it.
+- **The split:** 70%, 12% and 1%, whatever the garrison. That's the same as
+  a world with no armies.
+
+Armies still wear down slowly, so they keep their value against invasion.
+Battle results are unchanged.

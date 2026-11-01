@@ -280,7 +280,8 @@ fn apply_capped_invasion_soften_damage(
 }
 
 /// One bombardment exchange. Every hit goes to the highest target still
-/// standing: batteries -> stardock -> armies -> stored goods and factories.
+/// standing: batteries -> stardock -> armies and industry, which share what
+/// the dock leaves (a sixth to the armies).
 /// While any battery stands, the hits it does not take expire, so batteries
 /// shield everything behind them, but some fire always gets past them (t234):
 /// [`bombardment_leak`] lands on top of the hits the batteries take. Units
@@ -298,9 +299,12 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
     if planet.ground_batteries > 0 {
         return;
     }
+    // Past the dock, a sixth of the fire strikes the armies and the rest the
+    // industry, so a garrison cannot shield the factories (t238).
     let hits = reduce_stardock(planet, hits) / 2;
-    let hits = hit_armies(planet, hits);
-    hit_industry(planet, hits);
+    let to_armies = hits / 6;
+    let rest = hit_armies(planet, to_armies);
+    hit_industry(planet, hits - to_armies + rest);
 }
 
 /// The extra hits that get past standing batteries: a share of the round's

@@ -593,6 +593,39 @@ battleships or the AI's mix; 33 to 2,700 AS; 300 seeds.
 leftover hits, on 2026-11-01. The engine's `planetary.rs` model tests are
 pinned to `collateral_t236.py`.
 
+## Simulation: the army shield
+
+**Question.** Under t236, fire that passes the dock strikes the armies
+before the industry. An army costs 2 and soaks 20 half-strength hits. Can a
+world shield its factories with cheap armies?
+
+**Setup.** A potential-80 world with no batteries, starting with 0, 10, 25,
+50 or 100 armies. It was bombarded for five years by 3, 10 or 27 cruisers,
+300 seeds. In half the cases the defender spent half its production on new
+armies each year. The variants were the strict order, and splits that send
+a sixth or a tenth of the fire to the armies.
+
+**Findings.** Production left after years 1, 3 and 5, under 10 cruisers,
+with the defender buying armies:
+
+| Starting armies | Strict | A sixth | A tenth |
+|---|---|---|---|
+| 0 | 64 / 22 / 2 | 64 / 8 / 1 | 64 / 6 / 1 |
+| 10 | 77 / 40 / 7 | 70 / 12 / 1 | 68 / 7 / 1 |
+| 50 | 100 / 96 / 80 | 70 / 12 / 1 | 68 / 7 / 1 |
+| 100 | 100 / 100 / 100 | 70 / 12 / 1 | 68 / 7 / 1 |
+
+- Under the strict order, the shield is real. 50 armies hold off 10
+  cruisers for years, and buying armies makes the world nearly immune.
+- Either split removes it: industry falls the same whatever the garrison.
+- Under a sixth, a garrison of 50 still has 29 armies after five years
+  without reinforcement, and 53 when the defender keeps buying them. Armies
+  keep their value against invasion.
+
+**Resolution.** The owner chose a sixth on 2026-11-01 (t238). It's the
+armies' share of the leak and of classic's passes, leaving the dock out.
+The engine's model tests are pinned to the updated `collateral_t236.py`.
+
 ## Validation and remaining work
 
 - Deterministic: the orbital sweep (500 seeds per case) and the fleet

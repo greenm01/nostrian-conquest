@@ -544,7 +544,9 @@ amended 2026-10-30). Batteries fire back each round they stand.
 ends with the round in which no battery is left: the round that destroys the
 last one, or the first round at a world with none. Hits that pass the
 stardock are halved, rounded down, before they strike the armies and
-industry. The dock takes full fire. Bombardment never takes production
+industry. The dock takes full fire. Of the halved hits, `floor(h / 6)` go to
+the armies and the rest, with what the armies cannot spend, to goods and
+factories, so a garrison cannot shield the industry (t238). Bombardment never takes production
 below `min(production before, 1.0)`, as classic's passes end (t237).
 
 **Some fire gets past the batteries (t234).** In a round that starts with a
