@@ -890,12 +890,11 @@ def main():
         advs = advantages(steps, args.gamma, args.lam)
         upgo = upgo_advantages(steps, args.gamma) if args.upgo else None
         coefs = (kl_coef, free_coef, teach_coef, mission_coef)
-        if args.update_cmd:
-            (pl, vl, kl, ent), n = update_remotely(args.update_cmd, model, ref, optimizer, steps,
-                                                   advs, coefs, args, upgo)
-        else:
-            (pl, vl, kl, ent), n = update(model, ref, optimizer, steps, advs, *coefs, args, dev,
-                                          upgo)
+        result = (update_remotely(args.update_cmd, model, ref, optimizer, steps, advs, coefs,
+                                  args, upgo) if args.update_cmd else None)
+        if result is None:
+            result = update(model, ref, optimizer, steps, advs, *coefs, args, dev, upgo)
+        (pl, vl, kl, ent), n = result
         wins = sum(s["win"].sum() for s in steps) / max((learning == 1).sum(), 1)
         handed_rows_n = max(sum(float(s["handed"].sum()) for s in steps), 1.0)
         # How often the learner's handed-over fleets sampled a join or an

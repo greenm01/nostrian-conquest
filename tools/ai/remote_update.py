@@ -7,7 +7,8 @@ weights, the KL reference, the optimizer state and the random state to
 random state back from its standard output. ``CMD`` runs this file, e.g.
 ``ssh crunch sh nc-ai-state/t235/update.sh``. The worker keeps no state
 between iterations, so the training run alone holds ``resume.pt`` and a
-killed worker loses nothing but the iteration's update.
+worker that fails or cannot be reached, as while its machine reboots,
+leaves that iteration's update to the training run itself.
 
 Usage (the worker): python remote_update.py [--expect ARCH:BUS]
 
@@ -27,7 +28,8 @@ import torch
 def update_remotely(cmd, model, ref, optimizer, steps, advs, coefs, args, upgo):
     """``fleet_ppo.update``'s result, computed by the worker ``cmd``, which
     leaves ``model``, ``optimizer`` and the torch random state as an
-    in-process update would."""
+    in-process update would; or None, changing nothing, if the worker
+    fails, so the caller can update in-process instead."""
     payload = io.BytesIO()
     torch.save(dict(config=model.config, model=model.state_dict(), ref=ref.state_dict(),
                     optimizer=optimizer.state_dict(), steps=steps, advs=advs, upgo=upgo,
@@ -36,8 +38,9 @@ def update_remotely(cmd, model, ref, optimizer, steps, advs, coefs, args, upgo):
     done = subprocess.run(cmd, shell=True, input=zlib.compress(payload.getvalue(), 1),
                           capture_output=True)
     if done.returncode:
-        raise SystemExit(f"update worker failed ({done.returncode}): "
-                         f"{done.stderr.decode(errors='replace')[-2000:]}")
+        print(f"update worker failed ({done.returncode}), updating here: "
+              f"{done.stderr.decode(errors='replace')[-500:]}", file=sys.stderr, flush=True)
+        return None
     sys.stderr.write(done.stderr.decode(errors="replace"))
     result = torch.load(io.BytesIO(done.stdout), map_location="cpu", weights_only=False)
     model.load_state_dict(result["model"])
