@@ -482,7 +482,30 @@ exactly.
 - Not yet measured: multi-year sieges with reinforcement; invasion
   suppression and blitz fire, which share the battery exchange; and fleet
   battles with a starbase present or with battleships.
-- Not playtested. The AI retrain on these rules is the next step.
+- Not playtested yet. The AI was retrained on these rules first (t233).
+
+**The t233 retrain (promoted 2026-11-01).** The t233 run fine-tuned
+`fleet-final` for 100 iterations on the t232 rules (`fleet_ppo.py --init`,
+64 games, league). On those rules, the old agent's win share against three
+executors fell from 0.58 to 0.375 over 60 years.
+
+Paired `behaviour_report` results against `fleet-final`, 1,024 maps, at
+`2ba010b6`:
+
+| Snapshot | Win share, 60 years | Win share, 100 years | Start check |
+|---|---|---|---|
+| 50 | -0.016 ± 0.019 | -0.001 ± 0.020 | +0.024 ± 0.025 |
+| 75 | +0.048 ± 0.020 | +0.051 ± 0.020 | +0.059 ± 0.022 |
+| 100 | +0.055 ± 0.020 | +0.043 ± 0.021 | +0.049 ± 0.024 |
+
+Its largest fleet holds 48% of its strength at 100 years, down from 52%.
+Snapshot 75 is now `fleet-final`; the previous agent is
+`fleet-final-pre-t233`. It is deployed with t232 to crunch's test BBS.
+archvps keeps its release and model until a release ships t232.
+
+The first reports ran on stale code: bean-void's checkout had no remote,
+so its pull failed. They were rerun after the commits were copied over with
+a git bundle.
 
 ## Connections
 

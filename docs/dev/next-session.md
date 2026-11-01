@@ -51,7 +51,12 @@ details are in the plans' result sections.
   robustness: t213's exploiter, which beat the t213 agent 0.348 by keeping
   its warships merged, falls to 0.274, and a fresh 80-iteration exploiter
   ends at 0.246. Its build head defers to the executor in greedy play.
-  The previous agent is `fleet-final-pre-t184`. Deployed to archvps on
+  t233 retrained it on the t232 combat rules, and its snapshot 75 was
+  promoted on 2026-11-01: +0.048 / +0.051 win share against the old agent
+  (60 / 100 years, paired), and it is deployed to crunch's test BBS
+  ([e1w4xpes](../notes/investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md#validation-and-remaining-work)).
+  The previous agent is `fleet-final-pre-t233`. archvps still runs the
+  t184b agent and will until a release ships t232. Deployed to archvps on
   2026-10-28 (owner's OK): `/opt/nc-community/models/fleet-final.onnx`,
   named by `NC_AI_MODEL` in systemd drop-ins
   (`/etc/systemd/system/{nc-community,nc-community-turns}.service.d/ai-model.conf`),
