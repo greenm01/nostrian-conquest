@@ -26,7 +26,7 @@ import torch
 
 import nc_ai_env
 import policy
-from fleet_policy import FLEET_HEADS, bucket, fleet_arrays, fleet_batch, from_strategist
+from fleet_policy import FLEET_HEADS, bucket, fleet_arrays, fleet_batch, from_strategist, on_device
 from policy import HEADS, device, goals_for, save
 
 PLAYERS = 4
@@ -47,9 +47,12 @@ def lineups(rng, games):
 
 def frozen_goals(frozen, obs, masks, goal_masks, select, dev):
     """The frozen strategist's goals for the ``select`` seats."""
-    batch = policy.bucket(policy.seat_batch(obs, masks, goal_masks, select, dev))
-    choices, _, _ = policy.act(frozen, batch)
-    return goals_for(choices, select)
+    # Bucketed on the CPU and acting on every row, cut after, as
+    # fleet_policy.act_padded (t235).
+    batch = policy.bucket(policy.seat_batch(obs, masks, goal_masks, select, torch.device("cpu")))
+    n = batch["n"]
+    choices, _, _ = policy.act(frozen, on_device({**batch, "n": batch["global"].shape[0]}, dev))
+    return goals_for({k: v.cpu()[:n] for k, v in choices.items()}, select)
 
 
 def actions_for(env, fleets):

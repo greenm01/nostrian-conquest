@@ -152,6 +152,29 @@ def bucket(batch):
     return out
 
 
+def on_device(batch, dev):
+    """``batch``, built and bucketed on the CPU, with its tensors on ``dev``."""
+    return {k: v.to(dev) if torch.is_tensor(v) else v for k, v in batch.items()}
+
+
+def act_padded(agent, batch, dev, **kwargs):
+    """``agent.act`` on ``dev`` over every seat row of ``batch``, a CPU batch
+    from :func:`bucket`, with its outputs back on the CPU and cut to the real
+    seats. MPS compiles and keeps a graph for each tensor shape, so acting on
+    exactly the real seats, whose count changes year to year, grew self-play
+    memory by about 22 MB for each new count (t235). A padded seat's masks
+    allow its first choice, so it acts harmlessly."""
+    n = batch["n"]
+    *out, goal_dists, dists = agent.act(
+        on_device({**batch, "n": batch["global"].shape[0]}, dev), **kwargs)
+    cut = lambda d: {k: v.cpu()[:n] for k, v in d.items()}
+    recut = lambda d: {k: torch.distributions.Categorical(logits=v.logits.cpu()[:n])
+                       for k, v in d.items()}
+    goals, fleets, *rest = out
+    return (cut(goals), cut(fleets), *(v.cpu()[:n] for v in rest), recut(goal_dists),
+            recut(dists))
+
+
 def goal_flags(goals, worlds):
     """``[N, W, 2]``: whether the seat's strike and colony goals name each
     world."""

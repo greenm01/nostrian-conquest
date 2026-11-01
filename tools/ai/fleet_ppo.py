@@ -120,13 +120,14 @@ import torch
 import nc_ai_env
 import policy
 from fleet_imitate import actions_for, frozen_goals
-from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, bucket, trim_rows, build_arrays, build_logp, fleet_arrays, fleet_batch,
+from fleet_policy import (BUILD_HEADS, FLEET_HEADS, FleetAgent, act_padded, bucket, trim_rows, build_arrays, build_logp, fleet_arrays, fleet_batch,
                           load_fleet_agent)
 from policy import HEADS, device, goals_for, save
 from ppo import advantages, pad_cat
 from remote_update import update_remotely
 
 PLAYERS = 4
+CPU = torch.device("cpu")
 FAMILIES = ("colonize", "scout", "strike", "convoy")
 # Observation fleet-row columns: ship counts start at 10, in the order
 # battleships, cruisers, destroyers, empty and loaded transports, ETACs,
@@ -371,11 +372,11 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
     sample = None
     with torch.no_grad():
         if learner.any():
-            batch = bucket(fleet_batch(obs, masks, goal_masks, learner, dev))
-            goals, fleets, goal_lp, fleet_lp, _, value, goal_dists, _ = model.act(
-                batch, greedy=greedy, builds="builds" in families)
+            batch = bucket(fleet_batch(obs, masks, goal_masks, learner, CPU))
+            goals, fleets, goal_lp, fleet_lp, _, value, goal_dists, _ = act_padded(
+                model, batch, dev, greedy=greedy, builds="builds" in families)
             handed = torch.from_numpy(
-                handed_rows(obs, learner, families, batch["fleets"].shape[1])).to(dev)
+                handed_rows(obs, learner, families, batch["fleets"].shape[1]))
             logp = goal_lp + (fleet_lp * handed).sum(-1)
             chosen = goals_for(goals, learner)
             for name in HEADS:
@@ -406,8 +407,9 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
             seats = (roles == 3 + k) & live
             if not seats.any():
                 continue
-            batch = bucket(fleet_batch(obs, masks, goal_masks, seats, dev))
-            goals, fleets, *_ = agent.act(batch, greedy=True, builds="builds" in families)
+            batch = bucket(fleet_batch(obs, masks, goal_masks, seats, CPU))
+            goals, fleets, *_ = act_padded(agent, batch, dev, greedy=True,
+                                           builds="builds" in families)
             chosen = goals_for(goals, seats)
             for name in HEADS:
                 env_goals[name][seats] = chosen[name][seats]
