@@ -182,7 +182,7 @@ Rust matches classic's odds, not its random sequence.
   and a nominal, crippled, destroyed ladder. Classic gives hit points, hit
   chance, damage, armor, range, and speed, and nothing persists.
 - Resolution. In a fleet battle each NC side rolls one d10 for 25, 50, or
-  100% of its attack strength, whatever the force ratio, with +1 to the die
+  100% of the attack strength it commits, with +1 to the die
   for combined arms and +1 for a starbase, and a critical on 9. Hits a side
   cannot spend carry to its next exchange in the same battle. Planetary
   combat keeps a combat results table by force ratio. Classic rolls per
@@ -190,9 +190,10 @@ Rust matches classic's odds, not its random sequence.
 - Fire. NC splits suppression fire (cruisers, battleships) from execution
   fire (destroyers, starbases, batteries) and shoots the combat line first.
   Classic shooters pick one target and keep it; batteries only ever target
-  warships, except in a blitz landing; and the larger side holds part of its
-  force back each round. Dropping that last rule turned NC into square-law
-  combat that rewards doom stacks; see
+  warships, except in a blitz landing. Both hold part of the larger side's
+  force back each round: NC dropped classic's engagement count, which made
+  its battles square-law combat that rewards doom stacks, and restored it in
+  AS for fleet battles under t232; see
   [e1w4xpes](../notes/investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md).
 - Rounds. NC fights one compulsory exchange, then lets every fleet check
   its own ROE after every exchange, shares a side's losses among its

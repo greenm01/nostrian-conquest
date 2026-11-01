@@ -63,7 +63,14 @@ pub(super) struct ExchangeResolution {
     pub(super) hits: u32,
 }
 
-fn apply_nominal_hits_to_fleet_classes(
+/// Suppression's dispersed fire (t232). Down the target group in order,
+/// every DS of hits strikes one hull of a class, at most one strike per hull
+/// in a pass. The strikes fall on healthy and crippled hulls in proportion to
+/// how many of each the class held when the walk reached it, healthy first:
+/// a strike cripples a healthy hull and destroys a crippled one. A class the
+/// hits cannot pay for shields every class behind it, and the hits carry
+/// (t206).
+fn apply_dispersed_hits_to_fleet_classes(
     state: &mut FleetCombatState,
     hits: &mut u32,
     target_order: &[usize],
@@ -71,41 +78,26 @@ fn apply_nominal_hits_to_fleet_classes(
     let mut progress = false;
     for &idx in target_order {
         let ds = fleet_class_ds(idx);
-        // A class with nothing left to cripple is skipped; a class that
-        // stands but cannot be afforded covers the ones behind it, and the
-        // hits carry (t206).
-        if ds == 0 || state.nominal_count(idx) == 0 {
+        let (nominal, crippled) = (state.nominal_count(idx), state.crippled_count(idx));
+        if ds == 0 || nominal + crippled == 0 {
             continue;
         }
         if *hits < ds {
             break;
         }
-        let reducible = state.nominal_count(idx).min(*hits / ds);
-        state.cripple(idx, reducible);
-        *hits -= reducible * ds;
-        progress = true;
-    }
-    progress
-}
-
-fn apply_destroyed_hits_to_fleet_classes(
-    state: &mut FleetCombatState,
-    hits: &mut u32,
-    target_order: &[usize],
-) -> bool {
-    let mut progress = false;
-    for &idx in target_order {
-        let ds = fleet_class_ds(idx);
-        if ds == 0 || state.crippled_count(idx) == 0 {
-            continue;
+        let crippled_share = f64::from(crippled) / f64::from(nominal + crippled);
+        let mut owed = 0.0;
+        for _ in 0..(nominal + crippled).min(*hits / ds) {
+            owed += crippled_share;
+            if (owed >= 1.0 && state.crippled_count(idx) > 0) || state.nominal_count(idx) == 0 {
+                owed -= 1.0;
+                state.finish_crippled(idx, 1);
+            } else {
+                state.cripple(idx, 1);
+            }
+            *hits -= ds;
+            progress = true;
         }
-        if *hits < ds {
-            break;
-        }
-        let destroyed = state.crippled_count(idx).min(*hits / ds);
-        state.finish_crippled(idx, destroyed);
-        *hits -= destroyed * ds;
-        progress = true;
     }
     progress
 }
@@ -122,6 +114,18 @@ fn base_combat_column(our_as: u32, enemy_as: u32) -> usize {
     } else {
         COLUMN_ADVANTAGED
     }
+}
+
+/// The batteries' column in a target-rich orbit (t232): Disadvantaged below
+/// 3:1, then one column up for each doubling, at most Advantaged.
+pub(super) fn target_rich_column(battery_as: u32, enemy_as: u32) -> usize {
+    let mut column = COLUMN_DISADVANTAGED;
+    let mut threshold = battery_as.saturating_mul(3);
+    while battery_as > 0 && enemy_as >= threshold && column < COLUMN_ADVANTAGED {
+        column += 1;
+        threshold = threshold.saturating_mul(2);
+    }
+    column
 }
 
 fn hits_from_multiplier(as_total: u32, multiplier_x4: u8) -> u32 {
@@ -271,6 +275,21 @@ pub(super) fn fleet_volley(roll: u8, die_modifier: u8, as_total: u32) -> Exchang
     }
 }
 
+/// Classic's engagement count in a fleet battle (ec-battle-spec §1.3, t232):
+/// the larger side fires with only `B · y` of its AS, where
+/// `y = (A/B)^(1/3.3)`, halved toward 1.3 past 1.3 and capped at 2.0. It is
+/// counted in AS, not whole ships. The smaller side fires in full.
+pub(super) fn committed_fleet_as(our_as: u32, enemy_as: u32) -> u32 {
+    if enemy_as == 0 || our_as <= enemy_as {
+        return our_as;
+    }
+    let mut y = (f64::from(our_as) / f64::from(enemy_as)).powf(1.0 / 3.3);
+    if y > 1.3 {
+        y = (y + 1.3) / 2.0;
+    }
+    ((f64::from(enemy_as) * y.min(2.0)).round() as u32).min(our_as)
+}
+
 /// A fleet battle side's die modifier: +1 for a starbase, +1 for a
 /// surprise first exchange, and +1 for a heavy line (t206).
 pub(super) fn fleet_die_modifier(state: &FleetCombatState, surprise: bool, heavy_line: bool) -> u8 {
@@ -293,7 +312,9 @@ pub(super) fn landing_volley(roll: u8, armies: u32) -> u32 {
 }
 
 /// The batteries' fire at ships in orbit: bombardment and invasion return
-/// fire, on the full ratio CRT (t202).
+/// fire, on the full ratio CRT (t202). A target-rich orbit (t232) moves the
+/// batteries one column up for each doubling of the ships' AS past three
+/// times theirs: Pressed from 3:1, Even from 6:1, Advantaged from 12:1.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn resolve_battery_exchange(
     campaign_seed: u64,
@@ -306,7 +327,8 @@ pub(super) fn resolve_battery_exchange(
     battery_as: u32,
     enemy_as: u32,
 ) -> ExchangeResolution {
-    let column = base_combat_column(battery_as, enemy_as);
+    let column =
+        base_combat_column(battery_as, enemy_as).max(target_rich_column(battery_as, enemy_as));
     seeded_exchange_resolution(
         campaign_seed,
         game_year,
@@ -486,18 +508,7 @@ pub(super) fn apply_hits_to_fleet(
             &auxiliary_order
         };
 
-        let mut progress =
-            apply_nominal_hits_to_fleet_classes(state, &mut suppression_hits, target_order);
-
-        if target_order
-            .iter()
-            .all(|&idx| state.nominal_count(idx) == 0)
-        {
-            progress |=
-                apply_destroyed_hits_to_fleet_classes(state, &mut suppression_hits, target_order);
-        }
-
-        if !progress {
+        if !apply_dispersed_hits_to_fleet_classes(state, &mut suppression_hits, target_order) {
             break;
         }
     }

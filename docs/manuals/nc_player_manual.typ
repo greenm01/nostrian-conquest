@@ -1404,9 +1404,9 @@ consistent.
 
 == The Rules of Battle
 
-Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
+Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. But it cannot bring all of it to bear at once. The larger side fires with only part of its AS: at least as much as the enemy has, and never more than twice it. Its other ships wait their turn, so extra size buys staying power, not a quicker kill. Rounds repeat until one side is destroyed or breaks off.
 
-Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Under suppression fire, every nominal ship in the current target group (the combat line first, auxiliaries after) must be crippled before any crippled ship in it is destroyed. Execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. It recovers on its own at the end of the second maintenance after the one that damaged it, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets that only share the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation).
+Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Suppression fire spreads over the current target group (the combat line first, auxiliaries after). It strikes the healthy and crippled ships of a class in proportion to their numbers. A strike cripples a healthy ship and destroys a crippled one. Execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. It recovers on its own at the end of the second maintenance after the one that damaged it, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets that only share the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation).
 
 Ordinary fleet fire targets the combat line first, heaviest hull first: battleships, cruisers, destroyers, and starbases. The heavy ships cover the destroyers behind them, and fire too weak for the ship in front cannot reach those behind it. Scouts, transports, and ETACs are safe from it as long as any combat-line ship remains. Your non-combat ships survive as long as your warships hold the line, except against a critical hit.
 
@@ -1430,13 +1430,10 @@ rounding rule. You could rebuild the game from it. The sections after it
 say who takes part and when a fleet leaves. The tables at the end of this
 appendix give the numbers.
 
-1. *Sides.* All the fleets and starbases one empire has in the sector and
-   layer fight as one side. The roster is set when the battle starts. If
-   more than two empires are present, each side picks one enemy to fire at
-   in each exchange. It picks in this order: an enemy guarding the world
-   (the world's owner, or a fleet on Guard a Starbase); then, at your own
-   world, an enemy attacking it; then the enemy with the most attack
-   strength; then the lowest empire number.
+1. *Sides.* A battle is between two empires. One side is the fleet that
+   attacked. The other is its target: a fleet, with the starbase it guards,
+   or a starbase, with the fleets guarding it. No other fleet joins (see
+   *Battle* under Who Fights Whom). The roster is set when the battle starts.
 
 2. *Strength.* Add up the AS of every ship on the side, from the Unit
    Combat Values table. A crippled hull counts half, rounded down: destroyer
@@ -1448,7 +1445,13 @@ appendix give the numbers.
 3. *The exchange.* Both sides fire at the same instant. Each side rolls one
    ten-sided die and adds its bonuses (see Fleet Battle Die Modifiers). A
    result above 9 reads as 9. The result sets the effectiveness: a quarter
-   on 0--2, half on 3--5, all on 6--9. Hits are `ceil(AS x effectiveness)`.
+   on 0--2, half on 3--5, all on 6--9. A side whose AS is no more than the
+   enemy's fires with all of it. A larger side fires with only part, as
+   classic EC did. With `A` its AS and `B` the enemy's, take
+   `y = (A / B)^(1 / 3.3)`. If `y` is above 1.3, it becomes `(y + 1.3) / 2`.
+   It is never above 2. The side fires with `round(B x y)` AS, a half
+   rounding up. A 2:1 side fires with about 1.23 times the enemy's AS, a
+   10:1 side with 1.65 times. Hits are `ceil(firing AS x effectiveness)`.
    Split the hits into two pools. Suppression hits are
    `round(hits x suppression AS / total AS)`, with a half rounding up. The
    rest are execution hits. A natural 9 adds one critical hit. Hits the side
@@ -1460,13 +1463,20 @@ appendix give the numbers.
    then transports, then ETACs. Both sides' hits land after both have
    fired, so a ship destroyed this exchange still fired in it.
    - *Suppression.* Go down the target group in order. Skip a class with no
-     healthy hull. If the hits cannot pay the next class's DS, stop. That
-     class shields every class behind it. Otherwise cripple as many of its
-     healthy hulls as the hits can pay for, one DS each, and go on. Start
-     over at the top while the walk still buys something. Once no healthy
-     hull is left in the group, the same walk finishes crippled hulls at
-     their full DS, with the same shielding. When the group is wiped out,
-     move on to the next group.
+     hulls left. If the hits cannot pay the next class's DS, stop. That
+     class shields every class behind it, crippled or not. Otherwise each DS
+     of hits strikes one hull of the class, at most one strike per hull. A
+     strike cripples a healthy hull and destroys a crippled one. The strikes
+     fall on healthy and crippled hulls in proportion, healthy first. Keep a
+     tally that starts at 0. Each strike adds the class's crippled share
+     (crippled hulls over all its hulls, counted when the walk reached the
+     class). When the tally reaches 1 and a crippled hull is left, the strike
+     destroys it and the tally drops by 1. Otherwise it cripples a healthy
+     hull, or destroys a crippled one if no healthy hull is left. So of four
+     hulls, two of them crippled, the first strike cripples a healthy hull
+     and the second destroys a crippled one. Go on to the next class, and
+     start over at the top while the walk still buys something. When the
+     group is wiped out, move on to the next group.
    - *Execution.* Go down the target group in order. In each class, first
      finish crippled hulls at half DS, rounded up (destroyer 4, cruiser 15,
      battleship 55, starbase 65). Then destroy healthy hulls at twice DS.
@@ -1647,7 +1657,7 @@ fleet takes to climb out of orbit.
 
 Combat is more than a numbers game. Each ship class has a tactical role set by how it delivers fire. The hits a side generates are split into two pools:
 
-- *Suppression Fire (Cruisers and Battleships):* These heavy ships bring volume. Their hits are spread across the enemy fleet, knocking nominal ships down to *crippled*. This takes enemy guns offline and wins the field in front of you, but it does not always kill for good.
+- *Suppression Fire (Cruisers and Battleships):* These heavy ships bring volume. Their hits are spread across the enemy fleet, healthy and crippled ships alike. A hit cripples a healthy ship and destroys a crippled one. This takes enemy guns offline and wears a big fleet down from the first round.
 - *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to pick off single targets. Their hits skip the crippled state and go straight to *destroyed*, paying 2x DS for a healthy ship and half DS, rounded up, for a crippled one. They blow ships up one by one.
 
 Together they are a deadly pair. Heavy ships soften the line and stand in front of it. Destroyers finish it from behind them. Each pool carries its own leftover hits: suppression hits never pay for an execution kill, and execution hits never pay for a cripple.
@@ -1744,7 +1754,7 @@ Each bombardment turn resolves three rounds of fire, and every round works the s
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 
-Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in one year and loses less than the batteries cost. Twice their cost wins about half the time in the first year, and kept on station and reinforced it takes the world in about three. A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. Build batteries to buy time; bring heavy fleets to break through faster.
+Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in one year and loses less than the batteries cost. Twice their cost wins about half the time in the first year, and kept on station and reinforced it takes the world in about three. A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. The cheapest attack is about four to five times their cost. Past that, more ships no longer make it cheaper: a crowded orbit is an easy target, and the batteries read a better column (see Planetary Columns and Hit Formula). A stack of twenty-five times their cost still takes the world, but loses about two and a half times what one of five times loses. Build batteries to buy time; bring heavy fleets to break through faster.
 
 @missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The bombardment table, the two-step battery rule, the batteries-only return-fire rule, and the other combat tables follow below.
 
@@ -1859,9 +1869,10 @@ and lets crippled light ships keep adding fire.
 )
 
 Fleet battles, the pursuit exchange included, read the modified `d10` on
-this table. The force ratio plays no part in a volley. It decides only
-whether a fleet attacks and whether it stays, as attack strength against
-attack strength, a starbase counting 100.
+this table. The force ratio does not change the table. It limits how much
+AS the larger side fires with (step 3 of How a Fleet Battle Is Fought). It
+also decides whether a fleet attacks and whether it stays, as attack
+strength against attack strength, a starbase counting 100.
 
 == Fleet Battle Die Modifiers and Hit Formula
 
@@ -1879,7 +1890,9 @@ attack strength, a starbase counting 100.
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[hits = ceil(total_AS \* effectiveness)]],
+    [#text(font: "IBM Plex Mono")[y = min(2, damp((our_AS / enemy_AS) ^ (1 / 3.3))),  damp(y) = y if y <= 1.3, else (y + 1.3) / 2]],
+    [#text(font: "IBM Plex Mono")[firing_AS = our_AS if our_AS <= enemy_AS, else min(our_AS, round(enemy_AS \* y))]],
+    [#text(font: "IBM Plex Mono")[hits = ceil(firing_AS \* effectiveness)]],
   )
 ]
 
@@ -1972,7 +1985,10 @@ fire that hits poorly and in quarters for fire that does not:
 
 == Planetary Columns and Hit Formula
 
-- The force ratio alone picks the column; nothing shifts it
+- The force ratio picks the column, with one exception: a crowded orbit.
+  Batteries firing at ships in orbit read one column better for each
+  doubling of the ships' AS past three times theirs. They read at least
+  Pressed from 3:1, Even from 6:1, and Advantaged from 12:1.
 
 #align(left)[
   #stack(

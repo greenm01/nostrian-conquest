@@ -1426,10 +1426,9 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
     let report = joined_report_containing(&results, "Enemy starbase destroyed.");
     assert!(report.contains("ALERT: Enemy fleet contact!"), "{report}");
     assert!(report.contains("Enemy starbase destroyed."), "{report}");
-    assert!(
-        report.contains("The aliens were completely destroyed."),
-        "{report}"
-    );
+    // The attacker fires with only part of its AS (t232), so the guard's
+    // ETAC outlives the exchange that destroys the line, and flees.
+    assert!(report.contains("The enemy fled the field."), "{report}");
 
     cleanup_dir(&target);
 }

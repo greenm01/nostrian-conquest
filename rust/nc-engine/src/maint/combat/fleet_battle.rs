@@ -12,7 +12,7 @@ use super::damage::{Holder, apply_class_change, write_back_base, write_back_flee
 use super::exchange::{
     BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_ALLOCATION, COMBAT_KIND_FLEET,
     COMBAT_KIND_PURSUIT, COMBAT_KIND_PURSUIT_CATCH, SeededDice, apply_hits_to_fleet,
-    fleet_die_modifier, fleet_volley, heavy_line_outweighs, pursuit_catches,
+    committed_fleet_as, fleet_die_modifier, fleet_volley, heavy_line_outweighs, pursuit_catches,
 };
 use super::reporting::{
     loaded_armies_for_fleet_indices, mission_kind_for_order, preferred_reporting_fleet_index,
@@ -108,16 +108,16 @@ fn fire_exchange(
             continue;
         };
         let our_as = tf.state.total_combat_as();
-        let enemy_heavy_cost: u32 = opponents
+        let targets = opponents
             .iter()
-            .filter(|other| other.empire == target_empire)
-            .map(|other| other.state.heavy_cost())
-            .sum();
+            .filter(|other| other.empire == target_empire);
+        let enemy_heavy_cost: u32 = targets.clone().map(|other| other.state.heavy_cost()).sum();
+        let enemy_as: u32 = targets.map(|other| other.state.total_combat_as()).sum();
         let heavy_line = heavy_line_outweighs(tf.state.heavy_cost(), enemy_heavy_cost);
         let result = fleet_volley(
             dice.d10(kind, round, tf.empire, target_empire),
             fleet_die_modifier(&tf.state, surprise == Some(tf.empire), heavy_line),
-            our_as,
+            committed_fleet_as(our_as, enemy_as),
         );
         let sup_hits = if result.hits > 0 {
             let sup_ratio = tf.state.suppression_as() as f64 / our_as as f64;

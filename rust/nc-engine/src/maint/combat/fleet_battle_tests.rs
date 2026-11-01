@@ -17,8 +17,8 @@ use nc_data::{
 
 use super::exchange::{
     BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_PURSUIT, apply_battery_hits_to_fleet,
-    apply_hits_to_fleet, apply_landing_fire_to_fleet, fleet_die_modifier, fleet_volley,
-    heavy_line_outweighs,
+    apply_hits_to_fleet, apply_landing_fire_to_fleet, committed_fleet_as, fleet_die_modifier,
+    fleet_volley, heavy_line_outweighs, target_rich_column,
 };
 use super::fleet_battle::{BattleSide, FleetBattle, apply_pending_hits, fight_encounter_with_dice};
 use super::state::{FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, new_task_force};
@@ -205,6 +205,34 @@ fn fleet_volley_reads_the_flat_table() {
     assert!(!fleet_volley(9, 0, 0).critical);
 }
 
+/// Classic's engagement count (t232): the larger side fires with part of
+/// its AS, about the enemy's, and never more than twice it.
+#[test]
+fn the_larger_side_commits_part_of_its_force() {
+    // An equal or smaller side, or one with no enemy AS, fires in full.
+    assert_eq!(committed_fleet_as(100, 100), 100);
+    assert_eq!(committed_fleet_as(50, 100), 50);
+    assert_eq!(committed_fleet_as(100, 0), 100);
+    // 2:1 commits 2^(1/3.3) ≈ 1.23 times the enemy.
+    assert_eq!(committed_fleet_as(200, 100), 123);
+    // 10:1 is past 1.3, so it is halved toward it: (2.01 + 1.3) / 2.
+    assert_eq!(committed_fleet_as(1000, 100), 165);
+    // No stack commits more than twice the enemy.
+    assert_eq!(committed_fleet_as(100_000, 100), 200);
+}
+
+/// The target-rich orbit (t232): batteries read one column better for each
+/// doubling of the ships' AS past three times theirs.
+#[test]
+fn batteries_shoot_better_into_a_crowded_orbit() {
+    let columns: Vec<usize> = [269, 270, 539, 540, 1080, 100_000]
+        .into_iter()
+        .map(|enemy_as| target_rich_column(90, enemy_as))
+        .collect();
+    assert_eq!(columns, [0, 1, 1, 2, 3, 3]);
+    assert_eq!(target_rich_column(0, 1000), 0);
+}
+
 /// The punch ladder (6vqrcldx): a destroyer's DS is 7, so crippling one
 /// costs 7 and execution fire pays 14 to destroy a nominal one. Finishing a
 /// cripple with execution fire costs half, rounded up to 4 (t206).
@@ -264,8 +292,8 @@ fn heavies_cover_the_destroyers() {
 }
 
 /// Cover (t206): suppression too weak for the cruiser in front cannot
-/// reach the destroyers behind it, and carries; a class with nothing left
-/// to hit is simply skipped.
+/// reach the destroyers behind it, and carries. A crippled cruiser still
+/// stands in front (t232): only the 30 that destroy it open the way.
 #[test]
 fn a_cruiser_too_dear_to_hit_shields_the_destroyers() {
     let mut state = FleetCombatState::default();
@@ -276,12 +304,32 @@ fn a_cruiser_too_dear_to_hit_shields_the_destroyers() {
     assert_eq!(carried.suppression, 20);
     state.cripple(IDX_CA, 1);
     let carried = apply_hits_to_fleet(&mut state, 20, 0, 0);
+    assert_eq!(state.crippled_count(IDX_DD), 0);
+    assert_eq!(carried.suppression, 20);
+    let carried = apply_hits_to_fleet(&mut state, 44, 0, 0);
+    assert_eq!(state.counts[IDX_CA], 0, "30 destroy the crippled cruiser");
     assert_eq!(
         state.crippled_count(IDX_DD),
         2,
-        "with the cruiser crippled, 14 of the 20 cripple both destroyers"
+        "14 cripple both destroyers"
     );
-    assert_eq!(carried.suppression, 6);
+    assert_eq!(carried.suppression, 0);
+}
+
+/// Dispersed fire (t232): suppression strikes healthy and crippled hulls in
+/// proportion, healthy first, so it destroys crippled hulls before every
+/// healthy one is crippled. Two healthy and two crippled cruisers take two
+/// strikes: one cripples a healthy hull, the other destroys a crippled one.
+#[test]
+fn suppression_strikes_healthy_and_crippled_hulls_in_proportion() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_CA] = 4;
+    state.cripple(IDX_CA, 2);
+    let carried = apply_hits_to_fleet(&mut state, 60, 0, 0);
+    assert_eq!(state.counts[IDX_CA], 3);
+    assert_eq!(state.nominal_count(IDX_CA), 1);
+    assert_eq!(state.crippled_count(IDX_CA), 2);
+    assert_eq!(carried.suppression, 0);
 }
 
 /// Battery return fire and landing fire keep the pre-t206 prices and
@@ -826,7 +874,8 @@ fn a_fleet_on_roe_zero_fights_the_first_exchange_when_attacked() {
 
 /// The allocation example at the battle level: eighteen destroyers' 180
 /// execution hits destroy three nominal cruisers of a side whose fleets
-/// hold 8 and 2, shared as 2 and 1.
+/// hold 8 and 2, shared as 2 and 1. The larger cruiser side commits only
+/// 246 of its 330 AS (t232), so one destroyer survives.
 #[test]
 fn losses_are_shared_among_a_sides_fleets_in_proportion() {
     let mut game_data = board();
@@ -840,12 +889,12 @@ fn losses_are_shared_among_a_sides_fleets_in_proportion() {
     fight_sides(&mut game_data, &dice, 1, 1, &[0, 1], &[4]);
     assert_eq!(game_data.fleets[0].ships.cruisers, 6);
     assert_eq!(game_data.fleets[1].ships.cruisers, 1);
-    assert_eq!(game_data.fleets[4].ships.destroyers, 0);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 1);
 }
 
 /// The carry bank stays with the side: the 15 suppression hits a cruiser
 /// pair's roll of 0 leaves carried are still there after the fleet that
-/// was hit has left, and buy a cripple with the next exchange's 15.
+/// was hit has left, and buy a cripple with the next exchange's hits.
 #[test]
 fn a_departing_fleet_leaves_the_carried_hits_with_its_side() {
     let mut game_data = board();
@@ -853,11 +902,13 @@ fn a_departing_fleet_leaves_the_carried_hits_with_its_side() {
     place(&mut game_data, 4, 2, Ships { ca: 1, ..NONE }, 0);
     place(&mut game_data, 5, 2, Ships { ca: 1, ..NONE }, 10);
     let dice = Scripted {
-        d10: &|_, _, _, _| 0,
+        d10: &|_, round, empire, _| if empire == 1 && round == 2 { 3 } else { 0 },
         pursuit: &|_, _, _| ESCAPED,
     };
     // Exchange 1: 15 carried against empire 2; the ROE 0 cruiser leaves.
-    // Exchange 2: 15 more make 30, and the remaining cruiser is crippled.
+    // Exchange 2: the pair now outnumber the lone cruiser and commit 41 of
+    // their 66 AS (t232). A roll of 3 gives 21, too few alone to cripple a
+    // cruiser, but with the 15 carried the remaining cruiser is crippled.
     fight_sides(&mut game_data, &dice, 2, 1, &[0], &[4, 5]);
     assert_eq!(game_data.fleets[4].crippled.cruisers.total(), 0);
     assert_eq!(game_data.fleets[5].crippled.cruisers.total(), 1);

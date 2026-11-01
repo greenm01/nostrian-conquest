@@ -32,10 +32,13 @@ fn at_sector_centre_in_deep_space(game_data: &mut CoreGameData, idx: usize) {
 
 /// Fleet 0 withdrew from the battle at `coords` this year.
 fn withdrew(events: &MaintenanceEvents, coords: [u8; 2]) -> bool {
+    // A withdrawal the enemy survives to fire on is reported as pursuit fire.
     events.encounter_disposition_events.iter().any(|event| {
         matches!(
             event,
-            EncounterDispositionEvent::Retreated { fleet_idx: 0, coords: at, .. } if *at == coords
+            EncounterDispositionEvent::Retreated { fleet_idx: 0, coords: at, .. }
+                | EncounterDispositionEvent::PursuitFire { fleet_idx: 0, coords: at, .. }
+                if *at == coords
         )
     })
 }
@@ -351,6 +354,10 @@ fn retreat_picks_home_by_travel_distance_not_manhattan_distance() {
                 .any(|event| matches!(
                     event,
                     EncounterDispositionEvent::Retreated {
+                        fleet_idx: 0,
+                        retreat_target_coords: BY_TRAVEL,
+                        ..
+                    } | EncounterDispositionEvent::PursuitFire {
                         fleet_idx: 0,
                         retreat_target_coords: BY_TRAVEL,
                         ..

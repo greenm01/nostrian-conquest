@@ -729,6 +729,8 @@ fn a_starbase_lost_with_its_guard_sends_one_loss_notice() {
     );
     game_data.fleets[4].order = Order::GuardStarbase;
     game_data.fleets[4].mission_target = 1;
+    // On ROE 10 the guard stays beside its base to the end (t232).
+    game_data.fleets[4].rules_of_engagement = 10;
     game_data.players[1].mode = PlayerMode::Human;
     game_data.players[1].autopilot = false;
 

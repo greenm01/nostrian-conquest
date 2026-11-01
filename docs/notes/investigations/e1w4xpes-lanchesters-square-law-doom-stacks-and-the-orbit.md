@@ -2,7 +2,7 @@
 id: e1w4xpes
 date: 2026-10-31
 kind: investigation
-status: investigating
+status: resolved
 tags: [investigation, combat, balance, simulation, doom-stacks]
 ---
 # Lanchester's square law, doom stacks and the orbit
@@ -438,28 +438,51 @@ The owner proposed (2026-10-31) to combine:
   sieges as they are, and never makes a world unbreakable.
 
 The two rules act on different exchanges and don't interact. Neither
-reaches the cripple-first buffer. If heavy stacks should also bleed in fleet
-battles, that needs a damage rule as well: for example, letting suppression
-destroy crippled hulls before every healthy hull is crippled. Hughes's
-break-off data suggest ending battles earlier, but Helmbold found fixed
-break points don't fit history, so NC's ROE already plays that role. That is
-a separate decision.
+reaches the cripple-first buffer, so a third rule was simulated: dispersed
+suppression, where suppression strikes healthy and crippled hulls in
+proportion (see Simulation: dispersed suppression). Hughes's break-off data
+suggest ending battles earlier, but Helmbold found fixed break points don't
+fit history, so NC's ROE already plays that role.
 
-t232 tracks the choice. No rule has changed.
+The owner adopted all three rules on 2026-10-31:
+[almb7dbt](../decisions/almb7dbt-a-larger-side-commits-part-of-its-force-and-batteries-punish-a-crowded-orbit.md),
+task t232.
+
+## Simulation: dispersed suppression
+
+The fleet sweep again, 60 defending units, 300 seeds, with classic's count
+in both columns. The figure is the attacker's loss as a share of its cost.
+Who wins is the same in both columns, and destroyer fleets and the AI's mix
+come out identical to three decimals: their crippled hulls are finished by
+execution fire before suppression reaches them.
+
+| Cruisers, r | Before t232 | Count only | Count + dispersed | Square law |
+|---|---|---|---|---|
+| 1.5 | 10.5% | 21.9% | 32.5% | 25.5% |
+| 2 | 0.4% | 3.1% | 12.3% | 13.4% |
+| 3 | 0.1% | 0.2% | 4.5% | 5.7% |
+| 5 | 0.0% | 0.1% | 1.3% | 2.0% |
+
+Dispersed fire brings cruiser stacks from steeper than the square law back
+to about it, the same place destroyer fleets already were. The engine's
+final rules reproduce this table and the orbital sweep's target-rich table
+exactly.
 
 ## Validation and remaining work
 
 - Deterministic: the orbital sweep (500 seeds per case) and the fleet
-  sweep (300 seeds per case), run on today's engine and on temporary
-  patches. All the patches have been reverted.
+  sweep (300 seeds per case), run on the engine before t232, on temporary
+  patches, and on the final engine. The final engine matches the patches
+  exactly.
+- Regression tests pin the count, the target-rich columns and the
+  dispersed walk (`fleet_battle_tests.rs`). Tests that pinned old outcomes
+  were updated: a withdrawing fleet now meets pursuit fire, a guard on ROE 0
+  escapes a base it used to die beside, a guard's ETAC now outlives the
+  line, and the AI seat fixtures were re-recorded.
 - Not yet measured: multi-year sieges with reinforcement; invasion
   suppression and blitz fire, which share the battery exchange; and fleet
-  battles between different hull mixes or with a starbase present.
-- Not playtested. Either rule needs a manual change, the "three times the
-  batteries' cost" paragraph rechecked, and the pending AI retrain for
-  [bd8trz18](../decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)
-  run on the chosen rule.
-- Open decision: t232 in [todo.md](../../../todo.md).
+  battles with a starbase present or with battleships.
+- Not playtested. The AI retrain on these rules is the next step.
 
 ## Connections
 

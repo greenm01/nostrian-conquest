@@ -20,14 +20,17 @@ fn fixture(name: &str) -> std::path::PathBuf {
         .join(name)
 }
 
-/// A submission that only commissions finished ships.
+/// A submission that only commissions finished ships, in bulk or slot by
+/// slot (each world's scouts commission as their own fleet, t227).
 fn commissioning(turn: &TurnSubmission) -> bool {
     turn.fleets.is_empty()
         && turn.planets.iter().all(|planet| {
-            planet
-                .actions
-                .iter()
-                .all(|action| matches!(action, PlanetTurnAction::AutoCommission))
+            planet.actions.iter().all(|action| {
+                matches!(
+                    action,
+                    PlanetTurnAction::AutoCommission | PlanetTurnAction::Commission { .. }
+                )
+            })
         })
 }
 
