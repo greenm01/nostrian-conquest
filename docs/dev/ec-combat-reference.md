@@ -211,7 +211,8 @@ Rust matches classic's odds, not its random sequence.
   world's potential and split as classic's passes are (t234). The turn ends
   with the round that leaves no battery, and armies and industry take fire
   at half strength (t236), which brings a cruiser's yearly damage to an open
-  world near classic's. Classic runs one
+  world near classic's. Both keep production at 1.0 or more (t237); classic
+  also raises a world under 1.0 to 1.0, and NC leaves it. Classic runs one
   battle, collateral damage, and up to 20 random passes, then goes to Hold.
 - Invade. NC runs one suppression exchange and a softening that hits armies
   only, at most half of them, with a defender column bonus and no draws.

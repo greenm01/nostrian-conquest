@@ -341,8 +341,11 @@ fn hit_industry(planet: &mut nc_data::Planet, hits: u32) {
             let goods_loss = f64::from(hits.saturating_mul(GOODS_DESTROYED_PER_POINT));
             planet.stored_goods = Real48::from_f64((goods - goods_loss).max(0.0));
         }
+        // Never below 1.0, as classic's passes end (t237); a world already
+        // under 1.0 keeps what it has.
         let production = planet.production.to_f64();
-        planet.production = Real48::from_f64((production - f64::from(hits)).max(0.0));
+        let floor = production.min(1.0);
+        planet.production = Real48::from_f64((production - f64::from(hits)).max(floor));
     }
 }
 

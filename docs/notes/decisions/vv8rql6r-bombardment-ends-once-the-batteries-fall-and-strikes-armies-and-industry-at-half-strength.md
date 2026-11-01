@@ -40,8 +40,8 @@ Fire at the batteries, return fire, invasion and blitz are unchanged.
   classic rewards with more passes.
 - **One round without half strength.** It still emptied a mid-size world in
   three years against ten cruisers.
-- **A classic floor of 1.0 production.** Not needed for the owner's goal,
-  and left out to keep the rule small.
+- **A classic floor of 1.0 production.** Left out at first, then adopted
+  by the owner the same day (t237; see Amendment).
 
 ## Consequences
 
@@ -59,3 +59,10 @@ text: the player manual's bombardment rules and
 [nc-combat-spec.md](../../dev/nc-combat-spec.md). Evidence:
 [e1w4xpes](../investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md#simulation-fewer-rounds-and-half-strength-behind-the-batteries),
 `tools/combat-model/collateral_t236.py`.
+
+## Amendment (t237, 2026-11-01)
+
+The owner asked to match classic's production floor. Bombardment never
+takes a world's production below 1.0. A world already under 1.0 keeps
+what it has, where classic raises it to 1.0. A world kept at 1.0 regrows
+from there once the siege lifts, rather than from nothing.

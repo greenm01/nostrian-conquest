@@ -638,7 +638,8 @@ up to three rounds. Its hits go to the ground batteries first. Only when none
 are left do they reach docked ships, then armies, stored goods, and
 factories, and they strike the armies and factories at half strength. The
 year's bombardment ends with the round that destroys the last battery, and a
-world with no batteries takes one round a year.
+world with no batteries takes one round a year. Bombardment never takes a
+world's production below 1.0.
 Some fire always gets past standing batteries, though, and more of it on a
 large world, so a siege the batteries can hold still wears down what lies
 behind them.
@@ -1756,7 +1757,7 @@ starbase in orbit does, and the transports turn for home.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 
-Each bombardment turn resolves up to three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield what lies behind them, except for the extra fire described next. Once the last battery falls, the rest of that round's hits flow on down the line, and the turn ends with that round. A world with no batteries takes one round of fire a year, on its stardock and armies first. Hits that get past the stardock strike the armies and factories at half strength: halve them, rounding down, before they reach the armies.
+Each bombardment turn resolves up to three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield what lies behind them, except for the extra fire described next. Once the last battery falls, the rest of that round's hits flow on down the line, and the turn ends with that round. A world with no batteries takes one round of fire a year, on its stardock and armies first. Hits that get past the stardock strike the armies and factories at half strength: halve them, rounding down, before they reach the armies. Bombardment never takes production below 1.0, and a world already under 1.0 keeps what it has.
 
 No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. The armies' and the factories' shares strike at half strength, rounded down. Hits the dock cannot spend pass to the armies at half strength, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, 54 of them reach industry and destroy 5 points of production and 125 goods.
 
@@ -2039,7 +2040,8 @@ Orbital hits on a world pay each target's DS on the same 10x scale:
 - Ship in the stardock: its own DS from the unit table (docked batteries `66`,
   armies `10`)
 - Stored goods and factories: remaining hits are divided by `10`, and each
-  point then destroys `25` stored goods and `1` factory
+  point then destroys `25` stored goods and `1` factory. Production never
+  falls below `1.0` this way; a world already under `1.0` keeps what it has.
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
 over to the next round. Once the stardock is exposed, hits too few for one

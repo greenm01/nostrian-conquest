@@ -356,3 +356,17 @@ fn bombarding_a_world_in_debt_leaves_the_debt() {
     assert_eq!(planet.stored_goods.to_f64(), -40.5);
     assert_eq!(planet.production.to_f64(), 98.0, "production still burns");
 }
+
+#[test]
+fn bombardment_never_takes_production_below_one() {
+    // 2,000 hits reach industry at half strength as 100 points, more than the
+    // world's 100 production: it keeps 1.0, as classic's runs leave it.
+    let mut planet = world(0, 0, 0, 0);
+    apply_planet_bombardment_damage(&mut planet, 2000, 4);
+    assert_eq!(planet.production.to_f64(), 1.0);
+
+    // A world already under 1.0 keeps what it has.
+    planet.production = Real48::from_f64(0.5);
+    apply_planet_bombardment_damage(&mut planet, 2000, 4);
+    assert_eq!(planet.production.to_f64(), 0.5);
+}
