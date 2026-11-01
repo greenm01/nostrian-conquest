@@ -522,7 +522,7 @@ This creates a deadly synergy where heavy ships suppress the enemy line, while l
 
 ### Bombardment Resolution (Per Turn)
 
-Each bombardment turn resolves three sequential exchanges (rounds). Ground
+Each bombardment turn resolves up to three sequential exchanges (rounds). Ground
 batteries act as the planet's shield wall --- while they stand, they draw
 orbital fire and shoot back, protecting the stardock, armies, production, and
 industry. When an empire's fleet strikes a world with Bombard, every other
@@ -538,8 +538,13 @@ the batteries cannot take expire, so nothing behind them is touched. Once the
 last battery falls, the rest of that round's hits go on to the stardock and
 below in the same round
 ([combat decision 5](../notes/decisions/mk1ie4e3-batteries-shield-the-stardock-and-failed-landings-hold-orbit.md),
-amended 2026-10-30). Batteries fire back each round they stand. A world with
-no batteries takes all three rounds on its stardock and armies.
+amended 2026-10-30). Batteries fire back each round they stand.
+
+**Fewer rounds and half strength behind the batteries (t236).** The turn
+ends with the round in which no battery is left: the round that destroys the
+last one, or the first round at a world with none. Hits that pass the
+stardock are halved, rounded down, before they strike the armies and
+industry. The dock takes full fire.
 
 **Some fire gets past the batteries (t234).** In a round that starts with a
 battery standing, `round(hits · share)` extra hits land behind the batteries,
@@ -549,7 +554,8 @@ on top of the hits the batteries take.
 - `2/5` of the extra hits, rounded down, go to the stardock, `1/10`, rounded
   down, to the armies, and the rest to goods and factories.
 - What the dock cannot spend passes to the armies, and what the armies
-  cannot spend passes to goods and factories.
+  cannot spend passes to goods and factories. The armies' share, with the
+  dock's leftover, and the industry share are halved, rounded down (t236).
 
 Battery outcomes, the attacker's losses and worlds without batteries are
 unchanged

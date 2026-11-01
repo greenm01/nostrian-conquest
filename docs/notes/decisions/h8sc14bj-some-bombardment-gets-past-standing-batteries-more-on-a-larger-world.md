@@ -59,3 +59,6 @@ Accepted by the owner on 2026-11-01 ("10–40%", after the simulation). Task
 t234. Normative text: the player manual's bombardment rules and
 [nc-combat-spec.md](../../dev/nc-combat-spec.md). Evidence:
 [e1w4xpes](../investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md#simulation-bombardment-leak).
+
+Amended by [vv8rql6r](vv8rql6r-bombardment-ends-once-the-batteries-fall-and-strikes-armies-and-industry-at-half-strength.md)
+(t236): the leak's armies and industry shares now strike at half strength.

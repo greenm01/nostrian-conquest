@@ -634,8 +634,11 @@ orbit. The owner's starbase there, with its guards, fights it before it can
 strike, and a fleet that loses is driven off (see @missions).
 
 *Bombard* wears a world down. Each year the fleet stays in orbit, it fires
-three rounds. Its hits go to the ground batteries first. Only when none are
-left do they reach docked ships, then armies, stored goods, and factories.
+up to three rounds. Its hits go to the ground batteries first. Only when none
+are left do they reach docked ships, then armies, stored goods, and
+factories, and they strike the armies and factories at half strength. The
+year's bombardment ends with the round that destroys the last battery, and a
+world with no batteries takes one round a year.
 Some fire always gets past standing batteries, though, and more of it on a
 large world, so a siege the batteries can hold still wears down what lies
 behind them.
@@ -1753,9 +1756,9 @@ starbase in orbit does, and the transports turn for home.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries skip the crippled state and destroy ships outright, which makes them far deadlier than spread ship-to-ship fire. A commander who parks a large fleet over a fortified world will watch ground fire pick his ships off one by one.]
 
-Each bombardment turn resolves three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield what lies behind them, except for the extra fire described next. Once the last battery falls, the rest of that round's hits flow on down the line. A world with no batteries takes your fire on its stardock and armies from the first round.
+Each bombardment turn resolves up to three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then armies, then stored goods and factories. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield what lies behind them, except for the extra fire described next. Once the last battery falls, the rest of that round's hits flow on down the line, and the turn ends with that round. A world with no batteries takes one round of fire a year, on its stardock and armies first. Hits that get past the stardock strike the armies and factories at half strength: halve them, rounding down, before they reach the armies.
 
-No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. Hits the dock cannot spend pass to the armies, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, they destroy 10 points of production and 250 goods.
+No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. The armies' and the factories' shares strike at half strength, rounded down. Hits the dock cannot spend pass to the armies at half strength, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, 54 of them reach industry and destroy 5 points of production and 125 goods.
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 
@@ -2052,8 +2055,8 @@ escorts' bombardment AS. It is focus fire aimed at the descending transports
 first: each transport destroyed costs `20` hits (2x its DS) and takes its army
 with it, and any hits left over fall on the escorts.
 
-Each bombardment turn runs three rounds, and each round pours its hits down
-the same order of targets:
+Each bombardment turn runs up to three rounds, and each round pours its hits
+down the same order of targets:
 
 + Ground batteries: cripple every healthy one, then destroy the crippled ones.
 + Ships in the stardock.
@@ -2062,8 +2065,11 @@ the same order of targets:
 
 A hit goes to the highest target still standing. While any battery stands,
 the hits it cannot take are lost. Once the last battery falls, the rest of
-the round's hits go on to the stardock and below in the same round.
-Batteries fire back each round they stand.
+the round's hits go on to the stardock and below in the same round, and the
+turn ends after that round. A world with no batteries takes one round.
+Hits the stardock does not spend are halved, rounded down, before they reach
+the armies: fire at armies and industry strikes at half strength. Batteries
+fire back each round they stand.
 
 In a round that begins with a battery standing, extra hits also get past
 the batteries, on top of the hits they take:
@@ -2080,8 +2086,10 @@ the batteries, on top of the hits they take:
 Potential is the world's Potential Production, counted as 10 below 10 and
 150 above 150. The `d10` is the round's own roll. Two fifths of the extra
 hits, rounded down, strike the stardock, and a tenth, rounded down, the
-armies. The rest strike stored goods and factories. Hits a target cannot
-spend pass to the next one. A world with no batteries takes no extra hits.
+armies. The rest strike stored goods and factories. The armies' and the
+factories' shares, and the dock's leftover passing to the armies, strike at
+half strength, rounded down. Hits a target cannot spend pass to the next
+one. A world with no batteries takes no extra hits.
 
 Invasion suppresses for up to three rounds, as a bombardment does, but its
 hits strike the batteries only and never the stardock, armies, or industry. It

@@ -284,7 +284,8 @@ fn apply_capped_invasion_soften_damage(
 /// While any battery stands, the hits it does not take expire, so batteries
 /// shield everything behind them, but some fire always gets past them (t234):
 /// [`bombardment_leak`] lands on top of the hits the batteries take. Units
-/// cost their DS in hits; hits reaching goods and factories are scaled down
+/// cost their DS in hits. Fire at armies and industry strikes at half
+/// strength (t236), and hits reaching goods and factories are scaled down
 /// from the 10x combat scale before the per-unit conversion.
 pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32, roll: u8) {
     let leak = if planet.ground_batteries > 0 {
@@ -297,7 +298,7 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
     if planet.ground_batteries > 0 {
         return;
     }
-    let hits = reduce_stardock(planet, hits);
+    let hits = reduce_stardock(planet, hits) / 2;
     let hits = hit_armies(planet, hits);
     hit_industry(planet, hits);
 }
@@ -313,14 +314,14 @@ fn bombardment_leak(planet: &nc_data::Planet, hits: u32, roll: u8) -> u32 {
 }
 
 /// Leaked hits split as classic's passes do: 40% at the dock, 10% at the
-/// armies, the rest at goods and factories. What a target cannot take
-/// passes down to the next.
+/// armies, the rest at goods and factories, those two at half strength.
+/// What a target cannot take passes down to the next.
 fn apply_leak(planet: &mut nc_data::Planet, leak: u32) {
     let dock = leak * 2 / 5;
     let armies = leak / 10;
     let rest = reduce_stardock(planet, dock);
-    let rest = hit_armies(planet, armies + rest);
-    hit_industry(planet, leak - dock - armies + rest);
+    let rest = hit_armies(planet, (armies + rest) / 2);
+    hit_industry(planet, (leak - dock - armies) / 2 + rest);
 }
 
 /// Armies cost their DS in hits. Returns the hits left over.
@@ -767,6 +768,10 @@ pub(crate) fn resolve_strike(
                     attacker_exchange.roll,
                 );
                 breakthrough |= game_data.planets[planet_idx].ground_batteries == 0;
+                // A world without batteries takes no more rounds this year (t236).
+                if breakthrough {
+                    break;
+                }
             }
 
             let post_planet = &game_data.planets[planet_idx];

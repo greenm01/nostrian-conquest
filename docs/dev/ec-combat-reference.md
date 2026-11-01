@@ -205,10 +205,13 @@ Rust matches classic's odds, not its random sequence.
 - Retreat. NC's retreat aborts the mission. Classic's scatter sends the fleet
   home at ROE 0; its retreat aborts only assault, colonize, and guard
   fleets.
-- Bombard. NC fires three rounds per turn behind a battery shield, with hit
-  costs per target, and persists each year until the player changes the
-  order. Extra fire leaks past standing batteries, growing with the world's
-  potential and split as classic's passes are (t234). Classic runs one
+- Bombard. NC fires up to three rounds per turn behind a battery shield,
+  with hit costs per target, and persists each year until the player changes
+  the order. Extra fire leaks past standing batteries, growing with the
+  world's potential and split as classic's passes are (t234). The turn ends
+  with the round that leaves no battery, and armies and industry take fire
+  at half strength (t236), which brings a cruiser's yearly damage to an open
+  world near classic's. Classic runs one
   battle, collateral damage, and up to 20 random passes, then goes to Hold.
 - Invade. NC runs one suppression exchange and a softening that hits armies
   only, at most half of them, with a defender column bonus and no draws.

@@ -531,7 +531,67 @@ switch were temporary, run on bean-void.
 engine reproduces both of its tables exactly.
 
 **Outside t234.** A fortress that falls loses all its production within the
-same year of bombardment. This is unchanged and not measured further.
+same year of bombardment. t236 takes this up below.
+
+## Simulation: fewer rounds and half strength behind the batteries
+
+**Question (owner, 2026-11-01).** Once the batteries are gone, or at a world
+that never had any, three full-strength rounds empty it in a year. A siege at
+1.5:1 or more took all of a fortress's production in year one. So did ten
+cruisers at an open world.
+
+**Classic.** Each Bombard order is one run: the battle, collateral damage
+scaled to the batteries destroyed, then up to 20 passes, less the rounds the
+battle took. In a pass each warship fires one small shot at a random target.
+A factory hit removes a tenth of the shot's damage. Production never drops
+below 1.0, and the fleet then holds. Ten cruisers against an open world
+leave 79% of the factories (ec-battle-spec, case B2).
+
+**Rules tested (t236).** Every variant was run on the t234 engine.
+- **One round once no battery stands.** The year ends with the round that
+  destroys the last battery, and a world with none takes one round.
+  - *Keep:* that round's leftover hits still flow on.
+  - *Drop:* they are lost.
+- **Half strength:** hits that pass the stardock are halved before they
+  strike the armies and industry, the leak's included. The dock takes full
+  fire.
+
+**Setup.** The t234 harness and seeds again. One added run bombards an open
+world with 10 armies for five years: potential 30, 80 or 150; cruisers,
+battleships or the AI's mix; 33 to 2,700 AS; 300 seeds.
+
+**Findings.**
+1. **Battles are untouched.** Battery break rates and the attacker's losses
+   match t234 exactly in every variant.
+2. **One round alone is not enough.** Ten cruisers still leave a
+   potential-80 world 41% of its production after a year, and none after
+   three.
+3. **One round at half strength is close to classic.** A cruiser removes
+   about 2.4 points of production a year from an open world (exact model
+   `tools/combat-model/collateral_t236.py`). Classic removes about 2.1.
+   Production left after years 1, 3 and 5:
+
+| World | Fleet | t234 | One round | One round + half |
+|---|---|---|---|---|
+| 80 | 3 CA | 51 / 0 / 0 | 92 / 50 / 10 | 100 / 82 / 63 |
+| 80 | 10 CA | 0 / 0 / 0 | 41 / 0 / 0 | 77 / 9 / 0 |
+| 150 | 10 CA | 4 / 0 / 0 | 68 / 3 / 0 | 88 / 50 / 13 |
+| 150 | 27 CA | 0 / 0 / 0 | 12 / 0 / 0 | 55 / 0 / 0 |
+
+4. **At a fortress of 10 batteries,** with the AI's mix and half strength,
+   production lost in year one:
+
+| Ratio | t234 | Keep | Drop |
+|---|---|---|---|
+| 1.5 | 99–100% | 48–62% | 25% |
+| 3 | 100% | 84–91% | 48–50% |
+| 25 | 100% | 100% | 94% |
+
+   A doom stack still levels a world in a year, as one does in classic.
+
+**Resolution.** The owner chose one round at half strength, keeping the
+leftover hits, on 2026-11-01. The engine's `planetary.rs` model tests are
+pinned to `collateral_t236.py`.
 
 ## Validation and remaining work
 

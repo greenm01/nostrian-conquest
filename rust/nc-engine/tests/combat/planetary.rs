@@ -307,19 +307,19 @@ fn the_dock_is_exposed_once_the_batteries_are_gone() {
     }
 }
 
-/// `tools/combat-model/collateral_t202.py` (`assault_collateral.py` under the
-/// t202 rules, ships and batteries firing at full strength, each round's hits
-/// pouring down the target order), case `BB4-B2`: the
+/// `tools/combat-model/collateral_t236.py` (`collateral_t202.py` with the
+/// t234 leak past standing batteries, half-strength fire at armies and
+/// industry, and no rounds once the batteries fall), case `BB4-B2`: the
 /// exact expected losses of one bombardment turn of four battleships against
 /// two two-step batteries, ten armies, and
 /// a docked battleship, in cost points (BB 45), batteries destroyed, armies,
 /// and points of production.
 const SHIELD_MODEL: [(&str, f64); 5] = [
     ("ship cost lost", 13.5),
-    ("dock cost lost", 45.0),
+    ("dock cost lost", 36.0),
     ("batteries lost", 2.0),
-    ("armies lost", 10.0),
-    ("production lost", 94.142),
+    ("armies lost", 7.3),
+    ("production lost", 8.1),
 ];
 
 #[test]
@@ -374,12 +374,12 @@ fn a_bombardment_turn_costs_what_the_shield_model_says() {
 #[test]
 fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
     // One ship bombards a world with nothing in orbit, no battery, and no
-    // garrison: all three rounds reach the economy. On the overwhelming
-    // column of the bombardment table each round's point count is
-    // `floor(hits / 10)`; exact enumeration over the rolls
-    // (`collateral_t202.py`) gives a cruiser (bombardment AS 33) 15.9 points
-    // and a battleship (90) 45.6, and 25 goods a point makes a cruiser raid
-    // about 400 goods and a battleship raid about 1,140.
+    // garrison: its one round (t236) reaches the economy at half strength.
+    // On the overwhelming column of the bombardment table the point count is
+    // `floor(floor(hits / 2) / 10)`; exact enumeration over the rolls
+    // (`collateral_t236.py`) gives a cruiser (bombardment AS 33) 2.4 points
+    // and a battleship (90) 7.3, and 25 goods a point makes a cruiser raid
+    // about 60 goods and a battleship raid about 180.
     const TRIALS: u64 = 2000;
     for (name, ships, mean_points) in [
         (
@@ -388,7 +388,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 ca: 1,
                 ..Ships::default()
             },
-            15.9,
+            2.4,
         ),
         (
             "battleship",
@@ -396,7 +396,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 bb: 1,
                 ..Ships::default()
             },
-            45.6,
+            7.3,
         ),
     ] {
         let mut game_data = assault_on_system(Order::BombardWorld, ships, 0, 0);
