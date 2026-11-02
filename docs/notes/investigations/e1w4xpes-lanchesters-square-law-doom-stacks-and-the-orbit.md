@@ -737,6 +737,116 @@ compacts the fleet list. The t234 siege harness read the attacker's losses
 from a fixed index, which then pointed at a home fleet. The siege at `r = 1`
 loses 95-99% of its fleet over ten years, not about 90%.
 
+## Simulation: battleships, starbases, invasion and recovery
+
+**Question (t243).** Which cases did the t232-t240 sweeps leave out?
+Fleet battles with battleships or a starbase, how much warship strength
+an invasion needs against batteries, and how fast a world recovers once a
+siege lifts.
+
+**Setup.** A temporary harness on the empty-board fixture at commit
+09046bc9, run on the Mac mini, 300 seeds a case. Fleets are found by owner
+and fleet number.
+
+**The t232 fleet sweep holds.** It read fleets by fixed index, the mistake
+that t240 found in t234's siege harness. Rerun with keyed lookup, every
+row for cruisers, destroyers and the AI's mix matches the recorded sweep
+exactly.
+
+**Battleships follow the square law like cruisers.** At twice the
+defender's numbers the attacker loses 10-13% of its fleet, and at three
+times 3-5%, the same as cruisers. Destroyers stay closer to the linear law
+(the dispersed walk).
+
+**For the same cost, battleships win fleet battles.** Equal-cost duels in
+deep space, the share of battles each side wins outright, averaged over
+both seatings (the first-listed seat wins 3-9 points more; cruisers
+against destroyers ran in one seating only):
+
+| Battle, equal cost | 405 PP | 1,215 PP |
+|---|---|---|
+| Battleships against cruisers | 62% to 30% | 72% to 28% |
+| Battleships against destroyers | 88% to 7% | 96% to 4% |
+| Battleships against the AI's mix (3 DD : 1 CA) | 71% to 21% | 77% to 23% |
+| Cruisers against destroyers | 86% to 12% | 86% to 14% |
+
+A battleship has more defence per point than any other hull (DS 110 for
+45, against 30 for 15 and 7 for 5), and the bigger the battle, the more
+that tells. The AI's usual mix gives up a lot to the same points in
+battleships.
+
+**A guard that won't fight bad odds often isn't caught.** A guard fleet of
+the AI's mix at its world, on Guard/Blockade at ROE 8, against the AI's
+mix on Bombard at `r` times the defence's attack strength, one year. The
+share of games in which the defence was cleared (guard destroyed or
+withdrawn, and the starbase destroyed):
+
+| Defence | `r = 1` | `r = 1.5` | `r = 2` | `r = 3` |
+|---|---|---|---|---|
+| 5 units, no starbase | 45% | 84% | 98% | 49% |
+| 5 units and a starbase | 27% | 87% | 74% | 72% |
+| 15 units, no starbase | 44% | 84% | 98% | 72% |
+| 15 units and a starbase | 40% | 84% | 90% | 91% |
+
+ROE 8 fights at odds up to 2 to 1 against it. Past that the guard
+declines, and the attacker must win the intercept roll (awareness and
+speed) to catch it; ships of equal speed often fail. At three times its
+strength the guard survives in orbit, unengaged, in 28-51% of games,
+while the world is bombarded. A starbase always fights an assault, and its
+owner's fleets there fight beside it, so a guard with a starbase is
+cleared more often at long odds. A starbase is destroyed in 74-76% of
+games at `r = 1` and in every game from `r = 2`.
+
+**An invasion needs warships at 1.5 times the batteries.** The AI's mix on
+Invade at `r` times the batteries' attack strength (90 each), with 40
+loaded transports, against a potential-80 world with 20 armies:
+
+| Batteries | `r = 0.5` | `r = 1` | `r = 1.5` | `r = 2` | `r = 3` |
+|---|---|---|---|---|---|
+| 5 | 0% | 77% | 99% | 100% | 100% |
+| 10 | 0% | 21% | 100% | 100% | 100% |
+
+Nearly every capture came in the first year, and each kept 30-31% of
+the production.
+The warships lost 44% of their points at `r = 1.5`, 35% at 2 and 15-23% at
+3. Below `r = 1` the batteries never fell and the fleet was lost. This
+agrees with the manual's "three times their cost in warships": 1.5 times a
+battery's 90 attack strength is about 2.9 times its cost of 20 in the AI's
+mix.
+
+**Recovery is slow, and the tax sets its pace.** A world grows each year by
+`(100 - tax) / 400` of the gap to its potential (`nc-data`
+`economy::yearly_growth`), whatever the potential. Measured in the engine,
+with no starbase:
+
+| Left after the siege | Tax 40: 1 / 5 / 10 years | Years to 90% | Tax 60: 1 / 5 / 10 years | Years to 90% |
+|---|---|---|---|---|
+| 2% | 17% / 57% / 81% | 15 | 12% / 42% / 66% | 22* |
+| 30% | 41% / 69% / 86% | 12 | 37% / 59% / 76% | 19* |
+| 60% | 66% / 82% / 92% | 9 | 64% / 76% / 86% | 14 |
+
+\* From the formula; the run stopped at 15 years.
+
+A broken world takes most of a decade and a half to come back, and longer
+if its owner keeps taxing it hard. A starbase adds half again to the growth
+at taxes of 50% or less.
+
+**A correction to t234-t240: the defender's economy was frozen.** The
+fixture's empires are all in civil disorder (mode 0, tax 0), which skips
+the yearly growth and income. So every siege world in those sweeps
+regrew nothing between years. t240 was rerun with the defender at tax 60:
+
+- The share of sieges that broke the batteries, and the attackers'
+  losses, are the same or within 0.05.
+- Production left is 2-10 points higher. A potential-150 world that spends
+  everything on batteries, against twice its potential in reinforcements
+  a year, ends at 30% after ten years instead of 20%.
+- A world bombarded down to 1-2% stays there while the siege lasts.
+
+The findings stand. The t234-t238 variants were compared on the same
+frozen fixture, so their comparisons hold, but their production-left
+figures are a few points low.
+
 ## Validation and remaining work
 
 - Deterministic: the orbital sweep (500 seeds per case) and the fleet
@@ -748,9 +858,9 @@ loses 95-99% of its fleet over ten years, not about 90%.
   were updated: a withdrawing fleet now meets pursuit fire, a guard on ROE 0
   escapes a base it used to die beside, a guard's ETAC now outlives the
   line, and the AI seat fixtures were re-recorded.
-- Not yet measured: invasion suppression and blitz fire, which share the
-  battery exchange; and fleet battles with a starbase present or with
-  battleships. Reinforced sieges and several empires were measured in t240.
+- Blitz fire was measured in t240; invasion suppression, fleet battles
+  with battleships or a starbase, and recovery after a siege in t243.
+  Reinforced sieges and several empires were measured in t240.
 - Not playtested yet. The AI was retrained on these rules first (t233).
 
 **The t233 retrain (promoted 2026-11-01).** The t233 run fine-tuned

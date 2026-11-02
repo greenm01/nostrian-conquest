@@ -2194,7 +2194,7 @@ fn at_war_with(game_data: &CoreGameData, empire: u8, other: u8) -> bool {
 }
 
 /// A declared enemy's force was reported near `sector` in recent years.
-fn threatened(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> bool {
+pub fn threatened(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> bool {
     let year = game_data.conquest.game_year;
     memory.contacts.iter().any(|contact| {
         contact.empire != 0

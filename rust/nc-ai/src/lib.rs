@@ -40,7 +40,7 @@ pub use batch::{
 };
 pub use executor::{
     Doctrine, Families, Family, Weights, execute_goals, fleet_family, hand_to_network,
-    network_joins, plan_goals, plan_turn,
+    network_joins, plan_goals, plan_turn, threatened,
 };
 pub use game::SeatedGame;
 pub use goals::{ALLOCATIONS, GoalMasks, Goals, POSTURES, goal_masks, posture_weights};

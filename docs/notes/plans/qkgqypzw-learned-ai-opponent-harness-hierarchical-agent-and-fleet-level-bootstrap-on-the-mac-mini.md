@@ -3886,6 +3886,70 @@ path, and a test pins the three temperatures.
 
 Closed on 2026-11-02.
 
+### t244
+
+Score the executor's threat rule against the attacks that follow. The
+rule (`threatened` in `executor.rs`): a declared enemy's force reported
+within 4 sectors in the last 2 years threatens a world. It drives guard
+builds, army ferries and other defensive choices for every family the
+network does not order.
+
+**Run (2026-11-02, Mac mini).** `nc-ai` example `threat_stats`: four
+land-grab executors on 1,024 maps from 100000, 60 years. Every year, before
+the turns, each world is judged from its owner's memory; it is attacked
+when a bombardment or an assault targets it while its owner holds it. The
+first variant is checked against `threatened` itself on every world-year.
+1,177,998 world-years, 94,632 attacks.
+
+| Rule | Flagged | Precision, 1 year | Recall, 1 year | Precision, 2 years | Recall, 2 years |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Declared enemy, 4 sectors, 2 years (the rule) | 55.7% | 10.8% | 76.2% | 16.8% | 73.3% |
+| Any empire, 4 sectors, 2 years | 59.1% | 10.4% | 77.8% | 16.2% | 75.3% |
+| Any empire, 8 sectors, 2 years | 84.0% | 9.0% | 95.3% | 14.3% | 94.4% |
+| Any empire, 8 sectors, 4 years | 88.8% | 8.7% | 98.2% | 14.0% | 97.7% |
+
+The base rate is 7.9% of world-years attacked within a year and 12.7%
+within two.
+
+1. **The rule barely discriminates.** It flags more than half of all
+   world-years, and its precision is 1.37 times the base rate. It catches
+   three attacks in four only by flagging most worlds.
+2. **The declared-enemy filter costs little.** 4.8% of attacks come from
+   an empire the owner had not declared an enemy.
+3. **Widening the rule only flags more.** Precision falls as recall
+   rises; no distance or memory setting separates the attacked worlds.
+
+A yes/no rule on distance and recency cannot rank threats when enemy
+forces are everywhere once war starts. A learned hazard (the chance a
+world is attacked within one or two years, from the owner's memory:
+force strength and heading, its own garrison, distance to enemy worlds)
+is justified by this result. It would be trained on self-play labels, and
+used as the executor's threat test or as an auxiliary head. Measured on
+executor-only games; the network's attacks were not scored.
+
+Closed on 2026-11-02.
+
+### t245
+
+Test t235's snapshot 50 against `fleet-final` on maps neither was chosen
+on. On maps 100000+ it was the best of three snapshots (+0.032 / +0.044),
+and in t241 it topped the league within one standard deviation.
+
+**Run (2026-11-02, Mac mini, commit 09046bc9).** `behaviour_report`,
+both `+builds`, 1,024 maps from 7000000 (clear of training, evaluation
+and league maps), three executors:
+
+| | 60 years | 100 years |
+| --- | ---: | ---: |
+| `fleet-final` win share | 0.530 | 0.659 |
+| snapshot 50 win share | 0.489 | 0.621 |
+| Paired difference | -0.042 +/- 0.018 | -0.038 +/- 0.019 |
+
+Snapshot 50's earlier gain was selection noise; `fleet-final` stays. The
+league's ranking of it above `fleet-final` was within noise too.
+
+Closed on 2026-11-02.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in
