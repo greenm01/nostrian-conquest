@@ -55,8 +55,17 @@ details are in the plans' result sections.
   promoted on 2026-11-01: +0.048 / +0.051 win share against the old agent
   (60 / 100 years, paired), and it is deployed to crunch's test BBS
   ([e1w4xpes](../notes/investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md#validation-and-remaining-work)).
-  The previous agent is `fleet-final-pre-t233`. archvps still runs the
-  t184b agent and will until a release ships t232. Deployed to archvps on
+  The previous agent is `fleet-final-pre-t233`. t235 retrained it on the
+  t234-t238 bombardment rules and was not promoted (owner, 2026-11-01): its
+  best snapshot gained +0.044 at 100 years but lost -0.033 on the start
+  check. Crunch's BBS still runs the t232 rules; deploying t238 there needs a
+  build on crunch, so coordinate it with crunch's agents first.
+  `fleet_ppo.py --update-cmd` can run each update on crunch's RX 7900 GRE
+  while self-play stays on the mini, but it is off: ROCm also opens crunch's
+  iGPU, which crunch's Sophia work needs. A device-cgroup launcher that hides
+  the iGPU is staged for review in crunch's `~/nc-ai-state/gpu-worker/`; do
+  not install or probe it until crunch's codex coordinates a window.
+  archvps still runs the t184b agent and will until a release ships t232. Deployed to archvps on
   2026-10-28 (owner's OK): `/opt/nc-community/models/fleet-final.onnx`,
   named by `NC_AI_MODEL` in systemd drop-ins
   (`/etc/systemd/system/{nc-community,nc-community-turns}.service.d/ai-model.conf`),

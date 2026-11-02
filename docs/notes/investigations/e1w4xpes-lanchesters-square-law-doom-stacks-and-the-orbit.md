@@ -665,6 +665,26 @@ The first reports ran on stale code: bean-void's checkout had no remote,
 so its pull failed. They were rerun after the commits were copied over with
 a git bundle.
 
+**The t235 retrain (not promoted, 2026-11-01).** The t235 run fine-tuned
+`fleet-final` (t233's snapshot 75) for 100 iterations on the t234-t238
+bombardment rules, with t233's recipe. Paired `behaviour_report` results
+against `fleet-final`, 1,024 maps, at `a7d6390f`:
+
+| Snapshot | Win share, 60 years | Win share, 100 years | Start check |
+|---|---|---|---|
+| 50 | +0.032 ± 0.019 | +0.044 ± 0.019 | -0.033 ± 0.023 |
+| 75 | +0.002 ± 0.019 | +0.014 ± 0.020 | -0.024 ± 0.025 |
+| 100 | -0.004 ± 0.019 | -0.017 ± 0.020 | -0.047 ± 0.024 |
+
+Snapshot 50's gain is about two standard errors, taken as the best of three,
+and the start check goes the other way; the run declined after it, and
+snapshot 100 ends 0.6 worlds down and bombards a third less. The owner kept
+`fleet-final`, which plays the new rules as it is. Iterations 20-37 and 41-74
+ran their optimizer updates on crunch's GPU (`fleet_ppo.py --update-cmd`, bit-identical
+to an in-process update) until that was switched off; the run also exposed
+and fixed a Mac GPU memory leak in self-play (`a7d6390f`), which had slowed
+self-play from 23 s to over 100 s an iteration.
+
 ## Connections
 
 - [ec-battle-spec §1.3](../../dev/ec-battle-spec.md): classic's engagement
