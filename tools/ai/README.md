@@ -87,6 +87,19 @@ registered agents:
 Map seeds from 5,000,000 keep league games apart from training and
 evaluation maps.
 
+To find out who beats whom, not just a rating, play every four-agent
+lineup and rank the agents with α-Rank (t248):
+
+```sh
+uv run league.py --db league.db play --every-lineup 32
+uv run --with open_spiel --with matplotlib league_alpharank.py --db league.db
+```
+
+[`league_alpharank.py`](league_alpharank.py) prints each agent's win share
+alone against three copies of another (above 0.25 it invades), and α-Rank's
+mass on each agent. OpenSpiel is not a dependency of this project; `--with`
+fetches it for the one run.
+
 ## Export an agent for real games (t165)
 
 ```sh

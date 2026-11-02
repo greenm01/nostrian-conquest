@@ -5,6 +5,7 @@ registered agents, stored as replays, rated with OpenSkill.
     uv run league.py --db ... add-agent final --checkpoint strategist-final.pt
     uv run league.py --db ... add-agent fleet --fleet fleet-final.pt
     uv run league.py --db ... play --games 256
+    uv run league.py --db ... play --every-lineup 16
     uv run league.py --db ... ratings
     uv run league.py --db ... verify
 
@@ -32,6 +33,7 @@ the end. The displayed rating is mu - 3 sigma, a cautious estimate.
 import argparse
 import datetime
 import hashlib
+import itertools
 import json
 import sqlite3
 import subprocess
@@ -154,7 +156,7 @@ def ranks(result):
     return [1 + sum(other > key for other in keys) for key in keys]
 
 
-def play(db, games, years, batch, seed):
+def play(db, games, years, batch, seed, every_lineup=0):
     agents = db.execute("select id, name, kind, spec, sha256 from agents order by id").fetchall()
     if len(agents) < 2:
         raise SystemExit("register at least two agents")
@@ -175,6 +177,12 @@ def play(db, games, years, batch, seed):
         else:
             seat_names[agent_id] = spec
     code = code_version()
+    # Every lineup of agents, self-play aside, each played every_lineup times
+    # in rotating seat order (t248, for alpharank.py).
+    combos = [c for c in itertools.combinations_with_replacement(agents, PLAYERS)
+              if len(set(c)) > 1]
+    if every_lineup:
+        games = len(combos) * every_lineup
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
     first = FIRST_MAP + (db.execute("select coalesce(max(id), 0) from matches").fetchone()[0])
@@ -187,7 +195,10 @@ def play(db, games, years, batch, seed):
         # small, in a seat order rotated by the game.
         lineups = []
         for game in range(count):
-            picked = [agents[i] for i in rng.choice(len(agents), PLAYERS, len(agents) < PLAYERS)]
+            if every_lineup:
+                picked = list(combos[(start + game) // every_lineup])
+            else:
+                picked = [agents[i] for i in rng.choice(len(agents), PLAYERS, len(agents) < PLAYERS)]
             shift = (start + game) % PLAYERS
             lineups.append(picked[shift:] + picked[:shift])
         env.reset(
@@ -358,6 +369,8 @@ def main():
     run.add_argument("--years", type=int, default=60)
     run.add_argument("--batch", type=int, default=128)
     run.add_argument("--seed", type=int, default=1)
+    run.add_argument("--every-lineup", type=int, default=0, metavar="N",
+                     help="play every lineup N times instead of --games random ones")
     sub.add_parser("ratings")
     sub.add_parser("verify")
     args = parser.parse_args()
@@ -366,7 +379,7 @@ def main():
     if args.command == "add-agent":
         add_agent(db, args.name, args.scripted, args.checkpoint, args.fleet)
     elif args.command == "play":
-        play(db, args.games, args.years, args.batch, args.seed)
+        play(db, args.games, args.years, args.batch, args.seed, args.every_lineup)
         rate(db)
         show(db)
     elif args.command == "ratings":

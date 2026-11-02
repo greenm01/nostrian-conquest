@@ -4034,6 +4034,64 @@ retrain (t249) in the plan are not triggered.
 
 Closed on 2026-11-02.
 
+### t248
+
+α-Rank the current agents, to settle what t241's table left open: are the
+top fleet agents tied, or do they beat each other in a cycle? The owner
+asked for it on the current agents, though t246 and t247 changed none.
+
+Scope: seven agents, the top five of t241 (fleet-final, t235's snapshot
+50, t239's exploiter, pre-t233, pre-t213) with the `final` strategist and
+the executor, checkpoints copied into the mini's `ai/t248/agents/`.
+`league.py play --every-lineup 32` played every four-agent lineup but
+self-play (203 lineups) 32 times each, seats rotated, 60 years: 6,496
+matches on maps 5000000-5006495, at `a4143ccf` with the `--every-lineup` change
+uncommitted. `tools/ai/league_alpharank.py` builds OpenSpiel's heuristic
+payoff table from the seats' mean win shares and runs α-Rank with the
+four seats as four populations sharing that table (OpenSpiel's
+single-population α-Rank takes two players only).
+
+**Result (2026-11-02).** `verify` rebuilt the table exactly.
+
+| Agent | Rating | Win share | α-Rank mass (α = 10) | (α infinite) |
+| --- | ---: | ---: | ---: | ---: |
+| t239-exploiter | 23.48 | 0.307 | 0.356 | 0.318 |
+| t235-s50 | 23.69 | 0.307 | 0.250 | 0.229 |
+| fleet-final | 24.75 | 0.294 | 0.213 | 0.208 |
+| pre-t233 | 22.68 | 0.272 | 0.113 | 0.133 |
+| pre-t213 | 23.08 | 0.257 | 0.062 | 0.092 |
+| final | 17.51 | 0.180 | 0.005 | 0.017 |
+| executor | 19.86 | 0.133 | 0.000 | 0.004 |
+
+Win share of an agent alone against three copies of another (32 games,
+standard error about 0.08; above 0.25 the lone agent invades), among the
+top four:
+
+| Alone \ against three | fleet-final | t235-s50 | t239-exploiter | pre-t233 |
+| --- | ---: | ---: | ---: | ---: |
+| fleet-final | - | 0.188 | 0.344 | 0.250 |
+| t235-s50 | 0.219 | - | 0.250 | 0.156 |
+| t239-exploiter | 0.281 | 0.156 | - | 0.406 |
+| pre-t233 | 0.219 | 0.281 | 0.188 | - |
+
+1. **The top three are tied; there is no cycle to find at this
+   precision.** No entry among them is more than 1.2 standard errors from
+   0.25, and α-Rank spreads its mass over all three. A cycle, if there is
+   one, is smaller than about 0.1 of win share. Resolving 0.05 would take
+   about ten times the games.
+2. **The ratings agree with the tie.** The order of the three changed from
+   t241 (t235-s50 first, fleet-final fourth) to here (fleet-final first),
+   and t245's paired test put t235-s50 0.04 behind fleet-final. fleet-final
+   stays the shipped agent.
+3. **The fleet agents beat the scripted and strategist seats clearly.**
+   Alone against three executors every fleet agent but pre-t213 wins about
+   0.5; alone among three of any fleet agent the executor wins 0.03-0.06.
+4. **For a later league retrain (t249),** α-Rank's mass is a ready set of
+   opponent weights: about a third to the exploiter, two-fifths to
+   fleet-final and t235-s50 together, the rest to pre-t233 and pre-t213.
+
+Closed on 2026-11-02.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in
