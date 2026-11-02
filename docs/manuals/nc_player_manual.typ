@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 25),
+  date: datetime(year: 2026, month: 11, day: 2),
 )
 
 #set page(
@@ -74,7 +74,7 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 25, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: November 2, 2026]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.5 — Beta]
 ]
@@ -651,7 +651,8 @@ keep bombarding, and recover only after a year without an attack.
 Battleships make the best bombardiers, because they live through the return
 fire.
 
-*Invade* takes a world intact. The fleet fires the year's three rounds at the
+*Invade* takes a world without bombarding it, but the landing still wrecks
+most of its industry. The fleet fires the year's three rounds at the
 batteries only. If any survive, no troops land: the fleet keeps its armies
 aboard and its order, and suppresses again next year until the last battery
 falls. With the batteries gone, your ships soften the defending armies, never
@@ -662,8 +663,10 @@ economy, but a world taken by invasion keeps only part of its industry.
 stronger the escort, the fewer batteries are left. Then your armies come down
 under the survivors' fire, which picks off transports before they reach the
 ground. If you win, the world's factories, goods, and surviving batteries are
-yours. Use it against lightly defended worlds, or when speed matters more
-than losses.
+yours. The batteries fire one volley at the landing, and each battery
+shoots down about three transports. Bring that many extra, plus twice the
+defending armies, and a blitz takes even a fortress in one year, keeping
+far more of it than an invasion does.
 
 On the ground, invasion and blitz fight the same battle, and the defenders fire
 first. Equal numbers are a poor bet: one army against one wins a third of the
@@ -678,15 +681,16 @@ combat appendix). Queued builds and any debt pass on either way. The world
 pays no revenue for two years while its industry converts, then full revenue.
 If its owner set Scorch Earth, its production and goods are halved and its
 stardock emptied when it falls (see @scorch-earth). In short: bombardment
-costs you part of the prize; invasion keeps the prize but needs the batteries
-down first; a blitz keeps everything at the price of armies and transports.
+costs you part of the prize; invasion spares the world until the landing but
+keeps only a fraction of its industry, and needs the batteries down first; a
+blitz keeps most of everything at the price of armies and transports.
 
 == Defending Your Worlds
 
 *Ground batteries* are your cheapest firepower: 20 points buys the attack of a
 battleship. They destroy ships outright, they must fall before an invader can
 land, and they fire on transports during a blitz. An attacker needs about three
-times their cost in warships to take a fortress in a year. With less he must
+times their cost in warships to break them in a year. With less he must
 besiege it for years, and an undersized fleet is destroyed. Lift his siege for
 a year and your crippled batteries are repaired.
 
@@ -730,7 +734,7 @@ A fleet always has exactly one standing order. If you give a new order before ma
     [04], [Guard a Starbase],  [Persistent], [Escort a starbase; fight alongside it. Needs warships.],
     [05], [Guard/Blockade a World],        [Persistent], [Watch a world. Attacks assaults, colonizers of an unowned world, and declared enemies. Needs warships.],
     [06], [Bombard a World],         [Hostile],    [Damage factories, batteries, armies, stardock contents, and production.],
-    [07], [Invade a World],          [Hostile],    [Suppress the batteries, soften the armies, then land. Spares industry and goods. Needs warships and loaded transports.],
+    [07], [Invade a World],          [Hostile],    [Suppress the batteries, soften the armies, then land. Never bombards, but keeps only 20--40% of production. Needs warships and loaded transports.],
     [08], [Blitz a World],           [Hostile],    [Drop armies at once, under battery fire. High army risk.],
     [09], [View a World],            [One-shot],   [Quick scan of owner and production; the fleet dives in and climbs back out.],
     [10], [Scout a Sector],    [Persistent], [Watch a sector closely and identify traffic (requires Scout).],
@@ -838,7 +842,7 @@ your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 *Mission 4: Guard a Starbase.* The fleet escorts a starbase and fights beside it. An attack on either one is a battle against both, and the base joins as a defender in any battle its guard is drawn into. A guard stays with its base and does not close on the contacts it spots. It attacks, or joins an attack by your other fleets there, when the ROE odds favor the fight.
 
-*Mission 5: Guard/Blockade a World.* A mission of denial. The blockade watches the world five times as hard as an ordinary fleet. It attacks any fleet that comes to bombard, invade, or blitz the world, or to colonize it while it is unowned. It also attacks any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. The mission stays in force until you assign a new one.
+*Mission 5: Guard/Blockade a World.* A mission of denial. The blockade watches the world five times as hard as an ordinary fleet. It attacks any fleet it catches coming to bombard, invade, or blitz the world, or to colonize it while it is unowned. An assault strikes as it arrives, so a blockade does not always catch it first; a starbase in orbit always fights it. It also attacks any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. The mission stays in force until you assign a new one.
 
 *Missions 10 and 11: Scout a Sector / Scout a Solar System.* Both need at least one Scout ship, and a fleet of a single Scout is the hardest to detect. Scout a Sector is a quiet watch over the sector. A scout on station looks five times as hard as an ordinary fleet and identifies what it spots, and with ROE 0 it never attacks. Scout a Solar System is an active spy run. The Scout enters the system and reports on ground batteries, armies, current production, stardock contents, and orbiting fleets. Entering the system means the owner's fleets there may attack it. A scout sent to a world of yours has nothing to learn: it gives up when it arrives and holds position. Both are persistent missions: the fleet stays on station and sends a new report each maintenance for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before you earn a full scout or view report.
 
@@ -1165,6 +1169,49 @@ are no alliances. Nobody ever joins your battles, and any pact you make rests
 on the other empire's word alone. You cannot fight everyone at once, so fight
 one rival at a time and keep the rest Neutral until you are ready.
 
+== Sieges <sieges>
+
+A world that buys new batteries every year fights back every year. Plan a
+siege as one hard blow, not a slow drip (see @attacking-worlds).
+
+*Bring enough the first time.* Batteries give the most firepower per point in
+the game. Destroyers and cruisers worth three times the batteries' cost nearly
+always break them in a year, but lose nearly half their number doing it.
+Bring six times their cost and you lose about a sixth. The bigger the fleet, the smaller its losses.
+
+*Never feed a siege a few ships at a time.* The defender rebuilds the batteries
+each year, and each small group of new ships meets the full line alone. A
+siege that starts too small loses nearly every ship you send and leaves the
+world almost whole. If the first blow fails, gather a bigger fleet and strike
+again.
+
+*Once the batteries fall, keep the fleet in orbit.* A bombarded world's
+production soon drops too low to buy new batteries, and it cannot recover
+while your fleet stays. Its owner has to drive your fleet off with a fleet;
+batteries alone can no longer save it.
+
+*Defending a world under siege.* Spend its production on batteries and the
+siege costs the attacker more in ships than you spend, often twice as much.
+But some fire always gets past standing batteries, so even a world that holds
+loses production year after year, and it builds nothing else meanwhile.
+Batteries buy time. Your fleets have to end the siege.
+
+*Bombarding with a friend.* There are no alliances, but two empires at war
+with the same rival can attack the same world while staying Neutral to each
+other. Each empire's fleets bombard on their own, and the batteries fight one
+empire's ships and then the other's. Split between two empires, a fleet worth
+three times the batteries' cost breaks them less often and loses about three
+quarters of its ships. So the stronger empire should bring enough to break the
+batteries alone; its partner, arriving the same year, adds a round against the
+open world. At a world with no batteries it makes no difference: each empire's
+ships do the same damage however you divide them.
+
+*Let your enemies fight each other.* If two empires at war with each other
+attack the same world, they fight each other in orbit first, and the world
+often keeps half its production. Before you strike a world a rival is already
+attacking, weigh whether you can beat the rival's fleet as well as the
+batteries.
+
 == Late Game: Total War
 
 Once the raw worlds are gone, the only way to grow is to take worlds from
@@ -1179,10 +1226,13 @@ heavier fleets. Build destroyers for speed, scouting, and the kill, not as
 your whole navy (see @cripple-or-destroy).
 
 *Match the attack to the prize.* Bombard a world you mean to ruin or whose
-batteries you must break; it destroys what you might capture. Invade a world
-you want intact, once its batteries are down. Blitz a lightly defended world
-when speed matters more than losses; it keeps everything, surviving batteries
-included. A captured world pays nothing for two years, so take worlds early
+batteries you must break; it destroys what you might capture. Invade when you
+have warships but few transports: it lands only once the batteries are down,
+and keeps a fifth to two fifths of the world's production. Blitz when you want
+the world whole: it needs about three transports for every battery plus twice
+the defending armies, and it keeps most of the industry and goods, surviving
+batteries included. Against a starbase in orbit, either one first needs
+warships that can beat the base. A captured world pays nothing for two years, so take worlds early
 rather than late, and do not count on their revenue to fund the next
 campaign.
 
@@ -1763,7 +1813,7 @@ No world is too small to hide everything, and no battery wall covers all of a la
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 
-Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in one year and loses less than the batteries cost. Twice their cost wins about half the time in the first year, and kept on station and reinforced it takes the world in about three. A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. The cheapest attack is about four to five times their cost. Past that, more ships no longer make it cheaper: a crowded orbit is an easy target, and the batteries read a better column (see Planetary Columns and Hit Formula). A stack of twenty-five times their cost still takes the world, but loses about two and a half times what one of five times loses. Build batteries to buy time; bring heavy fleets to break through faster.
+Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships breaks any fortress's batteries in one year. It loses less than the batteries cost if it is cruisers or battleships, and about a third more if it is mostly destroyers. Twice their cost breaks them in the first year about a quarter of the time with destroyers and cruisers, and most of the time with battleships. Kept on station against a world that rebuilds its batteries, it breaks them later only with heavy reinforcement (see @sieges). A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. The cheapest attack is about four to five times their cost. Past that, more ships no longer make it cheaper: a crowded orbit is an easy target, and the batteries read a better column (see Planetary Columns and Hit Formula). A stack of twenty-five times their cost still takes the world, but loses about two and a half times what one of five times loses. Build batteries to buy time; bring heavy fleets to break through faster.
 
 @missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The bombardment table, the two-step battery rule, the batteries-only return-fire rule, and the other combat tables follow below.
 

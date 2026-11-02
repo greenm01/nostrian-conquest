@@ -626,6 +626,117 @@ with the defender buying armies:
 armies' share of the leak and of classic's passes, leaving the dock out.
 The engine's model tests are pinned to the updated `collateral_t236.py`.
 
+## Simulation: reinforced sieges and several empires
+
+**Question (owner, 2026-11-02).** The t234-t238 sweeps held each siege
+fleet fixed and had one empire bombard. Can an attacker who keeps feeding a
+siege break a world that keeps rebuilding its batteries? And what changes
+when two or three empires bombard the same world, as allies or as rivals?
+
+**Setup (t240).** The t234 harness on the final t238 engine, run on the
+mini, with the AI's mix (three destroyers to a cruiser) on Bombard at ROE
+10 and 300 seeds per case. The harness was temporary.
+- **Reinforced siege:** ten years against 10 batteries. The defender spends
+  half or all of its production on batteries each year. The siege starts at
+  `r` of 0.5 or 1 and gets new ships each year worth 0, 0.5, 1 or 2 times
+  the world's potential. Ships join the siege fleet, or form a new one there
+  if it was destroyed.
+- **Several empires:** a fixed total force bombards one world for three
+  years. It is one fleet, one empire's two fleets, or split evenly among two
+  or three empires. The empires are allies (neutral to one another) or
+  rivals (at war with one another and the world). Worlds have potential 80
+  or 150, with 10 batteries (`r` of 1, 1.5 or 3) or none (210, 450 or 900
+  AS).
+
+**Findings: reinforced sieges.** Siege starting at `r = 1`. The cells give
+the share of games in which the batteries fall, the production left after
+ten years, and the attacker's losses against what it sent, in PP:
+
+| Potential, defender's spending | No reinforcement | 1× potential a year | 2× potential a year |
+|---|---|---|---|
+| 80, half | 28%, 76%, 370/390 | 31%, 59%, 875/1,110 | 79%, 18%, 937/1,830 |
+| 80, all | 27%, 81%, 379/390 | 27%, 65%, 947/1,110 | 35%, 46%, 1,354/1,830 |
+| 150, half | 27%, 82%, 382/390 | 35%, 46%, 1,298/1,740 | 99%, 2%, 815/3,090 |
+| 150, all | 27%, 86%, 388/390 | 27%, 55%, 1,496/1,740 | 55%, 20%, 1,894/3,090 |
+
+1. **A trickle of ships doesn't rescue an undersized siege.** The batteries
+   are rebuilt each year, and a few new ships meet them alone. At `r = 0.5`
+   with up to the potential a year, the batteries never fall, nearly every
+   ship sent is lost, and the world keeps 73-96% of its production. Only
+   twice the potential a year breaks them: 36% and 95% of worlds of 80 and
+   150 that spend half, 0% and 14% of those that spend all.
+2. **Heavy reinforcement breaks a world of potential 80 or more that spends
+   half its production on batteries.** Once the batteries fall the world
+   can't afford new ones, and its production collapses.
+3. **A world that spends everything on batteries holds longer.** Its
+   batteries fall in 35-55% of games, and the attacker loses 1,354-1,894 PP
+   against the defender's 623-794. The leak still takes industry every
+   year.
+
+**Findings: several empires.** At 10 batteries, potential 80: the share of
+games in which the batteries fall in year one, the attackers' losses as a
+share of their fleets, and production after three years.
+
+| Force | One empire | Two allies | Three allies | Two rivals | Three rivals |
+|---|---|---|---|---|---|
+| `r = 1` | 27%, 93%, 76% | 5%, 99%, 91% | 0%, 100%, 95% | 4%, 99%, 93% | 0%, 100%, 97% |
+| `r = 1.5` | 100%, 44%, 2% | 82%, 75%, 27% | 51%, 88%, 55% | 47%, 86%, 57% | 16%, 97%, 83% |
+| `r = 3` | 100%, 15%, 1.3% | 100%, 23%, 1.3% | 100%, 38%, 1.3% | 51%, 86%, 51% | 65%, 89%, 38% |
+
+1. **An empire's fleets strike together.** Two fleets of one empire match
+   one fleet exactly.
+2. **Each empire strikes alone, so allies gain nothing at an open world.**
+   Each empire gets its own round, but with only its share of the hits.
+   450 AS leave a potential-80 world 56-57% after a year and 1.3-1.4% after
+   three, however allies split it.
+3. **At a fortress, splitting among allies costs the attackers.** The
+   batteries fight each empire's ships in turn, and the square law favours
+   the concentrated side. Only an overwhelming coalition gains: at `r = 3`,
+   the empire after the breakthrough gets a round at the open world. Two
+   allies leave the world 1.3% after year one instead of 7.9% (5.5% instead
+   of 15% at potential 150), at 23% losses instead of 15%.
+4. **Rivals fight each other first.** The world is the winner: at `r = 3`
+   it keeps 38-51% of its production after three years, and the attackers
+   lose 85-89%.
+
+Potential 150 gives the same pattern. Neither run finds an exploit in the
+t234-t238 rules. The coalition result comes from the per-empire strike
+groups, which these rules didn't change.
+
+**Blitz against a fortress (owner question, 2026-11-02).** What happens to
+a player who builds mostly transports with a few cheap escorts and blitzes
+every world? The same harness, at a potential-80 world, 300 seeds. A loaded
+transport costs 7.
+
+| Attack on 10 batteries, 20 armies | Ships sent | Captured | Losses | Production kept | Batteries kept |
+|---|---|---|---|---|---|
+| Blitz: 80 transports, 2 destroyers | 570 | 100% | 209 | 92% | 6.7 |
+| Blitz: 40 transports, 2 destroyers | 290 | 11% | 206 | 68% | 4.7 |
+| Invade: 60 destroyers, 20 cruisers, 40 transports | 880 | 100% | 281 | 30% | 0 |
+
+- The batteries fire one volley at the landing, and each battery shoots
+  down about three transports, about its own cost. A blitz needs about
+  three transports per battery plus twice the garrison. Escorts of 2 to 12
+  destroyers change nothing against batteries.
+- Against batteries and armies alone, a big enough blitz beats an invasion:
+  it is cheaper, takes one year, loses less, and keeps about 90% of the
+  production and two thirds of the batteries. Invasion needs far fewer
+  transports: 20 with its warships took that fortress 88% of the time.
+- A starbase is the counter. At a world of 5 batteries and 10 armies, a
+  starbase cut a blitz with 2 destroyers from 99% to 16%; it took 30
+  destroyers to reach 92%. A guard fleet of 3 or 8 cruisers on
+  Guard/Blockade at ROE 8 stopped the lightly escorted blitz only about a
+  third of the time, because it must catch the assault before it strikes.
+
+The owner kept the rules. The manual was corrected where it said an
+invasion takes a world intact and that a blitz suits only lightly defended
+worlds.
+
+**A correction to t234.** Maintenance removes a destroyed fleet and
+compacts the fleet list. The t234 siege harness read the attacker's losses
+from a fixed index, which then pointed at a home fleet. The siege at `r = 1`
+loses 95-99% of its fleet over ten years, not about 90%.
+
 ## Validation and remaining work
 
 - Deterministic: the orbital sweep (500 seeds per case) and the fleet
@@ -637,9 +748,9 @@ The engine's model tests are pinned to the updated `collateral_t236.py`.
   were updated: a withdrawing fleet now meets pursuit fire, a guard on ROE 0
   escapes a base it used to die beside, a guard's ETAC now outlives the
   line, and the AI seat fixtures were re-recorded.
-- Not yet measured: multi-year sieges with reinforcement; invasion
-  suppression and blitz fire, which share the battery exchange; and fleet
-  battles with a starbase present or with battleships.
+- Not yet measured: invasion suppression and blitz fire, which share the
+  battery exchange; and fleet battles with a starbase present or with
+  battleships. Reinforced sieges and several empires were measured in t240.
 - Not playtested yet. The AI was retrained on these rules first (t233).
 
 **The t233 retrain (promoted 2026-11-01).** The t233 run fine-tuned
