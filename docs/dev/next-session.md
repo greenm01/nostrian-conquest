@@ -58,8 +58,12 @@ details are in the plans' result sections.
   The previous agent is `fleet-final-pre-t233`. t235 retrained it on the
   t234-t238 bombardment rules and was not promoted (owner, 2026-11-01): its
   best snapshot gained +0.044 at 100 years but lost -0.033 on the start
-  check. Crunch's BBS still runs the t232 rules; deploying t238 there needs a
-  build on crunch, so coordinate it with crunch's agents first.
+  check. Crunch's test BBS runs the t234-t238 rules and t242's difficulty
+  temperatures (hard 0, normal 0.85, easy 1.25), deployed at `09046bc9`.
+  t243-t248 (2026-11-02) changed no agent: battleships in the executor
+  (t246) and a learned threat score (t247) both lost in paired play, and
+  α-Rank (t248) found fleet-final, t235's snapshot 50 and t239's exploiter
+  tied, with no cycle. A league retrain (t249) is running on the mini (owner, 2026-11-02).
   `fleet_ppo.py --update-cmd` can run each update on crunch's RX 7900 GRE
   while self-play stays on the mini, but it is off: ROCm also opens crunch's
   iGPU, which crunch's Sophia work needs. A device-cgroup launcher that hides

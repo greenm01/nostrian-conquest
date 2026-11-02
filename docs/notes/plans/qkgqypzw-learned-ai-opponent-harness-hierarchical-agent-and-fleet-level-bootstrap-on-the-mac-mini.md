@@ -4092,6 +4092,25 @@ top four:
 
 Closed on 2026-11-02.
 
+### t249
+
+Fine-tune fleet-final against the agents t248's α-Rank weighted, to see
+whether training against them breaks the three-way tie. The plan gated this
+retrain on t246 or t247 changing the executor; neither did, and the owner
+asked for it anyway (2026-11-02).
+
+Scope: t235's recipe (`fleet_ppo.py`, strike and builds families, 100
+iterations of 64 games at 100 years) from fleet-final, with a quarter of
+games drawn from a league of t239's exploiter, t235's snapshot 50,
+fleet-final and pre-t233 (the t248 copies), weighted by PFSP as in t184.
+Scripts are in the mini's `ai/t249/`. Snapshots 50, 75 and 100 are paired
+with fleet-final by `behaviour_report` on 1,024 maps from 100000 at 60 and
+100 years, and run through `start_check.py`.
+
+**Exit:** a snapshot is put to the owner for promotion only if it gains at
+least two standard errors at both horizons and holds on the start check;
+an exploit check (t239's method) follows before any promotion.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in
