@@ -73,7 +73,6 @@ fn warships_guard_their_own_bases() {
 fn crippled_fleets_mend_beside_their_own_bases() {
     let doctrine = Doctrine {
         repair_at_bases: true,
-        threat_score: false,
         ..Doctrine::CURRENT
     };
     let mending = guards(doctrine, |fleet| !fleet.crippled.is_empty());

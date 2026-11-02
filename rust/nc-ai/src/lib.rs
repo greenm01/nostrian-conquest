@@ -25,7 +25,6 @@ mod observe;
 mod personality;
 mod replay;
 mod stored;
-mod threat;
 
 pub use action::{
     BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_EXECUTOR, BUILD_SLOTS, DETACH_CHOICES, DETACHES,
@@ -54,7 +53,4 @@ pub use personality::{
     personality_or_file,
 };
 pub use replay::{match_game, replay};
-pub use threat::{
-    THREAT_CUTOFF, THREAT_FEATURE_NAMES, THREAT_FEATURES, threat_features, threat_score,
-};
 pub use stored::{StoredPosition, load_position, opening_position};

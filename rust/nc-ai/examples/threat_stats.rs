@@ -17,17 +17,14 @@
 //! not declared an enemy when the year began.
 //!
 //! `--dump` also writes one CSV row per world-year (t247): the map, year,
-//! world and owner, [`nc_ai::threat_features`], and whether the world was
+//! world and owner, `threat_features` below, and whether the world was
 //! attacked within one and within two years (-1 where the game ended first).
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::thread;
 
-use nc_ai::{
-    SeatMemory, THREAT_CUTOFF, THREAT_FEATURE_NAMES, THREAT_FEATURES, executor_turn, match_game,
-    personality, threat_features, threat_score, threatened,
-};
+use nc_ai::{Contact, SeatMemory, executor_turn, match_game, personality, threatened};
 use nc_data::{CoreGameData, DiplomaticRelation};
 
 const PLAYERS: u8 = 4;
@@ -42,9 +39,6 @@ struct Variant {
     years: u16,
     declared: bool,
 }
-
-/// The variants, then the learned score (t247) as the last row.
-const ROWS: usize = VARIANTS.len() + 1;
 
 const VARIANTS: [Variant; 4] = [
     Variant {
@@ -106,7 +100,7 @@ struct Stats {
     games: u64,
     attacks: u64,
     undeclared_attacks: u64,
-    cells: [[Cell; HORIZONS.len()]; ROWS],
+    cells: [[Cell; HORIZONS.len()]; VARIANTS.len()],
 }
 
 impl Stats {
@@ -130,7 +124,7 @@ struct Judged {
     planet: usize,
     owner: u8,
     turn: u16,
-    flags: [bool; ROWS],
+    flags: [bool; VARIANTS.len()],
     features: [f32; THREAT_FEATURES],
 }
 
@@ -156,14 +150,13 @@ fn play(map: u64, years: u16, dump: bool) -> (Stats, String) {
             }
             let memory = &game.seats[usize::from(owner) - 1];
             let sector = record.sector.to_array();
-            let mut flags = [false; ROWS];
+            let mut flags = [false; VARIANTS.len()];
             for (flag, v) in flags.iter_mut().zip(&VARIANTS) {
                 *flag = flagged(game_data, memory, sector, v);
             }
-            flags[ROWS - 1] = threat_score(game_data, memory, planet) >= THREAT_CUTOFF;
             assert_eq!(
                 flags[0],
-                threatened(game_data, memory, &nc_ai::Doctrine::CURRENT, sector),
+                threatened(game_data, memory, sector),
                 "the first variant is the executor's rule"
             );
             judged.push(Judged {
@@ -311,19 +304,143 @@ fn main() {
             "\nattacked within {horizon} year(s): {:.2}% of world-years",
             100.0 * base.attacked as f64 / base.judged.max(1) as f64
         );
-        let names = VARIANTS
-            .iter()
-            .map(|v| v.name)
-            .chain(["learned score (t247 cutoff)"]);
-        for (v, name) in names.enumerate() {
+        for (v, variant) in VARIANTS.iter().enumerate() {
             let cell = stats.cells[v][h];
             println!(
                 "{:>36}: flagged {:5.1}%, precision {:5.1}%, recall {:5.1}%",
-                name,
+                variant.name,
                 100.0 * cell.flagged as f64 / cell.judged.max(1) as f64,
                 100.0 * cell.flagged_attacked as f64 / cell.flagged.max(1) as f64,
                 100.0 * cell.flagged_attacked as f64 / cell.attacked.max(1) as f64,
             );
         }
     }
+}
+
+/// Search radii (sectors) and report ages (years) of the strength features.
+const RADII: [f32; 3] = [2.0, 4.0, 8.0];
+const AGES: [u16; 2] = [1, 2];
+/// Distance reported when no foreign world is known.
+const FAR: f32 = 30.0;
+
+const THREAT_FEATURE_NAMES: [&str; 18] = [
+    "batteries",
+    "armies",
+    "potential",
+    "production",
+    "starbase",
+    "converting",
+    "enemy_world_distance",
+    "at_war",
+    "strength_r2_y1",
+    "strength_r2_y2",
+    "strength_r4_y1",
+    "strength_r4_y2",
+    "strength_r8_y1",
+    "strength_r8_y2",
+    "declared_strength_r4_y2",
+    "largest_force_r8_y2",
+    "contacts_r4_y2",
+    "rule",
+];
+const THREAT_FEATURES: usize = THREAT_FEATURE_NAMES.len();
+
+/// A contact's attack strength: its ships when a report counted them,
+/// otherwise its size classes counted at their strongest hull (small as a
+/// destroyer, medium a cruiser, large a battleship), and its starbases.
+fn strength(contact: &Contact) -> f32 {
+    let ships = match contact.ships {
+        Some(ships) => {
+            12.0 * ships.destroyers as f32
+                + 33.0 * ships.cruisers as f32
+                + 90.0 * ships.battleships as f32
+        }
+        None => {
+            12.0 * contact.small as f32 + 33.0 * contact.medium as f32 + 90.0 * contact.large as f32
+        }
+    };
+    ships + 100.0 * contact.starbases as f32
+}
+
+fn distance(a: [u8; 2], b: [u8; 2]) -> f32 {
+    let dx = f32::from(a[0]) - f32::from(b[0]);
+    let dy = f32::from(a[1]) - f32::from(b[1]);
+    (dx * dx + dy * dy).sqrt()
+}
+
+/// The features of world `planet_idx` (0-based) for its owner, `memory`'s
+/// empire, in the order of [`THREAT_FEATURE_NAMES`].
+fn threat_features(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    planet_idx: usize,
+) -> [f32; THREAT_FEATURES] {
+    let empire = memory.empire;
+    let year = game_data.conquest.game_year;
+    let planet = &game_data.planets[planet_idx];
+    let sector = planet.sector.to_array();
+    let declared = &game_data.players[usize::from(empire) - 1].diplomacy;
+    let enemy =
+        |other: u8| declared.get(usize::from(other) - 1) == Some(&DiplomaticRelation::Enemy);
+    let foreign: Vec<(&Contact, f32, u16)> = memory
+        .contacts
+        .iter()
+        .filter(|c| c.empire != 0 && c.empire != empire)
+        .map(|c| (c, distance(c.coords, sector), year.saturating_sub(c.year)))
+        .collect();
+    let sum = |radius: f32, age: u16| -> f32 {
+        foreign
+            .iter()
+            .filter(|(_, d, a)| *d <= radius && *a < age)
+            .map(|(c, _, _)| strength(c))
+            .sum()
+    };
+    let enemy_world_distance = memory
+        .planet_intel
+        .iter()
+        .filter(|(_, intel)| {
+            intel
+                .known_owner_empire_id
+                .is_some_and(|o| o != 0 && o != empire)
+        })
+        .filter_map(|(record, _)| game_data.planets.get(record - 1))
+        .map(|p| distance(p.sector.to_array(), sector))
+        .fold(FAR, f32::min);
+    let mut row = [0.0; THREAT_FEATURES];
+    row[0] = f32::from(planet.ground_batteries);
+    row[1] = f32::from(planet.armies);
+    row[2] = f32::from(planet.potential_production);
+    row[3] = planet.production.to_f64() as f32;
+    row[4] = f32::from(u8::from(
+        game_data
+            .bases
+            .iter()
+            .any(|b| b.owner.0 == empire && b.sector.to_array() == sector),
+    ));
+    row[5] = f32::from(u8::from(planet.years_under_owner < 2));
+    row[6] = enemy_world_distance;
+    row[7] = f32::from(u8::from(
+        (1..=game_data.conquest.player_count).any(|other| other != empire && enemy(other)),
+    ));
+    for (r, &radius) in RADII.iter().enumerate() {
+        for (a, &age) in AGES.iter().enumerate() {
+            row[8 + 2 * r + a] = sum(radius, age);
+        }
+    }
+    row[14] = foreign
+        .iter()
+        .filter(|(c, d, a)| enemy(c.empire) && *d <= 4.0 && *a < 2)
+        .map(|(c, _, _)| strength(c))
+        .sum();
+    row[15] = foreign
+        .iter()
+        .filter(|(_, d, a)| *d <= 8.0 && *a < 2)
+        .map(|(c, _, _)| strength(c))
+        .fold(0.0, f32::max);
+    row[16] = foreign
+        .iter()
+        .filter(|(_, d, a)| *d <= 4.0 && *a < 2)
+        .count() as f32;
+    row[17] = f32::from(u8::from(threatened(game_data, memory, sector)));
+    row
 }

@@ -204,10 +204,6 @@ pub struct Doctrine {
     /// alone (t207, trial; the owner's use). Off, cripples mend where they
     /// stand.
     pub repair_at_bases: bool,
-    /// A world is threatened when its learned threat score
-    /// ([`crate::threat_score`]) passes the cutoff, in place of the
-    /// distance-and-recency rule (t247, trial). Off, the rule.
-    pub threat_score: bool,
 }
 
 impl Doctrine {
@@ -237,7 +233,6 @@ impl Doctrine {
             "growth_tax" => &mut self.growth_tax,
             "guard_bases" => &mut self.guard_bases,
             "repair_at_bases" => &mut self.repair_at_bases,
-            "threat_score" => &mut self.threat_score,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -268,7 +263,6 @@ impl Doctrine {
         growth_tax: false,
         guard_bases: false,
         repair_at_bases: true,
-        threat_score: false,
     };
 }
 
@@ -357,7 +351,6 @@ impl Weights {
             growth_tax: false,
             guard_bases: false,
             repair_at_bases: false,
-            threat_score: false,
         },
     };
 
@@ -514,13 +507,7 @@ fn allocation_rule(
     labels: &Labels,
 ) -> usize {
     let threatened_world = game_data.planets.iter().any(|planet| {
-        planet.owner.0 == memory.empire
-            && threatened(
-                game_data,
-                memory,
-                &weights.doctrine,
-                planet.sector.to_array(),
-            )
+        planet.owner.0 == memory.empire && threatened(game_data, memory, planet.sector.to_array())
     });
     if !threatened_world {
         return 0;
@@ -529,7 +516,6 @@ fn allocation_rule(
         threatened(
             game_data,
             memory,
-            &weights.doctrine,
             game_data.planets[record - 1].sector.to_array(),
         )
     });
@@ -793,12 +779,7 @@ fn choose_builds(
         weights.starbases
     };
     if weights.doctrine.defend && !is_home {
-        let exposure = exposure(
-            game_data,
-            memory,
-            &weights.doctrine,
-            planet.sector.to_array(),
-        );
+        let exposure = exposure(game_data, memory, planet.sector.to_array());
         let armies = army_target(game_data, memory, weights, record, false);
         return defended_builds(
             game_data,
@@ -854,12 +835,7 @@ fn choose_builds(
     } else {
         // A threatened colony builds its guard, alone.
         if allocation >= 1
-            && threatened(
-                game_data,
-                memory,
-                &weights.doctrine,
-                planet.sector.to_array(),
-            )
+            && threatened(game_data, memory, planet.sector.to_array())
             && !guarded(game_data, memory.empire, planet.sector.to_array())
         {
             needs.push(Need::Warship);
@@ -944,14 +920,7 @@ fn army_target(
     let production = f32::from(nc_data::present_production_points(planet));
     let armies = (weights.colony_armies * production / 25.0).max(1.0);
     if weights.doctrine.defend {
-        armies
-            * (1.0
-                + exposure(
-                    game_data,
-                    memory,
-                    &weights.doctrine,
-                    planet.sector.to_array(),
-                ))
+        armies * (1.0 + exposure(game_data, memory, planet.sector.to_array()))
     } else {
         armies
     }
@@ -996,12 +965,7 @@ fn defended_builds(
         bought
     };
     if allocation >= 1
-        && threatened(
-            game_data,
-            memory,
-            &weights.doctrine,
-            planet.sector.to_array(),
-        )
+        && threatened(game_data, memory, planet.sector.to_array())
         && !guarded(game_data, memory.empire, planet.sector.to_array())
         && let Some(kind) = preferred_hull(allowed, weights, points, stock)
         && order(kind, 1, &mut points) > 0
@@ -1044,13 +1008,8 @@ fn defended_builds(
 }
 
 /// How exposed a world is, 0 to 1 (`Doctrine::defend`).
-fn exposure(
-    game_data: &CoreGameData,
-    memory: &SeatMemory,
-    doctrine: &Doctrine,
-    sector: [u8; 2],
-) -> f32 {
-    if threatened(game_data, memory, doctrine, sector) {
+fn exposure(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> f32 {
+    if threatened(game_data, memory, sector) {
         return 1.0;
     }
     memory
@@ -1472,8 +1431,7 @@ fn plan_fleets(
             && world_at(game_data, fleet.target.to_array()).is_some_and(enemy_world)
     };
     let mut blockaded = game_data.fleets.iter().any(blockading);
-    let home_threatened =
-        home_sector.is_some_and(|sector| threatened(game_data, memory, &weights.doctrine, sector));
+    let home_threatened = home_sector.is_some_and(|sector| threatened(game_data, memory, sector));
     let allocation = goals.map_or(0, |goals| goals.allocation);
     // Sectors where a fleet of the seat already stands watch.
     let mut watched: Vec<[u8; 2]> = game_data
@@ -1717,7 +1675,6 @@ fn plan_fleets(
                                 && threatened(
                                     game_data,
                                     memory,
-                                    &weights.doctrine,
                                     game_data.planets[idx].sector.to_array(),
                                 )
                         })
@@ -1789,7 +1746,7 @@ fn plan_fleets(
                 && strength(fleet) <= GUARD_STRENGTH
                 && let Some(idx) = world_at(game_data, sector)
                 && own_world(idx)
-                && threatened(game_data, memory, &weights.doctrine, sector)
+                && threatened(game_data, memory, sector)
                 && let Some(choice) = post(idx, sector)
             {
                 return choice;
@@ -1883,12 +1840,7 @@ fn plan_fleets(
                 && fleet.order == Order::HoldPosition
                 && has_combat_ships(fleet)
                 && let Some(idx) = nearest_base(game_data, empire, sector, |planet| {
-                    threatened(
-                        game_data,
-                        memory,
-                        &weights.doctrine,
-                        planet.sector.to_array(),
-                    )
+                    threatened(game_data, memory, planet.sector.to_array())
                 })
                 && let Some(choice) = post(idx, game_data.planets[idx].sector.to_array())
             {
@@ -2241,32 +2193,8 @@ fn at_war_with(game_data: &CoreGameData, empire: u8, other: u8) -> bool {
         == Some(&nc_data::DiplomaticRelation::Enemy)
 }
 
-/// `sector`'s world is threatened: by [`rule_threatened`], or under
-/// [`Doctrine::threat_score`] by its learned threat score.
-pub fn threatened(
-    game_data: &CoreGameData,
-    memory: &SeatMemory,
-    doctrine: &Doctrine,
-    sector: [u8; 2],
-) -> bool {
-    if doctrine.threat_score
-        && let Some(planet_idx) = game_data
-            .planets
-            .iter()
-            .position(|planet| planet.sector.to_array() == sector)
-    {
-        return crate::threat::threat_score(game_data, memory, planet_idx)
-            >= crate::threat::THREAT_CUTOFF;
-    }
-    rule_threatened(game_data, memory, sector)
-}
-
 /// A declared enemy's force was reported near `sector` in recent years.
-pub(crate) fn rule_threatened(
-    game_data: &CoreGameData,
-    memory: &SeatMemory,
-    sector: [u8; 2],
-) -> bool {
+pub fn threatened(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> bool {
     let year = game_data.conquest.game_year;
     memory.contacts.iter().any(|contact| {
         contact.empire != 0

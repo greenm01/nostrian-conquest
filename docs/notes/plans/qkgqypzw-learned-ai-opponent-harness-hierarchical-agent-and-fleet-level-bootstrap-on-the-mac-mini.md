@@ -3991,7 +3991,7 @@ found barely better than chance.
 
 **Offline (2026-11-02, Mac mini).** `threat_stats --dump` wrote one row
 per world-year of 1,024 land-grab executor games (maps 100000+): 17
-features from the owner's memory and records only (`nc-ai` `threat.rs`:
+features from the owner's memory and records only (`threat_features` in `nc-ai/examples/threat_stats.rs`:
 enemy strength reported within 2, 4 and 8 sectors in the last one and two
 years, the largest force nearby, the declared enemies' strength, the
 distance to the nearest known foreign world, the world's own batteries,
