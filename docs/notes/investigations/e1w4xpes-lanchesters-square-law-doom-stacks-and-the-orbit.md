@@ -685,6 +685,38 @@ to an in-process update) until that was switched off; the run also exposed
 and fixed a Mac GPU memory leak in self-play (`a7d6390f`), which had slowed
 self-play from 23 s to over 100 s an iteration.
 
+**t239: an exploit check under the new rules.** Nobody has played the
+t234-t238 bombardment rules, so an exploiter looks for what they allow.
+Scope: 80 iterations of `fleet_ppo.py --exploit` from `fleet-final`
+against three greedy copies of it, strike and builds handed over on both
+sides, `--kl 0 --entropy-coef 0.003`, 128 60-year games an iteration, on the
+mini. Exit: the target itself and exploiter snapshots 40, 60 and 80 are
+scored greedy against three copies of the target on 1,024 maps from 100000,
+256 at a time. If an exploiter clearly beats the target's own share, its
+games are read and the weakness named, with whether it comes from the new
+rules. Earlier `fleet-final`s showed holes of 0.35-0.38 to such exploiters
+(see [qkgqypzw](../plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md)).
+
+**t239 result (2026-11-01): no hole found.** Scored greedy against three
+copies of `fleet-final`, 1,024 maps from 100000:
+
+| Seat | Win share |
+|---|---|
+| `fleet-final` itself | 0.248 ± 0.013 |
+| Exploiter, iteration 40 | 0.270 ± 0.014 |
+| Exploiter, iteration 60 | 0.265 ± 0.014 |
+| Exploiter, iteration 80 | 0.257 ± 0.014 |
+
+The best is about one standard error above the target's own share, far
+below the 0.35-0.43 holes earlier exploiters found. The check is weaker
+than those, though: this exploiter learned little. Its sampled win share
+against the target stayed at 0.09-0.15 and its entropy rose from 103 to 141,
+while t213's exploiter, on the same recipe, reached 0.348. A first run with
+t235's `--limit-credit 0.5` drifted further toward random play (entropy to
+148, greedy 0.226-0.261) and does not count; it is kept as `run-lc05` in the
+mini's `ai/t239/`. The default credit of 1.0 belongs in exploit checks. A
+lower `--entropy-coef` may keep the next exploiter from drifting.
+
 ## Connections
 
 - [ec-battle-spec §1.3](../../dev/ec-battle-spec.md): classic's engagement
