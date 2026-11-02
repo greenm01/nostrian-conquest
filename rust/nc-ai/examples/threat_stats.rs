@@ -6,7 +6,8 @@
 //! an assault (invasion or blitz) targets it while its owner holds it.
 //!
 //! ```text
-//! cargo run --release -p nc-ai --example threat_stats -- [--games 256] [--years 60] [--first-map 100000]
+//! cargo run --release -p nc-ai --example threat_stats -- [--games 256] [--years 60] [--first-map 100000] \
+//!     [--dump FILE.csv]
 //! ```
 //!
 //! For each variant and horizon (attacked this year, or this year or next),
@@ -14,11 +15,19 @@
 //! by an attack (precision), and the share of attacks flagged beforehand
 //! (recall). It also prints the share of attacks whose attacker the owner had
 //! not declared an enemy when the year began.
+//!
+//! `--dump` also writes one CSV row per world-year (t247): the map, year,
+//! world and owner, [`nc_ai::threat_features`], and whether the world was
+//! attacked within one and within two years (-1 where the game ended first).
 
 use std::collections::BTreeSet;
+use std::fmt::Write as _;
 use std::thread;
 
-use nc_ai::{SeatMemory, executor_turn, match_game, personality, threatened};
+use nc_ai::{
+    SeatMemory, THREAT_CUTOFF, THREAT_FEATURE_NAMES, THREAT_FEATURES, executor_turn, match_game,
+    personality, threat_features, threat_score, threatened,
+};
 use nc_data::{CoreGameData, DiplomaticRelation};
 
 const PLAYERS: u8 = 4;
@@ -33,6 +42,9 @@ struct Variant {
     years: u16,
     declared: bool,
 }
+
+/// The variants, then the learned score (t247) as the last row.
+const ROWS: usize = VARIANTS.len() + 1;
 
 const VARIANTS: [Variant; 4] = [
     Variant {
@@ -94,7 +106,7 @@ struct Stats {
     games: u64,
     attacks: u64,
     undeclared_attacks: u64,
-    cells: [[Cell; HORIZONS.len()]; VARIANTS.len()],
+    cells: [[Cell; HORIZONS.len()]; ROWS],
 }
 
 impl Stats {
@@ -118,10 +130,12 @@ struct Judged {
     planet: usize,
     owner: u8,
     turn: u16,
-    flags: [bool; VARIANTS.len()],
+    flags: [bool; ROWS],
+    features: [f32; THREAT_FEATURES],
 }
 
-fn play(map: u64, years: u16) -> Stats {
+/// One game's tallies, and its dump rows when `dump` is set.
+fn play(map: u64, years: u16, dump: bool) -> (Stats, String) {
     let weights = personality("land-grab").expect("built in").weights;
     let mut game = match_game(map, map, &[false; PLAYERS as usize], years);
     let start = game.play.built.game_data.conquest.game_year;
@@ -142,12 +156,14 @@ fn play(map: u64, years: u16) -> Stats {
             }
             let memory = &game.seats[usize::from(owner) - 1];
             let sector = record.sector.to_array();
-            let flags = VARIANTS
-                .each_ref()
-                .map(|v| flagged(game_data, memory, sector, v));
+            let mut flags = [false; ROWS];
+            for (flag, v) in flags.iter_mut().zip(&VARIANTS) {
+                *flag = flagged(game_data, memory, sector, v);
+            }
+            flags[ROWS - 1] = threat_score(game_data, memory, planet) >= THREAT_CUTOFF;
             assert_eq!(
                 flags[0],
-                threatened(game_data, memory, sector),
+                threatened(game_data, memory, &nc_ai::Doctrine::CURRENT, sector),
                 "the first variant is the executor's rule"
             );
             judged.push(Judged {
@@ -155,6 +171,7 @@ fn play(map: u64, years: u16) -> Stats {
                 owner,
                 turn,
                 flags,
+                features: threat_features(game_data, memory, planet),
             });
         }
         let declared: Vec<_> = game_data
@@ -191,11 +208,31 @@ fn play(map: u64, years: u16) -> Stats {
             break;
         }
     }
+    let mut rows = String::new();
     for world in &judged {
         let hit = |horizon: u16| {
             (world.turn..world.turn + horizon)
                 .any(|turn| attacked.contains(&(world.planet, world.owner, turn)))
         };
+        if dump {
+            let _ = write!(
+                rows,
+                "{map},{},{},{}",
+                world.turn, world.planet, world.owner
+            );
+            for value in world.features {
+                let _ = write!(rows, ",{value}");
+            }
+            for horizon in HORIZONS {
+                let label = if world.turn + horizon > turns {
+                    -1
+                } else {
+                    i32::from(hit(horizon))
+                };
+                let _ = write!(rows, ",{label}");
+            }
+            rows.push('\n');
+        }
         for (h, &horizon) in HORIZONS.iter().enumerate() {
             if world.turn + horizon > turns {
                 continue;
@@ -210,7 +247,7 @@ fn play(map: u64, years: u16) -> Stats {
             }
         }
     }
-    stats
+    (stats, rows)
 }
 
 fn main() {
@@ -225,24 +262,40 @@ fn main() {
         flag("--years", 60) as u16,
         flag("--first-map", 100_000),
     );
+    let dump = args
+        .iter()
+        .position(|arg| arg == "--dump")
+        .map(|idx| args[idx + 1].clone());
     let threads = thread::available_parallelism().map_or(1, |n| n.get());
     let mut stats = Stats::default();
+    let mut rows = format!(
+        "map,turn,planet,owner,{},attacked_1,attacked_2\n",
+        THREAT_FEATURE_NAMES.join(",")
+    );
     thread::scope(|scope| {
         let workers: Vec<_> = (0..threads)
             .map(|worker| {
+                let dump = dump.is_some();
                 scope.spawn(move || {
-                    let mut stats = Stats::default();
+                    let (mut stats, mut rows) = (Stats::default(), String::new());
                     for map in (first..first + games).skip(worker).step_by(threads) {
-                        stats.merge(play(map, years));
+                        let (game, game_rows) = play(map, years, dump);
+                        stats.merge(game);
+                        rows.push_str(&game_rows);
                     }
-                    stats
+                    (stats, rows)
                 })
             })
             .collect();
         for worker in workers {
-            stats.merge(worker.join().expect("worker should finish"));
+            let (worker_stats, worker_rows) = worker.join().expect("worker should finish");
+            stats.merge(worker_stats);
+            rows.push_str(&worker_rows);
         }
     });
+    if let Some(path) = &dump {
+        std::fs::write(path, &rows).expect("the dump file should be writable");
+    }
 
     println!(
         "{} games of {years} years: {} world-years, {} attacks ({:.1}% by an empire the owner \
@@ -258,11 +311,15 @@ fn main() {
             "\nattacked within {horizon} year(s): {:.2}% of world-years",
             100.0 * base.attacked as f64 / base.judged.max(1) as f64
         );
-        for (v, variant) in VARIANTS.iter().enumerate() {
+        let names = VARIANTS
+            .iter()
+            .map(|v| v.name)
+            .chain(["learned score (t247 cutoff)"]);
+        for (v, name) in names.enumerate() {
             let cell = stats.cells[v][h];
             println!(
                 "{:>36}: flagged {:5.1}%, precision {:5.1}%, recall {:5.1}%",
-                variant.name,
+                name,
                 100.0 * cell.flagged as f64 / cell.judged.max(1) as f64,
                 100.0 * cell.flagged_attacked as f64 / cell.flagged.max(1) as f64,
                 100.0 * cell.flagged_attacked as f64 / cell.attacked.max(1) as f64,

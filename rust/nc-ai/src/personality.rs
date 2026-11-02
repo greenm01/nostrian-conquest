@@ -286,6 +286,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 growth_tax: false,
                 guard_bases: false,
                 repair_at_bases,
+                threat_score: false,
             },
             ..Weights::from_array(weights)
         },

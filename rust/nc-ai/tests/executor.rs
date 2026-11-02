@@ -112,6 +112,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
         growth_tax: false,
         guard_bases: false,
         repair_at_bases: false,
+        threat_score: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {

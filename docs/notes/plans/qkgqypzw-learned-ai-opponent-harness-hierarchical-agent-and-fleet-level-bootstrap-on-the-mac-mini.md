@@ -3950,6 +3950,90 @@ league's ranking of it above `fleet-final` was within noise too.
 
 Closed on 2026-11-02.
 
+### t246
+
+Battleships in the land-grab executor's line. Under the t232 rules,
+battleships win equal-cost fleet battles (t243: 71-77% against the AI's
+3 DD : 1 CA mix), yet `land-grab.kdl` builds none. fleet-final's build head
+copies the executor greedily (t242), so the shipped AI's hulls are the
+executor's.
+
+**Run (2026-11-02, Mac mini, commit c74be41f).** Copies of
+`land-grab.kdl` with `battleship` at 0.15, 0.3 and 0.5 (about 20%, 34%
+and 46% of warship points under `mixed_hulls`), everything else unchanged.
+`executor_matches --paired --baseline land-grab`, three land-grab
+opponents, 1,024 maps from 100000. Files and logs in
+`~/.local/state/nostrian-conquest/ai/t246/`.
+
+| Battleship weight | 60 years | 100 years |
+| --- | ---: | ---: |
+| 0.15 | -0.065 +/- 0.017 | -0.122 +/- 0.016 |
+| 0.3 | -0.075 +/- 0.016 | -0.107 +/- 0.016 |
+| 0.5 | -0.058 +/- 0.016 | -0.087 +/- 0.016 |
+| 0.0 through the same file (control) | +0.000 +/- 0.000 | |
+
+Every variant loses. `style_stats` (512 maps, 60 years) shows why. At 0.3
+the executor's first attack comes in year 14.9 instead of 12.9, it orders
+5.3 blitzes a game instead of 6.6, it runs 7.1 convoy fleet-years instead of
+8.6, and it fields 7,158 destroyer-years against 9,870. Points tied up in
+45-point hulls delay the first strike and thin out the fleets; tempo and
+the number of fleets decide a campaign more than set-piece battles. The
+duel advantage doesn't carry over. `land-grab.kdl` is unchanged, the
+network seat run was not needed, and step 4 (retrain) is not triggered by
+this step.
+
+Closed on 2026-11-02.
+
+### t247
+
+A learned threat score in place of the executor's threat rule, which t244
+found barely better than chance.
+
+**Offline (2026-11-02, Mac mini).** `threat_stats --dump` wrote one row
+per world-year of 1,024 land-grab executor games (maps 100000+): 17
+features from the owner's memory and records only (`nc-ai` `threat.rs`:
+enemy strength reported within 2, 4 and 8 sectors in the last one and two
+years, the largest force nearby, the declared enemies' strength, the
+distance to the nearest known foreign world, the world's own batteries,
+armies, potential, production and starbase, and whether the owner is at
+war), and whether the world was attacked within one and two years.
+`tools/ai/threat_fit.py` fitted a logistic regression on the first 768
+maps and scored the last 256. A year ahead (base rate 7.9%):
+
+| Test | Flagged | Precision | Recall |
+| --- | ---: | ---: | ---: |
+| The rule | 55.5% | 10.7% | 75.6% |
+| Score, at the rule's recall | 40.9% | 14.5% | 75.6% |
+| Score, cutoff -2.02 | 12.0% | 32.8% | 50% |
+| Score, top of the ranking | 3.3% | 72.0% | 30% |
+
+Its average precision is 0.43. The heaviest weights: the owner being at
+war (+1.0), the world's armies (-0.65) and production (-0.41), and enemy
+strength within 4 and 8 sectors over two years (+0.39, +0.28). Attackers
+pick weak, small worlds near where they have been seen, which is the
+executor's own targeting. Ported to Rust and run on fresh maps (200000+,
+256 games), the score at -2.02 flagged 11.7% at 32.9% precision and 49.1%
+recall, matching the fit.
+
+**In play.** A `Doctrine::threat_score` switch made `threatened` test the
+score against a cutoff. Paired `executor_matches --with threat_score`,
+three land-grab opponents, 1,024 maps from 100000:
+
+| Cutoff | 60 years | 100 years |
+| --- | ---: | ---: |
+| -2.02 (flags 12%) | -0.004 +/- 0.016 | -0.005 +/- 0.016 |
+| -2.92 (flags 41%, the rule's recall) | -0.020 +/- 0.017 | -0.009 +/- 0.018 |
+
+No gain at either cutoff. Better-aimed guard builds, ferries and other
+defensive reactions don't decide executor games, so predicting attacks
+better doesn't win them. The network-seat run was not needed. The switch
+and score were committed for the record and then removed; the feature
+dump (`threat_stats --dump`) and `threat_fit.py` stay as tools. Neither
+t246 nor t247 changed an agent, so the α-Rank comparison (t248) and the
+retrain (t249) in the plan are not triggered.
+
+Closed on 2026-11-02.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in
