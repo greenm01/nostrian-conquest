@@ -3765,6 +3765,127 @@ is the large part of this task.
 empire, get a reply that matches its later conduct, and the agent's
 strength against the bots doesn't drop.
 
+### t241
+
+Rate every agent in a fresh league under the t234-t238 rules.
+
+The last league (t193, `league-t193.db`) was played before the t232-t238
+combat and bombardment rules and before four promotions, so its table no
+longer says which agent is strongest or how hard each scripted personality
+plays. The t235 reports compared only neighbouring agents.
+
+Scope: a new league in the mini's `ai/t241/league.db`, every agent greedy,
+3,072 matches of 60 years from seed 1. Eighteen agents, their checkpoints
+copied into `ai/t241/agents/` so later promotions don't change them: the
+nine scripted policies (executor, baseline, classic, aggressor, autopilot,
+rusher, turtle, armada, raider); the strategists `final` and `allocation`;
+and the fleet agents `fleet-final` (t233's snapshot 75), `pre-t233`,
+`pre-t213`, `pre-t206`, `pre-t202`, t235's snapshot 50 and t239's
+exploiter snapshot 40. Before the run, `league.py` was given the same
+fixed-shape GPU batching as self-play (`a7d6390f`); 16 matches played with
+the old and new code came out identical.
+
+**Exit:** `verify` replays every match and rebuilds the table exactly; the
+table and its implications (the strongest agent, the order of the
+personalities, whether an older fleet agent plays the new rules better)
+are recorded here.
+
+**A league bug found first (2026-11-02).** The first run rated every agent
+that hands builds over (t213 on) at the bottom, with fleet-final winning
+0.006. `league.py` predated t207: it never asked those agents for builds
+or passed their build choices to the game, so their worlds built nothing.
+It now does, as `fleet_ppo.py` does; fleet-final against executors went
+back to 0.39. No earlier result used the broken path: the t193 league
+predates the build family, and promotions use `behaviour_report`. The
+broken run is kept as `ai/t241/league-nobuilds.db`.
+
+**Result (2026-11-02, at `3969f854` with the fix uncommitted).** 3,072
+matches; `verify` rebuilt the table exactly. Rating is `mu - 3 sigma`;
+win is the mean win share.
+
+| Agent | Kind | Rating | mu | Win share |
+| --- | --- | ---: | ---: | ---: |
+| t235-s50 | fleet | 32.99 | 38.15 | 0.472 |
+| t239-exploiter | fleet | 31.78 | 36.90 | 0.468 |
+| pre-t233 | fleet | 30.41 | 35.48 | 0.445 |
+| fleet-final | fleet | 30.25 | 35.37 | 0.493 |
+| pre-t213 | fleet | 28.62 | 33.70 | 0.430 |
+| final | strategist | 27.26 | 32.31 | 0.342 |
+| allocation | strategist | 26.28 | 31.33 | 0.265 |
+| executor | scripted | 24.71 | 29.75 | 0.286 |
+| pre-t202 | fleet | 24.17 | 29.19 | 0.222 |
+| raider | scripted | 24.04 | 29.06 | 0.261 |
+| armada | scripted | 22.46 | 27.49 | 0.208 |
+| turtle | scripted | 22.28 | 27.33 | 0.252 |
+| rusher | scripted | 22.14 | 27.23 | 0.168 |
+| pre-t206 | fleet | 20.29 | 25.38 | 0.145 |
+| classic | scripted | 5.44 | 11.12 | 0.013 |
+| baseline | scripted | 4.33 | 10.07 | 0.010 |
+| aggressor | scripted | -4.72 | 1.71 | 0.000 |
+| autopilot | scripted | -7.95 | -1.37 | 0.000 |
+
+1. **The agents that hand builds over form the top tier, and no one of
+   them leads.** Their `mu` spread is 2.8 with a `sigma` of about 1.7
+   each, about one standard deviation. fleet-final has the best win share
+   but the fourth rating. t235's snapshot 50 tops it, in line with its
+   +0.03 in t235's reports, again not decisively.
+2. **Handing builds over is worth a little.** pre-t213, the last agent
+   that orders fleets only, is 1.6 below fleet-final.
+3. **pre-t206 plays the new rules worst of the fleet agents,** below the
+   executor and every playable personality; pre-t202 is level with the
+   executor.
+4. **The personalities bunch together.** Raider, armada, turtle and rusher
+   rate 22-24, just under the executor. Classic and baseline are far
+   below, and aggressor and autopilot never win: the ladder has no step
+   between 5 and 22.
+
+Closed on 2026-11-02.
+
+### t242
+
+Retune the AI seats' difficulty temperatures under the t234-t238 rules.
+
+**A correction to t241's finding 4.** The gap between the scripted bots
+is not the players' ladder. A sysop picks `--difficulty`, which plays
+`fleet-final` at a temperature (`nc-ai-onnx` `temperature()`); the
+scripted bots only fill league seats.
+
+**The curve (2026-11-02, Mac mini, commit 3969f854).** `behaviour_report`,
+1,024 maps from 100000, 60 years, one seat against three executors, run
+script and logs in `~/.local/state/nostrian-conquest/ai/t242/`:
+
+| Seat | Win share | Paired vs greedy | Worlds at end | Declared war |
+| --- | ---: | ---: | ---: | ---: |
+| `fleet-final` (strike only) | 0.491 | | 7.3 | 0% |
+| `+builds`, greedy (hard) | 0.491 | +0.000 | 7.3 | 0% |
+| `+builds~0.5` | 0.511 | +0.020 +/- 0.019 | 7.2 | 4% |
+| `+builds~0.75` | 0.447 | -0.044 +/- 0.019 | 6.8 | 26% |
+| `+builds~0.85` (normal) | 0.382 | -0.109 +/- 0.020 | 6.3 | 41% |
+| `+builds~1` (old normal) | 0.277 | -0.214 +/- 0.018 | 5.4 | 66% |
+| `+builds~1.1` | 0.222 | -0.270 +/- 0.019 | 4.8 | 78% |
+| `+builds~1.25` (easy) | 0.092 | -0.399 +/- 0.017 | 3.8 | 90% |
+| `+builds~1.5` | 0.031 | -0.460 +/- 0.016 | 2.8 | 98% |
+| `+builds~2` (old easy) | 0.009 | -0.482 +/- 0.016 | 1.9 | 100% |
+| `+builds~3` | 0.002 | -0.489 +/- 0.016 | 1.4 | 100% |
+
+1. **Builds change nothing greedily.** Greedy, the build head always
+   picks the executor's build (0.0% of worlds built its own way), so hard
+   was never weaker than promoted. Campaign seats now hand builds over
+   anyway (`AGENT_FAMILIES`), so seats play as every promotion since t213
+   was measured, and sampled levels sample their builds too.
+2. **The old ladder was hard 0.49, normal 0.28 and easy 0.01.** Easy
+   was helpless: it declared war in every game and ended with 1.9 worlds.
+   Strength falls off a cliff between T=0.5 and T=1.5.
+3. **New temperatures: hard 0, normal 0.85, easy 1.25,** for 0.49, 0.38
+   and 0.09, either side of an executor's 0.25. Sampled diplomacy is a
+   large part of the drop: the war-declaration share climbs with
+   temperature.
+
+The campaign test now plays `tiny-builds.onnx`, so it covers the build
+path, and a test pins the three temperatures.
+
+Closed on 2026-11-02.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in

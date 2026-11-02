@@ -48,6 +48,7 @@ from fleet_imitate import actions_for
 from policy import act, bucket, device, goals_for, load, seat_batch
 
 PLAYERS = 4
+CPU = torch.device("cpu")
 SCRIPTED = ("executor", "baseline", "classic", "aggressor", "autopilot", "rusher", "turtle",
             "armada", "raider")
 # League maps start here, clear of training (1+, 1,000,000+) and evaluation
@@ -158,7 +159,7 @@ def play(db, games, years, batch, seed):
     if len(agents) < 2:
         raise SystemExit("register at least two agents")
     dev = device()
-    models, fleets, seat_names = {}, {}, {}
+    models, fleets, seat_names, builders = {}, {}, {}, set()
     for agent_id, name, kind, spec, digest in agents:
         if kind != "scripted" and sha256(spec) != digest:
             raise SystemExit(f"checkpoint for {name} changed since it was added")
@@ -169,6 +170,8 @@ def play(db, games, years, batch, seed):
             families = torch.load(spec, map_location="cpu", weights_only=False)["families"]
             fleets[agent_id] = fleet_policy.load_fleet_agent(spec, dev)
             seat_names[agent_id] = "hybrid:" + ",".join(families)
+            if "builds" in families:
+                builders.add(agent_id)
         else:
             seat_names[agent_id] = spec
     code = code_version()
@@ -201,14 +204,21 @@ def play(db, games, years, batch, seed):
                 goals = {name: np.zeros_like(value) for name, value in env.goal_labels().items()}
                 fleet_choices = {name: np.zeros((count, PLAYERS, env.fleets), np.int64)
                                  for name in fleet_policy.FLEET_HEADS}
+                build_choices = {}
                 with torch.no_grad():
                     for agent_id, model in fleets.items():
                         select = (owner == agent_id) & ~done[:, None]
                         if not select.any():
                             continue
                         batch_ = fleet_policy.bucket(
-                            fleet_policy.fleet_batch(obs, masks, goal_masks, select, dev))
-                        chosen_goals, chosen_fleets, *_ = model.act(batch_, greedy=True)
+                            fleet_policy.fleet_batch(obs, masks, goal_masks, select, CPU))
+                        chosen_goals, chosen_fleets, *_ = fleet_policy.act_padded(
+                            model, batch_, dev, greedy=True, builds=agent_id in builders)
+                        if agent_id in builders:
+                            # A seat that hands builds over builds only what it is given (t207).
+                            built = fleet_policy.build_arrays(chosen_goals, select, env.worlds)
+                            for name, value in built.items():
+                                build_choices.setdefault(name, np.zeros_like(value))[select] = value[select]
                         chosen = goals_for(chosen_goals, select)
                         for name in goals:
                             goals[name][select] = chosen[name][select]
@@ -216,12 +226,17 @@ def play(db, games, years, batch, seed):
                         for name in fleet_choices:
                             fleet_choices[name][select] = placed[name][select]
                     actions = actions_for(env, fleet_choices) if fleets else None
+                    if build_choices:
+                        actions.update(build_choices)
                     for agent_id, model in models.items():
                         select = (owner == agent_id) & ~done[:, None]
                         if not select.any():
                             continue
-                        batch_ = bucket(seat_batch(obs, masks, goal_masks, select, dev))
-                        choices, _, _ = act(model, batch_, greedy=True)
+                        # Fixed bucketed shapes on the GPU, cut to the real seats here (t235).
+                        batch_ = bucket(seat_batch(obs, masks, goal_masks, select, CPU))
+                        choices, _, _ = act(model, fleet_policy.on_device(
+                            {**batch_, "n": batch_["global"].shape[0]}, dev), greedy=True)
+                        choices = {k: v.cpu()[:batch_["n"]] for k, v in choices.items()}
                         chosen = goals_for(choices, select)
                         for name in goals:
                             goals[name][select] = chosen[name][select]

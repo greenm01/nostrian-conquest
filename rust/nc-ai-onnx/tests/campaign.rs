@@ -6,7 +6,7 @@
 use std::path::{Path, PathBuf};
 
 use nc_ai::{commission_submission, match_game, opening_position};
-use nc_ai_onnx::{AGENT_FAMILIES, CampaignAi, NetworkSeat};
+use nc_ai_onnx::{AGENT_FAMILIES, CampaignAi, NetworkSeat, temperature};
 use nc_data::{
     AiDifficulty, AiSeat, CampaignSettings, CampaignStore, CoreGameData, TurnSubmission,
 };
@@ -14,8 +14,9 @@ use nc_engine::CampaignMaintenance;
 
 const PLAYERS: usize = 4;
 
+/// A graph with build heads, so the seats hand their builds over as shipped.
 fn model() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tiny.onnx")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/tiny-builds.onnx")
 }
 
 #[test]
@@ -193,4 +194,12 @@ fn ai_seats_refuse_a_campaign_that_is_not_four_players() {
         .err()
         .expect("a 3-player campaign is refused");
     assert!(error.to_string().contains("4-player"), "{error}");
+}
+
+#[test]
+fn difficulties_play_hotter_as_they_get_easier() {
+    // The values t242 measured: hard greedy, then normal, then easy.
+    assert_eq!(temperature(AiDifficulty::Hard), 0.0);
+    assert_eq!(temperature(AiDifficulty::Normal), 0.85);
+    assert_eq!(temperature(AiDifficulty::Easy), 1.25);
 }

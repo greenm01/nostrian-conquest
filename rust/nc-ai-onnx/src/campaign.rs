@@ -34,23 +34,25 @@ pub fn model_from_env() -> Option<std::path::PathBuf> {
 }
 
 /// The temperature each difficulty plays at. Greedy is the agent at full
-/// strength.
+/// strength; against three executors normal wins about 0.38 and easy about
+/// 0.09, either side of an executor's 0.25 (t242).
 pub fn temperature(difficulty: AiDifficulty) -> f32 {
     match difficulty {
         AiDifficulty::Hard => 0.0,
-        AiDifficulty::Normal => 1.0,
-        AiDifficulty::Easy => 2.0,
+        AiDifficulty::Normal => 0.85,
+        AiDifficulty::Easy => 1.25,
     }
 }
 
-/// The families the shipped agent orders itself; the executor orders the
+/// The families the shipped agent orders itself, and its builds (t207), as
+/// every promotion since t213 was measured (t242); the executor orders the
 /// rest (t157), convoys included, so its ferry moves armies (t191).
 pub const AGENT_FAMILIES: Families = Families {
     colonize: false,
     scout: false,
     strike: true,
     convoy: false,
-    builds: false,
+    builds: true,
 };
 
 /// A campaign's AI seats during one maintenance run: each seat with the

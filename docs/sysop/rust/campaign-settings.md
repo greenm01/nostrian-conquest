@@ -104,9 +104,11 @@ nc-sysop settings remove-ai-seat --dir /path/to/mygame --player 3
 Seats can mix styles, so a game has variety.
 
 Difficulty is `easy`, `normal` or `hard`. Hard plays the agent at full
-strength. On held-out test maps it won about two games in three against
-three scripted executor seats. Normal won about three in five; it still
-beats the executor, but is less predictable. Easy won about one in five.
+strength. On held-out test maps against three scripted executor seats, which
+win a quarter of the games each when they play one another, hard won about one
+game in two, normal a little under two in five, and easy about one in eleven.
+Normal and easy are less predictable: they sometimes pick a weaker build,
+fleet order or declaration of war at random, easy more often.
 
 A reserved seat cannot be an AI seat. Before each maintenance year,
 `nc-sysop maint` has every AI seat commission its ships and submit its turn,

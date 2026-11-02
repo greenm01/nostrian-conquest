@@ -324,9 +324,11 @@ starbases, always guards threatened worlds, and attacks late. Different seats
 can use different styles.
 
 Difficulty is `easy`, `normal` or `hard`. `hard` is the agent at full
-strength. On test maps it won about two games in three against three scripted
-executor opponents. `normal` won about three in five, and `easy` about one in
-five.
+strength. On test maps against three scripted executor opponents, which win a
+quarter of the games each when they play one another, `hard` won about one game
+in two, `normal` a little under two in five, and `easy` about one in eleven.
+`normal` and `easy` play less predictably: they sometimes pick a weaker
+build, fleet order or declaration of war at random, `easy` more often.
 
 A reserved seat cannot be an AI seat. An AI seat claims its empire as soon as
 the game next reads its settings, at a login or a maintenance run, so players
