@@ -1,22 +1,23 @@
 // The raider (t189): cheap, fast destroyers first, striking at short odds.
 // Colonies and the home world build destroyers; the fleet moves at speed 6.
+// Retuned under t255's per-hull fire (t256): a later war and more cruisers.
 personality "raider"
 weights {
-    tax 63.545086
-    home-armies 16.938251
-    colony-armies 9.6966095
+    tax 63.51344
+    home-armies 15.248486
+    colony-armies 9.946619
     batteries 10.0
-    etacs 8.0
-    scouts 1.3695203
-    starbases 1.0171384
-    transports 15.615639
-    battleship 0.056925546
-    cruiser 0.21824437
-    destroyer 0.9800827
-    attack-ratio 1.7594712
-    roe 4.715693
-    war-year 6.0
-    young-tax 63.545086
+    etacs 4.357539
+    scouts 4.711386
+    starbases 0.84327984
+    transports 13.532373
+    battleship 0.1428313
+    cruiser 0.5604862
+    destroyer 0.903755
+    attack-ratio 1.568236
+    roe 4.100554
+    war-year 14.20052
+    young-tax 58.97051
 }
 doctrine {
     land-grab #true

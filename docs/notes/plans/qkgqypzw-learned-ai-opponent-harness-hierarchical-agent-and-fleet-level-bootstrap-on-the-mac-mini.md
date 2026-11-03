@@ -4140,6 +4140,50 @@ self-play time matched t235's, and the optimizer update took the rest.
 
 Closed on 2026-11-02.
 
+### t256
+
+Re-check the AI under t255's per-hull fire
+([zq5xtv8l](../decisions/zq5xtv8l-each-hull-fires-on-its-own-destroyers-hunt-cruisers-cruisers-hunt-battleships.md)):
+retune the executor styles, then fine-tune fleet-final.
+
+**Executor styles (2026-11-03, bean-void, at `9365fdf6`).** Each style was
+retuned with t189's recipe: `tune_executor --against-default`, 30
+generations of 24 candidates, 64 fresh maps a generation, 100 years.
+Land-grab and rusher had their battleship bound opened from 0 to 0–1; the
+others kept their own bounds. Each retune was then paired against its
+current style, three land-grab seats, 1,024 maps from 1500000
+(`executor_matches --baseline STYLE --opponent land-grab --paired`):
+
+| Style | 60 years | 100 years | Verdict |
+| --- | ---: | ---: | --- |
+| land-grab | -0.006 ± 0.017 | +0.019 ± 0.018 | kept |
+| rusher | +0.087 ± 0.017 | +0.121 ± 0.016 | adopted |
+| raider | +0.112 ± 0.017 | +0.127 ± 0.018 | adopted |
+| armada | -0.005 ± 0.015 | +0.029 ± 0.014 | kept |
+| turtle | +0.001 ± 0.016 | -0.014 ± 0.016 | kept |
+
+A style is adopted when it gains at both horizons. Both opened retunes
+ended with no battleships. Adding them to the land-grab retune, paired
+against it with battleships at 0, loses at every weight:
+
+| Battleship weight | 60 years | 100 years |
+| --- | ---: | ---: |
+| 0.15 | -0.084 ± 0.016 | -0.131 ± 0.017 |
+| 0.3 | -0.086 ± 0.016 | -0.141 ± 0.016 |
+| 0.5 | -0.106 ± 0.016 | -0.157 ± 0.016 |
+
+So land-grab and rusher keep battleships pinned at 0. Equal-cost battles
+show no such penalty for battleship mixes (t255), so the loss lies in how
+the executor builds or moves battleships (at speed 4, for 45 points), not
+in the combat rules. The retuned raider does build a few (weight 0.14).
+The first paired runs left out `--opponent` and played Aggressor seats,
+which every style beats; they were discarded.
+
+**Retrain.** t235's recipe from fleet-final, its league fleet-final alone,
+in the mini's `ai/t256/`. The executors it trains against are land-grab's,
+unchanged above. Under R2, fleet-final's self-play win share against
+them fell to 0.08–0.15.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in
