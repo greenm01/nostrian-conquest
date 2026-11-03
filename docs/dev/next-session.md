@@ -63,7 +63,7 @@ details are in the plans' result sections.
   t243-t248 (2026-11-02) changed no agent: battleships in the executor
   (t246) and a learned threat score (t247) both lost in paired play, and
   α-Rank (t248) found fleet-final, t235's snapshot 50 and t239's exploiter
-  tied, with no cycle. A league retrain (t249) is running on the mini (owner, 2026-11-02).
+  tied, with no cycle. A league retrain against those three and pre-t233 (t249) gained +0.044 at 100 years but lost the start check, as t235 did; fleet-final stays.
   `fleet_ppo.py --update-cmd` can run each update on crunch's RX 7900 GRE
   while self-play stays on the mini, but it is off: ROCm also opens crunch's
   iGPU, which crunch's Sophia work needs. A device-cgroup launcher that hides

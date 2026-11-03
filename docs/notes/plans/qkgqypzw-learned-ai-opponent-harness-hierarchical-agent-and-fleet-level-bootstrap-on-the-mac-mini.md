@@ -4111,6 +4111,35 @@ with fleet-final by `behaviour_report` on 1,024 maps from 100000 at 60 and
 least two standard errors at both horizons and holds on the start check;
 an exploit check (t239's method) follows before any promotion.
 
+**Result (2026-11-02, at `92e559ae`).** Paired `behaviour_report` against
+fleet-final, 1,024 maps, and the start check's 143 positions:
+
+| Snapshot | Win share, 60 years | Win share, 100 years | Start check |
+| --- | ---: | ---: | ---: |
+| 50 | -0.009 ± 0.019 | +0.003 ± 0.020 | -0.040 ± 0.023 |
+| 75 | +0.006 ± 0.020 | +0.040 ± 0.020 | -0.019 ± 0.024 |
+| 100 | +0.032 ± 0.019 | +0.044 ± 0.020 | -0.044 ± 0.022 |
+
+1. **Not promoted under the exit rule.** Snapshot 100 clears two standard
+   errors at 100 years only (1.7 at 60), and it loses the start check by
+   two standard errors. Snapshot 75 clears neither horizon.
+2. **The same pattern as t235.** Fine-tuning from fleet-final gains about
+   +0.04 in long games against fleet-final and gives it back in the
+   recovery positions the start check replays. Both runs bought it with
+   the same trade: snapshot 100 loses 0.36 fewer worlds at 100 years but
+   holds no more at the end.
+3. **The league did not break the tie.** The learner, sampling its moves,
+   ended with running win shares of 0.04 against the exploiter and
+   pre-t233 and 0.10-0.11 against fleet-final and t235's snapshot 50, about
+   as low as t235's 0.03 against fleet-final, so PFSP drew all four nearly
+   evenly. Training against α-Rank's top set made no agent stronger than
+   fleet-final by this test. fleet-final stays.
+
+Training took about 12 hours, 440 s an iteration against t235's 165 s; the
+self-play time matched t235's, and the optimizer update took the rest.
+
+Closed on 2026-11-02.
+
 ## Cold-eye review (Muse Code, 2026-10-16)
 
 Muse reviewed the AI work read-only on crunch (full report in
