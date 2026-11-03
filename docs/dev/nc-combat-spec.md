@@ -543,10 +543,10 @@ amended 2026-10-30). Batteries fire back each round they stand.
 **Fewer rounds and half strength behind the batteries (t236).** The turn
 ends with the round in which no battery is left: the round that destroys the
 last one, or the first round at a world with none. Hits that pass the
-stardock are halved, rounded down, before they strike the armies and
-industry. The dock takes full fire. Of the halved hits, `floor(h / 6)` go to
-the armies and the rest, with what the armies cannot spend, to goods and
-factories, so a garrison cannot shield the industry (t238). Bombardment never takes production
+stardock split: `floor(h / 6)` go to the armies at full strength (t252),
+and the rest, with what the armies cannot spend, are halved, rounded down,
+and strike goods and factories, so a garrison cannot shield the industry
+(t238). The dock takes full fire. Bombardment never takes production
 below `min(production before, 1.0)`, as classic's passes end (t237).
 
 **Some fire gets past the batteries (t234).** In a round that starts with a
@@ -557,8 +557,9 @@ on top of the hits the batteries take.
 - `2/5` of the extra hits, rounded down, go to the stardock, `1/10`, rounded
   down, to the armies, and the rest to goods and factories.
 - What the dock cannot spend passes to the armies, and what the armies
-  cannot spend passes to goods and factories. The armies' share, with the
-  dock's leftover, and the industry share are halved, rounded down (t236).
+  cannot spend passes to goods and factories. The industry share, with the
+  armies' leftover, is halved, rounded down (t236); the armies take theirs,
+  with the dock's leftover, at full strength (t252).
 
 Battery outcomes, the attacker's losses and worlds without batteries are
 unchanged

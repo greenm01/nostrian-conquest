@@ -285,8 +285,9 @@ fn apply_capped_invasion_soften_damage(
 /// While any battery stands, the hits it does not take expire, so batteries
 /// shield everything behind them, but some fire always gets past them (t234):
 /// [`bombardment_leak`] lands on top of the hits the batteries take. Units
-/// cost their DS in hits. Fire at armies and industry strikes at half
-/// strength (t236), and hits reaching goods and factories are scaled down
+/// cost their DS in hits. Fire at industry strikes at half strength (t236;
+/// the armies take theirs at full, t252), and hits reaching goods and
+/// factories are scaled down
 /// from the 10x combat scale before the per-unit conversion.
 pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32, roll: u8) {
     let leak = if planet.ground_batteries > 0 {
@@ -300,11 +301,13 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
         return;
     }
     // Past the dock, a sixth of the fire strikes the armies and the rest the
-    // industry, so a garrison cannot shield the factories (t238).
-    let hits = reduce_stardock(planet, hits) / 2;
+    // industry, so a garrison cannot shield the factories (t238). The armies
+    // take their sixth at full strength (t252); the industry, with what the
+    // armies leave, at half.
+    let hits = reduce_stardock(planet, hits);
     let to_armies = hits / 6;
     let rest = hit_armies(planet, to_armies);
-    hit_industry(planet, hits - to_armies + rest);
+    hit_industry(planet, (hits - to_armies + rest) / 2);
 }
 
 /// The extra hits that get past standing batteries: a share of the round's
@@ -318,14 +321,14 @@ fn bombardment_leak(planet: &nc_data::Planet, hits: u32, roll: u8) -> u32 {
 }
 
 /// Leaked hits split as classic's passes do: 40% at the dock, 10% at the
-/// armies, the rest at goods and factories, those two at half strength.
-/// What a target cannot take passes down to the next.
+/// armies, the rest at goods and factories, those at half strength (the
+/// armies at full, t252). What a target cannot take passes down to the next.
 fn apply_leak(planet: &mut nc_data::Planet, leak: u32) {
     let dock = leak * 2 / 5;
     let armies = leak / 10;
     let rest = reduce_stardock(planet, dock);
-    let rest = hit_armies(planet, (armies + rest) / 2);
-    hit_industry(planet, (leak - dock - armies) / 2 + rest);
+    let rest = hit_armies(planet, armies + rest);
+    hit_industry(planet, (leak - dock - armies + rest) / 2);
 }
 
 /// Armies cost their DS in hits. Returns the hits left over.

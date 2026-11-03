@@ -637,7 +637,8 @@ is driven off (see @missions).
 *Bombard* wears a world down. Each year the fleet stays in orbit, it fires
 up to three rounds. Its hits go to the ground batteries first. Only when none
 are left do they reach docked ships, and then the armies and factories
-together, at half strength. Stacking armies does not shield the factories. The
+together: the armies at full strength, the factories at half. Stacking armies
+does not shield the factories. The
 year's bombardment ends with the round that destroys the last battery, and a
 world with no batteries takes one round a year. Bombardment never takes a
 world's production below 1.0.
@@ -1508,8 +1509,7 @@ appendix give the numbers.
    ten-sided die and adds its bonuses (see Fleet Battle Die Modifiers). A
    result above 9 reads as 9. The result sets the effectiveness: a quarter
    on 0--2, half on 3--5, all on 6--9. A side whose AS is no more than the
-   enemy's fires with all of it. A larger side fires with only part, as
-   classic EC did. With `A` its AS and `B` the enemy's, take
+   enemy's fires with all of it. A larger side fires with only part. With `A` its AS and `B` the enemy's, take
    `y = (A / B)^(1 / 3.3)`. If `y` is above 1.3, it becomes `(y + 1.3) / 2`.
    It is never above 2. The side fires with `round(B x y)` AS, a half
    rounding up. A 2:1 side fires with about 1.23 times the enemy's AS, a
@@ -1816,7 +1816,7 @@ starbase in orbit does, and the transports turn for home.
 
 Each bombardment turn resolves up to three rounds of fire, and every round works the same way. Each hit goes to the highest target still standing: ground batteries, then ships in the stardock, then the armies and the stored goods and factories together. Hits cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. While even one battery stands, the hits it does not take are lost, so the batteries shield what lies behind them, except for the extra fire described next. Once the last battery falls, the rest of that round's hits flow on down the line, and the turn ends with that round. A world with no batteries takes one round of fire a year, on its stardock and armies first. Hits that get past the stardock strike the armies and factories at half strength: halve them, rounding down. A sixth of the halved hits, rounded down, strike the armies, and the rest strike stored goods and factories, along with any the armies cannot spend. So no garrison, however large, shields the factories. Bombardment never takes production below 1.0, and a world already under 1.0 keeps what it has.
 
-No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. The armies' and the factories' shares strike at half strength, rounded down. Hits the dock cannot spend pass to the armies at half strength, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, 54 of them reach industry and destroy 5 points of production and 125 goods.
+No world is too small to hide everything, and no battery wall covers all of a large one. In every round that begins with a battery standing, some extra fire gets past the batteries, on top of the hits they take. Its share of the round's hits grows with the world's Potential Production: 10% at a potential of 10, rising evenly to 40% at 150. The round's `d10` scales it by `(d10 + 1) / 5.5`, which averages one, so a 0 lets through a fifth of the share and a 9 lets through 1.8 times it. Round the extra hits to the nearest whole hit. Two fifths of them, rounded down, strike the stardock, and a tenth, rounded down, the armies. The rest strike stored goods and factories. The armies take their share at full strength; the factories' share strikes at half strength, rounded down. Hits the dock cannot spend pass to the armies, and hits the armies cannot spend pass to goods and factories. For example, 300 hits at a potential-150 world on a `d10` of 4 let 109 extra hits through. With an empty dock and no armies, 54 of them reach industry and destroy 5 points of production and 125 goods.
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 
@@ -1834,7 +1834,7 @@ Capture odds follow the ratio of landed armies to defending armies, about the sa
 
 === Captured Worlds
 
-A world falls when its last defending army is destroyed, and your surviving armies become its garrison. The fight wrecks part of what it was worth, as in classic Esterian Conquest. An *invasion* leaves 20--40% of the world's production, 10--50% of its stored goods, a share of its docked ships, and no batteries. The slow assault gives the defenders time to sabotage. A *blitz* keeps most of the world intact. Production, goods, docked ships, and batteries are kept in proportion to how well the landing went, `f = min(1, sqrt(surviving attackers / starting defenders))`: production `85--100% x f`, goods `55--100% x f`, batteries `35--100% x f`. A blitz that lands in strength takes a world almost whole. Each share is a seeded roll. Production never falls below 1.0 on a world with potential, the queued build work survives, and debt is never forgiven. Your capture report lists the goods, the docked ships, and the queued work you inherit.
+A world falls when its last defending army is destroyed, and your surviving armies become its garrison. The fight wrecks part of what it was worth. An *invasion* leaves 20--40% of the world's production, 10--50% of its stored goods, a share of its docked ships, and no batteries. The slow assault gives the defenders time to sabotage. A *blitz* keeps most of the world intact. Production, goods, docked ships, and batteries are kept in proportion to how well the landing went, `f = min(1, sqrt(surviving attackers / starting defenders))`: production `85--100% x f`, goods `55--100% x f`, batteries `35--100% x f`. A blitz that lands in strength takes a world almost whole. Each share is a seeded roll. Production never falls below 1.0 on a world with potential, the queued build work survives, and debt is never forgiven. Your capture report lists the goods, the docked ships, and the queued work you inherit.
 
 A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
 
@@ -2126,10 +2126,11 @@ A hit goes to the highest target still standing. While any battery stands,
 the hits it cannot take are lost. Once the last battery falls, the rest of
 the round's hits go on to the stardock and below in the same round, and the
 turn ends after that round. A world with no batteries takes one round.
-Hits the stardock does not spend are halved, rounded down: fire at armies
-and industry strikes at half strength. A sixth of the halved hits, rounded
-down, go to the armies, and the rest, with what the armies cannot spend, to
-stored goods and factories. Batteries fire back each round they stand.
+A sixth of the hits the stardock does not spend, rounded down, go to the
+armies at full strength. The rest, with what the armies cannot spend, are
+halved, rounded down, and strike stored goods and factories: fire at
+industry strikes at half strength. Batteries fire back each round they
+stand.
 
 In a round that begins with a battery standing, extra hits also get past
 the batteries, on top of the hits they take:
@@ -2146,10 +2147,10 @@ the batteries, on top of the hits they take:
 Potential is the world's Potential Production, counted as 10 below 10 and
 150 above 150. The `d10` is the round's own roll. Two fifths of the extra
 hits, rounded down, strike the stardock, and a tenth, rounded down, the
-armies. The rest strike stored goods and factories. The armies' and the
-factories' shares, and the dock's leftover passing to the armies, strike at
-half strength, rounded down. Hits a target cannot spend pass to the next
-one. A world with no batteries takes no extra hits.
+armies. The rest strike stored goods and factories. The armies take their
+share, with the dock's leftover, at full strength; the factories' share,
+with the armies' leftover, strikes at half strength, rounded down. Hits a
+target cannot spend pass to the next one. A world with no batteries takes no extra hits.
 
 Invasion suppresses for up to three rounds, as a bombardment does, but its
 hits strike the batteries only and never the stardock, armies, or industry. It

@@ -228,15 +228,16 @@ fn hits_left_after_the_last_battery_falls_pour_down_the_hierarchy() {
 
     // 400 hits against two batteries: 132 cripple both and 132 destroy them.
     // The other 136 go on: 110 destroy the docked battleship (DS 110), and
-    // 26 go on at half strength, 13: a sixth, 2, strike the armies and
-    // destroy none, and the rest reach industry. The leak past the standing
+    // of the 26 left a sixth, 4, strike the armies and destroy none; the
+    // rest reach industry at half strength. The leak past the standing
     // batteries (36 at potential 10 and roll 4) leaves the battleship to the
-    // main fire and destroys no army.
+    // main fire: its 14 for the dock pass on, and with the armies' 3 they
+    // destroy one army at full strength (t252).
     apply_planet_bombardment_damage(&mut planet, 400, 4);
     assert_eq!(planet.ground_batteries, 0);
     assert_eq!(planet.crippled_batteries, 0);
     assert_eq!(planet.stardock.battleships, 0);
-    assert_eq!(planet.armies, 10);
+    assert_eq!(planet.armies, 9);
 }
 
 #[test]
@@ -279,8 +280,8 @@ fn leaked_hits_strike_the_dock_and_armies_before_the_industry() {
     planet.potential_production = 150;
 
     // 100 hits at roll 4 leak 36: 14 at the dock destroy two destroyers
-    // (DS 7) at full strength. The armies' 3 strike at half and pass 1 on,
-    // and the other 19 strike at half: 10 reach industry, 1 point.
+    // (DS 7) at full strength. The armies' 3 destroy none and pass on, and
+    // with the other 19 strike industry at half: 11, 1 point.
     apply_planet_bombardment_damage(&mut planet, 100, 4);
     assert_eq!(planet.stardock.destroyers, 3);
     assert_eq!(planet.armies, 10);
@@ -291,10 +292,10 @@ fn leaked_hits_strike_the_dock_and_armies_before_the_industry() {
 fn an_undefended_world_with_an_empty_dock_loses_armies_at_once() {
     let mut planet = world(0, 22, 0, 0);
 
-    // 120 hits strike at half strength, 60: a sixth, 10, destroy one army
-    // and the other 50 reach industry.
+    // 120 hits: a sixth, 20, destroy two armies at full strength (t252), and
+    // the other 100 reach industry at half strength.
     apply_planet_bombardment_damage(&mut planet, 120, 4);
-    assert_eq!(planet.armies, 21);
+    assert_eq!(planet.armies, 20);
 }
 
 #[test]
@@ -325,11 +326,11 @@ fn batteries_are_all_crippled_before_any_is_destroyed() {
 fn an_unshielded_dock_takes_the_hits_before_the_armies_behind_it() {
     let mut planet = world(0, 20, 0, 1);
 
-    // 230 hits: 110 for the docked battleship at full strength, and 120 at
-    // half strength, 60, a sixth of which destroys one army.
+    // 230 hits: 110 for the docked battleship, and of the other 120 a sixth,
+    // 20, destroys two armies, all at full strength.
     apply_planet_bombardment_damage(&mut planet, 230, 4);
     assert_eq!(planet.stardock.battleships, 0);
-    assert_eq!(planet.armies, 19);
+    assert_eq!(planet.armies, 18);
 }
 
 #[test]
@@ -374,11 +375,11 @@ fn bombardment_never_takes_production_below_one() {
 
 #[test]
 fn a_garrison_does_not_shield_the_industry() {
-    // 200 hits at a world with 100 armies: half strength leaves 100. A
-    // sixth (16) destroys one army and passes 6 on, so 90 reach industry,
-    // 9 points.
+    // 200 hits at a world with 100 armies: a sixth (33) destroys three
+    // armies at full strength and passes 3 on, so 170 reach industry at
+    // half strength, 85: 8 points.
     let mut planet = world(0, 100, 0, 0);
     apply_planet_bombardment_damage(&mut planet, 200, 4);
-    assert_eq!(planet.armies, 99);
-    assert_eq!(planet.production.to_f64(), 91.0);
+    assert_eq!(planet.armies, 97);
+    assert_eq!(planet.production.to_f64(), 92.0);
 }

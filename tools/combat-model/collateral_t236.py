@@ -5,7 +5,8 @@ t236 limits: in a round that starts with a battery standing,
 1/10 armies and the rest industry; fire at armies and industry strikes at
 half strength; and the year's rounds end once no battery stands. With t237
 production never falls below 1.0, and with t238 the main fire that passes
-the dock splits a sixth to the armies and the rest to industry.
+the dock splits a sixth to the armies and the rest to industry. With t252
+the armies take their share at full strength; only industry is halved.
 
 Usage: python3 -I -B tools/combat-model/collateral_t236.py
 """
@@ -45,14 +46,13 @@ def damage(planet, hits, roll):
     batteries, hits = T.battery_hits(batteries, hits)
     to_dock, to_armies = extra * 2 // 5, extra // 10
     dock, rest = AC.dock_damage(dock, to_dock)
-    armies, rest = hit_armies(armies, (to_armies + rest) // 2)
-    goods, production = hit_industry(goods, production, (extra - to_dock - to_armies) // 2 + rest)
+    armies, rest = hit_armies(armies, to_armies + rest)
+    goods, production = hit_industry(goods, production, (extra - to_dock - to_armies + rest) // 2)
     if sum(batteries):
         return batteries, dock, armies, goods, production
     dock, hits = AC.dock_damage(dock, hits)
-    hits //= 2
     armies, rest = hit_armies(armies, hits // 6)
-    goods, production = hit_industry(goods, production, hits - hits // 6 + rest)
+    goods, production = hit_industry(goods, production, (hits - hits // 6 + rest) // 2)
     return batteries, dock, armies, goods, production
 
 

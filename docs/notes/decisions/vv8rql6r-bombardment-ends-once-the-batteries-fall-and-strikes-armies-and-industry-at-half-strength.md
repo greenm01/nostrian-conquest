@@ -84,3 +84,18 @@ Simulated over five years at a potential-80 world with no batteries, under
 
 Armies still wear down slowly, so they keep their value against invasion.
 Battle results are unchanged.
+
+## Amendment (t252, 2026-11-02)
+
+Halving the armies' share made a single round soft against a garrison. On
+Venus, BB1 CA10 DD1 bombarding a world with no batteries and 22 armies
+killed 3 armies a year. The owner chose on 2026-11-02 to let the armies
+take their share at full strength ("Armies take full strength"): the sixth
+of the main fire that passes the dock, and the leak's tenth with the dock's
+leftover, strike the armies unhalved. The industry share stays halved.
+
+The same Venus strike now kills about 7 armies a year; industry losses are
+unchanged at about 18. In the t236 model's BB4-B2 case, armies lost per
+turn go from 3.8 to 7.0 and production lost from 11.6 to 12.1
+(`tools/combat-model/collateral_t236.py`). Code: `apply_planet_bombardment_damage` and
+`apply_leak` in `rust/nc-engine/src/maint/combat/assault.rs`.
