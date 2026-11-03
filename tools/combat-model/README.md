@@ -523,3 +523,13 @@ matplotlib and networkx for α-Rank (`uv run --with ...`). Results are in
 `nc_metagame_t253.json`, and the
 [fleet-mix investigation](../../docs/notes/investigations/hltgp5ow-fleet-mixes-as-a-game-one-mix-beats-all-others-and-roe-picks-which.md)
 reads them.
+
+## t254: the attack-and-defence game
+
+`assault_game.py` reads an `assault_odds --grid DEFENCE [--attack POINTS]`
+JSON: every attack (a warship mix and loaded transports) besieging every
+defence of the same world (batteries, armies, a starbase, a guard fleet).
+It solves the two-player zero-sum game on the chance the world falls in 8
+years, and again on the cost exchange, with each side's mass by component
+and a bootstrap of the value and support. It reuses `metagame.py`'s solver
+and needs numpy and scipy. Results are in `nc_assault_game_t254.json`.

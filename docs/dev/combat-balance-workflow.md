@@ -42,6 +42,12 @@ equilibrium, dominant mixes, a bootstrap of the support and, with
 `--alpharank`, α-Rank. Pool both seatings: cases share their seed range,
 so one seat can lean a few points in every case.
 
+**Attack-and-defence games (t254).** To ask how a world is best defended,
+and attacked, for the same points, run
+`assault_odds --grid DEFENCE --attack POINTS`. Then run
+`tools/combat-model/assault_game.py` on its JSON. It solves the
+attacker-against-defender game on capture odds and on the cost exchange.
+
 The model is trusted only as far as it has been checked against the
 engine: `combat_odds` runs the current rules on the cases tagged `engine`
 and `sweep.py --engine` tests the model's current-rule odds against the

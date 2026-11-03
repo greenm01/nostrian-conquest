@@ -32,14 +32,14 @@ SUPPORT = 1e-3
 
 def nash(m):
     """Maximin strategy of the row player of zero-sum matrix `m`, and the value."""
-    n = m.shape[0]
+    n, k = m.shape
     # Variables x_1..x_n, v; maximise v subject to x^T m[:, j] >= v for every j.
     c = np.zeros(n + 1)
     c[-1] = -1
-    a_ub = np.hstack([-m.T, np.ones((n, 1))])
+    a_ub = np.hstack([-m.T, np.ones((k, 1))])
     a_eq = np.hstack([np.ones((1, n)), np.zeros((1, 1))])
     bounds = [(0, None)] * n + [(None, None)]
-    res = linprog(c, A_ub=a_ub, b_ub=np.zeros(n), A_eq=a_eq, b_eq=[1], bounds=bounds, method='highs')
+    res = linprog(c, A_ub=a_ub, b_ub=np.zeros(k), A_eq=a_eq, b_eq=[1], bounds=bounds, method='highs')
     assert res.success, res.message
     x = np.clip(res.x[:n], 0, None)
     return x / x.sum(), res.x[-1]

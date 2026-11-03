@@ -2,7 +2,7 @@
 id: hltgp5ow
 date: 2026-11-03
 kind: investigation
-status: investigating
+status: resolved
 tags: [investigation, combat, balance, game-theory, hulls]
 ---
 # Fleet mixes as a game: one mix beats all others, and ROE picks which
@@ -108,8 +108,7 @@ Not covered here:
 - Fleets that meet while moving.
 
 Remaining work:
-- t254: the attack-and-defence game (fleet mixes against batteries, armies,
-  starbases and guards).
+- t254: the attack-and-defence game (see below; batteries dominate).
 - t255: search rule settings for counters (see below; adopted).
 
 ## Search for counters (t255)
@@ -182,6 +181,85 @@ t256 re-checks the AI.
 - The trained AI, which learned under today's rules and would need
   retraining.
 - The player manual's combat chapter.
+
+## Attack and defence (t254)
+
+How should a world be defended for its points, and how attacked? Run under
+R2 at `7933bfa8`.
+
+**Method.**
+- `rust/nc-fuzz/examples/assault_odds.rs --grid 400 --attack A` puts every
+  attack against every defence of empire 2's homeworld, through the real
+  maintenance turn. 400 trials a pairing (seeds 1–400), up to 8 years each.
+- **A defence spends 400 points:** no starbase or one (50), batteries in
+  steps of 5 (100 points), a guard fleet on Guard/Blockade a World in
+  90-point shares of one hull, and the rest in armies (2 each). That's 57
+  defences, from 200 armies alone to 20 batteries alone.
+- **An attack spends A points:** a warship mix in 90-point shares of DD, CA
+  or BB, two shares or more, and the rest in loaded transports (7 points an
+  army). It besieges: it bombards until the batteries are gone and its
+  armies outnumber the garrison, then invades.
+- **Attack budgets:** 400, 600 and 800 points, which give 31, 80 and 161
+  attacks.
+- `tools/combat-model/assault_game.py` solves the zero-sum game on the
+  chance the world falls. It also solves a second table on the cost
+  exchange. It bootstraps each pairing's trials 200 times.
+- Results are in `tools/combat-model/nc_assault_game_t254.json`. Raw grids
+  are in the mini's `~/.local/state/nostrian-conquest/balance/t254/`.
+- **Checks:** the solver's rectangular check (unbalanced matching pennies)
+  passes. The harness's fixed cases reproduce their earlier numbers exactly.
+
+**Batteries alone are the best defence.** Below, each defence's capture
+chance is taken against the attack that does best against it:
+
+| Defence (400 points) | Attack 400 | Attack 600 | Attack 800 |
+| --- | ---: | ---: | ---: |
+| 20 batteries | 0.00 | 0.01 | 0.31 |
+| 15 batteries, guard 6 CA, 5 armies | 0.00 | 0.17 | 0.86 |
+| 15 batteries, guard 2 BB, 5 armies | 0.00 | 0.24 | 0.88 |
+| 15 batteries, a starbase, 25 armies | 0.00 | 0.28 | 0.97 |
+| 15 batteries, 50 armies | 0.00 | 0.35 | 0.97 |
+| 200 armies | 0.04 | 1.00 | 1.00 |
+| Any defence with 5 batteries or fewer | 0.04–0.98 | 0.98–1.00 | 1.00 |
+
+1. **The defence is solved.** At attacks of 600 and 800 points, 20
+   batteries do as well as every other defence against every attack
+   (within 3 points). They are the whole equilibrium in all 200 bootstrap
+   runs. At 400 points several battery-heavy defences hold completely, so
+   the game's value is 0.
+2. **Points moved off batteries are wasted.** A starbase, a guard fleet or
+   armies all do worse, point for point. A battery fires like a battleship
+   for less than half the price (AS 100 for 20 points against 45). Armies
+   are weak once bombardment strikes them at full strength (t252): 200 of
+   them hold against 400 points but fall to every 600-point attack.
+3. **Attacking takes about twice the points.** Against the best defence,
+   twice its points take the world 31% of the time, and 1.5 times take it
+   1%. The attacker loses more points
+   than the defender in every equilibrium (exchange value −0.99, −1.41 and
+   −1.21 of the defence budget). This matches the manual's siege guide,
+   which says the cheapest attack is four to five times the batteries'
+   cost.
+4. **The best attacks are heavy.** Against batteries, the equilibrium
+   attacks at 600 and 800 points are cruisers and battleships with no
+   destroyers: 30–34% of the
+   points in cruisers and 56–60% in battleships. The rest is troops, kept
+   to a tenth. Destroyers enter only the exchange table at 600 points.
+
+**Limits.**
+- One world, with no rebuilding during the siege, no relief fleet and no
+  reinforcements.
+- The attacker never blitzes, and lands only once it outnumbers the
+  garrison. A blitz might punish a world with no armies.
+- Guard fleets are one hull each, at ROE 10.
+- Starbases and guards have other uses (economy, mobility) that this game
+  doesn't price.
+
+**Finding.** Point for point, world defence comes down to batteries, and
+taking a battery world costs about twice its points. That fits classic's
+"huge firepower for cost" and the manual's siege guide. Starbases, guard
+fleets and armies earn their points in other ways, not in holding a
+besieged world. Whether batteries should share that role is the owner's
+call. No rule change is proposed.
 
 ## Connections
 
