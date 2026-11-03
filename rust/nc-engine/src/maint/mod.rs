@@ -18,6 +18,7 @@ mod ship_recovery;
 pub mod timing;
 
 pub use campaign_run::CampaignMaintenance;
+pub use combat::{CombatTuning, set_combat_tuning};
 pub use nc_data::maintenance_types::*;
 pub use results::{apply_results_reviewable_flags, build_results_dat, build_results_report_blocks};
 

@@ -21,6 +21,7 @@ mod fleet_battle_tests;
 mod reporting;
 mod retreat;
 mod state;
+mod tuning;
 
 pub(crate) use assault::{AssaultEvents, resolve_strike};
 pub(crate) use fleet_battle::{BattleSide, FleetBattle, FleetBattlePhaseEvents, fight_encounter};
@@ -31,3 +32,4 @@ pub(crate) use retreat::{
     abort_mission_to_seek_home_or_hold, hold_in_place, nearest_friendly_world,
 };
 pub(crate) use state::{STARBASE_ATTACK_STRENGTH, base_attack_strength, warship_attack_strength};
+pub use tuning::{CombatTuning, set_combat_tuning};

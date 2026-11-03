@@ -468,6 +468,9 @@ fn main() {
             "--json" => json_path = Some(value()),
             "--grid" => grid_budget = Some(value().parse().expect("--grid takes a number")),
             "--step" => grid_step = value().parse().expect("--step takes a number"),
+            "--tuning" => nc_engine::maint::set_combat_tuning(
+                nc_engine::maint::CombatTuning::parse(&value()).expect("--tuning should parse"),
+            ),
             "--roe" => grid_roe = value().parse().expect("--roe takes a number"),
             other => panic!("unknown option {other}"),
         }

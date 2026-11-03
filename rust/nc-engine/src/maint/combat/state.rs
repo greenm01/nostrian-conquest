@@ -12,9 +12,6 @@ pub(super) const IDX_SC: usize = 4;
 pub(super) const IDX_TT: usize = 5;
 pub(super) const IDX_ET: usize = 6;
 
-const AS_DD: u32 = 12;
-const AS_CA: u32 = 33;
-const AS_BB: u32 = 90;
 const AS_SB: u32 = 100;
 const AS_SC: u32 = 0;
 const AS_TT: u32 = 0;
@@ -24,9 +21,6 @@ const AS_ET: u32 = 0;
 /// decision to fight.
 pub(crate) const STARBASE_ATTACK_STRENGTH: u32 = AS_SB;
 
-const DS_DD: u32 = 7;
-const DS_CA: u32 = 30;
-const DS_BB: u32 = 110;
 const DS_SB: u32 = 130;
 const DS_SC: u32 = 10;
 const DS_TT: u32 = 10;
@@ -56,6 +50,8 @@ pub(super) struct FleetCombatState {
 pub(super) struct CarriedHits {
     pub(super) suppression: u32,
     pub(super) execution: u32,
+    /// Per-hull fire (t255 experiment): carried hits of DD, CA, BB, SB.
+    pub(super) by_class: [u32; 4],
 }
 
 /// How a fleet left the battle.
@@ -290,9 +286,19 @@ pub(crate) fn warship_attack_strength(
     battleships: u16,
     crippled: &CrippledShips,
 ) -> u32 {
-    hull_attack_strength(AS_DD, destroyers.into(), crippled.destroyers.total())
-        + hull_attack_strength(AS_CA, cruisers.into(), crippled.cruisers.total())
-        + hull_attack_strength(AS_BB, battleships.into(), crippled.battleships.total())
+    hull_attack_strength(
+        fleet_class_as(IDX_DD),
+        destroyers.into(),
+        crippled.destroyers.total(),
+    ) + hull_attack_strength(
+        fleet_class_as(IDX_CA),
+        cruisers.into(),
+        crippled.cruisers.total(),
+    ) + hull_attack_strength(
+        fleet_class_as(IDX_BB),
+        battleships.into(),
+        crippled.battleships.total(),
+    )
 }
 
 /// A starbase's attack strength: 100, or 50 while it is crippled.
@@ -302,7 +308,7 @@ pub(crate) fn base_attack_strength(base: &Starbase) -> u32 {
 
 /// `hulls` of one class, `crippled` of them crippled, each hull at its
 /// current AS.
-fn hull_attack_strength(as_value: u32, hulls: u32, crippled: u32) -> u32 {
+pub(super) fn hull_attack_strength(as_value: u32, hulls: u32, crippled: u32) -> u32 {
     hulls.saturating_sub(crippled) * as_value + crippled * crippled_as(as_value)
 }
 
@@ -363,11 +369,9 @@ pub(super) fn fleet_state_from_records(
     state
 }
 
-fn fleet_class_as(idx: usize) -> u32 {
+pub(super) fn fleet_class_as(idx: usize) -> u32 {
     match idx {
-        IDX_DD => AS_DD,
-        IDX_CA => AS_CA,
-        IDX_BB => AS_BB,
+        IDX_DD | IDX_CA | IDX_BB => super::tuning::tuning().attack[idx],
         IDX_SB => AS_SB,
         IDX_SC => AS_SC,
         IDX_TT => AS_TT,
@@ -378,9 +382,7 @@ fn fleet_class_as(idx: usize) -> u32 {
 
 pub(super) fn fleet_class_ds(idx: usize) -> u32 {
     match idx {
-        IDX_DD => DS_DD,
-        IDX_CA => DS_CA,
-        IDX_BB => DS_BB,
+        IDX_DD | IDX_CA | IDX_BB => super::tuning::tuning().defense[idx],
         IDX_SB => DS_SB,
         IDX_SC => DS_SC,
         IDX_TT => DS_TT,

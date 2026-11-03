@@ -11,8 +11,9 @@ use super::super::FleetBattlePerspective;
 use super::damage::{Holder, apply_class_change, write_back_base, write_back_fleet};
 use super::exchange::{
     BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_ALLOCATION, COMBAT_KIND_FLEET,
-    COMBAT_KIND_PURSUIT, COMBAT_KIND_PURSUIT_CATCH, SeededDice, apply_hits_to_fleet,
-    committed_fleet_as, fleet_die_modifier, fleet_volley, heavy_line_outweighs, pursuit_catches,
+    COMBAT_KIND_PURSUIT, COMBAT_KIND_PURSUIT_CATCH, SeededDice, apply_hits_per_hull,
+    apply_hits_to_fleet, committed_fleet_as, fleet_die_modifier, fleet_volley,
+    heavy_line_outweighs, pursuit_catches,
 };
 use super::reporting::{
     loaded_armies_for_fleet_indices, mission_kind_for_order, preferred_reporting_fleet_index,
@@ -23,9 +24,9 @@ use super::retreat::{
     retreat_task_force,
 };
 use super::state::{
-    BattleRole, FleetCombatState, IDX_SB, IDX_TT, Member, Record, TaskForce, Transports,
-    Withdrawal, new_task_force, planet_idx_at_coords, ship_counts_from_state,
-    ship_losses_from_states, tf_has_any_units,
+    BattleRole, FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, Member, Record,
+    TaskForce, Transports, Withdrawal, fleet_class_as, hull_attack_strength, new_task_force,
+    planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states, tf_has_any_units,
 };
 use crate::maint::encounter::rules::roe_permits;
 use nc_data::{GameRng, has_any_force, troop_transports};
@@ -97,6 +98,8 @@ fn fire_exchange(
     let mut pending_suppression: HashMap<u8, u32> = HashMap::new();
     let mut pending_execution: HashMap<u8, u32> = HashMap::new();
     let mut pending_criticals: HashMap<u8, u32> = HashMap::new();
+    let mut pending_by_class: HashMap<u8, [u32; 4]> = HashMap::new();
+    let per_hull = super::tuning::tuning().per_hull;
     let mut engaged = HashSet::new();
     for tf in task_forces.iter() {
         if !task_force_can_fire(tf) {
@@ -126,6 +129,12 @@ fn fire_exchange(
             0
         };
         let exe_hits = result.hits.saturating_sub(sup_hits);
+        if per_hull {
+            let pools = pending_by_class.entry(target_empire).or_default();
+            for (pool, hits) in pools.iter_mut().zip(split_by_class(&tf.state, result.hits)) {
+                *pool += hits;
+            }
+        }
         *pending_suppression.entry(target_empire).or_default() += sup_hits;
         *pending_execution.entry(target_empire).or_default() += exe_hits;
         *pending_criticals.entry(target_empire).or_default() += u32::from(result.critical);
@@ -137,6 +146,28 @@ fn fire_exchange(
             tf.engaged_in_battle = true;
         }
     }
+    if per_hull {
+        for tf in task_forces.iter_mut() {
+            let mut pools = tf.carried_hits.by_class;
+            for (pool, new) in pools.iter_mut().zip(
+                pending_by_class
+                    .get(&tf.empire)
+                    .copied()
+                    .unwrap_or_default(),
+            ) {
+                *pool += new;
+            }
+            let critical_hits = pending_criticals.get(&tf.empire).copied().unwrap_or(0);
+            if pools.iter().any(|&h| h > 0) || critical_hits > 0 {
+                let before = tf.state.clone();
+                tf.carried_hits.by_class = apply_hits_per_hull(&mut tf.state, pools, critical_hits);
+                let mut rng =
+                    dice.allocation(COMBAT_KIND_ALLOCATION | (kind & !0xff), round, tf.empire);
+                share_losses(tf, &before, &mut rng);
+            }
+        }
+        return !engaged.is_empty();
+    }
     apply_pending_hits(
         task_forces,
         &pending_suppression,
@@ -147,6 +178,32 @@ fn fire_exchange(
         round,
     );
     !engaged.is_empty()
+}
+
+/// Per-hull fire (t255 experiment): a volley's hits split among DD, CA, BB
+/// and SB by each class's share of the side's AS, rounded so they add up.
+fn split_by_class(state: &FleetCombatState, hits: u32) -> [u32; 4] {
+    let class_as = [IDX_DD, IDX_CA, IDX_BB, IDX_SB].map(|idx| {
+        hull_attack_strength(
+            fleet_class_as(idx),
+            state.counts[idx],
+            state.crippled_count(idx),
+        )
+    });
+    let total: u32 = class_as.iter().sum();
+    let mut out = [0; 4];
+    if total == 0 {
+        return out;
+    }
+    let (mut cumulative, mut given) = (0u64, 0u32);
+    for (slot, value) in out.iter_mut().zip(class_as) {
+        cumulative += u64::from(value);
+        let upto =
+            ((u64::from(hits) * cumulative + u64::from(total) / 2) / u64::from(total)) as u32;
+        *slot = upto - given;
+        given = upto;
+    }
+    out
 }
 
 /// Apply one pass of exchanges to every side. A side's carried hits join the

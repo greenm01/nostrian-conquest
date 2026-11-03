@@ -74,10 +74,11 @@ fn apply_dispersed_hits_to_fleet_classes(
     state: &mut FleetCombatState,
     hits: &mut u32,
     target_order: &[usize],
+    bonus: Option<(usize, f64)>,
 ) -> bool {
     let mut progress = false;
     for &idx in target_order {
-        let ds = fleet_class_ds(idx);
+        let ds = bonus_ds(fleet_class_ds(idx), idx, bonus);
         let (nominal, crippled) = (state.nominal_count(idx), state.crippled_count(idx));
         if ds == 0 || nominal + crippled == 0 {
             continue;
@@ -283,7 +284,8 @@ pub(super) fn committed_fleet_as(our_as: u32, enemy_as: u32) -> u32 {
     if enemy_as == 0 || our_as <= enemy_as {
         return our_as;
     }
-    let mut y = (f64::from(our_as) / f64::from(enemy_as)).powf(1.0 / 3.3);
+    let exponent = super::tuning::tuning().engage_exponent;
+    let mut y = (f64::from(our_as) / f64::from(enemy_as)).powf(1.0 / exponent);
     if y > 1.3 {
         y = (y + 1.3) / 2.0;
     }
@@ -454,10 +456,11 @@ fn apply_focus_fire_hits_to_fleet_classes(
     hits: &mut u32,
     target_order: &[usize],
     half_finish: bool,
+    bonus: Option<(usize, f64)>,
 ) -> bool {
     let mut progress = false;
     for &idx in target_order {
-        let ds = fleet_class_ds(idx);
+        let ds = bonus_ds(fleet_class_ds(idx), idx, bonus);
         if ds == 0 {
             continue;
         }
@@ -508,7 +511,8 @@ pub(super) fn apply_hits_to_fleet(
             &auxiliary_order
         };
 
-        if !apply_dispersed_hits_to_fleet_classes(state, &mut suppression_hits, target_order) {
+        if !apply_dispersed_hits_to_fleet_classes(state, &mut suppression_hits, target_order, None)
+        {
             break;
         }
     }
@@ -524,7 +528,13 @@ pub(super) fn apply_hits_to_fleet(
             &auxiliary_order
         };
 
-        if !apply_focus_fire_hits_to_fleet_classes(state, &mut execution_hits, target_order, true) {
+        if !apply_focus_fire_hits_to_fleet_classes(
+            state,
+            &mut execution_hits,
+            target_order,
+            true,
+            None,
+        ) {
             break;
         }
     }
@@ -539,7 +549,65 @@ pub(super) fn apply_hits_to_fleet(
     CarriedHits {
         suppression: suppression_hits,
         execution: execution_hits,
+        by_class: [0; 4],
     }
+}
+
+/// A DS cost under a shooter's bonus against one class (t255 experiment).
+fn bonus_ds(ds: u32, idx: usize, bonus: Option<(usize, f64)>) -> u32 {
+    match bonus {
+        Some((target, factor)) if target == idx && ds > 0 => {
+            ((f64::from(ds) / factor).ceil() as u32).max(1)
+        }
+        _ => ds,
+    }
+}
+
+/// Per-hull fire (t255 experiment): each class's pool (DD, CA, BB, SB)
+/// works through its own target order, with its bonus against its first
+/// target; CA and BB fire dispersed, DD and SB focused, as the shared pools
+/// do. Returns what each pool could not spend.
+pub(super) fn apply_hits_per_hull(
+    state: &mut FleetCombatState,
+    mut pools: [u32; 4],
+    critical_hits: u32,
+) -> [u32; 4] {
+    let tuning = super::tuning::tuning();
+    for (pool, shooter) in [(2, IDX_BB), (1, IDX_CA), (0, IDX_DD), (3, IDX_SB)] {
+        let first = (shooter < 3)
+            .then(|| tuning.first_target[shooter])
+            .flatten();
+        let bonus = first.map(|target| (target, tuning.bonus[shooter]));
+        let dispersed = shooter == IDX_CA || shooter == IDX_BB;
+        while pools[pool] > 0 {
+            let order: Vec<usize> = if fleet_combat_line_present(state) {
+                first
+                    .into_iter()
+                    .chain(
+                        fleet_combat_line_order()
+                            .into_iter()
+                            .filter(|&i| Some(i) != first),
+                    )
+                    .collect()
+            } else {
+                fleet_auxiliary_order().to_vec()
+            };
+            let progress = if dispersed {
+                apply_dispersed_hits_to_fleet_classes(state, &mut pools[pool], &order, bonus)
+            } else {
+                apply_focus_fire_hits_to_fleet_classes(state, &mut pools[pool], &order, true, bonus)
+            };
+            if !progress {
+                break;
+            }
+        }
+    }
+    for _ in 0..critical_hits {
+        if !apply_critical_hit_to_fleet(state) {
+            break;
+        }
+    }
+    pools
 }
 
 /// Battery return fire on a fleet in orbit: execution fire that keeps the
@@ -559,7 +627,7 @@ pub(super) fn apply_battery_hits_to_fleet(
             auxiliary_order = fleet_auxiliary_order();
             &auxiliary_order
         };
-        if !apply_focus_fire_hits_to_fleet_classes(state, &mut hits, target_order, false) {
+        if !apply_focus_fire_hits_to_fleet_classes(state, &mut hits, target_order, false, None) {
             break;
         }
     }
@@ -578,7 +646,8 @@ pub(super) fn apply_landing_fire_to_fleet(
     critical: bool,
 ) {
     let target_order = [IDX_TT, IDX_DD, IDX_CA, IDX_BB];
-    while hits > 0 && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order, false)
+    while hits > 0
+        && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order, false, None)
     {
     }
 
