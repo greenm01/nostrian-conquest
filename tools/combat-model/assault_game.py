@@ -2,8 +2,9 @@
 attacked, for the same points?
 
 Reads an `assault_odds --grid` JSON from the engine: every attack (a warship
-mix plus loaded transports) against every defence (batteries, armies, a
-starbase, a guard fleet) of a world. Each besieges for up to 8 years. It
+mix plus loaded transports, and a plan: siege, bombard-then-blitz or blitz)
+against every defence (batteries, armies, a starbase, a guard fleet) of a
+world, for up to 8 years. It
 builds the two-player zero-sum game, the attacker's payoff being the chance
 the world falls, and solves it:
 
@@ -27,8 +28,11 @@ from metagame import SUPPORT, nash, self_check
 COST = {'DD': 5, 'CA': 15, 'BB': 45, 'army': 7, 'battery': 20, 'garrison': 2, 'starbase': 50}
 
 
+PLANS = ('siege', 'bombard-then-blitz', 'blitz')
+
+
 def attack_key(c):
-    return (c['destroyers'], c['cruisers'], c['battleships'], c['armies'])
+    return (c['destroyers'], c['cruisers'], c['battleships'], c['armies'], c['plan'])
 
 
 def defence_key(c):
@@ -36,7 +40,7 @@ def defence_key(c):
 
 
 def attack_name(k):
-    return f'{k[0]}DD+{k[1]}CA+{k[2]}BB, {k[3]} armies'
+    return f'{k[0]}DD+{k[1]}CA+{k[2]}BB, {k[3]} armies, {k[4]}'
 
 
 def defence_name(k):
@@ -108,7 +112,9 @@ def main():
         am = mass(x, attacks, attack_points)
         dm = mass(y, defences, defence_points)
         print(f'\n[{label}] value {v:+.3f}')
-        print('  attack mass: ' + ', '.join(f'{h} {p:.2f}' for h, p in zip(('DD', 'CA', 'BB', 'troops'), am)))
+        pm = [sum(x[i] for i, k in enumerate(attacks) if k[4] == plan) for plan in PLANS]
+        print('  attack mass: ' + ', '.join(f'{h} {p:.2f}' for h, p in zip(('DD', 'CA', 'BB', 'troops'), am))
+              + '; by plan ' + ', '.join(f'{plan} {p:.2f}' for plan, p in zip(PLANS, pm)))
         for i in np.argsort(-x):
             if x[i] > SUPPORT:
                 print(f'    {attack_name(attacks[i]):>32} {x[i]:.3f}')
@@ -118,7 +124,8 @@ def main():
             if y[j] > SUPPORT:
                 print(f'    {defence_name(defences[j]):>40} {y[j]:.3f}')
         report[label] = {'value': v, 'attack': x.round(4).tolist(), 'defence': y.round(4).tolist(),
-                         'attack_mass': am.round(4).tolist(), 'defence_mass': dm.round(4).tolist(),
+                         'attack_mass': am.round(4).tolist(), 'plan_mass': [round(p, 4) for p in pm],
+                         'defence_mass': dm.round(4).tolist(),
                          'matrix': m.round(4).tolist()}
 
     if args.boot:

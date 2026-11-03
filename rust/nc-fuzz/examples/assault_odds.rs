@@ -12,12 +12,14 @@
 //! `--grid DEFENCE` (t254) replaces the fixed cases with the attack-and-defence
 //! game: every attack spending `--attack POINTS` (default DEFENCE) against
 //! every defence spending DEFENCE. An attack is a warship mix in 90-point
-//! shares of DD, CA or BB, from two shares up, with the rest spent on loaded
-//! transports at 7 points an army. A defence is no starbase or one (50
+//! shares of DD, CA or BB, with the rest spent on loaded transports at 7
+//! points an army, and one of three plans. A siege or a bombard-then-blitz
+//! takes two shares or more; a blitz may take none. A defence is no starbase or one (50
 //! points), batteries in 100-point steps, a guard fleet on Guard/Blockade a
-//! World in 90-point shares of one hull, and the rest in armies. The attack
-//! besieges: it bombards until the batteries are gone and its armies
-//! outnumber the garrison, then invades. Its JSON feeds
+//! World in 90-point shares of one hull, and the rest in armies. A siege
+//! bombards until the batteries are gone and its armies outnumber the
+//! garrison, then invades. A bombard-then-blitz blitzes once the batteries
+//! are gone. A blitz lands at once, past the batteries. Its JSON feeds
 //! `tools/combat-model/assault_game.py`.
 //!
 //! Every trial builds the same two-player game, empties every fleet but one
@@ -144,10 +146,17 @@ fn mixes(shares: u16) -> Vec<Force> {
 /// The attack-and-defence game (t254): every attack spending `attack`
 /// points against every defence spending `defence`.
 fn grid(defence: u16, attack: u16) -> Vec<Case> {
-    let attacks: Vec<(Force, u16)> = (2..=attack / SHARE)
-        .flat_map(mixes)
-        .map(|fleet| (fleet, (attack - fleet.points()) / (COST_TT + COST_ARMY)))
-        .filter(|&(_, armies)| armies > 0)
+    // A blitz may go in with transports alone; a bombardment needs warships.
+    let attacks: Vec<(Plan, Force, u16)> = [Plan::Siege, Plan::BombardThenBlitz, Plan::Blitz]
+        .into_iter()
+        .flat_map(|plan| {
+            let first = if plan == Plan::Blitz { 0 } else { 2 };
+            (first..=attack / SHARE).flat_map(mixes).map(move |fleet| {
+                let armies = (attack - fleet.points()) / (COST_TT + COST_ARMY);
+                (plan, fleet, armies)
+            })
+        })
+        .filter(|&(_, _, armies)| armies > 0)
         .collect();
     let mut defences = Vec::new();
     for starbase in [false, true] {
@@ -177,7 +186,7 @@ fn grid(defence: u16, attack: u16) -> Vec<Case> {
         }
     }
     let mut cases = Vec::new();
-    for &(fleet, armies) in &attacks {
+    for &(plan, fleet, armies) in &attacks {
         for &(starbase, batteries, guard, defenders) in &defences {
             cases.push(Case {
                 batteries,
@@ -186,7 +195,7 @@ fn grid(defence: u16, attack: u16) -> Vec<Case> {
                 guard,
                 fleet,
                 armies,
-                plan: Plan::Siege,
+                plan,
             });
         }
     }

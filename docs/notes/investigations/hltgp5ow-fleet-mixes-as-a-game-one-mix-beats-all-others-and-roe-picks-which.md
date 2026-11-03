@@ -108,7 +108,8 @@ Not covered here:
 - Fleets that meet while moving.
 
 Remaining work:
-- t254: the attack-and-defence game (see below; batteries dominate).
+- t254: the attack-and-defence game (see below; batteries and armies counter
+  different attacks).
 - t255: search rule settings for counters (see below; adopted).
 
 ## Search for counters (t255)
@@ -196,70 +197,88 @@ R2 at `7933bfa8`.
   90-point shares of one hull, and the rest in armies (2 each). That's 57
   defences, from 200 armies alone to 20 batteries alone.
 - **An attack spends A points:** a warship mix in 90-point shares of DD, CA
-  or BB, two shares or more, and the rest in loaded transports (7 points an
-  army). It besieges: it bombards until the batteries are gone and its
-  armies outnumber the garrison, then invades.
-- **Attack budgets:** 400, 600 and 800 points, which give 31, 80 and 161
+  or BB, the rest in loaded transports (7 points an army), and one of three
+  plans:
+  - *Siege:* bombard until the batteries are gone and the armies aboard
+    outnumber the garrison, then invade.
+  - *Bombard, then blitz:* blitz once the batteries are gone.
+  - *Blitz:* land at once, past the batteries. A blitz may bring no
+    warships; the other plans take two shares or more.
+- **Attack budgets:** 400, 600 and 800 points, which give 97, 244 and 487
   attacks.
 - `tools/combat-model/assault_game.py` solves the zero-sum game on the
   chance the world falls. It also solves a second table on the cost
   exchange. It bootstraps each pairing's trials 200 times.
 - Results are in `tools/combat-model/nc_assault_game_t254.json`. Raw grids
-  are in the mini's `~/.local/state/nostrian-conquest/balance/t254/`.
+  are in the mini's `~/.local/state/nostrian-conquest/balance/t254/`. A
+  first run with sieges alone is in its `siege-only/`.
 - **Checks:** the solver's rectangular check (unbalanced matching pennies)
   passes. The harness's fixed cases reproduce their earlier numbers exactly.
 
-**Batteries alone are the best defence.** Below, each defence's capture
-chance is taken against the attack that does best against it:
+**Batteries stop sieges, and armies stop blitzes.** Below is each
+defence's capture chance against the best siege and the best blitz (either
+blitz plan):
 
-| Defence (400 points) | Attack 400 | Attack 600 | Attack 800 |
-| --- | ---: | ---: | ---: |
-| 20 batteries | 0.00 | 0.01 | 0.31 |
-| 15 batteries, guard 6 CA, 5 armies | 0.00 | 0.17 | 0.86 |
-| 15 batteries, guard 2 BB, 5 armies | 0.00 | 0.24 | 0.88 |
-| 15 batteries, a starbase, 25 armies | 0.00 | 0.28 | 0.97 |
-| 15 batteries, 50 armies | 0.00 | 0.35 | 0.97 |
-| 200 armies | 0.04 | 1.00 | 1.00 |
-| Any defence with 5 batteries or fewer | 0.04–0.98 | 0.98–1.00 | 1.00 |
+| Defence (400 points) | 600: siege | 600: blitz | 800: siege | 800: blitz |
+| --- | ---: | ---: | ---: | ---: |
+| 20 batteries | 0.01 | 1.00 | 0.31 | 1.00 |
+| 15 batteries, 50 armies | 0.35 | 0.25 | 0.97 | 0.58 |
+| 15 batteries, a starbase, 25 armies | 0.28 | 0.34 | 0.97 | 0.96 |
+| 15 batteries, guard 6 CA, 5 armies | 0.17 | 0.90 | 0.86 | 1.00 |
+| 10 batteries, 100 armies | 0.99 | 0.04 | 1.00 | 0.25 |
+| 200 armies | 1.00 | 0.00 | 1.00 | 0.00 |
 
-1. **The defence is solved.** At attacks of 600 and 800 points, 20
-   batteries do as well as every other defence against every attack
-   (within 3 points). They are the whole equilibrium in all 200 bootstrap
-   runs. At 400 points several battery-heavy defences hold completely, so
-   the game's value is 0.
-2. **Points moved off batteries are wasted.** A starbase, a guard fleet or
-   armies all do worse, point for point. A battery fires like a battleship
-   for less than half the price (AS 100 for 20 points against 45). Armies
-   are weak once bombardment strikes them at full strength (t252): 200 of
-   them hold against 400 points but fall to every 600-point attack.
-3. **Attacking takes about twice the points.** Against the best defence,
-   twice its points take the world 31% of the time, and 1.5 times take it
-   1%. The attacker loses more points
-   than the defender in every equilibrium (exchange value −0.99, −1.41 and
-   −1.21 of the defence budget). This matches the manual's siege guide,
-   which says the cheapest attack is four to five times the batteries'
-   cost.
-4. **The best attacks are heavy.** Against batteries, the equilibrium
-   attacks at 600 and 800 points are cruisers and battleships with no
-   destroyers: 30–34% of the
-   points in cruisers and 56–60% in battleships. The rest is troops, kept
-   to a tenth. Destroyers enter only the exchange table at 600 points.
+At 400 points, 15 batteries and 50 armies hold against every attack. Twenty
+batteries with no armies fall to a 400-point blitz of 57 armies, with no
+warships, 41% of the time.
+
+1. **The two ground defences counter different attacks.** Batteries make a
+   siege slow and costly, but a blitz lands past them. Armies are what a
+   blitz must beat, but a siege bombards them away. Neither alone holds
+   against twice its points.
+2. **The best defence mixes them.** When the attacker sees the defence (a
+   scout counts batteries and armies), the best one is about three-quarters
+   batteries and a quarter armies: 15 batteries with 50 armies, or 15
+   batteries, a starbase and 25 armies.
+   - At 1.5 times its points, either falls 34–35% of the time.
+   - At twice its points, either falls 97% of the time.
+3. **A defender who keeps the mix secret does better.** The equilibrium
+   switches between all-batteries and all-armies at 800 points, and the
+   world falls 59% of the time. The secret is hard to keep in play, so
+   the seen-defence numbers above are the practical ones.
+4. **Attacks mix too.** Both plans stay in the equilibrium:
+   - heavy sieges with few troops (cruisers and battleships, about a tenth
+     of the points in troops);
+   - blitzes that are mostly troops (60–114 armies with a light escort).
+
+   Bombard-then-blitz never enters it, in either table.
+5. **The attacker still pays.** In every equilibrium of the cost-exchange
+   table, the attacker loses more points than the defender: 0.46, 0.34 and
+   0.25 of the defence budget at 400, 600 and 800 points. These attacks are
+   all blitzes.
+6. **Guard fleets and starbases add little to holding a world.** A
+   starbase in place of 25 armies plays about the same. A guard fleet in
+   place of armies leaves the world open to a blitz.
 
 **Limits.**
 - One world, with no rebuilding during the siege, no relief fleet and no
   reinforcements.
-- The attacker never blitzes, and lands only once it outnumbers the
-  garrison. A blitz might punish a world with no armies.
+- A siege invades only once its armies outnumber the garrison.
 - Guard fleets are one hull each, at ROE 10.
-- Starbases and guards have other uses (economy, mobility) that this game
-  doesn't price.
+- Starbases and guards have other uses (economy, mobility, keeping
+  bombardment off production) that this game doesn't price.
 
-**Finding.** Point for point, world defence comes down to batteries, and
-taking a battery world costs about twice its points. That fits classic's
-"huge firepower for cost" and the manual's siege guide. Starbases, guard
-fleets and armies earn their points in other ways, not in holding a
-besieged world. Whether batteries should share that role is the owner's
-call. No rule change is proposed.
+**Finding.** World defence has a counter cycle. Batteries counter sieges,
+armies counter blitzes, and the best seen defence is mostly batteries with
+a quarter of the points in armies. The original player guide gives the
+same advice: batteries give the most "firepower per dollar", but "Keep a
+number of armies on your planet or your opponents will BLITZ and overrun
+your armies." Taking such a world costs about twice its points.
+Starbases, guard fleets and armies past a blitz-proof garrison earn their
+points in other ways. No rule change is proposed.
+
+A first run with sieges alone found batteries alone the best defence. That
+was an artifact of leaving out the blitz.
 
 ## Connections
 

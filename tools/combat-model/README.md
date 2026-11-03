@@ -527,8 +527,9 @@ reads them.
 ## t254: the attack-and-defence game
 
 `assault_game.py` reads an `assault_odds --grid DEFENCE [--attack POINTS]`
-JSON: every attack (a warship mix and loaded transports) besieging every
-defence of the same world (batteries, armies, a starbase, a guard fleet).
+JSON: every attack (a warship mix and loaded transports, and a plan: siege,
+bombard-then-blitz or blitz) against every defence of the same world
+(batteries, armies, a starbase, a guard fleet).
 It solves the two-player zero-sum game on the chance the world falls in 8
 years, and again on the cost exchange, with each side's mass by component
 and a bootstrap of the value and support. It reuses `metagame.py`'s solver
