@@ -4182,7 +4182,33 @@ which every style beats; they were discarded.
 **Retrain.** t235's recipe from fleet-final, its league fleet-final alone,
 in the mini's `ai/t256/`. The executors it trains against are land-grab's,
 unchanged above. Under R2, fleet-final's self-play win share against
-them fell to 0.08–0.15.
+them fell to 0.08–0.15. The exit rule is t249's.
+
+**Result (2026-11-03, at `33c7fc70`).** Paired `behaviour_report` against
+fleet-final, 1,024 maps from 100000, and the start check's 143 positions:
+
+| Snapshot | Win share, 60 years | Win share, 100 years | Start check |
+| --- | ---: | ---: | ---: |
+| 50 | +0.015 ± 0.019 | +0.039 ± 0.019 | +0.026 ± 0.026 |
+| 75 | +0.036 ± 0.019 | +0.033 ± 0.019 | +0.075 ± 0.024 |
+| 100 | +0.043 ± 0.019 | +0.011 ± 0.020 | +0.033 ± 0.025 |
+
+1. **Not promoted under the exit rule.** No snapshot clears two standard
+   errors at both horizons. Snapshot 75 comes closest: 1.9 and 1.7
+   standard errors, and +3.1 on the start check.
+2. **Unlike t235 and t249, the start check rises.** Every snapshot gains in
+   the recovery positions, and none gives the long-game gain back there.
+   Under R2 the gains are small but point the same way in all nine cells.
+3. **Play is unchanged in kind.** The snapshots tax at 60%, never declare
+   war, and keep fleet-final's defence share (32% at 60 years). They build
+   15–17 more transports a game at 60 years and join fleets more often (132
+   joins a game for snapshot 75, against 74).
+
+fleet-final stays the shipped network. No snapshot beats it by the exit
+rule, so the rule change needs no retrain. Snapshot 75 stays in the mini's
+`ai/t256/run/` if a later retrain wants a start.
+
+Closed on 2026-11-03.
 
 ## Cold-eye review (Muse Code, 2026-10-16)
 
