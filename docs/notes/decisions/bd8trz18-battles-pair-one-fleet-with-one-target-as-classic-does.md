@@ -68,3 +68,7 @@ with classic's gate). Supersedes gzly58c5 items 1 to 3 and the t080 gate
 extension. Task t226. Normative text: the player manual's battle and
 orbit sections, [ec-encounter-spec.md](../../dev/ec-encounter-spec.md),
 [ec-combat-reference.md](../../dev/ec-combat-reference.md).
+
+Item 3 is amended by
+[j9tz0hos](j9tz0hos-world-guards-defend-the-orbit.md) (2026-11-02):
+Guard/Blockade a World fleets in orbit now join the gate's battle.

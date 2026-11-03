@@ -4,7 +4,7 @@
 use nc_data::{
     BlockingForce, ContactDecision, Coords, DiplomacyOverride, DiplomaticRelation,
     EncounterDispositionReason, GameRng, Mission, MissionAbortReason, Order, Real48, StarbaseAlert,
-    StarbaseSightingEvent, has_any_force, troop_transports,
+    StarbaseSightingEvent, has_any_force, has_combat_ships, troop_transports,
 };
 
 use super::rules::{
@@ -187,11 +187,12 @@ impl Year<'_> {
         }
     }
 
-    /// The orbital gate, classic's starbase gate (`110a:67bd`): before fleet
-    /// unit `unit` assaults, the world owner's starbases in orbit fight it,
-    /// sighted or not, each with the guard fleet at rest beside it. His
-    /// other fleets there meet the attacker only through the encounter loop
-    /// (ADR bd8trz18). ROE decides for the attacker as for a base blocking
+    /// The orbital gate, classic's starbase gate (`110a:67bd`) widened to the
+    /// world's guards: before fleet unit `unit` assaults, the world owner's
+    /// starbases in orbit, the guard fleets at rest beside them and his
+    /// Guard/Blockade a World fleets in orbit fight it in one
+    /// battle, sighted or not (ADR j9tz0hos). His other fleets there meet the
+    /// attacker only through the encounter loop (ADR bd8trz18). ROE decides for the attacker as for a base blocking
     /// the path, weighing its own attack strength against the defenders' (a
     /// starbase at 100); a fleet unwilling to fight them aborts as it does
     /// before a base, without a shot: classic's gate runs the base decision
@@ -222,10 +223,11 @@ impl Year<'_> {
                 defenders.bases.push(other);
             }
         }
-        if defenders.bases.is_empty() {
+        self.add_guards(game_data, &mut defenders, owner);
+        self.add_world_guards(game_data, &mut defenders, world_owner, sector, owner);
+        if defenders.bases.is_empty() && defenders.fleets.is_empty() {
             return true;
         }
-        self.add_guards(game_data, &mut defenders, owner);
         let order = game_data.fleets[fleet_idx].order;
         let defence = self.roster_strength(game_data, &defenders);
         let volunteers = self.volunteers(game_data, unit, defence);
@@ -402,6 +404,44 @@ impl Year<'_> {
                     .guarded_base_of(game_data, unit)
                     .is_some_and(|base| roster.bases.contains(&base))
                 && !roster.fleets.contains(&unit)
+            {
+                roster.fleets.push(unit);
+            }
+        }
+    }
+
+    /// Add to `roster` the world owner's Guard/Blockade a World fleets with
+    /// warships in orbit of `sector` (ADR j9tz0hos), less any escaping
+    /// from a battle here that `attacker` has already caught once.
+    fn add_world_guards(
+        &self,
+        game_data: &CoreGameData,
+        roster: &mut Roster,
+        world_owner: u8,
+        sector: [u8; 2],
+        attacker: u8,
+    ) {
+        for unit in 0..self.units.len() {
+            let u = self.units[unit];
+            if u.kind != UnitKind::Fleet
+                || !u.active
+                || u.owner != world_owner
+                || u.sector != sector
+                || u.layer != 1
+                || roster.fleets.contains(&unit)
+            {
+                continue;
+            }
+            let fleet = &game_data.fleets[u.index];
+            // In orbit at its world; speed is no test, since a fleet told to
+            // guard the world it is over keeps its speed on station.
+            if fleet.order == Order::GuardBlockadeWorld
+                && fleet.depth == Real48::ONE
+                && fleet.target.to_array() == sector
+                && has_combat_ships(fleet)
+                && !fleet
+                    .escape
+                    .is_some_and(|escape| escape.pursued_by(attacker))
             {
                 roster.fleets.push(unit);
             }

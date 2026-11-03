@@ -147,7 +147,9 @@ fn toothless() -> Ships {
 }
 
 /// Six battleships of empire 1 bombarding `SYSTEM` on ROE 0 meet its
-/// toothless guard and withdraw after the first exchange.
+/// toothless guard and withdraw after the first exchange. The guard defends
+/// the orbit (ADR j9tz0hos), so they abort there first and the guard
+/// catches them later in the year.
 fn bombardment_withdraws(game_data: &mut CoreGameData, seed: u64) -> MaintenanceEvents {
     place_fleet(
         game_data,
@@ -289,7 +291,10 @@ fn retreat_with_no_owned_world_holds_in_place() {
         let fleet = &game_data.fleets[0];
         assert_eq!(fleet.order, Order::HoldPosition, "seed {seed}");
         assert_eq!(fleet.speed, 0);
-        assert_eq!(fleet.ships.battleships, 6);
+        assert!(
+            fleet.ships.battleships > 0,
+            "it breaks off with ships, seed {seed}"
+        );
         assert_eq!(fleet.sector.to_array(), SYSTEM);
         assert_eq!(fleet.depth, Real48::ONE, "it stays in orbit, seed {seed}");
     }

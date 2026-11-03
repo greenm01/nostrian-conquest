@@ -630,8 +630,9 @@ clean.
 == Attacking Worlds <attacking-worlds>
 
 You attack a world with one of three missions. First the fleet must win the
-orbit. The owner's starbase there, with its guards, fights it before it can
-strike, and a fleet that loses is driven off (see @missions).
+orbit. The owner's starbase there, with its escorts, and his fleets on
+Guard/Blockade a World fight it before it can strike, and a fleet that loses
+is driven off (see @missions).
 
 *Bombard* wears a world down. Each year the fleet stays in orbit, it fires
 up to three rounds. Its hits go to the ground batteries first. Only when none
@@ -699,10 +700,12 @@ about twice your armies to be confident, and a world with none falls to a
 single transport. At 2 points each, they are cheap insurance for any world
 worth taking.
 
-*A starbase in orbit* and its guards fight every hostile fleet before it can
+*The orbit's defence* is your starbase there, its escorts on Guard a
+Starbase, and your fleets on Guard/Blockade a World. Together, as one side,
+they fight every hostile fleet that comes to strike the world, before it can
 strike. Your other fleets in orbit fight it only if they spot it first, so
-put warships on Guard Starbase to make them part of that defence. A
-starbase adds 1 to your die and never retreats. An attacker that
+put warships on one of the two guard missions to make them part of that
+defence. A starbase adds 1 to your die and never retreats. An attacker that
 loses the orbit is driven off without bombarding or landing. A starbase
 denies every attacker a surprise there. Once your fleets in the sector have
 spotted an empire, keeping one there denies that empire a surprise attack.
@@ -732,7 +735,7 @@ A fleet always has exactly one standing order. If you give a new order before ma
     [02], [Seek Home],       [One-shot],   [Return to nearest owned planet; retargets if that planet is captured en route.],
     [03], [Patrol a Sector],          [Persistent], [Move within sector deep space to intercept enemies.],
     [04], [Guard a Starbase],  [Persistent], [Escort a starbase; fight alongside it. Needs warships.],
-    [05], [Guard/Blockade a World],        [Persistent], [Watch a world. Attacks assaults, colonizers of an unowned world, and declared enemies. Needs warships.],
+    [05], [Guard/Blockade a World],        [Persistent], [Watch a world and defend its orbit. Fights every assault on your world; attacks colonizers of an unowned world and declared enemies. Needs warships.],
     [06], [Bombard a World],         [Hostile],    [Damage factories, batteries, armies, stardock contents, and production.],
     [07], [Invade a World],          [Hostile],    [Suppress the batteries, soften the armies, then land. Never bombards, but keeps only 20--40% of production. Needs warships and loaded transports.],
     [08], [Blitz a World],           [Hostile],    [Drop armies at once, under battery fire. High army risk.],
@@ -842,7 +845,7 @@ your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 *Mission 4: Guard a Starbase.* The fleet escorts a starbase and fights beside it. An attack on either one is a battle against both, and the base joins as a defender in any battle its guard is drawn into. A guard stays with its base and does not close on the contacts it spots. It attacks, or joins an attack by your other fleets there, when the ROE odds favor the fight.
 
-*Mission 5: Guard/Blockade a World.* A mission of denial. The blockade watches the world five times as hard as an ordinary fleet. It attacks any fleet it catches coming to bombard, invade, or blitz the world, or to colonize it while it is unowned. An assault strikes as it arrives, so a blockade does not always catch it first; a starbase in orbit always fights it. It also attacks any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. The mission stays in force until you assign a new one.
+*Mission 5: Guard/Blockade a World.* A mission of denial. The blockade watches the world five times as hard as an ordinary fleet. At a world of yours it defends the orbit: every fleet that comes to bombard, invade, or blitz the world must fight it first, with your starbase and its escorts there, sighted or not. A blockade whose ROE refuses the odds still fights the first exchange, then breaks off under fire and heads home, so match its ROE to how hard it should hold. It attacks any fleet it catches coming to colonize the world while it is unowned. It also attacks any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. The mission stays in force until you assign a new one.
 
 *Missions 10 and 11: Scout a Sector / Scout a Solar System.* Both need at least one Scout ship, and a fleet of a single Scout is the hardest to detect. Scout a Sector is a quiet watch over the sector. A scout on station looks five times as hard as an ordinary fleet and identifies what it spots, and with ROE 0 it never attacks. Scout a Solar System is an active spy run. The Scout enters the system and reports on ground batteries, armies, current production, stardock contents, and orbiting fleets. Entering the system means the owner's fleets there may attack it. A scout sent to a world of yours has nothing to learn: it gives up when it arrives and holds position. Both are persistent missions: the fleet stays on station and sends a new report each maintenance for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before you earn a full scout or view report.
 
@@ -862,9 +865,9 @@ the system and dive into it. That takes about half a year at speed 3 and more
 than a year and a half at speed 1, so a fleet that enters the sector late in
 the year attacks the next year.
 
-*It must first win the orbit.* The owner's starbase there, with the fleets
-guarding it, fights your fleet the week it arrives, whether they had spotted
-it or not. If your fleet's ROE will not take them on, it turns for home
+*It must first win the orbit.* The owner's starbase there with its escorts,
+and his fleets on Guard/Blockade a World, fight your fleet as one side the
+week it arrives, whether they had spotted it or not. If your fleet's ROE will not take them on, it turns for home
 without a shot. If it loses, it is driven off. Only a fleet that holds the
 orbit attacks. His other fleets in orbit fight it only by spotting and
 catching it, as anywhere else. Bring enough to win, or clear the orbit
@@ -892,8 +895,8 @@ it and attack it, and set its ROE to match.
 Only destroyers, cruisers, and battleships fire at a world. Scouts,
 transports, and ETACs carry no guns. Invade needs loaded transports and
 warships. Blitz needs loaded transports. It can go in without warships, but
-then it brings no fire of its own, and if the owner has a starbase in
-orbit, the transports turn for home.
+then it brings no fire of its own, and if the owner has a starbase or a
+Guard/Blockade fleet in orbit, the transports turn for home.
 
 #pagebreak()
 
@@ -1489,7 +1492,9 @@ appendix give the numbers.
 
 1. *Sides.* A battle is between two empires. One side is the fleet that
    attacked. The other is its target: a fleet, with the starbase it guards,
-   or a starbase, with the fleets guarding it. No other fleet joins (see
+   or a starbase, with the fleets guarding it. At the orbit of a world under
+   assault, the target is the orbit's defence: the owner's starbases there,
+   their escorts, and his Guard/Blockade fleets. No other fleet joins (see
    *Battle* under Who Fights Whom). The roster is set when the battle starts.
 
 2. *Strength.* Add up the AS of every ship on the side, from the Unit
@@ -1661,7 +1666,9 @@ and then it stays to fight only if its own ROE accepts the odds.
 one target. Your side is the fleet that attacked. The enemy's side is the
 fleet it caught, whatever its ROE (a fleet that is attacked fights, ROE 0
 included), with the starbase it guards, or the starbase attacked with the
-fleets guarding it. Nobody else joins: not your other fleets or his, not a
+fleets guarding it. At the orbit of a world under assault it is the orbit's
+whole defence: the starbases there, their escorts and the world's
+Guard/Blockade fleets (see @attacking-worlds). Nobody else joins: not your other fleets or his, not a
 third empire, not allies, not fleets that arrive later in the week. The fleet that started the attack spends the week fighting
 instead of moving. A fight does not change the empires' diplomacy.
 

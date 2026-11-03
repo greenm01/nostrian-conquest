@@ -63,6 +63,22 @@ fn holding_orbit(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Shi
     set_fleet_at_rest(&mut game_data.fleets[idx]);
 }
 
+/// Fleet record `idx` of `owner` at rest in orbit of `SYSTEM` on Guard/Blockade
+/// a World at ROE `roe`.
+fn guarding_world(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Ships, roe: u8) {
+    place_fleet(
+        game_data,
+        idx,
+        owner,
+        SYSTEM,
+        Order::GuardBlockadeWorld,
+        SYSTEM,
+        ships,
+        roe,
+    );
+    set_fleet_at_rest(&mut game_data.fleets[idx]);
+}
+
 /// Empire 1's only world in the fixture, at (16,13), next door to `SYSTEM`.
 const HOME_PLANET_IDX: usize = 14;
 /// Where `far_home` moves it: a fleet seeking it from `SYSTEM` is still
@@ -823,10 +839,11 @@ fn a_starbase_and_its_guard_get_one_battle_report_whatever_the_outcome() {
 }
 
 #[test]
-fn a_transport_only_blitz_passes_any_orbit_but_a_starbases() {
+fn a_transport_only_blitz_passes_any_orbit_but_a_starbases_or_a_guards() {
     // Loaded transports alone can fight nobody. They land past the owner's
-    // fleets in orbit, warships or not, since only a starbase blocks the
-    // strike (ADR bd8trz18); his starbase turns them for home.
+    // fleets in orbit, warships or not, unless a starbase or a Guard/Blockade
+    // fleet defends the orbit (ADRs bd8trz18, j9tz0hos); those turn them for
+    // home.
     let loaded = Ships {
         tt: 10,
         armies: 10,
@@ -875,13 +892,24 @@ fn a_transport_only_blitz_passes_any_orbit_but_a_starbases() {
         assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1, "{name}");
     }
 
-    for (name, mut game_data) in [("starbase in orbit", {
-        let mut game_data = blitz();
-        place_starbase(&mut game_data, 2, SYSTEM);
-        game_data
-    })] {
+    // A starbase never starts a fight; the guard may catch the transports
+    // afterwards, as any fleet of it would.
+    for (name, guard_may_attack, mut game_data) in [
+        ("starbase in orbit", false, {
+            let mut game_data = blitz();
+            place_starbase(&mut game_data, 2, SYSTEM);
+            game_data
+        }),
+        ("destroyer guarding the world", true, {
+            let mut game_data = blitz();
+            guarding_world(&mut game_data, 4, 2, destroyer, 6);
+            game_data
+        }),
+    ] {
         let events = run_neutral(&mut game_data, 0);
-        assert!(events.fleet_battle_events.is_empty(), "{name}");
+        if !guard_may_attack {
+            assert!(events.fleet_battle_events.is_empty(), "{name}");
+        }
         assert!(events.assault_report_events.is_empty(), "{name}");
         assert!(
             repelled(&events, Mission::BlitzWorld),
@@ -1006,5 +1034,82 @@ fn a_bombardments_eta_counts_the_dive_into_orbit() {
             })
             .unwrap_or(0);
         assert_eq!(struck, years, "offset {offset} speed {speed}");
+    }
+}
+
+#[test]
+fn an_outgunned_world_guard_fights_for_the_orbit() {
+    // A Guard/Blockade fleet on ROE 8 against three times its strength.
+    // Before ADR j9tz0hos it refused the odds and often slipped the
+    // attacker's intercept, sitting out the bombardment untouched. Now it
+    // defends the orbit: it fights the first exchange, then breaks off or
+    // dies, and the world is bombarded.
+    for seed in 0..12u64 {
+        let mut game_data = assault_on_system(
+            Order::BombardWorld,
+            Ships {
+                bb: 6,
+                ..Ships::default()
+            },
+            0,
+            0,
+        );
+        game_data.fleets[0].rules_of_engagement = 10;
+        guarding_world(
+            &mut game_data,
+            4,
+            2,
+            Ships {
+                ca: 5,
+                ..Ships::default()
+            },
+            8,
+        );
+
+        let events = run_neutral(&mut game_data, seed);
+
+        assert!(
+            events
+                .fleet_battle_events
+                .iter()
+                .any(|event| event.reporting_empire == 2),
+            "the guard fights, seed {seed}"
+        );
+        let guard = &game_data.fleets[4];
+        assert!(
+            guard.ships.cruisers < 5 || guard.order != Order::GuardBlockadeWorld,
+            "the guard does not sit it out, seed {seed}: {guard:?}"
+        );
+        assert_eq!(events.bombard_events.len(), 1, "seed {seed}");
+    }
+}
+
+#[test]
+fn a_world_guard_turns_back_an_attacker_that_will_not_fight_it() {
+    // One cruiser on ROE 6 will not take on five guarding cruisers, sighted
+    // or not: it aborts at the orbit without a shot, as before a starbase.
+    // The guard may catch it on its way out.
+    for seed in 0..4u64 {
+        let mut game_data = assault_on_system(Order::BombardWorld, cruiser(), 0, 0);
+        game_data.fleets[0].rules_of_engagement = 6;
+        guarding_world(
+            &mut game_data,
+            4,
+            2,
+            Ships {
+                ca: 5,
+                ..Ships::default()
+            },
+            8,
+        );
+
+        let events = run_neutral(&mut game_data, seed);
+
+        assert!(events.bombard_events.is_empty(), "seed {seed}");
+        assert!(
+            repelled(&events, Mission::BombardWorld),
+            "seed {seed}: {:?}",
+            events.mission_events
+        );
     }
 }

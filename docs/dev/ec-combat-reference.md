@@ -233,9 +233,13 @@ Rust matches classic's odds, not its random sequence.
   with its guard, in the strike tick before it touches the world, sighted
   or not, and leaves the owner's other fleets to the encounter loop. NC runs
   the same gate (`holds_orbit` in `encounter/handler.rs`,
-  [bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)): an attacker whose ROE refuses the
-  fight seeks home without a shot, and only the holder of the field
-  strikes. A transport-only blitz passes any orbit without a starbase.
+  [bd8trz18](../notes/decisions/bd8trz18-battles-pair-one-fleet-with-one-target-as-classic-does.md)),
+  widened to the world's Guard/Blockade a World fleets in orbit,
+  which fight on the starbase's side or, without one, alone
+  ([j9tz0hos](../notes/decisions/j9tz0hos-world-guards-defend-the-orbit.md)).
+  An attacker whose ROE refuses the fight seeks home without a shot, and
+  only the holder of the field strikes. A transport-only blitz passes any
+  orbit without a starbase or a Guard/Blockade fleet.
 - Failed attacks. NC resolves invade and blitz, and the fleet holds. Classic
   resurrects a destroyed assault fleet (B1) and attacks again next year.
 - Damage. NC writes only destroyed hulls back. Classic has no damage state
