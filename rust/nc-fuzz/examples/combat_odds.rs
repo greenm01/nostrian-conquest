@@ -139,7 +139,7 @@ fn roe6_mixes() -> Vec<Case> {
 
 /// Every mix spending `budget` points in `step`-point shares of BB, CA or DD,
 /// each ordered pair once, mirrors included, both sides at `roe`.
-fn grid(budget: u32, step: u32, roe: u8) -> Vec<Case> {
+fn grid(budget: u32, step: u32, roe: u8, left_pct: u32) -> Vec<Case> {
     assert!(
         step % COST_BB == 0 && step > 0 && budget % step == 0,
         "--step must be a multiple of {COST_BB} that divides --grid"
@@ -162,7 +162,12 @@ fn grid(budget: u32, step: u32, roe: u8) -> Vec<Case> {
         for right in &mixes {
             cases.push(Case {
                 name: format!("{} vs {}", name(left), name(right)),
-                left: *left,
+                // t255 monotonicity check: the left side at `left_pct`% strength.
+                left: Force {
+                    dd: (u32::from(left.dd) * left_pct).div_ceil(100) as u16,
+                    ca: (u32::from(left.ca) * left_pct).div_ceil(100) as u16,
+                    bb: (u32::from(left.bb) * left_pct).div_ceil(100) as u16,
+                },
                 right: *right,
                 roe: (roe, roe),
             });
@@ -457,6 +462,7 @@ fn main() {
     let mut grid_budget = None;
     let mut grid_roe = 10u8;
     let mut grid_step = COST_BB;
+    let mut left_pct = 100u32;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         let mut value = || args.next().unwrap_or_else(|| panic!("{arg} needs a value"));
@@ -471,12 +477,13 @@ fn main() {
             "--tuning" => nc_engine::maint::set_combat_tuning(
                 nc_engine::maint::CombatTuning::parse(&value()).expect("--tuning should parse"),
             ),
+            "--left-pct" => left_pct = value().parse().expect("--left-pct takes a number"),
             "--roe" => grid_roe = value().parse().expect("--roe takes a number"),
             other => panic!("unknown option {other}"),
         }
     }
     let all_cases = match grid_budget {
-        Some(budget) => grid(budget, grid_step, grid_roe),
+        Some(budget) => grid(budget, grid_step, grid_roe, left_pct),
         None => cases(),
     };
 
