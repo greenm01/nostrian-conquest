@@ -64,8 +64,9 @@ The owner chose on 2026-11-02 to make world guards defend the orbit.
   so an early raid on a homeworld now meets them at the orbit.
 - A transport-only blitz is turned back by any Guard/Blockade fleet with
   warships in orbit, as by a starbase.
-- The trained AI learned under the old gate. Its play under the new one is
-  checked in t250's results.
+- The trained AI learned under the old gate. Under the new one it wins as
+  often against executors (0.496 and 0.631 at 60 and 100 years, against
+  0.491 and 0.617), so it was not retrained ([e1w4xpes](../investigations/e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md#guards-defend-the-orbit-t250)).
 
 ## Acceptance and connections
 

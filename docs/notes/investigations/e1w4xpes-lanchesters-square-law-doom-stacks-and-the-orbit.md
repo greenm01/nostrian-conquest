@@ -847,6 +847,43 @@ The findings stand. The t234-t238 variants were compared on the same
 frozen fixture, so their comparisons hold, but their production-left
 figures are a few points low.
 
+## Guards defend the orbit (t250)
+
+**Change.** The owner adopted
+[j9tz0hos](../decisions/j9tz0hos-world-guards-defend-the-orbit.md) on
+2026-11-02: Guard/Blockade a World fleets in orbit fight every assault on
+their world at the orbital gate, in one battle with its starbase and
+escorts. Before, an outgunned guard on ROE 8 often slipped the attacker's
+intercept and sat out the bombardment untouched.
+
+**The t243 guard sweep, rerun at `9615c4d3`** (300 seeds a cell; cleared
+means the guard destroyed or withdrawn, and the starbase destroyed):
+
+| Defence | `r = 1` | `r = 1.5` | `r = 2` | `r = 3` |
+|---|---|---|---|---|
+| 5 units, no starbase | 51% (45%) | 87% (84%) | 98% (98%) | 100% (49%) |
+| 5 units and starbase | 26% (27%) | 84% (87%) | 97% (74%) | 100% (72%) |
+| 15 units, no starbase | 51% (44%) | 85% (84%) | 98% (98%) | 100% (72%) |
+| 15 units and starbase | 34% (40%) | 79% (84%) | 97% (90%) | 100% (91%) |
+
+The t243 figure is in brackets. Clearing the orbit now gets surer as the
+attack grows, and a guard beside a starbase helps it: the base fell in 28%
+of games at even strength with 5 guarding units, against 74% before, when
+the guard fought apart.
+
+**The AI under the new gate.** fleet-final (strike and builds handed over)
+against three executors, 1,024 maps from 100000, `behaviour_report` built
+at `451c082b` and at `9615c4d3`:
+
+| Rules | Win share, 60 years | Win share, 100 years | Worlds at end, 100 years |
+|---|---|---|---|
+| Old gate | 0.491 | 0.617 | 9.0 |
+| Guards defend the orbit | 0.496 | 0.631 | 9.0 |
+
+Both sides play the same new rule, and the agent loses nothing (each
+figure has a standard error near 0.015). Bombard and Blitz missions run at
+the same rate, so no retrain is needed for the change.
+
 ## Validation and remaining work
 
 - Deterministic: the orbital sweep (500 seeds per case) and the fleet
