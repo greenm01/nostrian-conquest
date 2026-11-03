@@ -10,7 +10,7 @@ traced to its server, game and day without opening it.
 <server>-<game>-<YYYY-MM-DD>.db
 ```
 
-- `<server>` is the host that runs the game: `crunch` or `archvps`.
+- `<server>` is the host that runs the game: `x13`, `crunch` or `archvps`.
 - `<game>` is the game's directory name under the server's games root, such as
   `ai` for `~/bbs/nc-testing/games/ai/ncgame.db`.
 - `<YYYY-MM-DD>` is the local date the copy was taken (`date +%F`).
@@ -48,12 +48,13 @@ sqlite3 <games-root>/<game>/ncgame.db ".backup /tmp/<server>-<game>-<YYYY-MM-DD>
 
 ## Where copies live
 
-On the Mac mini, `~/.local/bin/nc-ai-backup` copies every crunch game to
+On the Mac mini, `~/.local/bin/nc-ai-backup` copies every x13 lab game to
 `~/.local/state/nostrian-conquest/game-history/` and sends that directory to
 the AI model repositories on archvps and crunch
 (`sftp:archvps:backups/nc-ai` and `sftp:crunch:backups/nc-ai`, tag
 `nc-games`; 7 daily, 8 weekly and 24 monthly snapshots). The local directory
-is never pruned. The script is not scheduled; run it after a session of play
+is never pruned. The lab ran on crunch until 2026-11-03, so earlier copies
+are named `crunch-…`. The script is not scheduled; run it after a session of play
 and after each model promotion.
 
 The community server's own backups have their own naming and job; see
