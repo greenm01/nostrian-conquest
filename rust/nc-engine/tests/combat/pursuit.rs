@@ -3,10 +3,10 @@
 //! lasts, and the escape outlives the year.
 
 use nc_data::{
-    Coords, CoreGameData, DiplomacyOverride, EscapeEpisode, MaintenanceEvents, Order, Real48,
-    recompute_max_speed, set_mission_target,
+    Coords, CoreGameData, DiplomacyOverride, EncounterDispositionEvent, EscapeEpisode,
+    MaintenanceEvents, Order, PlayerMode, Real48, recompute_max_speed, set_mission_target,
 };
-use nc_engine::run_maintenance_turn_with_context_and_seed;
+use nc_engine::{build_results_report_blocks, run_maintenance_turn_with_context_and_seed};
 
 use super::support::{DEEP_SPACE, Ships, diplomacy, empty_board, place_fleet};
 
@@ -121,4 +121,95 @@ fn an_empire_that_caught_an_escaping_fleet_once_gets_no_second_attack_even_next_
         assert_eq!(fleet.order, Order::SeekHome);
     }
     assert!(caught_by_the_third > 0);
+}
+
+#[test]
+fn the_winners_report_says_the_enemy_fled_when_it_broke_off() {
+    // A patrol on ROE 10 catches a fleet whose ROE 6 refuses the odds. The fleet
+    // fights the first exchange and breaks off, and the patrol's report
+    // says the enemy fled, whether it got away clean (a destroyer outrunning
+    // a cruiser) or was caught for a pursuit exchange (a cruiser chased by
+    // faster destroyers). Pursuit fire (t232) records the second kind as
+    // pursuit fire, which the report had read as holding the field.
+    let (mut clean, mut pursued) = (0, 0);
+    for (patrol, fleeing) in [
+        (
+            Ships {
+                ca: 1,
+                ..Ships::default()
+            },
+            Ships {
+                dd: 1,
+                ..Ships::default()
+            },
+        ),
+        (
+            Ships {
+                dd: 6,
+                ..Ships::default()
+            },
+            Ships {
+                ca: 1,
+                ..Ships::default()
+            },
+        ),
+    ] {
+        for seed in 0..24u64 {
+            let mut game_data = empty_board(0, 0);
+            for (idx, owner, order, ships, roe) in [
+                (0, 1, Order::PatrolSector, patrol, 10),
+                (4, 2, Order::HoldPosition, fleeing, 6),
+            ] {
+                place_fleet(
+                    &mut game_data,
+                    idx,
+                    owner,
+                    DEEP_SPACE,
+                    order,
+                    DEEP_SPACE,
+                    ships,
+                    roe,
+                );
+                let fleet = &mut game_data.fleets[idx];
+                fleet.depth = Real48::ZERO;
+                set_mission_target(fleet, 0, 0);
+                recompute_max_speed(fleet);
+            }
+            game_data.players[0].mode = PlayerMode::Human;
+            game_data.players[0].autopilot = false;
+            let events = run(&mut game_data, seed, &diplomacy(&[(1, 2)]));
+            let (got_clear, caught) = events.encounter_disposition_events.iter().fold(
+                (false, false),
+                |(got_clear, caught), event| match event {
+                    EncounterDispositionEvent::Retreated {
+                        owner_empire: 2, ..
+                    } => (true, caught),
+                    EncounterDispositionEvent::PursuitFire {
+                        owner_empire: 2, ..
+                    } => (got_clear, true),
+                    _ => (got_clear, caught),
+                },
+            );
+            let text = build_results_report_blocks(&game_data, &events)
+                .into_iter()
+                .filter(|row| {
+                    row.viewer_empire_id == 1 && row.decoded_text.contains("Enemy fleet contact")
+                })
+                .map(|row| row.decoded_text)
+                .collect::<Vec<_>>()
+                .join(" ");
+            // A patrol lost later in the year sends a loss notice instead.
+            if !(got_clear || caught) || text.is_empty() {
+                continue;
+            }
+            clean += usize::from(got_clear);
+            pursued += usize::from(caught);
+            assert!(
+                text.contains("The enemy fled the field."),
+                "seed {seed}: {text}"
+            );
+            assert!(!text.contains("We held the field."), "seed {seed}: {text}");
+        }
+    }
+    assert!(clean > 0 && pursued > 0, "clean {clean}, pursued {pursued}");
 }

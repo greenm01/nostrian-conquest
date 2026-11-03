@@ -796,7 +796,11 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar() {
             || text.contains("We lost all contact with the")
             || text.contains("We lost all contact with Starbase")
     );
-    assert!(text.contains("We lost all contact with the") || text.contains("held the field"));
+    assert!(
+        text.contains("We lost all contact with the")
+            || text.contains("held the field")
+            || text.contains("fled the field")
+    );
 
     let diplomacy_sidecar = target.join("diplomacy.kdl");
     assert!(

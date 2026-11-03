@@ -22,10 +22,15 @@ pub fn enemy_retreat_reported_for_battle(
         return false;
     }
 
+    // A fleet caught as it broke off (pursuit fire, t232) fled the field too.
     events.encounter_disposition_events.iter().any(|event| {
         matches!(
             event,
             nc_data::EncounterDispositionEvent::Retreated {
+                owner_empire,
+                coords,
+                ..
+            } | nc_data::EncounterDispositionEvent::PursuitFire {
                 owner_empire,
                 coords,
                 ..

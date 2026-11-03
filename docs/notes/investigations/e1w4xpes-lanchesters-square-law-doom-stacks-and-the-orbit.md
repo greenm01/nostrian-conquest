@@ -899,6 +899,10 @@ the same rate, so no retrain is needed for the change.
   with battleships or a starbase, and recovery after a siege in t243.
   Reinforced sieges and several empires were measured in t240.
 - Not playtested yet. The AI was retrained on these rules first (t233).
+- Report fix (t251, from the owner's playtest on 2026-11-02): a fleet that
+  broke off and was caught for a pursuit exchange is recorded as pursuit
+  fire, and the winner's report read that as "We held the field." It now
+  says "The enemy fled the field.", as for a fleet that got away clean.
 
 **The t233 retrain (promoted 2026-11-01).** The t233 run fine-tuned
 `fleet-final` for 100 iterations on the t232 rules (`fleet_ppo.py --init`,
