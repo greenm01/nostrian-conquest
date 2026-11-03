@@ -34,6 +34,14 @@ the engine comparison. It links the reproduction probes and retained evidence.
    seeded engine entry point directly, because `ScenarioPlay::run_maintenance`
    passes seed 0 and repeats the same luck).
 
+**Mix games (t253).** To ask which equal-cost fleet mix wins overall, not
+one duel, run `combat_odds --grid BUDGET [--step POINTS] --roe R` (every
+ordered pair of DD/CA/BB mixes through the engine). Then run
+`tools/combat-model/metagame.py` on its JSON. That gives the Nash
+equilibrium, dominant mixes, a bootstrap of the support and, with
+`--alpharank`, α-Rank. Pool both seatings: cases share their seed range,
+so one seat can lean a few points in every case.
+
 The model is trusted only as far as it has been checked against the
 engine: `combat_odds` runs the current rules on the cases tagged `engine`
 and `sweep.py --engine` tests the model's current-rule odds against the

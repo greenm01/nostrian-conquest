@@ -9,6 +9,12 @@
 //! default 1), `--years Y` (maintenance years to wait for a battle, default
 //! 6), `--case NAME` (repeatable; default every case), `--json PATH`.
 //!
+//! `--grid BUDGET` (t253) replaces the fixed cases with every DD/CA/BB mix
+//! spending BUDGET build points in steps of `--step POINTS` (default 45, one
+//! battleship), each ordered pair of mixes once, both sides at `--roe R`
+//! (default 10). Its JSON
+//! feeds `tools/combat-model/metagame.py`.
+//!
 //! Every trial builds the same two-player game (map seed fixed), places one
 //! fleet of each empire in an empty sector, at rest, at war, on Hold, with
 //! both seats off autopilot (it would recall idle fleets), and runs
@@ -125,6 +131,40 @@ fn roe6_mixes() -> Vec<Case> {
                 left: *left,
                 right: *right,
                 roe: (6, 6),
+            });
+        }
+    }
+    cases
+}
+
+/// Every mix spending `budget` points in `step`-point shares of BB, CA or DD,
+/// each ordered pair once, mirrors included, both sides at `roe`.
+fn grid(budget: u32, step: u32, roe: u8) -> Vec<Case> {
+    assert!(
+        step % COST_BB == 0 && step > 0 && budget % step == 0,
+        "--step must be a multiple of {COST_BB} that divides --grid"
+    );
+    let steps = (budget / step) as u16;
+    let mut mixes = Vec::new();
+    for bb in 0..=steps {
+        for ca_steps in 0..=steps - bb {
+            let dd_steps = steps - bb - ca_steps;
+            mixes.push(Force {
+                dd: dd_steps * (step / COST_DD) as u16,
+                ca: ca_steps * (step / COST_CA) as u16,
+                bb: bb * (step / COST_BB) as u16,
+            });
+        }
+    }
+    let name = |f: &Force| format!("{}DD+{}CA+{}BB", f.dd, f.ca, f.bb);
+    let mut cases = Vec::new();
+    for left in &mixes {
+        for right in &mixes {
+            cases.push(Case {
+                name: format!("{} vs {}", name(left), name(right)),
+                left: *left,
+                right: *right,
+                roe: (roe, roe),
             });
         }
     }
@@ -414,6 +454,9 @@ fn main() {
     let mut years = 6u16;
     let mut selected = Vec::new();
     let mut json_path = None;
+    let mut grid_budget = None;
+    let mut grid_roe = 10u8;
+    let mut grid_step = COST_BB;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         let mut value = || args.next().unwrap_or_else(|| panic!("{arg} needs a value"));
@@ -423,9 +466,16 @@ fn main() {
             "--years" => years = value().parse().expect("--years takes a number"),
             "--case" => selected.push(value()),
             "--json" => json_path = Some(value()),
+            "--grid" => grid_budget = Some(value().parse().expect("--grid takes a number")),
+            "--step" => grid_step = value().parse().expect("--step takes a number"),
+            "--roe" => grid_roe = value().parse().expect("--roe takes a number"),
             other => panic!("unknown option {other}"),
         }
     }
+    let all_cases = match grid_budget {
+        Some(budget) => grid(budget, grid_step, grid_roe),
+        None => cases(),
+    };
 
     let (records, coords) = placement();
     println!(
@@ -445,7 +495,7 @@ fn main() {
     );
     json.push_str("  \"cases\": [\n");
     let mut first = true;
-    for case in cases() {
+    for case in all_cases {
         if !selected.is_empty() && !selected.iter().any(|name| *name == case.name) {
             continue;
         }
@@ -480,10 +530,19 @@ fn main() {
         first = false;
         let _ = write!(
             json,
-            "    {{\"case\": \"{}\", \"trials\": {}, \"battles\": {}, \"years_per_battle\": {:.4}, \
+            "    {{\"case\": \"{}\", \"left_ships\": [{}, {}, {}], \"right_ships\": [{}, {}, {}], \
+             \"roe\": [{}, {}], \"trials\": {}, \"battles\": {}, \"years_per_battle\": {:.4}, \
              \"counts\": {{\"left\": {}, \"right\": {}, \"mutual\": {}, \"stalemate\": {}}}, \
              \"loss_left\": {:.4}, \"loss_right\": {:.4}}}",
             case.name,
+            case.left.dd,
+            case.left.ca,
+            case.left.bb,
+            case.right.dd,
+            case.right.ca,
+            case.right.bb,
+            case.roe.0,
+            case.roe.1,
             tally.trials,
             tally.battles,
             per_battle(u64::from(tally.years)),

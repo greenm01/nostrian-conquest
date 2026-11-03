@@ -508,3 +508,15 @@ at least twice the enemy's, crippled hulls at full price). `volley` takes
 the enemy side as `enemy` for that shift. `participation_review.py` now
 runs on this preset with the t200 hulls; the t073 numbers above were taken
 with `engine-t060` and DD 10/8/5.
+
+## t253: the fleet-mix game
+
+`metagame.py` reads a `combat_odds --grid` JSON from the engine, with every
+ordered pair of equal-cost DD/CA/BB mixes. It solves the game between
+mixes: the Nash equilibrium by linear program, mixes that beat every
+other, best responses to one mix, a bootstrap of the support and, with
+`--alpharank`, α-Rank. It needs numpy and scipy, plus open_spiel,
+matplotlib and networkx for α-Rank (`uv run --with ...`). Results are in
+`nc_metagame_t253.json`, and the
+[fleet-mix investigation](../../docs/notes/investigations/hltgp5ow-fleet-mixes-as-a-game-one-mix-beats-all-others-and-roe-picks-which.md)
+reads them.
