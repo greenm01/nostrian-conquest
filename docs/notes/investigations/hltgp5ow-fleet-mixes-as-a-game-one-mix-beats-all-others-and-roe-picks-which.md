@@ -110,7 +110,7 @@ Not covered here:
 Remaining work:
 - t254: the attack-and-defence game (fleet mixes against batteries, armies,
   starbases and guards).
-- t255: search rule settings for counters (see below).
+- t255: search rule settings for counters (see below; adopted).
 
 ## Search for counters (t255)
 
@@ -170,7 +170,12 @@ so R2 keeps classic's engagement count.
 Results: `tools/combat-model/nc_metagame_t255.json`. Raw runs:
 `~/.local/state/nostrian-conquest/balance/t255/` on the Mac mini.
 
-**If adopted, R2 also affects:**
+**Adopted.** The owner adopted R2 on 2026-11-03, with the ground battery
+raised to AS 100 to match the battleship
+([zq5xtv8l](../decisions/zq5xtv8l-each-hull-fires-on-its-own-destroyers-hunt-cruisers-cruisers-hunt-battleships.md)).
+t256 re-checks the AI.
+
+**R2 also affects:**
 - Bombardment, which uses warship AS.
 - Battery fire against fleets, which uses DS.
 - The AI's build weights; land-grab builds no battleships.

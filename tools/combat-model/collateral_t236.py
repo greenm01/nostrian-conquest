@@ -7,6 +7,8 @@ half strength; and the year's rounds end once no battery stands. With t237
 production never falls below 1.0, and with t238 the main fire that passes
 the dock splits a sixth to the armies and the rest to industry. With t252
 the armies take their share at full strength; only industry is halved.
+With t255 the hulls are t255's (cruiser DS 37, battleship 100 / 105) and
+a battery fires 100 AS, 50 crippled.
 
 Usage: python3 -I -B tools/combat-model/collateral_t236.py
 """
@@ -19,7 +21,24 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import assault_collateral as AC  # noqa: E402
 import collateral_t202 as T  # noqa: E402
-from fleet_model import force  # noqa: E402
+from fleet_model import Model, force  # noqa: E402
+from rules import load_units  # noqa: E402
+
+T.UNITS = AC.UNITS = load_units('t255')
+T.MODEL = Model(T.MODEL.rules, T.UNITS)
+
+
+def _bombard_as(side):
+    n, c, _ = side
+    return sum((n[i] - c[i]) * full + c[i] * (full // 2) for i, full in ((T.DD, 12), (T.CA, 33), (T.BB, 100)))
+
+
+def _battery_as(batteries):
+    healthy, crippled = batteries
+    return 100 * healthy + 50 * crippled
+
+
+T.bombard_as, T.battery_as = _bombard_as, _battery_as
 
 POTENTIAL = 100  # the combat tests' target world
 

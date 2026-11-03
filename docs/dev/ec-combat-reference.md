@@ -187,8 +187,10 @@ Rust matches classic's odds, not its random sequence.
   cannot spend carry to its next exchange in the same battle. Planetary
   combat keeps a combat results table by force ratio. Classic rolls per
   shooter.
-- Fire. NC splits suppression fire (cruisers, battleships) from execution
-  fire (destroyers, starbases, batteries) and shoots the combat line first.
+- Fire. NC splits each volley among the firing hull classes. Cruisers and
+  battleships disperse their fire; destroyers, starbases and batteries
+  focus theirs. Destroyers hunt cruisers and cruisers hunt battleships
+  (t255), and all fire takes the combat line first.
   Classic shooters pick one target and keep it; batteries only ever target
   warships, except in a blitz landing. Both hold part of the larger side's
   force back each round: NC dropped classic's engagement count, which made

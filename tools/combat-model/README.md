@@ -7,6 +7,9 @@ and its
 [consultation](../../docs/notes/investigations/ebrogywq-nc-combat-design-review-against-its-sources.md#consultation-with-codex-2026-10-10)
 before any engine rule changes. They do not run the Rust engine; the
 engine-side harness below checks the model's current rules against it.
+The fleet model predates t232 and t255's per-hull fire, so it does not
+match today's engine; current fleet payoffs come from the engine through
+`combat_odds --grid` and `metagame.py`.
 [combat-balance-workflow.md](../../docs/dev/combat-balance-workflow.md)
 says how the pieces fit.
 

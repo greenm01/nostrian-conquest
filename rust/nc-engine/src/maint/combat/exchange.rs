@@ -2,12 +2,13 @@ use crate::maint::encounter::rules::speed_roll_catches;
 use crate::{GameRng, RNG_TAG_COMBAT};
 
 use super::state::{
-    CarriedHits, FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, fleet_auxiliary_order,
+    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, fleet_auxiliary_order,
     fleet_battery_line_order, fleet_class_ds, fleet_combat_line_order, fleet_combat_line_present,
     fleet_target_order,
 };
 
-pub(super) const GROUND_AS_BATTERY: u32 = 90;
+/// A battery's attack strength, a battleship's (t255).
+pub(super) const GROUND_AS_BATTERY: u32 = 100;
 /// A battery takes two steps, like a ship: this many hits cripple it, and as
 /// many again destroy it (t202).
 pub(super) const GROUND_DS_BATTERY: u32 = 66;
@@ -74,10 +75,11 @@ fn apply_dispersed_hits_to_fleet_classes(
     state: &mut FleetCombatState,
     hits: &mut u32,
     target_order: &[usize],
+    focus: Option<(usize, u32)>,
 ) -> bool {
     let mut progress = false;
     for &idx in target_order {
-        let ds = fleet_class_ds(idx);
+        let ds = focus_ds(fleet_class_ds(idx), idx, focus);
         let (nominal, crippled) = (state.nominal_count(idx), state.crippled_count(idx));
         if ds == 0 || nominal + crippled == 0 {
             continue;
@@ -454,10 +456,11 @@ fn apply_focus_fire_hits_to_fleet_classes(
     hits: &mut u32,
     target_order: &[usize],
     half_finish: bool,
+    focus: Option<(usize, u32)>,
 ) -> bool {
     let mut progress = false;
     for &idx in target_order {
-        let ds = fleet_class_ds(idx);
+        let ds = focus_ds(fleet_class_ds(idx), idx, focus);
         if ds == 0 {
             continue;
         }
@@ -489,57 +492,70 @@ fn apply_focus_fire_hits_to_fleet_classes(
     progress
 }
 
-/// Apply a volley's hits pool by pool and return what each pool could not
-/// spend on a damage step.
+/// The class each hull's fire aims at first, and how many times its hits
+/// count against that class (t255): destroyers hunt cruisers at three
+/// times, cruisers hunt battleships at twice. Battleships and starbases keep
+/// the line order.
+fn hull_fire_focus(shooter: usize) -> Option<(usize, u32)> {
+    match shooter {
+        IDX_DD => Some((IDX_CA, 3)),
+        IDX_CA => Some((IDX_BB, 2)),
+        _ => None,
+    }
+}
+
+/// A class's DS cost to a shooter with a bonus against it.
+fn focus_ds(ds: u32, idx: usize, focus: Option<(usize, u32)>) -> u32 {
+    match focus {
+        Some((target, factor)) if target == idx && ds > 0 => ds.div_ceil(factor),
+        _ => ds,
+    }
+}
+
+/// Apply a volley's hits, each hull class's pool (DD, CA, BB, SB, by class
+/// index) on its own (t255): battleships, then cruisers, then destroyers,
+/// then starbases. A pool works down its own target order: its focus class
+/// first, at its bonus, then the line order. Cruiser and battleship fire is
+/// dispersed; destroyer and starbase fire is focused and finishes cripples
+/// at half DS. Criticals come last. Returns what each pool could not spend.
 pub(super) fn apply_hits_to_fleet(
     state: &mut FleetCombatState,
-    mut suppression_hits: u32,
-    mut execution_hits: u32,
+    mut pools: [u32; 4],
     critical_hits: u32,
-) -> CarriedHits {
-    // 1. Apply Suppression hits (Dispersed Fire)
-    while suppression_hits > 0 {
-        let (combat_line_order, auxiliary_order);
-        let target_order: &[usize] = if fleet_combat_line_present(state) {
-            combat_line_order = fleet_combat_line_order();
-            &combat_line_order
-        } else {
-            auxiliary_order = fleet_auxiliary_order();
-            &auxiliary_order
-        };
-
-        if !apply_dispersed_hits_to_fleet_classes(state, &mut suppression_hits, target_order) {
-            break;
+) -> [u32; 4] {
+    for shooter in [IDX_BB, IDX_CA, IDX_DD, IDX_SB] {
+        let focus = hull_fire_focus(shooter);
+        let first = focus.map(|(target, _)| target);
+        while pools[shooter] > 0 {
+            let order: Vec<usize> = if fleet_combat_line_present(state) {
+                first
+                    .into_iter()
+                    .chain(
+                        fleet_combat_line_order()
+                            .into_iter()
+                            .filter(|&i| Some(i) != first),
+                    )
+                    .collect()
+            } else {
+                fleet_auxiliary_order().to_vec()
+            };
+            let hits = &mut pools[shooter];
+            let progress = if shooter == IDX_CA || shooter == IDX_BB {
+                apply_dispersed_hits_to_fleet_classes(state, hits, &order, focus)
+            } else {
+                apply_focus_fire_hits_to_fleet_classes(state, hits, &order, true, focus)
+            };
+            if !progress {
+                break;
+            }
         }
     }
-
-    // 2. Apply Execution hits (Focus Fire)
-    while execution_hits > 0 {
-        let (combat_line_order, auxiliary_order);
-        let target_order: &[usize] = if fleet_combat_line_present(state) {
-            combat_line_order = fleet_combat_line_order();
-            &combat_line_order
-        } else {
-            auxiliary_order = fleet_auxiliary_order();
-            &auxiliary_order
-        };
-
-        if !apply_focus_fire_hits_to_fleet_classes(state, &mut execution_hits, target_order, true) {
-            break;
-        }
-    }
-
-    // 3. Apply Critical hits
     for _ in 0..critical_hits {
         if !apply_critical_hit_to_fleet(state) {
             break;
         }
     }
-
-    CarriedHits {
-        suppression: suppression_hits,
-        execution: execution_hits,
-    }
+    pools
 }
 
 /// Battery return fire on a fleet in orbit: execution fire that keeps the
@@ -559,7 +575,7 @@ pub(super) fn apply_battery_hits_to_fleet(
             auxiliary_order = fleet_auxiliary_order();
             &auxiliary_order
         };
-        if !apply_focus_fire_hits_to_fleet_classes(state, &mut hits, target_order, false) {
+        if !apply_focus_fire_hits_to_fleet_classes(state, &mut hits, target_order, false, None) {
             break;
         }
     }
@@ -578,7 +594,8 @@ pub(super) fn apply_landing_fire_to_fleet(
     critical: bool,
 ) {
     let target_order = [IDX_TT, IDX_DD, IDX_CA, IDX_BB];
-    while hits > 0 && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order, false)
+    while hits > 0
+        && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order, false, None)
     {
     }
 

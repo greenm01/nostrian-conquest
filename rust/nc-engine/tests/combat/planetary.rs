@@ -310,18 +310,18 @@ fn the_dock_is_exposed_once_the_batteries_are_gone() {
 /// `tools/combat-model/collateral_t236.py` (`collateral_t202.py` with the
 /// t234 leak past standing batteries, half-strength fire at armies and
 /// industry, no rounds once the batteries fall, the 1.0 floor, the sixth
-/// to the armies past the dock and, with t252, full strength at the
-/// armies), case `BB4-B2`: the
+/// to the armies past the dock, with t252, full strength at the armies,
+/// and t255's hulls and batteries), case `BB4-B2`: the
 /// exact expected losses of one bombardment turn of four battleships against
 /// two two-step batteries, ten armies, and
 /// a docked battleship, in cost points (BB 45), batteries destroyed, armies,
 /// and points of production.
 const SHIELD_MODEL: [(&str, f64); 5] = [
     ("ship cost lost", 13.5),
-    ("dock cost lost", 36.0),
+    ("dock cost lost", 40.5),
     ("batteries lost", 2.0),
-    ("armies lost", 7.0),
-    ("production lost", 12.1),
+    ("armies lost", 7.5),
+    ("production lost", 15.3),
 ];
 
 #[test]
@@ -380,8 +380,8 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
     // On the overwhelming column of the bombardment table the point count is
     // `floor(floor(hits / 2) / 10)`; exact enumeration over the rolls
     // (`collateral_t236.py`) gives a cruiser (bombardment AS 33) 2.4 points
-    // and a battleship (90) 7.3, and 25 goods a point makes a cruiser raid
-    // about 60 goods and a battleship raid about 180.
+    // and a battleship (100) 8.3, and 25 goods a point makes a cruiser raid
+    // about 60 goods and a battleship raid about 210.
     const TRIALS: u64 = 2000;
     for (name, ships, mean_points) in [
         (
@@ -398,7 +398,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 bb: 1,
                 ..Ships::default()
             },
-            7.3,
+            8.3,
         ),
     ] {
         let mut game_data = assault_on_system(Order::BombardWorld, ships, 0, 0);

@@ -270,7 +270,7 @@ fn starbases_are_attacked_only_as_an_assault_target_or_a_declared_enemy() {
         Verdict::Engaged
     );
     // The base protects the target world: its guard counts too.
-    let guarded = BASE_STRENGTH + strength(&at_world(2, order::GUARD_STARBASE)) + 100;
+    let guarded = BASE_STRENGTH + strength(&at_world(2, order::GUARD_STARBASE)) + 150;
     assert_eq!(
         decide_vs_base(&bomber, own, guarded, false),
         Verdict::Aborted
@@ -323,9 +323,9 @@ fn strength_is_attack_strength() {
     fleet.scouts = 5;
     fleet.transports = 4;
     fleet.etacs = 1;
-    assert_eq!(strength(&fleet), 90 + 66 + 36);
+    assert_eq!(strength(&fleet), 100 + 66 + 36);
     fleet.order = order::GUARD_STARBASE;
-    assert_eq!(strength(&fleet), 192);
+    assert_eq!(strength(&fleet), 202);
     assert_eq!(BASE_STRENGTH, 100);
 }
 
@@ -337,7 +337,7 @@ fn a_crippled_warship_counts_at_half_its_attack_strength() {
     fleet.battleships = 2;
     fleet.cruisers = 2;
     fleet.destroyers = 3;
-    assert_eq!(strength(&fleet), 180 + 66 + 36);
+    assert_eq!(strength(&fleet), 200 + 66 + 36);
     let hurt = |turns_2: u32| CrippledHulls {
         turns: [0, turns_2],
         fresh: 0,
@@ -348,8 +348,8 @@ fn a_crippled_warship_counts_at_half_its_attack_strength() {
         turns: [1, 0],
         fresh: 1,
     };
-    // Battleships 90 + 45, cruisers 2 x 16, destroyers 12 + 2 x 6.
-    assert_eq!(strength(&fleet), 135 + 32 + 24);
+    // Battleships 100 + 50, cruisers 2 x 16, destroyers 12 + 2 x 6.
+    assert_eq!(strength(&fleet), 150 + 32 + 24);
 }
 
 /// Three cruisers (99) take on three cruisers at ROE 6; with two of the

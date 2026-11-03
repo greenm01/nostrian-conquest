@@ -94,8 +94,7 @@ fn fire_exchange(
     planet_owner: Option<u8>,
     surprise: Option<u8>,
 ) -> bool {
-    let mut pending_suppression: HashMap<u8, u32> = HashMap::new();
-    let mut pending_execution: HashMap<u8, u32> = HashMap::new();
+    let mut pending_hits: HashMap<u8, [u32; 4]> = HashMap::new();
     let mut pending_criticals: HashMap<u8, u32> = HashMap::new();
     let mut engaged = HashSet::new();
     for tf in task_forces.iter() {
@@ -119,15 +118,10 @@ fn fire_exchange(
             fleet_die_modifier(&tf.state, surprise == Some(tf.empire), heavy_line),
             committed_fleet_as(our_as, enemy_as),
         );
-        let sup_hits = if result.hits > 0 {
-            let sup_ratio = tf.state.suppression_as() as f64 / our_as as f64;
-            (result.hits as f64 * sup_ratio).round() as u32
-        } else {
-            0
-        };
-        let exe_hits = result.hits.saturating_sub(sup_hits);
-        *pending_suppression.entry(target_empire).or_default() += sup_hits;
-        *pending_execution.entry(target_empire).or_default() += exe_hits;
+        let pools = pending_hits.entry(target_empire).or_default();
+        for (pool, hits) in pools.iter_mut().zip(split_by_class(&tf.state, result.hits)) {
+            *pool += hits;
+        }
         *pending_criticals.entry(target_empire).or_default() += u32::from(result.critical);
         engaged.insert(tf.empire);
         engaged.insert(target_empire);
@@ -139,8 +133,7 @@ fn fire_exchange(
     }
     apply_pending_hits(
         task_forces,
-        &pending_suppression,
-        &pending_execution,
+        &pending_hits,
         &pending_criticals,
         dice,
         COMBAT_KIND_ALLOCATION | (kind & !0xff),
@@ -149,28 +142,50 @@ fn fire_exchange(
     !engaged.is_empty()
 }
 
+/// A volley's hits split among the firing classes DD, CA, BB and SB, by each
+/// class's share of the side's AS, rounded so they add up (t255).
+fn split_by_class(state: &FleetCombatState, hits: u32) -> [u32; 4] {
+    let class_as = state.class_as();
+    let total: u32 = class_as.iter().sum();
+    let mut out = [0; 4];
+    if total == 0 {
+        return out;
+    }
+    let (mut cumulative, mut given) = (0u64, 0u32);
+    for (slot, value) in out.iter_mut().zip(class_as) {
+        cumulative += u64::from(value);
+        let upto =
+            ((u64::from(hits) * cumulative + u64::from(total) / 2) / u64::from(total)) as u32;
+        *slot = upto - given;
+        given = upto;
+    }
+    out
+}
+
 /// Apply one pass of exchanges to every side. A side's carried hits join the
 /// new hits of the same fire pool, and what a pool cannot spend on a damage
 /// step stays carried in that pool for the side's next exchange in this
 /// battle. What the hits did to the side is then shared among its fleets.
 pub(super) fn apply_pending_hits(
     task_forces: &mut [TaskForce],
-    pending_suppression: &HashMap<u8, u32>,
-    pending_execution: &HashMap<u8, u32>,
+    pending_hits: &HashMap<u8, [u32; 4]>,
     pending_criticals: &HashMap<u8, u32>,
     dice: &dyn BattleDice,
     allocation_kind: u64,
     round: u32,
 ) {
     for tf in task_forces {
-        let sup_hits =
-            tf.carried_hits.suppression + pending_suppression.get(&tf.empire).copied().unwrap_or(0);
-        let exe_hits =
-            tf.carried_hits.execution + pending_execution.get(&tf.empire).copied().unwrap_or(0);
+        let mut pools = tf.carried_hits;
+        for (pool, new) in pools
+            .iter_mut()
+            .zip(pending_hits.get(&tf.empire).copied().unwrap_or_default())
+        {
+            *pool += new;
+        }
         let critical_hits = pending_criticals.get(&tf.empire).copied().unwrap_or(0);
-        if sup_hits > 0 || exe_hits > 0 || critical_hits > 0 {
+        if pools.iter().any(|&hits| hits > 0) || critical_hits > 0 {
             let before = tf.state.clone();
-            tf.carried_hits = apply_hits_to_fleet(&mut tf.state, sup_hits, exe_hits, critical_hits);
+            tf.carried_hits = apply_hits_to_fleet(&mut tf.state, pools, critical_hits);
             let mut rng = dice.allocation(allocation_kind, round, tf.empire);
             share_losses(tf, &before, &mut rng);
         }

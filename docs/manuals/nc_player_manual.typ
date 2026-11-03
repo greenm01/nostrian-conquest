@@ -368,14 +368,14 @@ You control five major force types: planets, ships, starbases, armies, and groun
     table.header(
       [Unit], [Cost], [Speed], [Size], [AS], [DS], [Role],
     ),
-    [*Destroyer*],  [05], [6], [S], [12], [07], [Glass cannon: the most firepower per point, the least armor. Fast raider, picket, and finisher. Escapes heavy fleets.],
-    [*Cruiser*],    [15], [5], [M], [33], [30], [Balanced fighter and the faster battle line. About 3x the power of a destroyer.],
-    [*Battleship*], [45], [4], [L], [90], [110], [Heavy anchor and siege ship. About 3x the power of a cruiser. Slow, the toughest hull, and the best bombardier.],
+    [*Destroyer*],  [05], [6], [S], [12], [07], [Glass cannon: the most firepower per point, the least armor. Cruiser hunter: its fire aims at cruisers first and strikes them at triple effect. Fast raider, picket, and finisher.],
+    [*Cruiser*],    [15], [5], [M], [33], [37], [Battleship hunter and the faster battle line. Its fire aims at battleships first and strikes them at double effect.],
+    [*Battleship*], [45], [4], [L], [100], [105], [Heavy anchor and siege ship. Slow, the toughest hull, and the best bombardier. Cruisers are its bane.],
     [*Scout*],      [15], [6], [S], [00], [10], [Stealthy spy. A lone scout is hardest to detect.],
     [*Transport*],  [05], [5], [M], [00], [10], [Unarmed. Carries one army. Essential for conquest.],
     [*ETAC*],       [20], [3], [L], [00], [20], [Colony ship. Reusable --- survives colonization.],
     [*Starbase*],   [50], [1], [L], [100], [130], [Orbital fortress. Defense and production boost.],
-    [*Ground Battery*], [20], [--], [L], [90], [66], [Planetary defense. Two steps, like a ship: crippled, then destroyed.],
+    [*Ground Battery*], [20], [--], [L], [100], [66], [Planetary defense. Two steps, like a ship: crippled, then destroyed.],
     [*Army*],       [02], [--], [S], [10], [10], [Surface defense and capture.],
   ),
 )
@@ -433,7 +433,7 @@ gives the exact condition.
 
 *Armies* (Cost: 2, AS: 10, DS: 10) defend your planets from invasion and are the only way to capture enemy worlds. Each troop transport carries one army. To take a world, you must land enough armies to beat the garrison.
 
-*Ground Batteries* (Cost: 20, AS: 90, DS: 66) are fixed cannons on the ground. They give huge firepower for the cost: about a battleship's attack at less than half the price. Like a ship, a battery takes two steps. 66 hits cripple it, and it then fires at half strength until 66 more destroy it. Crippled batteries are repaired at the end of any year in which no one attacked the world. During an invasion, all batteries must be destroyed before transports can land. During a blitz, surviving batteries fire on the descending transports and cause heavy losses. If a blitz captures the planet, any surviving batteries pass intact to the new owner.
+*Ground Batteries* (Cost: 20, AS: 100, DS: 66) are fixed cannons on the ground. They give huge firepower for the cost: a battleship's attack at less than half the price. Like a ship, a battery takes two steps. 66 hits cripple it, and it then fires at half strength until 66 more destroy it. Crippled batteries are repaired at the end of any year in which no one attacked the world. During an invasion, all batteries must be destroyed before transports can land. During a blitz, surviving batteries fire on the descending transports and cause heavy losses. If a blitz captures the planet, any surviving batteries pass intact to the new owner.
 
 #pagebreak()
 
@@ -594,9 +594,16 @@ fleets of the same cost.
 
 Together they do what neither does alone. The heavy ships break the enemy
 line, and the destroyers turn that damage into lost ships at half price. The
-heavy ships also stand in front: enemy fire lands on battleships, then
+heavy ships also stand in front: battleship fire lands on battleships, then
 cruisers, then destroyers, so destroyers behind a heavy line live to finish
-what it cripples. A fleet whose cruisers and battleships are worth twice the
+what it cripples.
+
+Each hull also hunts one other. Destroyers aim at cruisers first, past any
+battleships, and their hits count three times against them. Cruisers aim at
+battleships first, and their hits count twice. Battleships have no favorite
+target, but their weight crushes destroyers. So battleships beat destroyers,
+destroyers beat cruisers, and cruisers beat battleships, and no one fleet mix
+beats every other. Build for the enemy you expect to meet. A fleet whose cruisers and battleships are worth twice the
 enemy's adds +1 to its die. Lean on cruisers and battleships to hold a system
 or win a skirmish. Add destroyers when you mean to wipe out an enemy fleet.
 Ground batteries fire the way destroyers do, which is why ships attacking a
@@ -1463,15 +1470,23 @@ not a random brawl. Combat follows rules, and both sides fire in the same
 round. Losses are then applied. This keeps battle outcomes clear, severe, and
 consistent.
 
+We tested these rules before we put them in the game. A computer fought
+millions of battles with them, using the game's own turn engine. Every mix
+of destroyers, cruisers, and battleships fought every other mix of the same
+cost. Some fleets were small and some were large. Some fought to the end,
+and some could break off. The rules passed two tests. First, no fleet mix
+beats all the others, so every fleet has a counter. Second, a bigger fleet
+always does at least as well as a smaller one built the same way.
+
 == The Rules of Battle
 
 Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. But it cannot bring all of it to bear at once. The larger side fires with only part of its AS: at least as much as the enemy has, and never more than twice it. Its other ships wait their turn, so extra size buys staying power, not a quicker kill. Rounds repeat until one side is destroyed or breaks off.
 
-Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Suppression fire spreads over the current target group (the combat line first, auxiliaries after). It strikes the healthy and crippled ships of a class in proportion to their numbers. A strike cripples a healthy ship and destroys a crippled one. Execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. It recovers on its own at the end of the second maintenance after the one that damaged it, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets that only share the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation).
+Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Cruiser and battleship fire spreads over the current target group (the combat line first, auxiliaries after). It strikes the healthy and crippled ships of a class in proportion to their numbers. A strike cripples a healthy ship and destroys a crippled one. Destroyer and starbase fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. It recovers on its own at the end of the second maintenance after the one that damaged it, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets that only share the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation).
 
-Ordinary fleet fire targets the combat line first, heaviest hull first: battleships, cruisers, destroyers, and starbases. The heavy ships cover the destroyers behind them, and fire too weak for the ship in front cannot reach those behind it. Scouts, transports, and ETACs are safe from it as long as any combat-line ship remains. Your non-combat ships survive as long as your warships hold the line, except against a critical hit.
+Each class's share of a side's fire takes its own aim at the combat line. Battleship and starbase fire goes heaviest hull first: battleships, cruisers, destroyers, and starbases. Destroyer fire goes for cruisers first, and cruiser fire for battleships first, then on down the same line. The heavy ships cover the destroyers behind them, and fire too weak for the ship in front cannot reach those behind it. Scouts, transports, and ETACs are safe from it as long as any combat-line ship remains. Your non-combat ships survive as long as your warships hold the line, except against a critical hit.
 
-Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Execution fire from destroyers and starbases finishes a crippled ship for half its DS, rounded up. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost. The next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
+Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Destroyer hits count three times against cruisers, and cruiser hits twice against battleships, so those targets cost them a third or a half of their DS, rounded up. Destroyer and starbase fire finishes a crippled ship for half its DS, rounded up. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost. The next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
 Three bonuses add to your die roll. A starbase fighting on your side adds +1.
 An attack that catches the enemy unprepared adds +1 to the attacker's first
@@ -1500,10 +1515,9 @@ appendix give the numbers.
 
 2. *Strength.* Add up the AS of every ship on the side, from the Unit
    Combat Values table. A crippled hull counts half, rounded down: destroyer
-   6, cruiser 16, battleship 45, starbase 50. Scouts, transports, and ETACs
-   count nothing. The cruisers' and battleships' part of the total is the
-   side's suppression strength. The destroyers' and starbases' part is its
-   execution strength.
+   6, cruiser 16, battleship 50, starbase 50. Scouts, transports, and ETACs
+   count nothing. Each firing class's part of the total, destroyers,
+   cruisers, battleships and starbases, is that class's strength.
 
 3. *The exchange.* Both sides fire at the same instant. Each side rolls one
    ten-sided die and adds its bonuses (see Fleet Battle Die Modifiers). A
@@ -1514,17 +1528,26 @@ appendix give the numbers.
    It is never above 2. The side fires with `round(B x y)` AS, a half
    rounding up. A 2:1 side fires with about 1.23 times the enemy's AS, a
    10:1 side with 1.65 times. Hits are `ceil(firing AS x effectiveness)`.
-   Split the hits into two pools. Suppression hits are
-   `round(hits x suppression AS / total AS)`, with a half rounding up. The
-   rest are execution hits. A natural 9 adds one critical hit. Hits the side
-   carried from earlier exchanges of this battle join their pools now.
+   Split the hits into four pools, one per firing class, in proportion to
+   each class's strength. Take the classes in the order destroyers,
+   cruisers, battleships, starbases. Each pool is
+   `round(hits x strength so far / total AS)`, a half rounding up, less the
+   hits given to the classes before it, so the pools add up to the hits. A
+   natural 9 adds one critical hit. Hits the side carried from earlier
+   exchanges of this battle join their pools now.
 
-4. *Where the hits land.* The target group is the enemy's combat line while
-   any of it stands: battleships, then cruisers, then destroyers, then
-   starbases. Once the line is gone, the group is the auxiliaries: scouts,
-   then transports, then ETACs. Both sides' hits land after both have
-   fired, so a ship destroyed this exchange still fired in it.
-   - *Suppression.* Go down the target group in order. Skip a class with no
+4. *Where the hits land.* The pools land one after another: battleships',
+   cruisers', destroyers', then starbases'. The target group is the enemy's
+   combat line while any of it stands. Battleship and starbase pools take
+   it in the line order: battleships, then cruisers, then destroyers, then
+   starbases. The destroyer pool takes cruisers first, and the cruiser pool
+   battleships first, then the rest in the line order. That first class
+   costs the pool less: a third of its DS for destroyer fire (a cruiser
+   costs 13), half for cruiser fire (a battleship costs 53), rounded up.
+   Once the line is gone, the group is the auxiliaries: scouts, then
+   transports, then ETACs. Both sides' hits land after both have fired, so
+   a ship destroyed this exchange still fired in it.
+   - *Cruiser and battleship pools.* Go down the target group in order. Skip a class with no
      hulls left. If the hits cannot pay the next class's DS, stop. That
      class shields every class behind it, crippled or not. Otherwise each DS
      of hits strikes one hull of the class, at most one strike per hull. A
@@ -1539,9 +1562,11 @@ appendix give the numbers.
      and the second destroys a crippled one. Go on to the next class, and
      start over at the top while the walk still buys something. When the
      group is wiped out, move on to the next group.
-   - *Execution.* Go down the target group in order. In each class, first
-     finish crippled hulls at half DS, rounded up (destroyer 4, cruiser 15,
-     battleship 55, starbase 65). Then destroy healthy hulls at twice DS.
+   - *Destroyer and starbase pools.* Go down the target group in order. In
+     each class, first finish crippled hulls at half DS, rounded up
+     (destroyer 4, cruiser 19, battleship 53, starbase 65; a cruiser costs
+     destroyer fire 7). Then destroy healthy hulls at twice DS (a cruiser
+     costs destroyer fire 26).
      Buy as many of each as the hits can pay for. A class the hits cannot
      pay for is passed over. It shields nothing. Start over at the top
      while the walk still buys something.
@@ -1643,7 +1668,7 @@ time it identifies a target and on every later week (see Rules of Engagement
 Thresholds below). Identifying an enemy first commits nothing. A cautious
 fleet does not attack a stronger enemy just because it saw it first. For
 these odds each warship counts its attack strength (a destroyer 12, a cruiser
-33, a battleship 90) and a starbase 100, the same values the battle fires
+33, a battleship 100) and a starbase 100, the same values the battle fires
 with. Scouts, transports, and ETACs count nothing, and a fleet without
 warships never attacks, whatever its ROE.
 
@@ -1719,14 +1744,16 @@ fleet takes to climb out of orbit.
 
 == Tactical Roles and Split Fire
 
-Combat is more than a numbers game. Each ship class has a tactical role set by how it delivers fire. The hits a side generates are split into two pools:
+Combat is more than a numbers game. Each ship class has a tactical role set by how it delivers fire and what it hunts. The hits a side generates are split among its classes, and each class fires its share on its own:
 
-- *Suppression Fire (Cruisers and Battleships):* These heavy ships bring volume. Their hits are spread across the enemy fleet, healthy and crippled ships alike. A hit cripples a healthy ship and destroys a crippled one. This takes enemy guns offline and wears a big fleet down from the first round.
-- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to pick off single targets. Their hits skip the crippled state and go straight to *destroyed*, paying 2x DS for a healthy ship and half DS, rounded up, for a crippled one. They blow ships up one by one.
+- *Spread Fire (Cruisers and Battleships):* These heavy ships bring volume. Their hits are spread across the enemy fleet, healthy and crippled ships alike. A hit cripples a healthy ship and destroys a crippled one. This takes enemy guns offline and wears a big fleet down from the first round.
+- *Focus Fire (Destroyers and Starbases):* These units use *focus fire* to pick off single targets. Their hits skip the crippled state and go straight to *destroyed*, paying 2x DS for a healthy ship and half DS, rounded up, for a crippled one. They blow ships up one by one.
 
-Together they are a deadly pair. Heavy ships soften the line and stand in front of it. Destroyers finish it from behind them. Each pool carries its own leftover hits: suppression hits never pay for an execution kill, and execution hits never pay for a cripple.
+- *Hunters.* Destroyers aim at cruisers first and strike them at triple effect. Cruisers aim at battleships first and strike them at double effect. Battleships and starbases fire down the line.
 
-#admonition("NOTE")[All return fire from ground batteries counts as *Execution Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one, destroyers first. Fortified worlds do not "soften" an attacker; they destroy him.]
+Together they are a deadly pair. Heavy ships soften the line and stand in front of it. Destroyers finish it from behind them. Each class's pool carries its own leftover hits: one class's hits never pay for another's.
+
+#admonition("NOTE")[All return fire from ground batteries counts as *Focus Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one, destroyers first. Fortified worlds do not "soften" an attacker; they destroy him.]
 
 == Fleet Limits
 
@@ -1906,14 +1933,14 @@ and lets crippled light ships keep adding fire.
     table.header(
       [Unit], [AS], [DS], [Notes],
     ),
-    [Destroyer], [12], [7],  [Glass cannon, raider, and finisher],
-    [Cruiser],   [33], [30], [Balanced brawler],
-    [Battleship],[90], [110],[Primary battle line and siege ship],
+    [Destroyer], [12], [7],  [Cruiser hunter (x3 against cruisers), raider, finisher],
+    [Cruiser],   [33], [37], [Battleship hunter (x2 against battleships)],
+    [Battleship],[100],[105],[Primary battle line and siege ship],
     [Scout],     [0],  [10], [Non-combat hull],
     [Transport], [0],  [10], [Non-combat hull],
     [ETAC],      [0],  [20], [Colonization hull],
     [Starbase],  [100],[130],[Heavy orbital defender],
-    [Battery],   [90], [66], [Planetary defense; two steps, 45 AS crippled],
+    [Battery],   [100],[66], [Planetary defense; two steps, 50 AS crippled],
     [Army],      [10], [10], [Ground combatant],
   ),
 )
@@ -1968,17 +1995,23 @@ outright, a crippled ship first.
 == Damage Steps and Carried Hits
 
 - Crippling a nominal ship costs its full DS.
-- Finishing a crippled ship costs its full DS again under suppression fire
-  and battery fire; execution fire from destroyers and starbases finishes it
-  for half DS, rounded up (DD 4, CA 15, BB 55, SB 65).
-- Execution fire that destroys a nominal ship pays both: `2x DS`.
-- Ship and starbase fire lands on the combat line heaviest hull first:
-  battleships, cruisers, destroyers, starbases. A class that stands but
-  cannot be afforded shields those behind it. Battery return fire lands
-  destroyers first.
+- Finishing a crippled ship costs its full DS again under cruiser,
+  battleship and battery fire; destroyer and starbase fire finishes it for
+  half DS, rounded up (DD 4, CA 19, BB 53, SB 65).
+- Destroyer and starbase fire that destroys a nominal ship pays both:
+  `2x DS`.
+- Destroyer fire counts three times against cruisers, and cruiser fire
+  twice against battleships: those targets cost them a third or a half of
+  each price above, rounded up (CA 13 to cripple or 26 to destroy by
+  destroyer fire, 7 to finish; BB 53 to cripple by cruiser fire).
+- Battleship and starbase fire lands on the combat line heaviest hull first:
+  battleships, cruisers, destroyers, starbases. Destroyer fire takes
+  cruisers first and cruiser fire battleships first, then the same line. A
+  class that stands but cannot be afforded shields those behind it. Battery
+  return fire lands destroyers first.
 - Hits a pool cannot spend carry over, in that pool, to the side's next
   exchange in the same battle, including the pursuit exchange.
-- Suppression and execution hits carry separately.
+- Each firing class's hits carry separately.
 - Carried hits are lost when the battle ends: by destruction, by a side
   breaking off, or at the 64-round limit. The next battle starts from zero,
   a pursuit on a later week included.
@@ -2071,7 +2104,7 @@ loss allocation.
 == Bombardment and Planetary Fire
 
 Only destroyers, cruisers, and battleships contribute bombardment attack
-strength, each with its own AS (destroyer 12, cruiser 33, battleship 90), half
+strength, each with its own AS (destroyer 12, cruiser 33, battleship 100), half
 while crippled. All of an empire's fleets bombarding the same world in a year
 fire together as one force, and share its losses as a battle side does.
 
@@ -2081,7 +2114,7 @@ Planetary return fire is:
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[return_fire_AS = 90 \* healthy_batteries + 45 \* crippled_batteries]],
+    [#text(font: "IBM Plex Mono")[return_fire_AS = 100 \* healthy_batteries + 50 \* crippled_batteries]],
   )
 ]
 

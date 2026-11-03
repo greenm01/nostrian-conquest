@@ -163,6 +163,7 @@ UNIT_VARIANTS = {
     'baseline': {},
     'dd-10-8-5': {'DD': dict(DS=8)},
     't200': {'DD': dict(AS=12, DS=7), 'CA': dict(AS=33), 'BB': dict(DS=110), 'SB': dict(DS=130)},
+    't255': {'DD': dict(AS=12, DS=7), 'CA': dict(AS=33, DS=37), 'BB': dict(AS=100, DS=105), 'SB': dict(DS=130)},
 }
 
 

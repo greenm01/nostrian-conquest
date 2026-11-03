@@ -128,8 +128,8 @@ fn the_winners_report_says_the_enemy_fled_when_it_broke_off() {
     // A patrol on ROE 10 catches a fleet whose ROE 6 refuses the odds. The fleet
     // fights the first exchange and breaks off, and the patrol's report
     // says the enemy fled, whether it got away clean (a destroyer outrunning
-    // a cruiser) or was caught for a pursuit exchange (a cruiser chased by
-    // faster destroyers). Pursuit fire (t232) records the second kind as
+    // a cruiser) or was caught for a pursuit exchange (two cruisers chased
+    // by faster destroyers, which kill a lone cruiser outright). Pursuit fire (t232) records the second kind as
     // pursuit fire, which the report had read as holding the field.
     let (mut clean, mut pursued) = (0, 0);
     for (patrol, fleeing) in [
@@ -149,7 +149,7 @@ fn the_winners_report_says_the_enemy_fled_when_it_broke_off() {
                 ..Ships::default()
             },
             Ships {
-                ca: 1,
+                ca: 2,
                 ..Ships::default()
             },
         ),

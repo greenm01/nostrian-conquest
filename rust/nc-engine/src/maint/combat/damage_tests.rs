@@ -38,28 +38,28 @@ fn full_strength_rolls() -> Scripted<'static> {
 #[test]
 fn a_battle_leaves_its_cripples_crippled_for_the_next_battle() {
     let mut game_data = board();
-    place(&mut game_data, 0, 1, Ships { ca: 2, ..NONE }, 10);
-    place(&mut game_data, 4, 2, Ships { ca: 2, ..NONE }, 10);
+    place(&mut game_data, 0, 1, Ships { ca: 3, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { ca: 3, ..NONE }, 10);
     let dice = full_strength_rolls();
 
-    // Two cruisers deal 60 to the other pair: both of its cruisers are
-    // crippled (DS 30 each), and nothing restores them after the battle.
+    // Three cruisers deal 99 to the other three: two of its cruisers are
+    // crippled (DS 37 each), and nothing restores them after the battle.
     fight_capped(&mut game_data, &dice, 1, 1, 0, 4);
     for idx in [0, 4] {
         let fleet = &game_data.fleets[idx];
-        assert_eq!(fleet.ships.cruisers, 2, "fleet {idx}");
+        assert_eq!(fleet.ships.cruisers, 3, "fleet {idx}");
         assert_eq!(fleet.crippled.cruisers, hulls(0, 0, 2), "fleet {idx}");
     }
 
-    // The next battle starts from that damage: two crippled cruisers fire
-    // 30 (half their AS), which finishes one of the other side's. Fought
-    // from whole ships, the second battle would have crippled two again and
-    // destroyed none.
+    // The next battle starts from that damage: one whole and two crippled
+    // cruisers fire 65, one strike, which cripples the other side's last
+    // whole cruiser. Fought from whole ships, the second battle would have
+    // fired 99 and crippled two.
     fight_capped(&mut game_data, &dice, 1, 2, 0, 4);
     for idx in [0, 4] {
         let fleet = &game_data.fleets[idx];
-        assert_eq!(fleet.ships.cruisers, 1, "fleet {idx}");
-        assert_eq!(fleet.crippled.cruisers, hulls(0, 0, 1), "fleet {idx}");
+        assert_eq!(fleet.ships.cruisers, 3, "fleet {idx}");
+        assert_eq!(fleet.crippled.cruisers.total(), 3, "fleet {idx}");
     }
 }
 
@@ -67,11 +67,11 @@ fn a_battle_leaves_its_cripples_crippled_for_the_next_battle() {
 fn finishing_fire_takes_this_pass_first_then_the_most_turns_left() {
     let finished = |before: CrippledHulls, ships: u16| {
         let mut game_data = board();
-        place(&mut game_data, 0, 1, Ships { ca: 1, ..NONE }, 10);
+        place(&mut game_data, 0, 1, Ships { ca: 2, ..NONE }, 10);
         place(&mut game_data, 4, 2, Ships { ca: ships, ..NONE }, 10);
         game_data.fleets[4].crippled.cruisers = before;
-        // One nominal cruiser deals 30: exactly one finishing step on a
-        // fleet of crippled cruisers.
+        // Two nominal cruisers deal 66: exactly one finishing step (DS 37)
+        // on a fleet of crippled cruisers.
         fight_capped(&mut game_data, &full_strength_rolls(), 1, 1, 0, 4);
         let fleet = &game_data.fleets[4];
         (fleet.ships.cruisers, fleet.crippled.cruisers)
@@ -84,7 +84,8 @@ fn finishing_fire_takes_this_pass_first_then_the_most_turns_left() {
 #[test]
 fn finishing_fire_spreads_over_a_sides_fleets_by_turns_left() {
     let mut game_data = board();
-    place(&mut game_data, 0, 1, Ships { ca: 1, ..NONE }, 10);
+    // Two cruisers deal 66: one finishing step.
+    place(&mut game_data, 0, 1, Ships { ca: 2, ..NONE }, 10);
     place(&mut game_data, 4, 2, Ships { ca: 1, ..NONE }, 10);
     place(&mut game_data, 8, 2, Ships { ca: 1, ..NONE }, 10);
     game_data.fleets[4].crippled.cruisers = hulls(1, 0, 0);
@@ -483,13 +484,13 @@ fn a_destroyed_base_is_the_crippled_one_and_a_survivor_keeps_its_state() {
 #[test]
 fn a_crippled_hull_counts_at_its_crippled_attack_strength() {
     let mut crippled = nc_data::CrippledShips::default();
-    assert_eq!(warship_attack_strength(2, 2, 1, &crippled), 24 + 66 + 90);
+    assert_eq!(warship_attack_strength(2, 2, 1, &crippled), 24 + 66 + 100);
     crippled.destroyers = hulls(0, 0, 1);
     crippled.cruisers = hulls(1, 1, 0);
     crippled.battleships = hulls(0, 1, 0);
     assert_eq!(
         warship_attack_strength(2, 2, 1, &crippled),
-        12 + 6 + 16 + 16 + 45
+        12 + 6 + 16 + 16 + 50
     );
 
     let mut record = Starbase::default();
@@ -505,9 +506,9 @@ fn bombardment_fire_keeps_its_crippled_rounding() {
     state.counts[IDX_CA] = 2;
     state.counts[IDX_BB] = 2;
     // Every warship bombards with its attack strength, no bonus (t202).
-    assert_eq!(bombard_attack_as(&state), 2 * 12 + 2 * 33 + 2 * 90);
+    assert_eq!(bombard_attack_as(&state), 2 * 12 + 2 * 33 + 2 * 100);
     state.crippled[IDX_DD] = hulls(1, 0, 0);
     state.crippled[IDX_CA] = hulls(0, 1, 0);
     state.crippled[IDX_BB] = hulls(0, 0, 1);
-    assert_eq!(bombard_attack_as(&state), 12 + 6 + 33 + 16 + 90 + 45);
+    assert_eq!(bombard_attack_as(&state), 12 + 6 + 33 + 16 + 100 + 50);
 }

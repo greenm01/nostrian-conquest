@@ -233,6 +233,20 @@ fn batteries_shoot_better_into_a_crowded_orbit() {
     assert_eq!(target_rich_column(0, 1000), 0);
 }
 
+/// The pre-t255 shared pools, which per-hull fire keeps as two of its
+/// classes: battleship fire is dispersed down the line order with no bonus
+/// (the old suppression), and starbase fire is focused down it (the old
+/// execution). Returns what each carried.
+fn volley(
+    state: &mut FleetCombatState,
+    dispersed: u32,
+    focused: u32,
+    criticals: u32,
+) -> (u32, u32) {
+    let carried = apply_hits_to_fleet(state, [0, 0, dispersed, focused], criticals);
+    (carried[IDX_BB], carried[IDX_SB])
+}
+
 /// The punch ladder (6vqrcldx): a destroyer's DS is 7, so crippling one
 /// costs 7 and execution fire pays 14 to destroy a nominal one. Finishing a
 /// cripple with execution fire costs half, rounded up to 4 (t206).
@@ -240,26 +254,26 @@ fn batteries_shoot_better_into_a_crowded_orbit() {
 fn a_destroyer_costs_seven_hits_a_step() {
     let mut state = FleetCombatState::default();
     state.counts[IDX_DD] = 2;
-    let carried = apply_hits_to_fleet(&mut state, 13, 0, 0);
+    let carried = volley(&mut state, 13, 0, 0);
     assert_eq!(
         state.crippled_count(IDX_DD),
         1,
         "13 suppression hits cripple one"
     );
-    assert_eq!(carried.suppression, 6);
-    let carried = apply_hits_to_fleet(&mut state, 0, 14, 0);
+    assert_eq!(carried.0, 6);
+    let carried = volley(&mut state, 0, 14, 0);
     assert_eq!(
         (state.counts[IDX_DD], state.crippled_count(IDX_DD)),
         (1, 0),
         "execution fire finishes the crippled one for 4 and cannot afford the nominal one"
     );
-    assert_eq!(carried.execution, 10);
-    let carried = apply_hits_to_fleet(&mut state, 0, 14, 0);
+    assert_eq!(carried.1, 10);
+    let carried = volley(&mut state, 0, 14, 0);
     assert_eq!(
         state.counts[IDX_DD], 0,
         "14 execution hits destroy a nominal destroyer"
     );
-    assert_eq!(carried.execution, 0);
+    assert_eq!(carried.1, 0);
 }
 
 /// Cover (t206): ordinary fire works through the heaviest hulls first, so
@@ -270,50 +284,50 @@ fn heavies_cover_the_destroyers() {
     state.counts[IDX_BB] = 1;
     state.counts[IDX_CA] = 1;
     state.counts[IDX_DD] = 3;
-    let carried = apply_hits_to_fleet(&mut state, 140, 0, 0);
+    let carried = volley(&mut state, 142, 0, 0);
     assert_eq!(
         state.crippled_count(IDX_BB),
         1,
-        "the battleship takes the first 110"
+        "the battleship takes the first 105"
     );
-    assert_eq!(state.crippled_count(IDX_CA), 1, "then the cruiser takes 30");
+    assert_eq!(state.crippled_count(IDX_CA), 1, "then the cruiser takes 37");
     assert_eq!(
         state.crippled_count(IDX_DD),
         0,
         "the destroyers are untouched"
     );
-    assert_eq!(carried.suppression, 0);
+    assert_eq!(carried.0, 0);
     // Execution fire follows the same cover: it finishes the crippled
     // battleship for half its DS before it can reach a destroyer.
-    let carried = apply_hits_to_fleet(&mut state, 0, 60, 0);
-    assert_eq!(state.counts[IDX_BB], 0, "55 finish the crippled battleship");
+    let carried = volley(&mut state, 0, 60, 0);
+    assert_eq!(state.counts[IDX_BB], 0, "53 finish the crippled battleship");
     assert_eq!(state.counts[IDX_DD], 3);
-    assert_eq!(carried.execution, 5);
+    assert_eq!(carried.1, 7);
 }
 
 /// Cover (t206): suppression too weak for the cruiser in front cannot
 /// reach the destroyers behind it, and carries. A crippled cruiser still
-/// stands in front (t232): only the 30 that destroy it open the way.
+/// stands in front (t232): only the 37 that destroy it open the way.
 #[test]
 fn a_cruiser_too_dear_to_hit_shields_the_destroyers() {
     let mut state = FleetCombatState::default();
     state.counts[IDX_CA] = 1;
     state.counts[IDX_DD] = 2;
-    let carried = apply_hits_to_fleet(&mut state, 20, 0, 0);
+    let carried = volley(&mut state, 20, 0, 0);
     assert_eq!(state.crippled_count(IDX_DD), 0);
-    assert_eq!(carried.suppression, 20);
+    assert_eq!(carried.0, 20);
     state.cripple(IDX_CA, 1);
-    let carried = apply_hits_to_fleet(&mut state, 20, 0, 0);
+    let carried = volley(&mut state, 20, 0, 0);
     assert_eq!(state.crippled_count(IDX_DD), 0);
-    assert_eq!(carried.suppression, 20);
-    let carried = apply_hits_to_fleet(&mut state, 44, 0, 0);
-    assert_eq!(state.counts[IDX_CA], 0, "30 destroy the crippled cruiser");
+    assert_eq!(carried.0, 20);
+    let carried = volley(&mut state, 51, 0, 0);
+    assert_eq!(state.counts[IDX_CA], 0, "37 destroy the crippled cruiser");
     assert_eq!(
         state.crippled_count(IDX_DD),
         2,
         "14 cripple both destroyers"
     );
-    assert_eq!(carried.suppression, 0);
+    assert_eq!(carried.0, 0);
 }
 
 /// Dispersed fire (t232): suppression strikes healthy and crippled hulls in
@@ -325,11 +339,11 @@ fn suppression_strikes_healthy_and_crippled_hulls_in_proportion() {
     let mut state = FleetCombatState::default();
     state.counts[IDX_CA] = 4;
     state.cripple(IDX_CA, 2);
-    let carried = apply_hits_to_fleet(&mut state, 60, 0, 0);
+    let carried = volley(&mut state, 74, 0, 0);
     assert_eq!(state.counts[IDX_CA], 3);
     assert_eq!(state.nominal_count(IDX_CA), 1);
     assert_eq!(state.crippled_count(IDX_CA), 2);
-    assert_eq!(carried.suppression, 0);
+    assert_eq!(carried.0, 0);
 }
 
 /// Battery return fire and landing fire keep the pre-t206 prices and
@@ -342,17 +356,17 @@ fn battery_and_landing_fire_keep_todays_prices() {
     state.cripple(IDX_CA, 1);
     state.cripple(IDX_DD, 1);
     let mut ships = state.clone();
-    apply_hits_to_fleet(&mut ships, 0, 30, 0);
+    volley(&mut ships, 0, 30, 0);
     assert_eq!(
         (ships.counts[IDX_CA], ships.counts[IDX_DD]),
         (0, 0),
-        "ship fire finishes the cruiser for 15 and the destroyer for 4"
+        "ship fire finishes the cruiser for 19 and the destroyer for 4"
     );
     apply_battery_hits_to_fleet(&mut state, 30, 0);
     assert_eq!(
         (state.counts[IDX_CA], state.counts[IDX_DD]),
         (1, 0),
-        "battery fire finishes the destroyer for 7 and cannot afford the cruiser's 30"
+        "battery fire finishes the destroyer for 7 and cannot afford the cruiser's 37"
     );
     let mut landing = FleetCombatState::default();
     landing.counts[IDX_TT] = 1;
@@ -374,12 +388,12 @@ fn a_critical_still_takes_the_cheapest_hull_first() {
     state.counts[IDX_BB] = 1;
     state.counts[IDX_DD] = 2;
     state.cripple(IDX_BB, 1);
-    apply_hits_to_fleet(&mut state, 0, 0, 1);
+    volley(&mut state, 0, 0, 1);
     assert_eq!(
         state.counts[IDX_BB], 0,
         "the crippled battleship goes first"
     );
-    apply_hits_to_fleet(&mut state, 0, 0, 1);
+    volley(&mut state, 0, 0, 1);
     assert_eq!(
         state.counts[IDX_DD], 1,
         "then a nominal destroyer, not a heavier hull"
@@ -440,17 +454,16 @@ fn carried_hits_buy_damage_steps() {
         pursuit: &|_, _, _| CAUGHT,
     };
 
-    // Two battleships fire 45 a round at battleships of DS 100: no single
-    // volley buys a step, but the carried hits cripple one in round 3 and
-    // the other in round 5 and finish them in rounds 7 and 9, on both
-    // sides alike.
+    // Two battleships fire 50 a round (a quarter of AS 200) at battleships
+    // of DS 105: no single volley buys a step, but the carried hits buy one
+    // every few rounds until both are gone, on both sides alike.
     fight(&mut game_data, &dice, 1, 0, 4);
     assert_eq!(game_data.fleets[0].ships.battleships, 0);
     assert_eq!(game_data.fleets[4].ships.battleships, 0);
 }
 
 #[test]
-fn suppression_and_execution_carry_separately() {
+fn each_hull_classs_fire_carries_separately() {
     let game_data = {
         let mut game_data = board();
         place(&mut game_data, 4, 2, Ships { tt: 1, ..NONE }, 0);
@@ -460,13 +473,12 @@ fn suppression_and_execution_carry_separately() {
         d10: &|_, _, _, _| 0,
         pursuit: &|_, _, _| CAUGHT,
     };
-    let pools = |carried_suppression: u32, suppression: u32, execution: u32| {
+    let pools = |carried_bb: u32, bb: u32, sb: u32| {
         let mut forces = vec![new_task_force(&game_data, 2, DEEP_SPACE, vec![4], &[])];
-        forces[0].carried_hits.suppression = carried_suppression;
+        forces[0].carried_hits[IDX_BB] = carried_bb;
         apply_pending_hits(
             &mut forces,
-            &HashMap::from([(2, suppression)]),
-            &HashMap::from([(2, execution)]),
+            &HashMap::from([(2, [0, 0, bb, sb])]),
             &HashMap::new(),
             &dice,
             0,
@@ -477,18 +489,51 @@ fn suppression_and_execution_carry_separately() {
             forces[0].carried_hits,
         )
     };
-    // Seven carried suppression hits and three new ones cripple a transport
-    // of DS 10; three new execution hits buy nothing with them, and each
+    // Seven carried battleship hits and three new ones cripple a transport
+    // of DS 10; three new starbase hits buy nothing with them, and each
     // pool keeps its own remainder.
     let (crippled, carried) = pools(7, 3, 0);
-    assert_eq!(
-        (crippled, carried.suppression, carried.execution),
-        (1, 0, 0)
-    );
+    assert_eq!((crippled, carried[IDX_BB], carried[IDX_SB]), (1, 0, 0));
     let (crippled, carried) = pools(7, 0, 3);
+    assert_eq!((crippled, carried[IDX_BB], carried[IDX_SB]), (0, 7, 3));
+}
+
+/// Hull fire (t255): destroyers aim at cruisers first, past the battleship
+/// in front, and their hits count three times: a cruiser's DS of 37 costs
+/// them 13, so 26 focused hits destroy a healthy one.
+#[test]
+fn destroyers_hunt_cruisers_at_three_times() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_BB] = 1;
+    state.counts[IDX_CA] = 2;
+    let carried = apply_hits_to_fleet(&mut state, [26, 0, 0, 0], 0);
+    assert_eq!(state.counts[IDX_CA], 1, "one cruiser destroyed");
+    assert_eq!(state.crippled_count(IDX_BB), 0, "the battleship untouched");
+    assert_eq!(carried, [0; 4]);
+}
+
+/// Hull fire (t255): cruisers aim at battleships first, and their hits
+/// count twice: a battleship's DS of 105 costs them 53, so 53 dispersed
+/// hits cripple it. The battleships' own fire keeps the line order.
+#[test]
+fn cruisers_hunt_battleships_at_twice() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_BB] = 1;
+    state.counts[IDX_DD] = 1;
+    apply_hits_to_fleet(&mut state, [0, 53, 0, 0], 0);
+    assert_eq!(state.crippled_count(IDX_BB), 1);
+    let mut line = FleetCombatState::default();
+    line.counts[IDX_BB] = 1;
+    line.counts[IDX_DD] = 1;
+    let carried = apply_hits_to_fleet(&mut line, [0, 0, 53, 0], 0);
     assert_eq!(
-        (crippled, carried.suppression, carried.execution),
-        (0, 7, 3)
+        line.crippled_count(IDX_BB),
+        0,
+        "53 battleship hits cannot pay 105"
+    );
+    assert_eq!(
+        carried[IDX_BB], 53,
+        "and the battleship shields the destroyer"
     );
 }
 
@@ -872,16 +917,16 @@ fn a_fleet_on_roe_zero_fights_the_first_exchange_when_attacked() {
     assert_eq!(game_data.fleets[4].order, Order::SeekHome);
 }
 
-/// The allocation example at the battle level: eighteen destroyers' 180
-/// execution hits destroy three nominal cruisers of a side whose fleets
-/// hold 8 and 2, shared as 2 and 1. The larger cruiser side commits only
-/// 246 of its 330 AS (t232), so one destroyer survives.
+/// The allocation example at the battle level: seven destroyers' 84 hits
+/// destroy three nominal cruisers (26 each: DS 37 at three times, t255) of
+/// a side whose fleets hold 8 and 2, shared as 2 and 1. The larger cruiser
+/// side commits only 118 of its 330 AS (t232), enough for every destroyer.
 #[test]
 fn losses_are_shared_among_a_sides_fleets_in_proportion() {
     let mut game_data = board();
     place(&mut game_data, 0, 1, Ships { ca: 8, ..NONE }, 10);
     place(&mut game_data, 1, 1, Ships { ca: 2, ..NONE }, 10);
-    place(&mut game_data, 4, 2, Ships { dd: 18, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { dd: 7, ..NONE }, 10);
     let dice = Scripted {
         d10: &|_, _, _, _| 6,
         pursuit: &|_, _, _| ESCAPED,
@@ -889,7 +934,7 @@ fn losses_are_shared_among_a_sides_fleets_in_proportion() {
     fight_sides(&mut game_data, &dice, 1, 1, &[0, 1], &[4]);
     assert_eq!(game_data.fleets[0].ships.cruisers, 6);
     assert_eq!(game_data.fleets[1].ships.cruisers, 1);
-    assert_eq!(game_data.fleets[4].ships.destroyers, 1);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 0);
 }
 
 /// The carry bank stays with the side: the 15 suppression hits a cruiser

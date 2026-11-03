@@ -14,7 +14,7 @@ pub(super) const IDX_ET: usize = 6;
 
 const AS_DD: u32 = 12;
 const AS_CA: u32 = 33;
-const AS_BB: u32 = 90;
+const AS_BB: u32 = 100;
 const AS_SB: u32 = 100;
 const AS_SC: u32 = 0;
 const AS_TT: u32 = 0;
@@ -25,8 +25,8 @@ const AS_ET: u32 = 0;
 pub(crate) const STARBASE_ATTACK_STRENGTH: u32 = AS_SB;
 
 const DS_DD: u32 = 7;
-const DS_CA: u32 = 30;
-const DS_BB: u32 = 110;
+const DS_CA: u32 = 37;
+const DS_BB: u32 = 105;
 const DS_SB: u32 = 130;
 const DS_SC: u32 = 10;
 const DS_TT: u32 = 10;
@@ -52,12 +52,6 @@ pub(super) struct FleetCombatState {
 
 /// Hits a side took in a fleet battle but has not yet spent on a damage
 /// step, per fire pool.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(super) struct CarriedHits {
-    pub(super) suppression: u32,
-    pub(super) execution: u32,
-}
-
 /// How a fleet left the battle.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct Withdrawal {
@@ -157,7 +151,9 @@ pub(super) struct TaskForce {
     /// Hits carried against this side from earlier exchanges of this
     /// battle. They belong to the side, not to its fleets: a fleet that
     /// leaves takes none with them, and the battle's end drops them.
-    pub(super) carried_hits: CarriedHits,
+    /// Hits each hull class's fire (DD, CA, BB, SB, by class index) could
+    /// not spend, carried to the side's next exchange in this battle.
+    pub(super) carried_hits: [u32; 4],
 }
 
 impl TaskForce {
@@ -196,27 +192,19 @@ fn sum_states<'a>(members: impl Iterator<Item = &'a Member>) -> FleetCombatState
 
 impl FleetCombatState {
     pub(super) fn total_combat_as(&self) -> u32 {
-        self.suppression_as() + self.execution_as()
+        self.class_as().iter().sum()
     }
 
-    pub(super) fn suppression_as(&self) -> u32 {
-        [IDX_CA, IDX_BB]
-            .into_iter()
-            .map(|idx| {
-                let as_value = fleet_class_as(idx);
-                hull_attack_strength(as_value, self.counts[idx], self.crippled_count(idx))
-            })
-            .sum()
-    }
-
-    pub(super) fn execution_as(&self) -> u32 {
-        [IDX_DD, IDX_SB]
-            .into_iter()
-            .map(|idx| {
-                let as_value = fleet_class_as(idx);
-                hull_attack_strength(as_value, self.counts[idx], self.crippled_count(idx))
-            })
-            .sum()
+    /// The attack strength of each firing class, DD, CA, BB, SB, indexed by
+    /// class.
+    pub(super) fn class_as(&self) -> [u32; 4] {
+        [IDX_DD, IDX_CA, IDX_BB, IDX_SB].map(|idx| {
+            hull_attack_strength(
+                fleet_class_as(idx),
+                self.counts[idx],
+                self.crippled_count(idx),
+            )
+        })
     }
 
     pub(super) fn has_units(&self) -> bool {
@@ -477,7 +465,7 @@ pub(super) fn new_task_force(
         state: FleetCombatState::default(),
         role,
         engaged_in_battle: false,
-        carried_hits: CarriedHits::default(),
+        carried_hits: [0; 4],
     };
     task_force.rebuild();
     task_force
