@@ -110,8 +110,73 @@ Not covered here:
 Remaining work:
 - t254: the attack-and-defence game (fleet mixes against batteries, armies,
   starbases and guards).
-- t255: refresh the Python fleet model and search rule settings, only if the
-  owner wants composition to have counters.
+- t255: search rule settings for counters (see below).
+
+## Search for counters (t255)
+
+The owner asked on 2026-11-03 for composition to have counters. Hull-specific
+bonuses are fine with them ("asymetry is not bad imo").
+
+**Method.**
+- Branch `t255-combat-search` (an experiment, never merged) adds two things:
+  - **Per-hull fire.** Each hull class spends its own share of a volley,
+    with its own first target and a damage bonus against it.
+  - **A test-only `--tuning` option** for `combat_odds`.
+- With no bonus, per-hull fire plays the same game as today: the same
+  dominant mix, 60% battleships. With nothing set, the engine reproduces
+  main battle for battle.
+- `tools/combat-model/counter_search.py` on the branch ran 300 Optuna
+  candidates on a 21-mix grid at 450 points, at ROE 10 and ROE 6. Each
+  candidate was scored on three things:
+  - whether every mix has a counter past two standard errors;
+  - the smallest hull's share of the equilibrium;
+  - a penalty for moving hull stats.
+- Today's rules scored +0.014; the best candidates scored +0.29.
+- The top five candidates were all the same family: destroyers aim at
+  cruisers first, cruisers aim at battleships first, and battleships keep
+  the line order.
+
+**Verification** on the full 55-mix grids, at 1,000 trials per ordered
+pair. "Force" means the first side at 125% strength in each of 441
+pairings, at both ROEs.
+
+| Candidate | Mix with no counter | Hull mass DD/CA/BB | More force worse |
+| --- | --- | --- | --- |
+| Today | one in every game | ROE 10: 22/11/67 | 0 |
+| C: bonuses only, today's stats | one at ROE 10 (cruisers 0%) | ROE 10: 33/0/67 | 0 of 882 |
+| R2: bonuses and three stat changes | none in all four games | 41–55 / 22–31 / 19–33 | 0 of 882 |
+
+R, which also raised the engagement exponent to 4.3, played the same as R2,
+so R2 keeps classic's engagement count.
+
+**R2's rules:**
+1. Each hull class fires its own share of the side's volley (in proportion
+   to its AS).
+2. Destroyers aim at cruisers first, and their hits count three times
+   against cruisers.
+3. Cruisers aim at battleships first, and their hits count twice against
+   battleships.
+4. Battleships keep the line order (BB, CA, DD) with no bonus.
+5. Stat changes: BB AS 90 → 100, BB DS 110 → 105, CA DS 30 → 37. Prices
+   are unchanged.
+
+**Counters under R2** (405 points, ROE 10, win margin):
+- Battleships beat destroyers by +0.85, destroyers beat cruisers by +0.41,
+  and cruisers beat battleships by +0.92.
+- Among the equilibrium's mixes, 27 DD + 6 BB beats 54 DD + 9 CA by +0.49,
+  and 54 DD + 9 CA beats 45 DD + 12 CA by +0.23.
+- Today, by contrast, 18 DD + 3 CA + 6 BB beats every mix.
+
+Results: `tools/combat-model/nc_metagame_t255.json`. Raw runs:
+`~/.local/state/nostrian-conquest/balance/t255/` on the Mac mini.
+
+**If adopted, R2 also affects:**
+- Bombardment, which uses warship AS.
+- Battery fire against fleets, which uses DS.
+- The AI's build weights; land-grab builds no battleships.
+- The trained AI, which learned under today's rules and would need
+  retraining.
+- The player manual's combat chapter.
 
 ## Connections
 
