@@ -622,8 +622,8 @@ than their cost is destroyed (`tools/combat-model/siege_review.py`, checked by
    Factories and stored goods are not damaged during invasion --- the goal is
    to capture the planet with its production intact. The CRT column compares
    bombardment AS against the garrison's strength on the same scale (armies x
-   army AS 10), and each army destroyed costs 10 hits. Softening may destroy at
-   most half of the defender's starting armies.
+   army AS 10), and each army destroyed costs 10 hits. Softening has no cap
+   (t259): it may destroy the whole garrison.
 3. **Landing battle:** The armies fight the Landing Battle above, defenders
    first, until one side has no armies. Capture requires destroying every
    defending army; the surviving attackers become the new garrison.

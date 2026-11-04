@@ -262,15 +262,12 @@ fn stardock_summary_diff(
     }
 }
 
-fn apply_capped_invasion_soften_damage(
-    planet: &mut nc_data::Planet,
-    hits: u32,
-    initial_armies: u8,
-) -> u8 {
-    let max_soften_losses = u32::from(initial_armies / 2);
-    let army_loss = (hits / GROUND_DS_ARMY)
-        .min(u8::try_from(planet.armies).unwrap_or(u8::MAX) as u32)
-        .min(max_soften_losses) as u8;
+/// Softening fire on the garrison: each army costs its DS in hits. The
+/// fleet's firepower alone limits it (t259); a world can be softened to
+/// nothing before the landing.
+fn apply_invasion_soften_damage(planet: &mut nc_data::Planet, hits: u32) -> u8 {
+    let army_loss =
+        (hits / GROUND_DS_ARMY).min(u8::try_from(planet.armies).unwrap_or(u8::MAX) as u32) as u8;
     planet.armies = u16::from(
         u8::try_from(planet.armies)
             .unwrap_or(u8::MAX)
@@ -944,10 +941,9 @@ pub(crate) fn resolve_strike(
                 );
                 // Soften targets armies only — factories and stored goods are
                 // preserved so the captured planet retains its production value.
-                let soften_army_losses = apply_capped_invasion_soften_damage(
+                let soften_army_losses = apply_invasion_soften_damage(
                     &mut game_data.planets[planet_idx],
                     scalar_hits_with_critical(soft_exchange),
-                    pre_armies,
                 );
 
                 let attacking_armies: u32 = fleets

@@ -1160,7 +1160,7 @@ fn failed_invasion_holds_in_orbit_without_retry() {
     }
     {
         let target = &mut game_data.planets[13];
-        target.armies = 10;
+        target.armies = 100;
         target.ground_batteries = 1;
     }
 
@@ -1168,7 +1168,8 @@ fn failed_invasion_holds_in_orbit_without_retry() {
 
     // The lone battery falls to the five battleships' one suppression
     // exchange (450 AS, Overwhelming, at least 150 hits against its 132),
-    // the two armies land and lose, and the surviving ships hold in orbit.
+    // softening leaves most of the 100 armies, the two armies land and
+    // lose, and the surviving ships hold in orbit.
     assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Failed);
     let attacker = &game_data.fleets[0];
     assert!(attacker.ships.battleships > 0);
@@ -1184,7 +1185,9 @@ fn failed_invasion_holds_in_orbit_without_retry() {
 }
 
 #[test]
-fn canonical_invade_softening_caps_at_half_of_starting_armies() {
+/// Softening has no cap (t259): a fleet strong enough destroys the whole
+/// garrison before the landing.
+fn canonical_invade_softening_is_limited_only_by_firepower() {
     let mut game_data = configured_assault_state(7);
 
     {
@@ -1209,36 +1212,8 @@ fn canonical_invade_softening_caps_at_half_of_starting_armies() {
     assert_eq!(assault.kind, Mission::InvadeWorld);
     assert_eq!(assault.outcome, MissionOutcome::Succeeded);
     assert_eq!(assault.defender_armies_initial, 62);
-    assert_eq!(assault.defender_army_losses_softening, 31);
+    assert_eq!(assault.defender_army_losses_softening, 62);
     assert_eq!(assault.defender_army_losses, 62);
-}
-
-#[test]
-fn canonical_invade_softening_leaves_majority_on_odd_army_counts() {
-    let mut game_data = configured_assault_state(7);
-
-    {
-        let attacker = &mut game_data.fleets[0];
-        attacker.ships.battleships = 20;
-        attacker.ships.cruisers = 20;
-        attacker.ships.destroyers = 20;
-        set_troop_transports(attacker, 20);
-        set_armies_aboard(attacker, 20);
-    }
-    {
-        let target = &mut game_data.planets[13];
-        target.armies = 5;
-        target.ground_batteries = 0;
-    }
-
-    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
-
-    let assault = &events.assault_report_events[0];
-    assert_eq!(assault.kind, Mission::InvadeWorld);
-    assert_eq!(assault.outcome, MissionOutcome::Succeeded);
-    assert_eq!(assault.defender_armies_initial, 5);
-    assert_eq!(assault.defender_army_losses_softening, 2);
-    assert_eq!(assault.defender_army_losses, 5);
 }
 
 #[test]

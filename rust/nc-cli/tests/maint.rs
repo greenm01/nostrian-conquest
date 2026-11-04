@@ -2176,11 +2176,11 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy orbital softening losses: 30 armies"),
+        attacker_report.contains("Enemy orbital softening losses: 60 armies"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy ground battle losses: 30 armies"),
+        attacker_report.contains("Enemy ground battle losses: none"),
         "{attacker_report}"
     );
 
@@ -2200,11 +2200,11 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
         "{defender_report}"
     );
     assert!(
-        defender_report.contains("Our orbital softening losses: 30 armies"),
+        defender_report.contains("Our orbital softening losses: 60 armies"),
         "{defender_report}"
     );
     assert!(
-        defender_report.contains("Our ground battle losses: 30 armies"),
+        defender_report.contains("Our ground battle losses: none"),
         "{defender_report}"
     );
 

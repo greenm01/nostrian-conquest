@@ -219,7 +219,7 @@ Rust matches classic's odds, not its random sequence.
   also raises a world under 1.0 to 1.0, and NC leaves it. Classic runs one
   battle, collateral damage, and up to 20 random passes, then goes to Hold.
 - Invade. NC runs one suppression exchange and a softening that hits armies
-  only, at most half of them, with a defender column bonus and no draws.
+  only, with no cap since t259, a defender column bonus and no draws.
   Classic runs the full battle, lands only when every battery is dead,
   softens factories, goods, and the dock as well, and fights the ground
   battle by count.

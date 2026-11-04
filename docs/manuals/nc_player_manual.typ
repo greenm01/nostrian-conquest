@@ -667,8 +667,8 @@ fire.
 most of its industry. The fleet fires the year's three rounds at the
 batteries only. If any survive, no troops land: the fleet keeps its armies
 aboard and its order, and suppresses again next year until the last battery
-falls. With the batteries gone, your ships soften the defending armies, never
-more than half of them, and the transports land. Invasion never bombards the
+falls. With the batteries gone, your ships fire on the defending armies, and
+a strong enough fleet destroys them all. Then the transports land. Invasion never bombards the
 economy, but a world taken by invasion keeps only part of its industry.
 
 *Blitz* lands at once. Your warships fire on the batteries first, and the
@@ -706,9 +706,10 @@ times their cost in warships to break them in a year. With less he must
 besiege it for years, and an undersized fleet is destroyed. Lift his siege for
 a year and your crippled batteries are repaired.
 
-*Armies* decide the landing. Your defenders fire first, so an attacker needs
-about twice your armies to be confident, and a world with none falls to a
-single transport. At 2 points each, they are cheap insurance for any world
+*Armies* decide the landing. An invading fleet's fire thins them first, and
+a big enough fleet destroys them all. The defenders who are left fire first,
+so an attacker needs about twice their number to be confident, and a world
+with none falls to a single transport. At 2 points each, they are cheap insurance for any world
 worth taking.
 
 *The orbit's defence* is your starbase there, its escorts on Guard a
@@ -1172,8 +1173,8 @@ every world, so time the change for the empire as a whole.
 (11) reports its batteries, armies, production, stardock, and the fleets in
 orbit; View a World (9) reports only its owner and production. Count the
 batteries and the armies, then bring what the count demands: the batteries
-must be down before an invasion can land, and you want twice the defender's
-armies to be confident of the landing (see @attacking-worlds).
+must be down before an invasion can land, and you want twice the armies
+your fleet's fire leaves standing to be confident of the landing (see @attacking-worlds).
 
 *Choose your enemies.* Diplomacy knows only Neutral and Enemy. Declare an
 empire Enemy and your fleets attack its fleets wherever they meet, as far as
@@ -2211,9 +2212,8 @@ hits strike the batteries only and never the stardock, armies, or industry. It
 stops as soon as the last battery falls. Once the batteries are cleared, the
 softening pass targets armies only. Industry and stored goods take no damage
 during an invasion. Its CRT column compares bombardment AS against
-`armies x 10`. Orbital softening may destroy at most half of the defender's
-starting armies, so there is always a real landing battle when a world began
-the assault with a garrison. Once armies land, the landing battle in invasion
+`armies x 10`. Nothing caps it: a fleet strong enough destroys the whole
+garrison, and the transports land unopposed. Once armies land, the landing battle in invasion
 and blitz is fought as described next.
 
 A fleet whose landing fails holds in orbit on Hold with a failure report. An
