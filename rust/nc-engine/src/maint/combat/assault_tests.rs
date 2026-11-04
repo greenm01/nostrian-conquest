@@ -299,6 +299,34 @@ fn an_undefended_world_with_an_empty_dock_loses_armies_at_once() {
 }
 
 #[test]
+fn hits_the_ruined_industry_cannot_spend_go_back_to_the_armies() {
+    let mut planet = world(0, 50, 0, 0);
+    planet.production = Real48::from_int(1);
+    planet.stored_goods = Real48::ZERO;
+
+    // 120 hits: a sixth, 20, destroy two armies. Production is at its floor
+    // and the goods are gone, so the other 100 come back to the armies at
+    // full strength and destroy ten more (t257).
+    apply_planet_bombardment_damage(&mut planet, 120, 4);
+    assert_eq!(planet.armies, 38);
+    assert_eq!(planet.production.to_f64(), 1.0);
+}
+
+#[test]
+fn the_industry_spends_what_it_can_and_the_armies_take_the_rest() {
+    let mut planet = world(0, 50, 0, 0);
+    planet.production = Real48::from_int(3);
+    planet.stored_goods = Real48::ZERO;
+
+    // 120 hits: two armies for the sixth. Of the other 100, 40 take the
+    // production's last two points at half strength, and 60 come back to
+    // the armies: six more.
+    apply_planet_bombardment_damage(&mut planet, 120, 4);
+    assert_eq!(planet.armies, 42);
+    assert_eq!(planet.production.to_f64(), 1.0);
+}
+
+#[test]
 fn hits_short_of_the_last_battery_do_not_spill_onto_the_dock() {
     let mut planet = world(3, 0, 5, 0);
 

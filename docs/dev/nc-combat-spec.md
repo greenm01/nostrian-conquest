@@ -551,7 +551,10 @@ last one, or the first round at a world with none. Hits that pass the
 stardock split: `floor(h / 6)` go to the armies at full strength (t252),
 and the rest, with what the armies cannot spend, are halved, rounded down,
 and strike goods and factories, so a garrison cannot shield the industry
-(t238). The dock takes full fire. Bombardment never takes production
+(t238). Hits the industry cannot spend (goods at 0 and production at its
+floor; a point costs 20 hits) go back to the armies at full strength, so
+hits are lost only when nothing is left that they can destroy (t257). The dock takes full
+fire. Bombardment never takes production
 below `min(production before, 1.0)`, as classic's passes end (t237).
 
 **Some fire gets past the batteries (t234).** In a round that starts with a
@@ -564,7 +567,8 @@ on top of the hits the batteries take.
 - What the dock cannot spend passes to the armies, and what the armies
   cannot spend passes to goods and factories. The industry share, with the
   armies' leftover, is halved, rounded down (t236); the armies take theirs,
-  with the dock's leftover, at full strength (t252).
+  with the dock's leftover, at full strength (t252). What the industry
+  cannot spend goes back to the armies (t257).
 
 Battery outcomes, the attacker's losses and worlds without batteries are
 unchanged

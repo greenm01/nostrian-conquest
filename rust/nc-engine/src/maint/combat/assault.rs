@@ -303,11 +303,13 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
     // Past the dock, a sixth of the fire strikes the armies and the rest the
     // industry, so a garrison cannot shield the factories (t238). The armies
     // take their sixth at full strength (t252); the industry, with what the
-    // armies leave, at half.
+    // armies leave, at half. What the industry cannot spend goes back to the
+    // armies, so no hit is wasted while the world has armies left (t257).
     let hits = reduce_stardock(planet, hits);
     let to_armies = hits / 6;
     let rest = hit_armies(planet, to_armies);
-    hit_industry(planet, (hits - to_armies + rest) / 2);
+    let unspent = hit_industry(planet, hits - to_armies + rest);
+    hit_armies(planet, unspent);
 }
 
 /// The extra hits that get past standing batteries: a share of the round's
@@ -322,13 +324,15 @@ fn bombardment_leak(planet: &nc_data::Planet, hits: u32, roll: u8) -> u32 {
 
 /// Leaked hits split as classic's passes do: 40% at the dock, 10% at the
 /// armies, the rest at goods and factories, those at half strength (the
-/// armies at full, t252). What a target cannot take passes down to the next.
+/// armies at full, t252). What a target cannot take passes down to the next,
+/// and what the industry cannot take goes back to the armies (t257).
 fn apply_leak(planet: &mut nc_data::Planet, leak: u32) {
     let dock = leak * 2 / 5;
     let armies = leak / 10;
     let rest = reduce_stardock(planet, dock);
     let rest = hit_armies(planet, armies + rest);
-    hit_industry(planet, (leak - dock - armies + rest) / 2);
+    let unspent = hit_industry(planet, leak - dock - armies + rest);
+    hit_armies(planet, unspent);
 }
 
 /// Armies cost their DS in hits. Returns the hits left over.
@@ -339,20 +343,31 @@ fn hit_armies(planet: &mut nc_data::Planet, hits: u32) -> u32 {
     hits - army_loss * GROUND_DS_ARMY
 }
 
-fn hit_industry(planet: &mut nc_data::Planet, hits: u32) {
-    let hits = hits / 10;
+/// Strikes goods and factories at half strength, a point for every 20 hits.
+/// Returns the hits left over once both are spent (goods gone, production at
+/// its floor); while either remains, the whole volley counts as spent.
+fn hit_industry(planet: &mut nc_data::Planet, raw_hits: u32) -> u32 {
+    let hits = raw_hits / 2 / 10;
+    // Only positive goods burn, fraction and all; a debt is left alone.
+    let goods = planet.stored_goods.to_f64();
+    // Never below 1.0, as classic's passes end (t237); a world already
+    // under 1.0 keeps what it has.
+    let production = planet.production.to_f64();
+    let floor = production.min(1.0);
+    let needed = (goods.max(0.0) / f64::from(GOODS_DESTROYED_PER_POINT))
+        .ceil()
+        .max((production - floor).ceil()) as u32;
     if hits > 0 {
-        // Only positive goods burn, fraction and all; a debt is left alone.
-        let goods = planet.stored_goods.to_f64();
         if goods > 0.0 {
             let goods_loss = f64::from(hits.saturating_mul(GOODS_DESTROYED_PER_POINT));
             planet.stored_goods = Real48::from_f64((goods - goods_loss).max(0.0));
         }
-        // Never below 1.0, as classic's passes end (t237); a world already
-        // under 1.0 keeps what it has.
-        let production = planet.production.to_f64();
-        let floor = production.min(1.0);
         planet.production = Real48::from_f64((production - f64::from(hits)).max(floor));
+    }
+    if hits > needed {
+        raw_hits - needed * 20
+    } else {
+        0
     }
 }
 

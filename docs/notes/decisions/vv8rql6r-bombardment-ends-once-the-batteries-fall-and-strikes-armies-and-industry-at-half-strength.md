@@ -99,3 +99,20 @@ unchanged at about 18. In the t236 model's BB4-B2 case, armies lost per
 turn go from 3.8 to 7.0 and production lost from 11.6 to 12.1
 (`tools/combat-model/collateral_t236.py`). Code: `apply_planet_bombardment_damage` and
 `apply_leak` in `rust/nc-engine/src/maint/combat/assault.rs`.
+
+## Amendment (t257, 2026-11-03)
+
+Hits the industry could not spend were lost. On Maurice in the x13 lab game,
+fleet 6 (BB3 CA1) and later fleet 2 bombarded a world with no batteries and
+no goods for five years. Production fell from 64 to 1.6, so most of each
+round was wasted, and the garrison fell only about 11 armies a year while
+the AI rebuilt it. The owner chose on 2026-11-03 that no hits are wasted
+while there are still assets to destroy: what the industry cannot spend
+(goods at 0, production at its floor, 20 hits a point) goes back to the
+armies at full strength, in the main fire and in the leak.
+
+A world whose industry still stands takes the same damage as before. A world
+with its industry wrecked loses its armies about six times as fast. Code:
+`hit_industry`, `apply_planet_bombardment_damage` and `apply_leak` in
+`rust/nc-engine/src/maint/combat/assault.rs`, with tests in
+`assault_tests.rs`.
