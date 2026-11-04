@@ -813,7 +813,11 @@ When a fleet arrives depends on its mission.
 A world mission often takes a year longer than a move to the same sector. The
 *ETA* command shows the year a fleet will arrive; for a world mission, answer
 yes to "Include time to enter system?" @appendix-combat gives the exact rule
-for when a fleet counts as inside a system.
+for when a fleet counts as inside a system. The fleet list's ETA column counts
+the maintenance runs until the fleet's mission acts. A fleet already in orbit
+with orders to bombard, invade, blitz, view, colonize, or salvage acts at the
+next run, so it shows 1. A 0 means the fleet is already doing its job, such as
+holding, patrolling, or guarding on station.
 
 #pagebreak()
 

@@ -8,13 +8,37 @@ pub fn fleet_target_eta_estimate(
     mission_code: u8,
     destination: [u8; 2],
 ) -> FleetEtaEstimate {
-    estimate_fleet_eta_to_destination(
-        game_data,
-        fleet_record_index_1_based.saturating_sub(1),
-        destination,
-        Order::from_code(mission_code).targets_world(),
-        true,
+    let order = Order::from_code(mission_code);
+    until_it_acts(
+        estimate_fleet_eta_to_destination(
+            game_data,
+            fleet_record_index_1_based.saturating_sub(1),
+            destination,
+            order.targets_world(),
+            true,
+        ),
+        order,
     )
+}
+
+/// An ETA counts the maintenance runs until the mission acts. A fleet
+/// already at its world strikes, views, colonizes or salvages at the next
+/// run, so it shows 1; 0 is left for missions already carried out on
+/// station, such as Hold, Patrol and the guard missions.
+fn until_it_acts(estimate: FleetEtaEstimate, order: Order) -> FleetEtaEstimate {
+    let acts_at_world = matches!(
+        order,
+        Order::BombardWorld
+            | Order::InvadeWorld
+            | Order::BlitzWorld
+            | Order::ViewWorld
+            | Order::ColonizeWorld
+            | Order::Salvage
+    );
+    match estimate {
+        FleetEtaEstimate::Arrived if acts_at_world => FleetEtaEstimate::Years(1),
+        other => other,
+    }
 }
 
 pub fn fleet_target_eta_message(
@@ -133,5 +157,5 @@ fn fleet_display_eta_estimate(game_data: &CoreGameData, fleet_idx: usize) -> Fle
     if target[0] == 0 || target[1] == 0 || target[0] > map_size || target[1] > map_size {
         return FleetEtaEstimate::Unreachable;
     }
-    estimate_fleet_eta(game_data, fleet_idx)
+    until_it_acts(estimate_fleet_eta(game_data, fleet_idx), fleet.order)
 }

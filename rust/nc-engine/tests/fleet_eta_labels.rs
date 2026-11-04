@@ -45,3 +45,25 @@ fn every_moving_order_counts_years_to_a_distant_target() {
         );
     }
 }
+
+#[test]
+fn a_world_mission_parked_at_its_world_acts_next_year() {
+    // ETA counts maintenance runs until the mission acts: an invasion
+    // ordered from orbit lands at the next run, so it shows 1, not 0.
+    for order in [Order::InvadeWorld, Order::BlitzWorld, Order::BombardWorld] {
+        let mut game_data = fleet_in_target_sector(order, 1);
+        let fleet = &mut game_data.fleets[0];
+        nc_data::set_fleet_at_rest(fleet);
+        fleet.depth = Real48::from_int(1);
+        assert_eq!(fleet_list_eta_label(&game_data, 0), "1", "{order:?}");
+        let target = game_data.fleets[0].target.to_array();
+        assert_eq!(
+            fleet_target_eta_estimate(&game_data, 1, order.code(), target),
+            FleetEtaEstimate::Years(1),
+            "{order:?}"
+        );
+    }
+    let mut game_data = fleet_in_target_sector(Order::GuardBlockadeWorld, 1);
+    game_data.fleets[0].depth = Real48::from_int(1);
+    assert_eq!(fleet_list_eta_label(&game_data, 0), "0");
+}
