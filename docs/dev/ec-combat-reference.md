@@ -192,7 +192,9 @@ Rust matches classic's odds, not its random sequence.
   focus theirs. Destroyers hunt cruisers and cruisers hunt battleships
   (t255), and all fire takes the combat line first.
   Classic shooters pick one target and keep it; batteries only ever target
-  warships, except in a blitz landing. Both hold part of the larger side's
+  warships, except in a blitz landing, and pick them at random, ship by
+  ship. NC shares battery hits among the warship classes by ship count to
+  match (t258). Both hold part of the larger side's
   force back each round: NC dropped classic's engagement count, which made
   its battles square-law combat that rewards doom stacks, and restored it in
   AS for fleet battles under t232; see

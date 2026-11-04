@@ -280,6 +280,12 @@ points in other ways. No rule change is proposed.
 A first run with sieges alone found batteries alone the best defence. That
 was an artifact of leaving out the blitz.
 
+Re-run under t258's battery targeting (batteries share their fire by ship
+count), the finding holds: the best defence is unchanged, and sieges are
+a little harder (capture value 0.245 → 0.224 at 1.5 times, 0.589 → 0.583
+at twice). Siege fleets shift from battleships to cruisers. Figures are in
+[kazzj70c](../decisions/kazzj70c-batteries-pick-their-targets-at-random-among-the-warships.md).
+
 ## Connections
 
 - [e1w4xpes](e1w4xpes-lanchesters-square-law-doom-stacks-and-the-orbit.md):

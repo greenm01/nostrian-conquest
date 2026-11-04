@@ -86,7 +86,8 @@ fn the_executor_beats_the_aggressor() {
 /// t198 no mixed fleet gets a combat bonus, and since t206 heavies cover
 /// destroyers, which finish cripples at half price. Since t194 an attacker
 /// learns a world's figures after bombarding it. Since t255 each hull fires
-/// on its own. The values below are recorded with all five.
+/// on its own, and since t258 batteries share their fire by ship count. The
+/// values below are recorded with all six.
 #[test]
 fn the_classic_doctrine_replays_t154_exactly() {
     let classic = Doctrine {
@@ -127,11 +128,11 @@ fn the_classic_doctrine_replays_t154_exactly() {
     };
     assert_eq!(
         play_match(100000, &[tuned, baseline, baseline, baseline], 60),
-        recorded([759, 243, 185, 273], [9, 3, 4, 4])
+        recorded([618, 102, 111, 275], [9, 3, 3, 5])
     );
     assert_eq!(
         play_match(100001, &mixed, 60),
-        recorded([267, 47, 513, 53], [7, 1, 11, 1])
+        recorded([258, 59, 711, 0], [7, 1, 12, 0])
     );
 }
 

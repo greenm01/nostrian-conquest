@@ -566,22 +566,59 @@ pub(super) fn apply_battery_hits_to_fleet(
     mut hits: u32,
     critical_hits: u32,
 ) {
-    while hits > 0 {
-        let (battery_line_order, auxiliary_order);
-        let target_order: &[usize] = if fleet_combat_line_present(state) {
-            battery_line_order = fleet_battery_line_order();
-            &battery_line_order
-        } else {
-            auxiliary_order = fleet_auxiliary_order();
-            &auxiliary_order
-        };
-        if !apply_focus_fire_hits_to_fleet_classes(state, &mut hits, target_order, false, None) {
-            break;
+    if fleet_combat_line_present(state) {
+        apply_battery_hits_to_line(state, &mut hits);
+    }
+    // Scouts, transports and ETACs are hit only once no warship is left,
+    // in the same volley if the line has just fallen.
+    if !fleet_combat_line_present(state) {
+        let order = fleet_auxiliary_order();
+        while hits > 0
+            && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &order, false, None)
+        {
         }
     }
     for _ in 0..critical_hits {
         if !apply_critical_hit_to_fleet(state) {
             break;
+        }
+    }
+}
+
+/// Batteries pick their targets among the warships at random, ship by ship,
+/// as classic's do (t258): their hits split among the classes in proportion
+/// to each class's ship count, rounded so they add up, and each share is
+/// focus fire on its own class. A share too small to destroy another ship
+/// cripples one for its DS, as damage builds up on a classic battleship.
+/// What the shares cannot spend is split again among the ships left; when no
+/// share can buy anything, the rest goes down the line, cheapest hull first.
+fn apply_battery_hits_to_line(state: &mut FleetCombatState, hits: &mut u32) {
+    let line = fleet_battery_line_order();
+    while *hits > 0 {
+        let counts = line.map(|idx| state.counts[idx] as u64);
+        let total: u64 = counts.iter().sum();
+        if total == 0 {
+            return;
+        }
+        let (mut cumulative, mut given, mut left, mut progress) = (0u64, 0u32, 0u32, false);
+        for (idx, count) in line.into_iter().zip(counts) {
+            cumulative += count;
+            let upto = ((u64::from(*hits) * cumulative + total / 2) / total) as u32;
+            let mut share = upto - given;
+            given = upto;
+            progress |=
+                apply_focus_fire_hits_to_fleet_classes(state, &mut share, &[idx], false, None);
+            let ds = fleet_class_ds(idx);
+            if ds > 0 && share >= ds && state.nominal_count(idx) > 0 {
+                state.cripple(idx, 1);
+                share -= ds;
+                progress = true;
+            }
+            left += share;
+        }
+        *hits = left;
+        if !progress && !apply_focus_fire_hits_to_fleet_classes(state, hits, &line, false, None) {
+            return;
         }
     }
 }

@@ -606,8 +606,10 @@ destroyers beat cruisers, and cruisers beat battleships, and no one fleet mix
 beats every other. Build for the enemy you expect to meet. A fleet whose cruisers and battleships are worth twice the
 enemy's adds +1 to its die. Lean on cruisers and battleships to hold a system
 or win a skirmish. Add destroyers when you mean to wipe out an enemy fleet.
-Ground batteries fire the way destroyers do, which is why ships attacking a
-fortified world are destroyed, not crippled.
+Ground batteries fire the way destroyers do, so ships attacking a fortified
+world are mostly destroyed, not crippled. Batteries pick their targets at
+random among your warships. A screen of cruisers does not hide your
+battleships.
 
 == What to Expect
 
@@ -1754,7 +1756,7 @@ Combat is more than a numbers game. Each ship class has a tactical role set by h
 
 Together they are a deadly pair. Heavy ships soften the line and stand in front of it. Destroyers finish it from behind them. Each class's pool carries its own leftover hits: one class's hits never pay for another's.
 
-#admonition("NOTE")[All return fire from ground batteries counts as *Focus Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one, destroyers first. Fortified worlds do not "soften" an attacker; they destroy him.]
+#admonition("NOTE")[All return fire from ground batteries counts as *Focus Fire*, at the full prices: 2x DS for a healthy ship and 1x DS for a crippled one. Batteries pick targets at random among the warships, so each class takes a share of the hits in proportion to its number of ships. Fortified worlds do not "soften" an attacker; they destroy him.]
 
 == Fleet Limits
 
@@ -1848,7 +1850,7 @@ No world is too small to hide everything, and no battery wall covers all of a la
 
 Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more. An army takes 10 hits, and a ship in the stardock as many hits as its own DS. Ships firing at the batteries read the bombardment table at full fleet strength, and so do the guns firing back at ships in orbit. A battery costs 20 but fires like a battleship, so a fortress still hits far above its price. A lone cruiser cannot level a fortified world in a single volley.
 
-Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships breaks any fortress's batteries in one year. It loses less than the batteries cost if it is cruisers or battleships, and about a third more if it is mostly destroyers. Twice their cost breaks them in the first year about a quarter of the time with destroyers and cruisers, and most of the time with battleships. Kept on station against a world that rebuilds its batteries, it breaks them later only with heavy reinforcement (see @sieges). A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. The cheapest attack is about four to five times their cost. Past that, more ships no longer make it cheaper: a crowded orbit is an easy target, and the batteries read a better column (see Planetary Columns and Hit Formula). A stack of twenty-five times their cost still takes the world, but loses about two and a half times what one of five times loses. Build batteries to buy time; bring heavy fleets to break through faster.
+Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships breaks any fortress's batteries in one year. It loses less than the batteries cost if it is cruisers or battleships, and about a third more if it is mostly destroyers. Twice their cost breaks them in the first year about a quarter of the time with destroyers and cruisers, and about half the time with battleships. Kept on station against a world that rebuilds its batteries, it breaks them later only with heavy reinforcement (see @sieges). A force of one and a half times their cost usually fails, and a force no larger than their cost is destroyed. The cheapest attack is about four to five times their cost. Past that, more ships no longer make it cheaper: a crowded orbit is an easy target, and the batteries read a better column (see Planetary Columns and Hit Formula). A stack of twenty-five times their cost still takes the world, but loses about two and a half times what one of five times loses. Build batteries to buy time; bring heavy fleets to break through faster.
 
 @missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The bombardment table, the two-step battery rule, the batteries-only return-fire rule, and the other combat tables follow below.
 
@@ -2009,7 +2011,8 @@ outright, a crippled ship first.
   battleships, cruisers, destroyers, starbases. Destroyer fire takes
   cruisers first and cruiser fire battleships first, then the same line. A
   class that stands but cannot be afforded shields those behind it. Battery
-  return fire lands destroyers first.
+  return fire is shared among the warship classes by ship count (see
+  Planetary return fire below).
 - Hits a pool cannot spend carry over, in that pool, to the side's next
   exchange in the same battle, including the pursuit exchange.
 - Each firing class's hits carry separately.
@@ -2122,6 +2125,22 @@ Planetary return fire is:
 Return fire from batteries uses the *focus fire* rule. Hits skip the crippled
 state and go straight to the destroyed pool, paying `2x DS` for a healthy ship
 and `1x DS` for a crippled one.
+
+Batteries pick their targets at random among the warships, ship by ship. So
+their hits are shared among destroyers, cruisers, battleships, and starbases
+in proportion to how many ships of each class the fleet has. Each class
+spends its share on its own ships: it finishes crippled ships first, then
+destroys healthy ones. A share too small to destroy one more ship cripples
+one if it can pay that ship's DS. Hits a share cannot spend are shared
+again among the ships still standing. When no share can buy anything, the
+rest go to the cheapest ship they can pay for. Transports, scouts, and ETACs
+are hit only when the fleet has no warships left.
+
+For example, 518 hits on 5 battleships and 9 cruisers split 185 to the
+battleships and 333 to the cruisers. The cruisers' share destroys four
+cruisers (74 each) and cripples a fifth (37). The battleships' share cannot
+destroy a battleship (210), so it cripples one (105). The 80 hits left split
+40 and 40, and the cruisers' 40 finish the crippled cruiser (37).
 
 Orbital hits on a world pay each target's DS on the same 10x scale:
 

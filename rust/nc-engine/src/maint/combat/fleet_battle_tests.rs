@@ -346,8 +346,26 @@ fn suppression_strikes_healthy_and_crippled_hulls_in_proportion() {
     assert_eq!(carried.0, 0);
 }
 
-/// Battery return fire and landing fire keep the pre-t206 prices and
-/// order: cripples finish at full DS, destroyers in front.
+/// Batteries share their hits by ship count (t258), so battleships behind a
+/// cruiser screen take their part. 518 hits on 5 BB and 9 CA: the cruisers'
+/// 333 destroy four (74 each) and cripple a fifth with the last 37; the
+/// battleships' 185 cannot destroy one (210) and cripple one for its 105.
+/// The 80 left split 40 and 40: the cruisers' share finishes the crippled
+/// cruiser for 37, and the 43 after that can buy nothing.
+#[test]
+fn battery_fire_reaches_battleships_in_proportion_to_their_numbers() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_BB] = 5;
+    state.counts[IDX_CA] = 9;
+    apply_battery_hits_to_fleet(&mut state, 518, 0);
+    assert_eq!(state.counts[IDX_CA], 4);
+    assert_eq!(state.crippled_count(IDX_CA), 0);
+    assert_eq!(state.counts[IDX_BB], 5);
+    assert_eq!(state.crippled_count(IDX_BB), 1);
+}
+
+/// Battery return fire and landing fire keep the pre-t206 prices: cripples
+/// finish at full DS.
 #[test]
 fn battery_and_landing_fire_keep_todays_prices() {
     let mut state = FleetCombatState::default();
@@ -366,7 +384,7 @@ fn battery_and_landing_fire_keep_todays_prices() {
     assert_eq!(
         (state.counts[IDX_CA], state.counts[IDX_DD]),
         (1, 0),
-        "battery fire finishes the destroyer for 7 and cannot afford the cruiser's 37"
+        "battery fire splits 15 and 15 by ship count: the destroyer's share finishes it for 7, and nothing can afford the cruiser's 37"
     );
     let mut landing = FleetCombatState::default();
     landing.counts[IDX_TT] = 1;

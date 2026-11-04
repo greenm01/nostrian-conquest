@@ -520,7 +520,14 @@ This creates a deadly synergy where heavy ships cripple the enemy line, while li
    that order. The heavies cover the destroyers behind them.
    A class with nothing left to hit is skipped; a class that stands but
    cannot be afforded shields those behind it, and the hits carry.
-2. Battery return fire works the line cheapest first, **DD, CA, BB, SB**.
+2. Battery return fire is shared by ship count (t258), as classic's
+   batteries pick a random warship. The hits split among **DD, CA, BB, SB**
+   in proportion to each class's ship count (cumulative rounding in that
+   order). Each share is focus fire on its own class at battery prices
+   (finish a cripple for `1x DS`, destroy a healthy hull for `2x DS`), and a
+   share too small for another kill cripples one healthy hull for `1x DS`.
+   What the shares cannot spend splits again among the ships left; when no
+   share can buy anything, the rest goes down **DD, CA, BB, SB**.
 3. Auxiliaries (**SC, TT, ET**) are screened until the combat line collapses.
 4. Critical hits and landing fire keep their own orders (cheapest hull
    first; transports first).

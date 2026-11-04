@@ -533,4 +533,5 @@ bombard-then-blitz or blitz) against every defence of the same world
 It solves the two-player zero-sum game on the chance the world falls in 8
 years, and again on the cost exchange, with each side's mass by component
 and a bootstrap of the value and support. It reuses `metagame.py`'s solver
-and needs numpy and scipy. Results are in `nc_assault_game_t254.json`.
+and needs numpy and scipy. Results are in `nc_assault_game_t254.json`, and
+in `nc_assault_game_t258.json` re-run under t258's battery targeting.

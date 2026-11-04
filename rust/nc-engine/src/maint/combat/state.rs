@@ -388,8 +388,9 @@ pub(super) fn fleet_combat_line_order() -> [usize; 4] {
     [IDX_BB, IDX_CA, IDX_DD, IDX_SB]
 }
 
-/// The order battery return fire works through the combat line: the
-/// cheapest hulls first, as every fire did before t206.
+/// The combat line as battery return fire sees it. Batteries share their
+/// hits among these classes by ship count (t258); what no share can spend
+/// goes down this order, cheapest hull first.
 pub(super) fn fleet_battery_line_order() -> [usize; 4] {
     [IDX_DD, IDX_CA, IDX_BB, IDX_SB]
 }

@@ -78,6 +78,9 @@ starbase 42.1% / 13.6% (unchanged). The participation model agrees: two
 - **Cover for battery fire too.** Would cut siege clearance (four
   batteries at 3x cost: 73.9% to 33.2%). Batteries keep the old order and
   prices.
+  Superseded for the order by
+  [kazzj70c](kazzj70c-batteries-pick-their-targets-at-random-among-the-warships.md)
+  (t258): batteries share their hits by ship count.
 
 ## Consequences
 
