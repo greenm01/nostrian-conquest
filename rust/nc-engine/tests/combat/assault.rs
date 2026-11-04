@@ -1113,3 +1113,58 @@ fn a_world_guard_turns_back_an_attacker_that_will_not_fight_it() {
         );
     }
 }
+
+#[test]
+fn an_assault_fleet_confronted_at_its_target_aborts_and_seeks_home() {
+    // Five cruisers on Hold in orbit (not a guard) catch an invasion or a
+    // blitz diving in. Whether it breaks off or is beaten, it lands nothing:
+    // the mission is aborted and the survivors seek home.
+    let cruiser_and_troops = Ships {
+        ca: 1,
+        tt: 10,
+        armies: 10,
+        ..Ships::default()
+    };
+    let troops_only = Ships {
+        tt: 10,
+        armies: 10,
+        ..Ships::default()
+    };
+    for (order, ships, roe) in [
+        (Order::BlitzWorld, troops_only, 0),
+        (Order::BlitzWorld, cruiser_and_troops, 3),
+        (Order::InvadeWorld, cruiser_and_troops, 3),
+    ] {
+        for seed in 0..4u64 {
+            let mut game_data = empty_board(1, 0);
+            diving_on_system(&mut game_data, 0, 1, order, ships, roe);
+            far_home(&mut game_data);
+            place_fleet(
+                &mut game_data,
+                4,
+                2,
+                SYSTEM,
+                Order::HoldPosition,
+                SYSTEM,
+                Ships {
+                    ca: 5,
+                    ..Ships::default()
+                },
+                10,
+            );
+            set_fleet_at_rest(&mut game_data.fleets[4]);
+
+            let events = run_neutral(&mut game_data, seed);
+
+            let name = format!("{order:?} with {} cruisers, seed {seed}", ships.ca);
+            assert!(!events.fleet_battle_events.is_empty(), "{name}");
+            assert!(events.assault_report_events.is_empty(), "{name}");
+            assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 2, "{name}");
+            let fleet = &game_data.fleets[0];
+            assert!(
+                !has_any_force(fleet) || fleet.order == Order::SeekHome,
+                "{name}: {fleet:?}"
+            );
+        }
+    }
+}
