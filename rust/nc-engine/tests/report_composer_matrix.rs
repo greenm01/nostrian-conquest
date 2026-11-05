@@ -128,6 +128,73 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
     assert!(!text.contains("Interception successful."), "{text}");
 }
 
+/// Fleet 4 escapes a battle with pursuit fire, then joins another fleet the
+/// same year, so its record is gone when the reports are written. The escape
+/// report still supersedes the battle alert: one report, not two.
+#[test]
+fn an_escape_supersedes_the_battle_even_when_the_fleet_joins_later() {
+    let game_data = seeded_game_data();
+    let transports = ShipLosses {
+        transports: 21,
+        ..ShipLosses::default()
+    };
+    let one_transport = ShipLosses {
+        transports: 1,
+        ..ShipLosses::default()
+    };
+    let destroyers = ShipLosses {
+        destroyers: 2,
+        ..ShipLosses::default()
+    };
+    let mut events = MaintenanceEvents::default();
+    events.fleet_battle_events.push(FleetBattleEvent {
+        reporting_empire: 1,
+        reporting_fleet_number: Some(4),
+        reporting_mission: Some(Mission::MoveOnly),
+        perspective: FleetBattlePerspective::Attacked,
+        coords: [4, 10],
+        enemy_empires: vec![2],
+        primary_enemy_fleet_number: Some(16),
+        held_field: false,
+        friendly_initial: transports,
+        friendly_initial_starbases: 0,
+        friendly_loaded_armies_initial: 21,
+        friendly_losses: one_transport,
+        friendly_starbases_lost: 0,
+        enemy_initial: destroyers,
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        stardate_week: Some(9),
+        surprise: true,
+    });
+    events
+        .encounter_disposition_events
+        .push(EncounterDispositionEvent::PursuitFire {
+            fleet_idx: usize::MAX,
+            fleet_number: 4,
+            owner_empire: 1,
+            mission: Some(Mission::MoveOnly),
+            coords: [4, 10],
+            friendly_initial: transports,
+            friendly_loaded_armies_initial: 21,
+            target_empire: 2,
+            target_fleet_number: Some(16),
+            enemy_initial: destroyers,
+            retreat_target_coords: [4, 11],
+            resumed: true,
+            losses_sustained: one_transport,
+            enemy_losses_inflicted: ShipLosses::default(),
+            reason: EncounterDispositionReason::UnarmedEscape,
+            stardate_week: Some(9),
+        });
+
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events));
+    assert_eq!(texts.len(), 1, "one report for one engagement: {texts:?}");
+    assert!(texts[0].contains("pursuit"), "{}", texts[0]);
+}
+
 #[test]
 fn roe_retreat_and_abort_merge_into_one_report() {
     let mut game_data = seeded_game_data();
@@ -149,6 +216,7 @@ fn roe_retreat_and_abort_merge_into_one_report() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
+            fleet_number: 12,
             owner_empire: 1,
             mission: Some(Mission::InvadeWorld),
             coords: [6, 6],

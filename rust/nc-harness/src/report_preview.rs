@@ -946,6 +946,7 @@ fn build_encounter_preview(
                 .encounter_disposition_events
                 .push(EncounterDispositionEvent::Retreated {
                     fleet_idx: ATTACKER_FLEET_IDX,
+                    fleet_number: ATTACKER_FLEET_NUMBER,
                     owner_empire: ATTACKER_EMPIRE,
                     mission: Some(Mission::InvadeWorld),
                     coords: world.target_coords,
@@ -984,6 +985,7 @@ fn build_encounter_preview(
             world.events.encounter_disposition_events.push(
                 EncounterDispositionEvent::PursuitFire {
                     fleet_idx: ATTACKER_FLEET_IDX,
+                    fleet_number: ATTACKER_FLEET_NUMBER,
                     owner_empire: ATTACKER_EMPIRE,
                     mission: Some(Mission::BombardWorld),
                     coords: world.target_coords,

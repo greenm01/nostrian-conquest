@@ -33,22 +33,15 @@ impl ReportSuppressionPlan {
             .iter()
             .filter_map(|event| match *event {
                 nc_data::EncounterDispositionEvent::Retreated {
-                    fleet_idx,
+                    fleet_number,
                     owner_empire,
                     ..
                 }
                 | nc_data::EncounterDispositionEvent::PursuitFire {
-                    fleet_idx,
+                    fleet_number,
                     owner_empire,
                     ..
-                } => {
-                    let fleet_number = game_data
-                        .fleets
-                        .get(fleet_idx)
-                        .map(|f| f.fleet_number.0 as u8)
-                        .filter(|n| *n != 0)?;
-                    Some((owner_empire, fleet_number))
-                }
+                } => (fleet_number != 0).then_some((owner_empire, fleet_number)),
                 _ => None,
             })
             .collect();

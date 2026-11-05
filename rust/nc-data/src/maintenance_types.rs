@@ -630,6 +630,9 @@ pub enum EncounterDispositionEvent {
     },
     Retreated {
         fleet_idx: usize,
+        /// The fleet's number at the battle, kept for reports when a later
+        /// join or salvage removes the fleet this turn; 0 when unnumbered.
+        fleet_number: u8,
         owner_empire: u8,
         mission: Option<Mission>,
         coords: [u8; 2],
@@ -653,6 +656,9 @@ pub enum EncounterDispositionEvent {
     /// exchange before it got away.
     PursuitFire {
         fleet_idx: usize,
+        /// The fleet's number at the battle, kept for reports when a later
+        /// join or salvage removes the fleet this turn; 0 when unnumbered.
+        fleet_number: u8,
         owner_empire: u8,
         mission: Option<Mission>,
         coords: [u8; 2],

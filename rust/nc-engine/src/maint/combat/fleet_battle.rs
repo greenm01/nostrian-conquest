@@ -951,9 +951,11 @@ pub(super) fn fight_encounter_with_dice(
                 .unwrap_or(0);
             let enemy_initial = ship_counts_from_state(&enemy_before);
             let retreat_target_coords = game_data.fleets[fleet_idx].target.to_array();
+            let fleet_number = game_data.fleets[fleet_idx].fleet_number.0 as u8;
             let event = if withdrawal.pursued {
                 EncounterDispositionEvent::PursuitFire {
                     fleet_idx,
+                    fleet_number,
                     owner_empire,
                     mission,
                     coords,
@@ -972,6 +974,7 @@ pub(super) fn fight_encounter_with_dice(
             } else {
                 EncounterDispositionEvent::Retreated {
                     fleet_idx,
+                    fleet_number,
                     owner_empire,
                     mission,
                     coords,

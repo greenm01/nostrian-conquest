@@ -1398,6 +1398,7 @@ fn results_merge_roe_retreat_into_invasion_abort_report() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
+            fleet_number: 1,
             owner_empire: 1,
             mission: Some(Mission::InvadeWorld),
             coords: [15, 13],
@@ -1459,6 +1460,7 @@ fn roe_retreat_without_losses_uses_natural_wording() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
+            fleet_number: 1,
             owner_empire: 1,
             mission: Some(Mission::MoveOnly),
             coords: [11, 12],
@@ -1534,6 +1536,7 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 4,
+            fleet_number: 1,
             owner_empire: 2,
             mission: Some(Mission::MoveOnly),
             coords: [9, 13],
@@ -1701,6 +1704,7 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 4,
+            fleet_number: 1,
             owner_empire: 2,
             mission: Some(Mission::MoveOnly),
             coords: [9, 6],
@@ -1830,6 +1834,7 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
+            fleet_number: 1,
             owner_empire: 1,
             mission: Some(Mission::BombardWorld),
             coords: [9, 6],
