@@ -1684,6 +1684,33 @@ are named as in [game history backups](../../dev/game-history-backups.md).
     - `human_demos.py`;
     - `fleet_ppo.py --human-demos`. Training waits for 20 human games.
 
+**Progress (2026-11-06): the first game with logged turns.** The owner's
+x13 lab game (`x13-ai2-2026-11-06.db`, 3000–3100) is the first with
+`ai_turns`. Empire 1 (human) won against three hard AI seats: Empire 2
+(land-grab) fell in 3060, Empire 3 (rusher) in 3041 and Empire 4 (turtle)
+at the end.
+
+- **Review** (`human_review.py` with `fleet-final`):
+  - The human led from the start, with 7 worlds by 3005 against the AI
+    seats' 3 or 4. The critic rated Empire 1 at 0.38 by 3008.
+  - Empire 3 was lost by 3013–3018 (0.08 to 0.00, down to 2 worlds), more
+    than 20 years before its fall. Empire 2 peaked at 0.27 with 7 worlds
+    in 3020 and fell in steps: 3021, 3031 and 3035.
+  - Empire 4 held exactly 4 worlds from 3006 to 3066 and stayed at
+    0.20–0.23 while Empire 1 rose to about 1.0. The critic does not see a
+    turtle that never grows as losing, and its shares pass 1 (1.08 in
+    3065).
+  - The agent kept 60% tax; the player ran 35–65%.
+- **Replays.** With today's engine, `opening_position` matches the stored
+  year on every AI planet, fleet and player field (report pointers aside)
+  in 84 of 100 years. Years 3007–3039 differ: the merge ROE rule (warships
+  that join an unarmed fleet keep their ROE) changed after those years were
+  played. Demos must skip years whose opening does not match.
+- **Defensive mode broke AI turns.** The agent playing a seat with a
+  fortified world ordered ships there and its turn was refused, so
+  `planet_spend_left` now leaves a defensive world nothing for new ship and
+  starbase orders.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.
