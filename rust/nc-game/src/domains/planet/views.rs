@@ -199,6 +199,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 .commission_result_notice
                 .as_deref()
                 .unwrap_or("Commission completed."),
+            &app.commission_merge_offer_lines(),
         ),
         ScreenId::PlanetAutoCommissionReport => {
             if app.planet.auto_commission_report_rows.is_empty() {
@@ -209,6 +210,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 frame.geometry,
                 &app.planet.auto_commission_report_rows,
                 app.planet.auto_commission_report_revealed_rows,
+                !app.planet.commission_merge_offer.is_empty(),
             )
         }
         ScreenId::PlanetBuildMenu => app.planet_build.render_menu(

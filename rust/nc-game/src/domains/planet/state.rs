@@ -76,6 +76,10 @@ pub struct PlanetState {
     pub commission_result_dismiss_key: Option<KeyCode>,
     pub commission_result_notice: Option<String>,
     pub auto_commission_prompt_active: bool,
+    /// Fleets commissioned at the open planet since it was opened.
+    pub commission_session_fleets: Vec<usize>,
+    /// New fleets that may merge into a fleet in orbit, awaiting Y/N.
+    pub commission_merge_offer: Vec<nc_engine::CommissionMerge>,
     pub auto_commission_report_rows: Vec<String>,
     pub auto_commission_report_revealed_rows: usize,
     pub scorch_prompt_mode: Option<PlanetScorchPromptMode>,
@@ -180,6 +184,8 @@ impl PlanetState {
             commission_result_dismiss_key: None,
             commission_result_notice: None,
             auto_commission_prompt_active: false,
+            commission_session_fleets: Vec::new(),
+            commission_merge_offer: Vec::new(),
             auto_commission_report_rows: Vec::new(),
             auto_commission_report_revealed_rows: 0,
             scorch_prompt_mode: None,

@@ -6,6 +6,7 @@ mod mission;
 use super::{ColonizationEvent, ColonizationResolvedEvent, FleetMergeEvent, JoinMissionHostEvent};
 use crate::{CoreGameData, maint::FleetRemovalRemapInfo};
 
+pub use consolidation::{CommissionMerge, commission_merge_hosts};
 pub(super) use helpers::merge_fits;
 pub(super) use mission::{merge_join, merge_rendezvous, on_rendezvous_station};
 

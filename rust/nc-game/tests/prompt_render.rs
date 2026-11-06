@@ -876,6 +876,7 @@ fn commission_result_renders_notice_with_dismiss_prompt() {
         .render_result(
             "DRAFT COMMISSION FLEET: \"Aurora Prime\" IN SYSTEM [08,09]:",
             "Fleet 02 Commissioned",
+            &[],
         )
         .expect("commission result renders");
 
@@ -893,7 +894,7 @@ fn auto_commission_report_bottom_aligns_text_and_leaves_blank_row_above_prompt()
     ];
 
     let buffer = screen
-        .render_auto_commission_report(ScreenGeometry::local_default(), &rows, rows.len())
+        .render_auto_commission_report(ScreenGeometry::local_default(), &rows, rows.len(), false)
         .expect("auto commission report renders");
 
     assert!(row_text(&buffer, 22).contains("Fleet 03 commissioned from"));
@@ -921,7 +922,7 @@ fn auto_commission_report_24_row_door_keeps_prompt_on_last_visible_row() {
     ];
 
     let buffer = screen
-        .render_auto_commission_report(geometry, &rows, rows.len())
+        .render_auto_commission_report(geometry, &rows, rows.len(), false)
         .expect("auto commission report renders on 24-row door");
 
     assert_eq!(buffer.height(), 24);

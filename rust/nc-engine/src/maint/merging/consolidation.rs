@@ -1,7 +1,7 @@
 use super::super::{FleetMergeEvent, Mission};
-use super::helpers::{merge_fits, merge_one_fleet_into_host};
+use super::helpers::{MAX_MERGED_SHIPS, merge_fits, merge_one_fleet_into_host};
 use crate::{CoreGameData, Order, maint::FleetRemovalRemapInfo};
-use nc_data::{Fleet, PlayerMode, Real48};
+use nc_data::{Fleet, PlayerMode, Real48, starship_count};
 
 /// A fleet that may host: a rogue empire's whatever its order and speed, an
 /// autopilot empire's only on Hold, Guard/Blockade, or Guard Starbase at
@@ -115,6 +115,60 @@ pub(super) fn process_fleet_merging(
     }
 
     Ok((merge_events, remap_info))
+}
+
+/// A fleet just commissioned and the fleet in orbit that would take it in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CommissionMerge {
+    pub fleet_record_index_1_based: usize,
+    pub fleet_number: u16,
+    pub host_record_index_1_based: usize,
+    pub host_fleet_number: u16,
+}
+
+/// The host each newly commissioned fleet would merge into under the
+/// autopilot's rule: a fleet of the same empire in orbit of the same world,
+/// at rest on Hold, Guard/Blockade or Guard a Starbase (its base at rest),
+/// with room for the ships, lowest Fleet ID first. Another new fleet never
+/// hosts, so only new ships move. A fleet with no host is left out.
+pub fn commission_merge_hosts(
+    game_data: &CoreGameData,
+    new_fleet_records_1_based: &[usize],
+) -> Vec<CommissionMerge> {
+    let fleets = &game_data.fleets;
+    let is_new = |idx: usize| new_fleet_records_1_based.contains(&(idx + 1));
+    let mut taken_in = vec![0u32; fleets.len()];
+    let mut merges = Vec::new();
+    for &record in new_fleet_records_1_based {
+        let Some(fleet) = record.checked_sub(1).and_then(|idx| fleets.get(idx)) else {
+            continue;
+        };
+        if fleet.depth < Real48::HALF {
+            continue;
+        }
+        let ships = starship_count(fleet);
+        let host = (0..fleets.len())
+            .filter(|&idx| {
+                let host = &fleets[idx];
+                !is_new(idx)
+                    && host.owner == fleet.owner
+                    && host.sector == fleet.sector
+                    && host.depth >= Real48::HALF
+                    && host_may_merge(game_data, host, false)
+                    && starship_count(host) + taken_in[idx] + ships <= MAX_MERGED_SHIPS
+            })
+            .min_by_key(|&idx| fleets[idx].fleet_number.0);
+        if let Some(host) = host {
+            taken_in[host] += ships;
+            merges.push(CommissionMerge {
+                fleet_record_index_1_based: record,
+                fleet_number: fleet.fleet_number.0,
+                host_record_index_1_based: host + 1,
+                host_fleet_number: fleets[host].fleet_number.0,
+            });
+        }
+    }
+    merges
 }
 
 /// A merged-away Join or Rendezvous fleet is reported; any other is not.

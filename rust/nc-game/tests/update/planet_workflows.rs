@@ -44,8 +44,12 @@ fn confirm_auto_commission_opens_paged_report_when_entries_exist() {
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal).expect("report should render");
-    assert_eq!(terminal.line(24).trim_end(), " (slap a key)");
-    assert_eq!(terminal.line(23).trim_end(), "");
+    // The home world's fleets in orbit can take in the new ships.
+    assert_eq!(
+        terminal.line(24).trim_end(),
+        " Merge into fleets in orbit? [Y]/N ->"
+    );
+    assert!(line_containing(&terminal, "can merge into Fleet").contains("in orbit."));
     let fleet_line = line_containing(&terminal, "Fleet");
     assert!(fleet_line.contains("commissioned from \""));
     // The new fleet's ships read in ship notation: `DD4 CA2`.
@@ -63,6 +67,26 @@ fn confirm_auto_commission_opens_paged_report_when_entries_exist() {
         "{composition}"
     );
     assert!(line_containing(&terminal, "Starbase").contains("commissioned to \""));
+
+    let offer = app.planet.commission_merge_offer.clone();
+    assert!(!offer.is_empty());
+    // Other keys wait for an answer; Y gives each new fleet a Join order.
+    apply_action(
+        &mut app,
+        Action::Planet(PlanetAction::AutoCommissionReportKey(KeyCode::Char('x'))),
+    );
+    assert_eq!(app.current_screen(), ScreenId::PlanetAutoCommissionReport);
+    apply_action(
+        &mut app,
+        Action::Planet(PlanetAction::AutoCommissionReportKey(KeyCode::Char('y'))),
+    );
+    assert_eq!(app.current_screen(), ScreenId::PlanetMenu);
+    let state = latest_runtime_state(&fixture_dir);
+    for merge in offer {
+        let fleet = &state.game_data.fleets[merge.fleet_record_index_1_based - 1];
+        assert_eq!(fleet.order, nc_data::Order::JoinAnotherFleet);
+        assert_eq!(fleet.mission_target, merge.host_fleet_number);
+    }
 }
 
 #[test]
@@ -159,11 +183,12 @@ fn planet_list_auto_commission_prompt_and_report_return_to_list() {
     );
     assert_eq!(app.current_screen(), ScreenId::PlanetAutoCommissionReport);
 
+    // N pages through the report and then declines the merge offer.
     while app.current_screen() == ScreenId::PlanetAutoCommissionReport {
         assert_eq!(
             apply_action(
                 &mut app,
-                Action::Planet(PlanetAction::AdvanceAutoCommissionReport)
+                Action::Planet(PlanetAction::AutoCommissionReportKey(KeyCode::Char('n')))
             ),
             AppOutcome::Continue
         );
@@ -697,12 +722,16 @@ fn planet_commission_uses_draft_for_ships_and_direct_result_for_starbases() {
             .iter()
             .any(|line| line.contains("Fleet") && line.contains("Commissioned"))
     );
+    // The home world's fleets in orbit can take in the new ships.
+    assert!(line_containing(&terminal, "can merge into Fleet").contains("in orbit."));
     assert!(
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("(slap a key)"))
+            .any(|line| line.contains("Merge into fleets in orbit? [Y]/N ->"))
     );
+    let offer = app.planet.commission_merge_offer.clone();
+    assert_eq!(offer.len(), 1);
 
     assert_eq!(
         apply_action(
@@ -712,6 +741,10 @@ fn planet_commission_uses_draft_for_ships_and_direct_result_for_starbases() {
         AppOutcome::Continue
     );
     assert_eq!(app.current_screen(), ScreenId::PlanetCommissionPicker);
+    let joined = &latest_runtime_state(&fixture_dir).game_data.fleets
+        [offer[0].fleet_record_index_1_based - 1];
+    assert_eq!(joined.order, nc_data::Order::JoinAnotherFleet);
+    assert_eq!(joined.mission_target, offer[0].host_fleet_number);
     assert_eq!(
         apply_action(&mut app, Action::Planet(PlanetAction::OpenCommissionPlanet)),
         AppOutcome::Continue

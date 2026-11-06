@@ -10,6 +10,8 @@ pub enum PlanetAction {
     OpenAutoCommissionPrompt,
     CloseAutoCommissionPrompt,
     AdvanceAutoCommissionReport,
+    /// A key on the Mass Commission report, which may answer a merge offer.
+    AutoCommissionReportKey(KeyCode),
     OpenScorchPrompt,
     SubmitScorchPrompt,
     AppendScorchPromptChar(char),

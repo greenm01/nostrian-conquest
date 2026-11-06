@@ -22,6 +22,8 @@ use nc_data::ProductionItemKind;
 
 pub struct PlanetCommissionScreen;
 
+const COMMISSION_MERGE_PROMPT: &str = "Merge into fleets in orbit? [Y]/N -> ";
+
 pub fn planet_commission_picker_visible_rows(geometry: ScreenGeometry) -> usize {
     standard_table_visible_rows_for(geometry, 1)
 }
@@ -443,6 +445,7 @@ impl PlanetCommissionScreen {
         &mut self,
         title: &str,
         notice: &str,
+        merge_lines: &[String],
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let mut buffer = new_playfield();
         draw_title_bar_padded(&mut buffer, 0, title);
@@ -454,7 +457,18 @@ impl PlanetCommissionScreen {
                 crate::screen::StyledSpan::new(notice, classic::status_value_style()),
             ],
         );
-        draw_dismiss_prompt_padded(&mut buffer, dismiss_prompt_row(2));
+        if merge_lines.is_empty() {
+            draw_dismiss_prompt_padded(&mut buffer, dismiss_prompt_row(2));
+            return Ok(buffer);
+        }
+        for (offset, line) in merge_lines.iter().enumerate() {
+            buffer.write_text(3 + offset, LEFT_WINDOW_PAD_COL, line, classic::body_style());
+        }
+        draw_plain_prompt_padded(
+            &mut buffer,
+            dismiss_prompt_row(2 + merge_lines.len()),
+            COMMISSION_MERGE_PROMPT,
+        );
         Ok(buffer)
     }
 
@@ -463,6 +477,7 @@ impl PlanetCommissionScreen {
         geometry: ScreenGeometry,
         rows: &[String],
         revealed_rows: usize,
+        merge_offer: bool,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let mut buffer = new_playfield_for(geometry);
         let last_row = planet_auto_commission_report_last_row(geometry);
@@ -474,7 +489,12 @@ impl PlanetCommissionScreen {
             last_row,
             |buffer, row, line| write_auto_commission_report_line(buffer, row, line),
         );
-        draw_plain_prompt_padded(&mut buffer, command_line_row_for(geometry), "(slap a key)");
+        let prompt = if merge_offer && revealed_rows >= rows.len() {
+            COMMISSION_MERGE_PROMPT
+        } else {
+            "(slap a key)"
+        };
+        draw_plain_prompt_padded(&mut buffer, command_line_row_for(geometry), prompt);
         Ok(buffer)
     }
 
@@ -547,7 +567,7 @@ impl PlanetCommissionScreen {
 
     pub fn handle_auto_commission_report_key(&self, key: KeyEvent) -> Action {
         if key.kind == KeyEventKind::Press {
-            Action::Planet(PlanetAction::AdvanceAutoCommissionReport)
+            Action::Planet(PlanetAction::AutoCommissionReportKey(key.code))
         } else {
             Action::Noop
         }

@@ -150,6 +150,7 @@ impl App {
         self.planet.commission_result_return_to_picker = false;
         self.planet.commission_result_dismiss_key = None;
         self.planet.commission_result_notice = None;
+        self.planet.commission_session_fleets.clear();
         self.load_planet_commission_draft_for_current_planet();
         self.current_screen = ScreenId::PlanetCommissionDraft;
     }
@@ -168,6 +169,12 @@ impl App {
     pub fn dismiss_planet_commission_result(&mut self, key_code: KeyCode) {
         if self.current_screen != ScreenId::PlanetCommissionResult {
             return;
+        }
+        if !self.planet.commission_merge_offer.is_empty() {
+            let Some(accept) = merge_offer_answer(key_code) else {
+                return;
+            };
+            self.answer_commission_merge_offer(accept);
         }
         if self.planet.command_context == crate::domains::planet::state::PlanetCommandContext::List
         {
@@ -603,6 +610,7 @@ impl App {
         self.clear_planet_commission_draft_state();
         self.planet.commission_status = None;
         self.planet.commission_result_dismiss_key = None;
+        self.planet.commission_session_fleets.clear();
         if self.planet.command_context == crate::domains::planet::state::PlanetCommandContext::List
         {
             self.current_screen = self.planet_context_screen();
@@ -701,6 +709,9 @@ impl App {
             CommissionResult::Fleet {
                 fleet_record_index_1_based,
             } => {
+                self.planet
+                    .commission_session_fleets
+                    .push(fleet_record_index_1_based);
                 let fleet = self
                     .game_data
                     .fleets
@@ -752,6 +763,7 @@ impl App {
             );
         }
         self.planet.commission_selected_slots.clear();
+        self.offer_commission_merges();
         self.current_screen = ScreenId::PlanetCommissionResult;
         Ok(())
     }
@@ -776,7 +788,12 @@ impl App {
         let result_notice = match result {
             CommissionResult::Fleet {
                 fleet_record_index_1_based,
-            } => self.commission_fleet_notice(fleet_record_index_1_based)?,
+            } => {
+                self.planet
+                    .commission_session_fleets
+                    .push(fleet_record_index_1_based);
+                self.commission_fleet_notice(fleet_record_index_1_based)?
+            }
             CommissionResult::Starbase {
                 base_record_index_1_based,
             } => {
@@ -794,6 +811,7 @@ impl App {
         self.planet.commission_result_title = Some(commission_title);
         self.planet.commission_result_return_to_picker = false;
         self.planet.commission_result_notice = Some(result_notice);
+        self.offer_commission_merges();
         self.current_screen = ScreenId::PlanetCommissionResult;
         Ok(())
     }
@@ -848,6 +866,9 @@ impl App {
                 return Err("ship draft unexpectedly commissioned a starbase".into());
             }
         };
+        self.planet
+            .commission_session_fleets
+            .push(fleet_record_index_1_based);
         let notice = self.commission_fleet_notice(fleet_record_index_1_based)?;
         let remaining_entries = self
             .current_planet_commission_rows_for(planet_record)
@@ -879,6 +900,7 @@ impl App {
             self.planet.commission_result_title = Some(draft_title);
             self.planet.commission_result_return_to_picker = true;
             self.planet.commission_result_notice = Some(notice);
+            self.offer_commission_merges();
             self.current_screen = ScreenId::PlanetCommissionResult;
             return Ok(());
         }
@@ -926,6 +948,26 @@ impl App {
             self.show_planet_context_notice("No ships or starbases are waiting in stardock.");
             return Ok(());
         }
+        let new_fleets = report
+            .entries
+            .iter()
+            .filter_map(|entry| match entry {
+                AutoCommissionEntry::Fleet(entry) => self
+                    .game_data
+                    .fleets
+                    .iter()
+                    .position(|fleet| {
+                        fleet.owner.0 as usize == player_record
+                            && fleet.fleet_number.0 == entry.fleet_number
+                    })
+                    .map(|idx| idx + 1),
+                AutoCommissionEntry::Starbase(_) => None,
+            })
+            .collect();
+        self.planet.commission_session_fleets = new_fleets;
+        self.offer_commission_merges();
+        let mut rows = rows;
+        rows.extend(self.commission_merge_offer_lines());
         self.planet.auto_commission_report_revealed_rows = rows
             .len()
             .min(self.planet_auto_commission_report_page_rows());
@@ -945,6 +987,9 @@ impl App {
             return;
         }
         if self.planet.auto_commission_report_revealed_rows >= total_rows {
+            if !self.planet.commission_merge_offer.is_empty() {
+                return;
+            }
             self.clear_planet_auto_commission_report();
             self.current_screen = self.planet_context_screen();
             return;
@@ -954,6 +999,64 @@ impl App {
                 + self.planet_auto_commission_report_page_rows(),
             total_rows,
         );
+    }
+
+    /// Offer to merge the fleets just commissioned into fleets in orbit.
+    fn offer_commission_merges(&mut self) {
+        let new_fleets = std::mem::take(&mut self.planet.commission_session_fleets);
+        self.planet.commission_merge_offer =
+            nc_engine::commission_merge_hosts(&self.game_data, &new_fleets);
+    }
+
+    /// The lines naming each offered merge, blank-led, for a result screen.
+    pub(crate) fn commission_merge_offer_lines(&self) -> Vec<String> {
+        let offer = &self.planet.commission_merge_offer;
+        if offer.is_empty() {
+            return Vec::new();
+        }
+        let mut lines = vec![String::new()];
+        lines.extend(offer.iter().map(|merge| {
+            format!(
+                "Fleet {} can merge into Fleet {} in orbit.",
+                merge.fleet_number, merge.host_fleet_number
+            )
+        }));
+        lines
+    }
+
+    /// Yes gives each offered fleet a Join order on its host, as Merge does;
+    /// maintenance merges them. No leaves the new fleets as they are.
+    pub(crate) fn answer_commission_merge_offer(&mut self, accept: bool) {
+        let offer = std::mem::take(&mut self.planet.commission_merge_offer);
+        if !accept {
+            return;
+        }
+        let player_record = self.player.record_index_1_based;
+        if let Err(err) = self.change(|state| {
+            for merge in &offer {
+                state.game_data.set_join_fleet_order(
+                    player_record,
+                    merge.fleet_record_index_1_based,
+                    merge.host_record_index_1_based,
+                )?;
+            }
+            Ok(())
+        }) {
+            self.log_action_error("answer_commission_merge_offer", err.as_ref());
+        }
+    }
+
+    pub fn answer_planet_auto_commission_merge(&mut self, key_code: KeyCode) {
+        if self.current_screen != ScreenId::PlanetAutoCommissionReport
+            || self.planet.auto_commission_report_revealed_rows
+                < self.planet.auto_commission_report_rows.len()
+        {
+            return self.advance_planet_auto_commission_report();
+        }
+        if let Some(accept) = merge_offer_answer(key_code) {
+            self.answer_commission_merge_offer(accept);
+            self.advance_planet_auto_commission_report();
+        }
     }
 
     fn build_auto_commission_report_rows(&self, report: &AutoCommissionReport) -> Vec<String> {
@@ -1840,4 +1943,17 @@ fn format_auto_commission_starbase_entry(entry: &AutoCommissionStarbaseEntry) ->
         entry.planet_name,
         format_sector_coords_table(entry.coords),
     )
+}
+
+/// Y or Enter accepts a merge offer; N, Q or Esc declines; other keys wait.
+fn merge_offer_answer(key_code: KeyCode) -> Option<bool> {
+    match key_code {
+        KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => Some(true),
+        KeyCode::Esc
+        | KeyCode::Char('n')
+        | KeyCode::Char('N')
+        | KeyCode::Char('q')
+        | KeyCode::Char('Q') => Some(false),
+        _ => None,
+    }
 }
