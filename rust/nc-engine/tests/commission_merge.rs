@@ -58,3 +58,34 @@ fn a_fleet_outside_orbit_does_not_host() {
 
     assert!(commission_merge_hosts(&game_data, &[4]).is_empty());
 }
+
+#[test]
+fn a_guard_fleet_on_station_hosts_at_any_speed() {
+    let mut game_data = baseline();
+    // Fleet #1 flew in on Guard/Blockade and kept its travel speed.
+    game_data.fleets[0].speed = 5;
+    game_data.fleets[0].target = game_data.fleets[0].sector;
+
+    let merges = commission_merge_hosts(&game_data, &[4]);
+    assert_eq!(merges[0].host_fleet_number, 1);
+}
+
+#[test]
+fn a_guard_fleet_passing_through_on_its_way_elsewhere_does_not_host() {
+    let mut game_data = baseline();
+    game_data.fleets[0].speed = 5;
+    game_data.fleets[0].target = nc_data::Coords::new(1, 1);
+
+    let merges = commission_merge_hosts(&game_data, &[4]);
+    assert_eq!(merges[0].host_fleet_number, 2);
+}
+
+#[test]
+fn a_hold_fleet_still_moving_does_not_host() {
+    let mut game_data = baseline();
+    game_data.fleets[0].order = Order::HoldPosition;
+    game_data.fleets[0].speed = 3;
+
+    let merges = commission_merge_hosts(&game_data, &[4]);
+    assert_eq!(merges[0].host_fleet_number, 2);
+}

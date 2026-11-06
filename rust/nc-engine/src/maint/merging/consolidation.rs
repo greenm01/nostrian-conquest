@@ -126,9 +126,8 @@ pub struct CommissionMerge {
     pub host_fleet_number: u16,
 }
 
-/// The host each newly commissioned fleet would merge into under the
-/// autopilot's rule: a fleet of the same empire in orbit of the same world,
-/// at rest on Hold, Guard/Blockade or Guard a Starbase (its base at rest),
+/// The host each newly commissioned fleet would merge into: a fleet of the
+/// same empire in orbit of the same world that `commission_host` accepts,
 /// with room for the ships, lowest Fleet ID first. Another new fleet never
 /// hosts, so only new ships move. A fleet with no host is left out.
 pub fn commission_merge_hosts(
@@ -154,7 +153,7 @@ pub fn commission_merge_hosts(
                     && host.owner == fleet.owner
                     && host.sector == fleet.sector
                     && host.depth >= Real48::HALF
-                    && host_may_merge(game_data, host, false)
+                    && commission_host(game_data, host)
                     && starship_count(host) + taken_in[idx] + ships <= MAX_MERGED_SHIPS
             })
             .min_by_key(|&idx| fleets[idx].fleet_number.0);
@@ -169,6 +168,20 @@ pub fn commission_merge_hosts(
         }
     }
     merges
+}
+
+/// A fleet on Hold at rest, or one on station guarding this world or a base
+/// resting here, whatever its speed: a guard fleet that flew in keeps its
+/// travel speed after it arrives (owner, 2026-11-06).
+fn commission_host(game_data: &CoreGameData, fleet: &Fleet) -> bool {
+    match fleet.order {
+        Order::HoldPosition => fleet.speed == 0,
+        Order::GuardBlockadeWorld => fleet.target == fleet.sector,
+        Order::GuardStarbase => {
+            fleet.target == fleet.sector && guarded_base_rests(game_data, fleet).unwrap_or(false)
+        }
+        _ => false,
+    }
 }
 
 /// A merged-away Join or Rendezvous fleet is reported; any other is not.
