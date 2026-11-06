@@ -487,71 +487,16 @@ impl App {
             .map(|fleet| fleet.fleet_number.0)
     }
 
-    pub(crate) fn remember_newly_commissioned_fleet_record(
-        &mut self,
-        fleet_record_index_1_based: usize,
-    ) {
-        self.fleet
-            .recently_commissioned_fleet_records_mru
-            .retain(|idx| *idx != fleet_record_index_1_based);
-        self.fleet
-            .recently_commissioned_fleet_records_mru
-            .insert(0, fleet_record_index_1_based);
-    }
-
-    fn prune_recently_commissioned_fleet_records(&mut self) {
-        self.fleet
-            .recently_commissioned_fleet_records_mru
-            .retain(|record_index_1_based| {
-                self.game_data
-                    .fleets
-                    .get(*record_index_1_based - 1)
-                    .is_some_and(|fleet| {
-                        fleet.owner.0 as usize == self.player.record_index_1_based
-                            && nc_data::has_any_force(&fleet)
-                            && fleet_is_idle_hold(fleet)
-                    })
-            });
-    }
-
+    /// The Orders prompt offers the highest-numbered fleet on Hold, so
+    /// pressing O again after each order walks down the idle fleets.
     pub(crate) fn order_prompt_default_fleet_number(&mut self) -> Option<u16> {
-        self.prune_recently_commissioned_fleet_records();
         let owned = self.active_owned_fleets().collect::<Vec<_>>();
 
-        if let Some(fleet_number) = self
-            .fleet
-            .recently_commissioned_fleet_records_mru
-            .iter()
-            .find_map(|record_index_1_based| {
-                self.game_data
-                    .fleets
-                    .get(*record_index_1_based - 1)
-                    .map(|fleet| fleet.fleet_number.0)
-            })
-        {
-            return Some(fleet_number);
-        }
-
-        let idle_etacs = owned
-            .iter()
-            .copied()
-            .filter(|fleet| fleet_is_idle_hold(fleet) && fleet.ships.etacs > 0)
-            .collect::<Vec<_>>();
-        if let Some(fleet) = idle_etacs
-            .into_iter()
-            .max_by_key(|fleet| fleet_strength_key(fleet))
-        {
-            return Some(fleet.fleet_number.0);
-        }
-
-        let idle_hold = owned
+        if let Some(fleet) = owned
             .iter()
             .copied()
             .filter(|fleet| fleet_is_idle_hold(fleet))
-            .collect::<Vec<_>>();
-        if let Some(fleet) = idle_hold
-            .into_iter()
-            .max_by_key(|fleet| fleet_strength_key(fleet))
+            .max_by_key(|fleet| fleet.fleet_number.0)
         {
             return Some(fleet.fleet_number.0);
         }

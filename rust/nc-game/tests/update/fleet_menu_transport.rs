@@ -155,18 +155,18 @@ fn fleet_order_prompt_uses_smart_default_while_other_prompts_keep_strongest_defa
 }
 
 #[test]
-fn fleet_order_prompt_prefers_ready_etac_fleets_over_stronger_ready_non_etac_fleets() {
+fn fleet_order_prompt_offers_the_highest_numbered_fleet_on_hold() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     {
         let fleet = owned_fleet_mut(&mut state, 1);
-        set_fleet_ship_profile(fleet, 0, 0, 0, 0, 0, 1);
+        set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 0);
         fleet.order = nc_data::Order::HoldPosition;
         fleet.target = nc_data::Coords::from_array([0, 0]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
-        set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 0);
+        set_fleet_ship_profile(fleet, 0, 0, 0, 0, 0, 1);
         fleet.order = nc_data::Order::HoldPosition;
         fleet.target = nc_data::Coords::from_array([0, 0]);
     }
@@ -191,7 +191,7 @@ fn fleet_order_prompt_prefers_ready_etac_fleets_over_stronger_ready_non_etac_fle
         AppOutcome::Continue
     );
 
-    assert_order_prompt_default(&mut app, 1);
+    assert_order_prompt_default(&mut app, 2);
 }
 
 #[test]

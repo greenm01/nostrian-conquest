@@ -1068,9 +1068,7 @@ impl App {
         // The chain sort can move the donor to another record.
         self.fleet.detach_donor_record_index_1_based =
             Some(result.donor_fleet_record_index_1_based);
-        // The new fleet sits on Hold, so the next Orders prompt and the list
-        // cursor point at it.
-        self.remember_newly_commissioned_fleet_record(result.new_fleet_record_index_1_based);
+        // The new fleet sits on Hold; the list cursor points at it.
         self.focus_fleet_list_record(result.new_fleet_record_index_1_based);
         let new_fleet_number = self
             .fleet_number_for_record_index(result.new_fleet_record_index_1_based)

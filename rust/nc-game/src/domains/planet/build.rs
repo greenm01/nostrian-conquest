@@ -701,7 +701,6 @@ impl App {
             CommissionResult::Fleet {
                 fleet_record_index_1_based,
             } => {
-                self.remember_newly_commissioned_fleet_record(fleet_record_index_1_based);
                 let fleet = self
                     .game_data
                     .fleets
@@ -777,10 +776,7 @@ impl App {
         let result_notice = match result {
             CommissionResult::Fleet {
                 fleet_record_index_1_based,
-            } => {
-                self.remember_newly_commissioned_fleet_record(fleet_record_index_1_based);
-                self.commission_fleet_notice(fleet_record_index_1_based)?
-            }
+            } => self.commission_fleet_notice(fleet_record_index_1_based)?,
             CommissionResult::Starbase {
                 base_record_index_1_based,
             } => {
@@ -852,7 +848,6 @@ impl App {
                 return Err("ship draft unexpectedly commissioned a starbase".into());
             }
         };
-        self.remember_newly_commissioned_fleet_record(fleet_record_index_1_based);
         let notice = self.commission_fleet_notice(fleet_record_index_1_based)?;
         let remaining_entries = self
             .current_planet_commission_rows_for(planet_record)
@@ -925,7 +920,6 @@ impl App {
                 .game_data
                 .auto_commission_all_stardock_units(player_record)?)
         })?;
-        self.remember_auto_commissioned_fleets(&report);
         self.close_planet_auto_commission_prompt();
         let rows = self.build_auto_commission_report_rows(&report);
         if rows.is_empty() {
@@ -1627,31 +1621,6 @@ impl App {
             "Fleet {} Commissioned",
             format_fleet_number(fleet.fleet_number.0, max_fleet_number)
         ))
-    }
-
-    fn owned_fleet_record_index_by_local_slot(&self, fleet_number: u16) -> Option<usize> {
-        self.game_data
-            .fleets
-            .iter()
-            .enumerate()
-            .find(|(_, fleet)| {
-                fleet.owner.0 as usize == self.player.record_index_1_based
-                    && fleet.fleet_number.0 == fleet_number
-            })
-            .map(|(idx, _)| idx + 1)
-    }
-
-    fn remember_auto_commissioned_fleets(&mut self, report: &AutoCommissionReport) {
-        for fleet_number in report.entries.iter().filter_map(|entry| match entry {
-            AutoCommissionEntry::Fleet(entry) => Some(entry.fleet_number),
-            AutoCommissionEntry::Starbase(_) => None,
-        }) {
-            if let Some(fleet_record_index_1_based) =
-                self.owned_fleet_record_index_by_local_slot(fleet_number)
-            {
-                self.remember_newly_commissioned_fleet_record(fleet_record_index_1_based);
-            }
-        }
     }
 
     pub(crate) fn build_change_rows(&self) -> Vec<PlanetBuildChangeRow> {
