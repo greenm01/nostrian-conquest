@@ -1,5 +1,6 @@
 mod ai;
 mod build;
+mod defensive;
 mod orders;
 mod planets;
 
@@ -24,6 +25,12 @@ pub(super) fn process_build_completion(
     game_data: &mut CoreGameData,
 ) -> Result<Vec<usize>, Box<dyn std::error::Error>> {
     build::process_build_completion(game_data)
+}
+
+pub(super) fn queue_defensive_builds(
+    game_data: &mut CoreGameData,
+) -> Result<(), Box<dyn std::error::Error>> {
+    defensive::queue_defensive_builds(game_data)
 }
 
 pub(super) fn process_planet_economics(

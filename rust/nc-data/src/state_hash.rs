@@ -178,6 +178,7 @@ impl StateHash {
             owner,
             scorch_earth,
             crippled_batteries,
+            defensive,
         } = planet;
         self.coords(*sector);
         self.u64(u64::from(*potential_production));
@@ -219,6 +220,10 @@ impl StateHash {
         // the seed it had before the field existed (t202).
         if *crippled_batteries > 0 {
             self.u64(u64::from(*crippled_batteries));
+        }
+        // Likewise fed only when set.
+        if *defensive {
+            self.text("defensive");
         }
     }
 

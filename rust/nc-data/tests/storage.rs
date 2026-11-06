@@ -558,6 +558,7 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
             "snapshot_fleets",
             "snapshot_ipbms",
             "snapshot_planet_build_slots",
+            "snapshot_planet_defensive",
             "snapshot_planets",
             "snapshot_player_diplomacy",
             "snapshot_players",
@@ -719,5 +720,83 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
             }
         ),
         "unexpected error: {err}"
+    );
+}
+
+#[test]
+fn sqlite_store_persists_defensive_mode_through_year_saves_and_changes() {
+    let source = repo_root().join("fixtures/ecutil-init/v1.5");
+    let imported = temp_dir("nc-data-storage-defensive");
+    copy_dir_all(&source, &imported);
+
+    let store = CampaignStore::open(imported.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+    let defensive = |store: &CampaignStore| -> Vec<usize> {
+        store
+            .load_latest_runtime_state()
+            .expect("load runtime state")
+            .expect("runtime snapshot")
+            .game_data
+            .planets
+            .iter()
+            .enumerate()
+            .filter(|(_, planet)| planet.defensive)
+            .map(|(index, _)| index)
+            .collect()
+    };
+    assert!(defensive(&store).is_empty());
+
+    let mut initial = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    let year = initial.game_data.conquest.game_year;
+    initial.game_data.planets[2].defensive = true;
+    initial.game_data.planets[6].defensive = true;
+    store
+        .save_year(
+            year,
+            &initial.game_data,
+            &initial.report_block_rows,
+            &initial.queued_mail,
+        )
+        .expect("resave runtime state");
+    assert_eq!(defensive(&store), vec![2, 6]);
+
+    // A change writes only the planets it altered, in place.
+    let changed: Result<((), _), CampaignStoreError> = store.change(year, |state| {
+        state.game_data.planets[2].defensive = false;
+        state.game_data.planets[4].defensive = true;
+        Ok(())
+    });
+    changed.expect("change saves");
+    assert_eq!(defensive(&store), vec![4, 6]);
+}
+
+#[test]
+fn sqlite_store_opens_a_save_made_before_defensive_mode_existed() {
+    let source = repo_root().join("fixtures/ecutil-init/v1.5");
+    let imported = temp_dir("nc-data-storage-defensive-old-save");
+    copy_dir_all(&source, &imported);
+    let path = imported.join(DEFAULT_CAMPAIGN_DB_NAME);
+    let store = CampaignStore::open(&path).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+    drop(store);
+    Connection::open(&path)
+        .expect("open sqlite")
+        .execute_batch("DROP TABLE snapshot_planet_defensive;")
+        .expect("drop the defensive table");
+
+    let store = CampaignStore::open(&path).expect("reopen an older save");
+    let state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    assert!(
+        state
+            .game_data
+            .planets
+            .iter()
+            .all(|planet| !planet.defensive)
     );
 }

@@ -629,6 +629,7 @@ fn build_menu_inline_abort_uses_standard_confirm_layout() {
         starbase_points_left: 0,
         building_count: 2,
         docked_count: 3,
+        defensive: false,
     };
     let orders = vec![
         PlanetBuildOrder {
@@ -649,8 +650,8 @@ fn build_menu_inline_abort_uses_standard_confirm_layout() {
         .render_menu(&view, &orders, None, false, false, [0, 0], "", None, true)
         .expect("build menu inline abort renders");
 
-    assert!(row_text(&buffer, 7).contains("COMMAND <- Abort queued builds? Y/[N] -> "));
-    assert!(row_text(&buffer, 8).trim().is_empty());
+    assert!(row_text(&buffer, 8).contains("COMMAND <- Abort queued builds? Y/[N] -> "));
+    assert!(row_text(&buffer, 9).trim().is_empty());
 }
 
 #[test]

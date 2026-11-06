@@ -34,6 +34,7 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
         starbase_points_left: 40,
         building_count: 5,
         docked_count: 3,
+        defensive: false,
     };
 
     let buffer = screen
@@ -41,23 +42,23 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
         .expect("render menu");
 
     assert_eq!(
-        buffer.plain_line(7),
-        " BUILD COMMAND <- ? X V P R C N S A D I <Q> ->"
-    );
-    assert_eq!(
-        buffer.plain_line(13),
-        " There are no starbases orbiting planet \"Not Named Yet\"."
+        buffer.plain_line(8),
+        " BUILD COMMAND <- ? X V P R C N S A D I F <Q> ->"
     );
     assert_eq!(
         buffer.plain_line(14),
-        " Standard building restrictions apply, except to a first starbase."
+        " There are no starbases orbiting planet \"Not Named Yet\"."
     );
     assert_eq!(
         buffer.plain_line(15),
+        " Standard building restrictions apply, except to a first starbase."
+    );
+    assert_eq!(
+        buffer.plain_line(16),
         " Treasury: 40 PP.  Build capacity: 100 PP.  Budget remaining: 40 PP."
     );
-    assert_eq!(buffer.plain_line(16), "");
-    assert_eq!(buffer.plain_line(17), " Building: 5   Docked: 3");
+    assert_eq!(buffer.plain_line(17), "");
+    assert_eq!(buffer.plain_line(18), " Building: 5   Docked: 3");
 }
 
 #[test]
@@ -86,6 +87,7 @@ fn abort_confirmation_says_cancelling_releases_only_unpaid_points() {
         starbase_points_left: 5,
         building_count: 1,
         docked_count: 0,
+        defensive: false,
     };
     let orders = [PlanetBuildOrder {
         kind: ProductionItemKind::Battleship,
@@ -133,6 +135,7 @@ fn build_list_renders_queue_columns_without_dock() {
         starbase_points_left: 40,
         building_count: 2,
         docked_count: 0,
+        defensive: false,
     };
 
     let rows = vec![
@@ -211,6 +214,7 @@ fn build_list_confirmation_renders_delete_question_below_command_row() {
         starbase_points_left: 40,
         building_count: 2,
         docked_count: 0,
+        defensive: false,
     };
 
     let rows = vec![PlanetBuildListRow {
@@ -281,6 +285,7 @@ fn empty_build_list_keeps_table_frame_and_shows_notice_below_command_row() {
         starbase_points_left: 50,
         building_count: 0,
         docked_count: 0,
+        defensive: false,
     };
 
     let buffer = screen
@@ -363,6 +368,7 @@ fn build_list_delete_prompts_keep_table_width_stable() {
         starbase_points_left: 40,
         building_count: 2,
         docked_count: 0,
+        defensive: false,
     };
     let rows = vec![PlanetBuildListRow {
         kind: ProductionItemKind::Destroyer,
@@ -485,6 +491,7 @@ fn build_specify_table_is_centered_and_footer_tracks_table_inset() {
         starbase_points_left: 50,
         building_count: 0,
         docked_count: 0,
+        defensive: false,
     };
 
     let buffer = screen
@@ -563,6 +570,7 @@ fn build_specify_title_shows_current_points_left_after_partial_commit() {
         starbase_points_left: 30,
         building_count: 0,
         docked_count: 0,
+        defensive: false,
     };
 
     let buffer = screen
@@ -598,6 +606,7 @@ fn build_quantity_prompt_keeps_points_left_visible_in_title_row() {
         starbase_points_left: 30,
         building_count: 0,
         docked_count: 0,
+        defensive: false,
     };
 
     let unit = BuildUnitSpec {
@@ -640,6 +649,7 @@ fn build_specify_qty_column_fits_large_queued_counts_in_the_same_table() {
         starbase_points_left: 50,
         building_count: 0,
         docked_count: 0,
+        defensive: false,
     };
     let order = |kind, units: u32| PlanetBuildOrder {
         kind,

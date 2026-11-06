@@ -7,6 +7,14 @@ pub fn update(app: &mut App, action: PlanetAction) {
         PlanetAction::OpenAutoCommissionPrompt => app.open_planet_auto_commission_prompt(),
         PlanetAction::CloseAutoCommissionPrompt => app.close_planet_auto_commission_prompt(),
         PlanetAction::AdvanceAutoCommissionReport => app.advance_planet_auto_commission_report(),
+        PlanetAction::ToggleBuildPlanetDefensive => {
+            if let Err(err) = app.toggle_build_planet_defensive() {
+                app.log_action_error("toggle_build_planet_defensive", err.as_ref());
+                app.planet.build_status = Some(
+                    "Unable to change defensive mode right now. Please try again.".to_string(),
+                );
+            }
+        }
         PlanetAction::AutoCommissionReportKey(key_code) => {
             app.answer_planet_auto_commission_merge(key_code)
         }

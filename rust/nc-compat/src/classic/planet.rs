@@ -68,6 +68,8 @@ pub fn decode_planet(bytes: &[u8; PLANET_RECORD_SIZE]) -> Result<Planet, ParseEr
         scorch_earth: bytes[0x60] != 0,
         // PLANETS.DAT has no crippled batteries; a classic world has none.
         crippled_batteries: 0,
+        // Nor defensive mode, which is NC only.
+        defensive: false,
     })
 }
 

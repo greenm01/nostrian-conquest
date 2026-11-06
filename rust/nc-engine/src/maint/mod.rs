@@ -361,6 +361,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // settles its economy, so the units finished this year sit in the
     // stardock, or on the surface, through every tick that follows.
     let starbase_planets = economics::starbase_planets(game_data);
+    economics::queue_defensive_builds(game_data)?;
     let planets_with_builds = economics::process_build_completion(game_data)?;
     let planet_scorch_events = economics::process_planet_economics(
         game_data,

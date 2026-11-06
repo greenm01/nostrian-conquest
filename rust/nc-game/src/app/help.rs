@@ -167,6 +167,7 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
                 ("Enter", "review highlighted planet"),
                 ("B", "specify new build orders for selected planet"),
                 ("D", "display queued build orders for selected planet"),
+                ("F", "fortify: defensive mode on/off for the current planet"),
                 ("A", "abort queued build orders for selected planet"),
                 ("C", "manually commission ships into a fleet"),
                 ("M", "mass commission ships from stardock to fleets"),

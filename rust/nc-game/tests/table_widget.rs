@@ -1541,6 +1541,7 @@ fn planet_build_specify_screen_uses_split_table() {
         starbase_points_left: 40,
         building_count: 2,
         docked_count: 3,
+        defensive: false,
     };
     let orders = vec![PlanetBuildOrder {
         kind: ProductionItemKind::Destroyer,

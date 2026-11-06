@@ -1124,7 +1124,7 @@ fn expert_mode_survives_command_menu_navigation_and_non_menu_screens_render_norm
         .expect("expert build menu should render");
     assert_eq!(
         terminal.lines[0].trim_end(),
-        " BUILD COMMAND <- ? X V P R C N S A D I <Q> ->"
+        " BUILD COMMAND <- ? X V P R C N S A D I F <Q> ->"
     );
     assert_eq!(terminal.lines[1].trim_end(), "");
 
@@ -1136,7 +1136,7 @@ fn expert_mode_survives_command_menu_navigation_and_non_menu_screens_render_norm
         .expect("empty build list should leave expert build menu visible");
     assert_eq!(
         terminal.lines[0].trim_end(),
-        " BUILD COMMAND <- ? X V P R C N S A D I <Q> ->"
+        " BUILD COMMAND <- ? X V P R C N S A D I F <Q> ->"
     );
     assert!(
         terminal

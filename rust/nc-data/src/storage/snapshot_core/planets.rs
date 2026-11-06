@@ -5,7 +5,8 @@ use crate::model::{BuildSlot, Coords, EmpireId, Planet, ProductionItemKind, Star
 
 /// One row per PLANETS.DAT record. `snapshot_planet_build_slots` holds the
 /// occupied slots of each planet's build queue (`slot` 0 to 9); a slot with
-/// no row is empty.
+/// no row is empty. `snapshot_planet_defensive` names the worlds in
+/// defensive mode, in its own table so saves made before it still load.
 pub(super) const SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS snapshot_planets (
         snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
@@ -39,6 +40,11 @@ pub(super) const SCHEMA: &str = "
         points_owed INTEGER NOT NULL,
         kind INTEGER NOT NULL,
         PRIMARY KEY(snapshot_id, record_index, slot)
+    );
+    CREATE TABLE IF NOT EXISTS snapshot_planet_defensive (
+        snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
+        record_index INTEGER NOT NULL,
+        PRIMARY KEY(snapshot_id, record_index)
     );";
 
 pub(super) fn write<'a>(
@@ -77,6 +83,16 @@ pub(super) fn write<'a>(
                 ":crippled_batteries": planet.crippled_batteries,
             },
         )?;
+        if planet.defensive {
+            insert_row(
+                tx,
+                "snapshot_planet_defensive",
+                named_params! {
+                    ":snapshot_id": snapshot_id,
+                    ":record_index": record_index,
+                },
+            )?;
+        }
         for (slot, entry) in planet.build_queue.iter().enumerate() {
             if *entry == BuildSlot::EMPTY {
                 continue;
@@ -125,6 +141,13 @@ pub(super) fn load(conn: &Connection, snapshot_id: i64) -> Result<Vec<Planet>, C
         let queue = &mut records[record].build_queue;
         queue[index_below(slot, queue.len(), "build slot")?] = entry;
     }
+
+    let mut stmt =
+        conn.prepare("SELECT record_index FROM snapshot_planet_defensive WHERE snapshot_id = ?1")?;
+    for record_index in stmt.query_map(params![snapshot_id], |row| row.get::<_, usize>(0))? {
+        let record = position_of(record_index?, records.len(), "planet record")?;
+        records[record].defensive = true;
+    }
     Ok(records)
 }
 
@@ -152,5 +175,6 @@ fn planet_from_row(row: &Row<'_>) -> rusqlite::Result<Planet> {
         owner: EmpireId(row.get("owner")?),
         scorch_earth: row.get("scorch_earth")?,
         crippled_batteries: row.get("crippled_batteries")?,
+        defensive: false,
     })
 }

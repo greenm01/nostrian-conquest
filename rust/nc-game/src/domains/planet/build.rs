@@ -1310,6 +1310,13 @@ impl App {
             self.planet.build_unit_status = Some("That unit is not available.".to_string());
             return;
         };
+        if !unit.kind.is_ground_defense() && self.current_build_planet_view_is_defensive() {
+            self.planet.build_unit_status = Some(
+                "This world is in defensive mode: it builds only ground batteries and armies."
+                    .to_string(),
+            );
+            return;
+        }
 
         let Ok(max_qty) = self.current_planet_build_max_quantity_for(unit.kind) else {
             self.planet.build_unit_status = Some("No points are available to spend.".to_string());
@@ -1418,6 +1425,34 @@ impl App {
         } else {
             self.show_planet_build_budget_exhausted_notice(self.planet.build_return_to_list);
         }
+        Ok(())
+    }
+
+    fn current_build_planet_view_is_defensive(&self) -> bool {
+        self.current_planet_build_view()
+            .is_ok_and(|view| view.defensive)
+    }
+
+    /// F on the Build menu: turn the current world's defensive mode on or off.
+    pub fn toggle_build_planet_defensive(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.current_screen != ScreenId::PlanetBuildMenu {
+            return Ok(());
+        }
+        let Ok(row) = self.current_build_planet_row() else {
+            return Ok(());
+        };
+        let record = row.planet_record_index_1_based;
+        let defensive = !self.current_build_planet_view_is_defensive();
+        self.change(|state| {
+            state.game_data.set_planet_defensive(record, defensive)?;
+            Ok(())
+        })?;
+        self.planet.build_status = Some(if defensive {
+            "Defensive mode on: each year this world builds ground batteries, then armies."
+                .to_string()
+        } else {
+            "Defensive mode off.".to_string()
+        });
         Ok(())
     }
 
@@ -1805,11 +1840,18 @@ impl App {
                     starbase_points_left: 0,
                     building_count: 0,
                     docked_count: 0,
+                    defensive: false,
                 });
             }
         };
         let view_stats = planet_build_view(&self.game_data, &row)?;
+        let defensive = self
+            .game_data
+            .planets
+            .get(row.planet_record_index_1_based - 1)
+            .is_some_and(|planet| planet.defensive);
         Ok(PlanetBuildMenuView {
+            defensive,
             row,
             committed_points: view_stats.committed_points,
             budget: view_stats.budget,

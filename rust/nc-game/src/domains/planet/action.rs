@@ -10,6 +10,8 @@ pub enum PlanetAction {
     OpenAutoCommissionPrompt,
     CloseAutoCommissionPrompt,
     AdvanceAutoCommissionReport,
+    /// F on the Build menu: toggle the current world's defensive mode.
+    ToggleBuildPlanetDefensive,
     /// A key on the Mass Commission report, which may answer a merge offer.
     AutoCommissionReportKey(KeyCode),
     OpenScorchPrompt,

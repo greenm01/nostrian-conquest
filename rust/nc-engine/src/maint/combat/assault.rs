@@ -469,6 +469,8 @@ fn capture_planet(
 ) -> InheritedAssets {
     let scorched = planet.scorch_earth;
     planet.owner.0 = new_owner;
+    // Defensive mode was the old owner's order.
+    planet.defensive = false;
     // Just captured: no income until the yearly pass has stepped the status
     // to 2, as ECMAINT does.
     planet.years_under_owner = 0;

@@ -97,6 +97,11 @@ impl ProductionItemKind {
         )
     }
 
+    /// Ground batteries and armies: all a world in defensive mode builds.
+    pub fn is_ground_defense(self) -> bool {
+        matches!(self, Self::GroundBattery | Self::Army)
+    }
+
     pub fn build_cost(self) -> Option<u32> {
         match self {
             Self::Destroyer => Some(5),
@@ -258,4 +263,9 @@ pub struct Planet {
     /// classic import starts with none crippled. They recover at the end of
     /// a year in which nobody bombards the world.
     pub crippled_batteries: u16,
+    /// Defensive mode: each year the world queues ground batteries and
+    /// armies with whatever capacity its other orders leave, and takes no
+    /// new ship or starbase orders. NC only: PLANETS.DAT has no such field,
+    /// so classic export drops it and classic import starts with it off.
+    pub defensive: bool,
 }

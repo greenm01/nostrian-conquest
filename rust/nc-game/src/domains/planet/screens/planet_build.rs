@@ -12,9 +12,9 @@ use crate::screen::layout::{
     CMD_COL_1, EXPERT_MENU_PROMPT_ROW, LEFT_WINDOW_PAD_COL, MenuEntry, ScreenGeometry,
     centered_row, dismiss_prompt_row, draw_command_line_default_input_padded,
     draw_command_prompt_padded, draw_dismiss_prompt_padded, draw_expert_menu_padded,
-    draw_inline_planet_info_prompt_padded, draw_menu_notice_padded, draw_menu_row,
-    draw_title_bar_padded, last_body_row, menu_prompt_row, new_playfield, new_playfield_for,
-    standard_table_visible_rows_for,
+    draw_inline_planet_info_prompt_padded, draw_menu_entry_with_toggle, draw_menu_notice_padded,
+    draw_menu_row, draw_title_bar_padded, last_body_row, menu_prompt_row, new_playfield,
+    new_playfield_for, standard_table_visible_rows_for,
 };
 use crate::screen::table::{
     SplitTableRow, TABLE_TEXT_INSET, TableColumn, TableFooter, centered_table_start_col,
@@ -98,6 +98,8 @@ pub struct PlanetBuildMenuView {
     pub starbase_points_left: u32,
     pub building_count: u32,
     pub docked_count: u32,
+    /// The world's defensive mode, shown as the F>ortify toggle.
+    pub defensive: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -157,7 +159,7 @@ impl PlanetBuildScreen {
                 draw_expert_menu_padded(
                     &mut buffer,
                     "BUILD COMMAND",
-                    "? X V P R C N S A D I <Q>",
+                    "? X V P R C N S A D I F <Q>",
                     status,
                 );
             }
@@ -177,8 +179,9 @@ impl PlanetBuildScreen {
         draw_menu_row(&mut buffer, 3, &ROW_2);
         draw_menu_row(&mut buffer, 4, &ROW_3);
         draw_menu_row(&mut buffer, 5, &ROW_4);
+        draw_menu_entry_with_toggle(&mut buffer, 6, CMD_COL_1, "F", "ortify ", view.defensive);
 
-        let command_row = menu_prompt_row(5);
+        let command_row = menu_prompt_row(6);
         if inline_planet_info {
             draw_inline_planet_info_prompt_padded(
                 &mut buffer,
@@ -248,7 +251,7 @@ impl PlanetBuildScreen {
                 &mut buffer,
                 command_row,
                 "BUILD COMMAND",
-                "? X V P R C N S A D I <Q>",
+                "? X V P R C N S A D I F <Q>",
             );
             if let Some(status) = status {
                 draw_menu_notice_padded(&mut buffer, command_row, status);
@@ -603,6 +606,9 @@ impl PlanetBuildScreen {
                 Action::Planet(PlanetAction::OpenCurrentBuildPlanetInfo)
             }
             KeyCode::Char('d') | KeyCode::Char('D') => Action::Planet(PlanetAction::OpenBuildList),
+            KeyCode::Char('f') | KeyCode::Char('F') => {
+                Action::Planet(PlanetAction::ToggleBuildPlanetDefensive)
+            }
             KeyCode::Char('a') | KeyCode::Char('A') => {
                 Action::Planet(PlanetAction::OpenBuildAbortPrompt)
             }

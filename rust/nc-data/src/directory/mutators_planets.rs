@@ -86,6 +86,21 @@ impl CoreGameData {
         Ok(())
     }
 
+    /// Set or lift the planet's defensive mode (see `Planet::defensive`).
+    pub fn set_planet_defensive(
+        &mut self,
+        record_index_1_based: usize,
+        defensive: bool,
+    ) -> Result<(), GameStateMutationError> {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
+                index_1_based: record_index_1_based,
+            },
+        )?;
+        record.defensive = defensive;
+        Ok(())
+    }
+
     pub fn clear_planet_build_orders_by_kind(
         &mut self,
         record_index_1_based: usize,
@@ -272,6 +287,11 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             },
         )?;
+        if record.defensive && !kind.is_ground_defense() {
+            return Err(GameStateMutationError::DefensiveWorldBuild {
+                index_1_based: record_index_1_based,
+            });
+        }
 
         // Orders of one kind share a slot; the budget is the only limit.
         let slot = record

@@ -1083,6 +1083,8 @@ A planet without a starbase can spend up to its Production, rounded to the neare
 
 #admonition("NOTE")[A world holds at most 255 armies and 255 ground batteries. An order that would pass either limit waits in the queue and spends nothing until there is room.]
 
+*Defensive mode.* Fortify (*F*) on the Build menu turns defensive mode on or off for the current planet, shown as `F>ortify [ON] [OFF]`. At each maintenance, before the world spends its points, a world in defensive mode orders as many ground batteries as the points left after its other orders will buy, and then armies with what remains. It stops at 255 of each, and a world full of both orders nothing. Ships and starbases already queued still finish, but the world takes no new ship or starbase orders until you turn the mode off. The mode ends if the world is captured.
+
 #admonition("WARNING")[Troop transports are built empty. Load armies onto them yourself before you send them into battle.]
 
 #admonition("WARNING")[Stardock contents are a prime target for enemy bombardment. Commission your ships promptly or risk losing them before they ever see combat.]

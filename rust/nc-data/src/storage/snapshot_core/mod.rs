@@ -106,7 +106,11 @@ pub(super) fn write_changed_core_rows(
     let changed = replace_records(
         tx,
         snapshot_id,
-        &["snapshot_planets", "snapshot_planet_build_slots"],
+        &[
+            "snapshot_planets",
+            "snapshot_planet_build_slots",
+            "snapshot_planet_defensive",
+        ],
         &before.planets,
         &after.planets,
     )?;

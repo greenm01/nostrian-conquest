@@ -282,6 +282,10 @@ pub enum GameStateMutationError {
     PlanetBuildQueueFull {
         index_1_based: usize,
     },
+    /// A world in defensive mode takes only ground batteries and armies.
+    DefensiveWorldBuild {
+        index_1_based: usize,
+    },
     EmptyStardockSlot {
         planet_index_1_based: usize,
         slot_0_based: usize,
@@ -595,6 +599,10 @@ impl std::fmt::Display for GameStateMutationError {
             Self::PlanetBuildQueueFull { index_1_based } => {
                 write!(f, "build queue full for planet record {}", index_1_based)
             }
+            Self::DefensiveWorldBuild { .. } => write!(
+                f,
+                "This world is in defensive mode: it builds only ground batteries and armies."
+            ),
             Self::EmptyStardockSlot {
                 planet_index_1_based,
                 slot_0_based,

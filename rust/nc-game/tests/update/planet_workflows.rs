@@ -1234,23 +1234,24 @@ fn planet_build_menu_matches_verified_v15_command_layout() {
         terminal.line(5).trim_end(),
         "  V>iew partial star map     N>ext planet                I>nfo about a Planet"
     );
+    assert_eq!(terminal.line(6).trim_end(), "  F>ortify [ON] [OFF]");
     assert_eq!(
-        terminal.line(7).trim_end(),
-        " BUILD COMMAND <- ? X V P R C N S A D I <Q> ->"
-    );
-    assert_eq!(
-        terminal.line(13).trim_end(),
-        " There are no starbases orbiting planet \"Codex Prime\"."
+        terminal.line(8).trim_end(),
+        " BUILD COMMAND <- ? X V P R C N S A D I F <Q> ->"
     );
     assert_eq!(
         terminal.line(14).trim_end(),
-        " Standard building restrictions apply, except to a first starbase."
+        " There are no starbases orbiting planet \"Codex Prime\"."
     );
     assert_eq!(
         terminal.line(15).trim_end(),
+        " Standard building restrictions apply, except to a first starbase."
+    );
+    assert_eq!(
+        terminal.line(16).trim_end(),
         " Treasury: 50 PP.  Build capacity: 100 PP.  Budget remaining: 50 PP."
     );
-    assert_eq!(terminal.lines[17].trim_end(), " Building: 0   Docked: 0");
+    assert_eq!(terminal.lines[18].trim_end(), " Building: 0   Docked: 0");
 }
 
 #[test]
@@ -1299,7 +1300,7 @@ fn repeated_same_kind_build_submissions_merge_into_one_player_visible_total() {
 
     app.open_planet_build_menu();
     app.render(&mut terminal).expect("render succeeds");
-    assert_eq!(terminal.line(17).trim_end(), " Building: 5   Docked: 0");
+    assert_eq!(terminal.line(18).trim_end(), " Building: 5   Docked: 0");
 
     assert_eq!(
         apply_action(
@@ -2775,6 +2776,7 @@ fn planet_build_specify_uses_bottom_command_line_default_prompt() {
         starbase_points_left: 30,
         building_count: 1,
         docked_count: 0,
+        defensive: false,
     };
     let orders = vec![PlanetBuildOrder {
         kind: ProductionItemKind::Destroyer,
@@ -2824,6 +2826,7 @@ fn planet_build_quantity_uses_bottom_command_line_default_prompt() {
         starbase_points_left: 30,
         building_count: 1,
         docked_count: 0,
+        defensive: false,
     };
     let orders = vec![PlanetBuildOrder {
         kind: ProductionItemKind::Destroyer,
@@ -2880,6 +2883,7 @@ fn planet_build_specify_renders_success_as_notice_not_error() {
         starbase_points_left: 30,
         building_count: 1,
         docked_count: 0,
+        defensive: false,
     };
     let orders = vec![PlanetBuildOrder {
         kind: ProductionItemKind::Destroyer,
@@ -2896,4 +2900,61 @@ fn planet_build_specify_renders_success_as_notice_not_error() {
             .contains("Notice: Queued 2 Destroyers.")
     }));
     assert!(!(0..buffer.height()).any(|row| buffer.plain_line(row).contains("Error:")));
+}
+
+#[test]
+fn build_menu_fortify_toggles_defensive_mode_and_refuses_ships() {
+    let fixture_dir = temp_game_copy();
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.clone(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    advance_to_main_menu(&mut app);
+    apply_action(&mut app, Action::Planet(PlanetAction::OpenBuildMenu));
+    assert_eq!(app.current_screen(), ScreenId::PlanetBuildMenu);
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal).expect("build menu renders");
+    assert!(line_containing(&terminal, "F>ortify").contains("F>ortify [ON] [OFF]"));
+
+    apply_action(
+        &mut app,
+        Action::Planet(PlanetAction::ToggleBuildPlanetDefensive),
+    );
+    let defensive = |dir: &std::path::Path| {
+        latest_runtime_state(dir)
+            .game_data
+            .planets
+            .iter()
+            .filter(|planet| planet.defensive)
+            .count()
+    };
+    assert_eq!(defensive(&fixture_dir), 1);
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal).expect("build menu renders");
+    assert!(line_containing(&terminal, "Defensive mode on").contains("ground batteries"));
+
+    // A destroyer (unit 1) is refused while the mode is on.
+    apply_action(&mut app, Action::Planet(PlanetAction::OpenBuildSpecify));
+    apply_action(
+        &mut app,
+        Action::Planet(PlanetAction::AppendBuildUnitChar('1')),
+    );
+    apply_action(&mut app, Action::Planet(PlanetAction::SubmitBuildUnit));
+    assert_eq!(
+        app.planet.build_unit_status.as_deref(),
+        Some("This world is in defensive mode: it builds only ground batteries and armies.")
+    );
+
+    apply_action(&mut app, Action::Planet(PlanetAction::OpenMenu));
+    apply_action(&mut app, Action::Planet(PlanetAction::OpenBuildMenu));
+    apply_action(
+        &mut app,
+        Action::Planet(PlanetAction::ToggleBuildPlanetDefensive),
+    );
+    assert_eq!(defensive(&fixture_dir), 0);
 }
