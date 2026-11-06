@@ -360,6 +360,17 @@ impl App {
         self.clamp_fleet_list_cursor_for_len(self.fleet_list_rows().len());
     }
 
+    pub(crate) fn focus_fleet_list_record(&mut self, fleet_record_index_1_based: usize) {
+        let rows = self.fleet_list_rows();
+        if let Some(position) = rows
+            .iter()
+            .position(|row| row.fleet_record_index_1_based == fleet_record_index_1_based)
+        {
+            self.fleet.cursor = position;
+            self.clamp_fleet_list_cursor_for_len(rows.len());
+        }
+    }
+
     pub(crate) fn fleet_selected_list_row(&mut self) -> Result<FleetRow, String> {
         let ScreenId::FleetList = self.current_screen else {
             return Err("Fleet list is not active.".to_string());

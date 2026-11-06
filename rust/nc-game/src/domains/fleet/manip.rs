@@ -1068,27 +1068,24 @@ impl App {
         // The chain sort can move the donor to another record.
         self.fleet.detach_donor_record_index_1_based =
             Some(result.donor_fleet_record_index_1_based);
+        // The new fleet sits on Hold, so the next Orders prompt and the list
+        // cursor point at it.
+        self.remember_newly_commissioned_fleet_record(result.new_fleet_record_index_1_based);
+        self.focus_fleet_list_record(result.new_fleet_record_index_1_based);
+        let new_fleet_number = self
+            .fleet_number_for_record_index(result.new_fleet_record_index_1_based)
+            .unwrap_or(0);
+        let message = format!(
+            "Detached ships from Fleet #{donor_fleet_number:02} into Fleet #{new_fleet_number:02}."
+        );
         if self.current_fleet_detach_ship_total(result.donor_fleet_record_index_1_based) > 1 {
-            let new_fleet_number = self
-                .fleet_number_for_record_index(result.new_fleet_record_index_1_based)
-                .unwrap_or(0);
-            self.fleet.detach_last_commissioned = Some(format!(
-                "Commissioned Fleet #{new_fleet_number:02} from Fleet #{donor_fleet_number:02}."
-            ));
+            self.fleet.detach_last_commissioned = Some(message);
             self.fleet.detach_mode = FleetDetachMode::ChoosingClass;
             self.current_screen = ScreenId::FleetDetach;
         } else {
-            let new_fleet_number = self
-                .fleet_number_for_record_index(result.new_fleet_record_index_1_based)
-                .unwrap_or(0);
             self.fleet.detach_donor_record_index_1_based = None;
             self.fleet.detach_last_commissioned = None;
-            self.show_fleet_context_success(
-                format!(
-                    "Detached ships from Fleet #{donor_fleet_number:02} into Fleet #{new_fleet_number:02}."
-                ),
-                true,
-            );
+            self.show_fleet_context_success(message, true);
         }
         Ok(())
     }

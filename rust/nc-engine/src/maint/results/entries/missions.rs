@@ -669,6 +669,9 @@ pub fn push_mission_entries(
                         outcome_rows.push(StructuredBodyItem::Text(if bombard_force_destroyed {
                             "Hostile return fire destroyed the bombardment force."
                                 .to_string()
+                        } else if !nc_data::has_combat_ships(fleet) {
+                            "Return fire destroyed all our warships. The ships left cannot bombard and await new orders."
+                                .to_string()
                         } else {
                             "We are maintaining bombardment position and will continue next turn."
                                 .to_string()

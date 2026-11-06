@@ -52,10 +52,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     assert!(terminal.line(10).contains("Ships: SC1 CA1 DD4 TT*4"));
     assert!(!terminal.line(10).contains("AR="));
     assert_eq!(terminal.line(12).trim_end(), "<D> Detach, <X> Clear");
-    assert!(
-        line_containing(&terminal, "Class <SC,CA,DD,TT*>")
-            .contains("Class <SC,CA,DD,TT*>")
-    );
+    assert!(line_containing(&terminal, "Class <SC,CA,DD,TT*>").contains("Class <SC,CA,DD,TT*>"));
     assert!(
         !terminal
             .lines
@@ -96,7 +93,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     );
     let updated = latest_runtime_state(&fixture_dir).game_data;
     let first_commission_message = format!(
-        "Commissioned Fleet #{:02} from Fleet #01.",
+        "Detached ships from Fleet #01 into Fleet #{:02}.",
         updated
             .fleets
             .last()
@@ -232,7 +229,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
         .expect("render after first commission");
-    let first_commission_message = line_containing(&terminal, "Commissioned Fleet #")
+    let first_commission_message = line_containing(&terminal, "Detached ships from Fleet #")
         .trim_end()
         .to_string();
 
@@ -261,7 +258,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     confirm_detach(&mut app);
     app.render(&mut terminal)
         .expect("render after second commission");
-    let second_commission_message = line_containing(&terminal, "Commissioned Fleet #")
+    let second_commission_message = line_containing(&terminal, "Detached ships from Fleet #")
         .trim_end()
         .to_string();
     assert_ne!(second_commission_message, first_commission_message);
@@ -445,6 +442,14 @@ fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() 
     assert!(line_containing(&terminal, "Notice: ").contains(&format!(
         "Detached ships from Fleet #01 into Fleet #{new_fleet_number:02}."
     )));
+
+    // The new fleet waits on Hold, so the Orders prompt offers it first.
+    apply_action(&mut app, Action::Fleet(FleetAction::OpenOrder));
+    app.render(&mut terminal).expect("render order prompt");
+    assert!(
+        line_containing(&terminal, "COMMAND <- Order Fleet #")
+            .contains(&format!("Order Fleet # [{new_fleet_number}] <Q> ->"))
+    );
 }
 
 #[test]
@@ -681,4 +686,61 @@ fn fleet_detach_prompt_defaults_to_largest_owned_fleet_by_ship_total() {
         AppOutcome::Continue
     );
     assert_eq!(app.fleet.menu_prompt_default_value, "2");
+}
+
+/// Leaving Detach from the Fleet List lands on the new fleet, which waits on
+/// Hold for its orders.
+#[test]
+fn fleet_detach_from_the_list_highlights_the_new_fleet() {
+    let fixture_dir = temp_game_copy();
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
+    let donor = &mut game_data.fleets[0];
+    donor.ships.battleships = 0;
+    donor.ships.cruisers = 0;
+    donor.ships.destroyers = 4;
+    nc_data::set_troop_transports(donor, 0);
+    nc_data::set_armies_aboard(donor, 0);
+    donor.ships.scouts = 0;
+    donor.ships.etacs = 0;
+    nc_data::recompute_max_speed(donor);
+    donor.speed = 0;
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
+    let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
+    import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
+
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.clone(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    advance_to_main_menu(&mut app);
+    app.open_fleet_list();
+    apply_action(&mut app, Action::Fleet(FleetAction::AppendListChar('1')));
+    apply_action(&mut app, Action::Fleet(FleetAction::OpenDetach));
+    enter_detach_input(&mut app, "dd");
+    submit_detach(&mut app);
+    submit_detach(&mut app);
+    confirm_detach(&mut app);
+    assert_eq!(app.current_screen(), ScreenId::FleetDetach);
+    let new_fleet_number = latest_runtime_state(&fixture_dir)
+        .game_data
+        .fleets
+        .last()
+        .expect("detached fleet")
+        .fleet_number
+        .0;
+
+    apply_action(&mut app, Action::Fleet(FleetAction::CancelDetach));
+    assert_eq!(app.current_screen(), ScreenId::FleetList);
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal).expect("render list");
+    assert!(
+        line_containing(&terminal, "COMMAND <-").contains(&format!("[{new_fleet_number}] ->")),
+        "{}",
+        line_containing(&terminal, "COMMAND <-")
+    );
 }

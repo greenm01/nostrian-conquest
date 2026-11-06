@@ -1147,6 +1147,47 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
     );
 }
 
+/// A bomber whose warships all fall to return fire, leaving only its
+/// transports, says so instead of promising another run.
+#[test]
+fn bombardment_report_says_when_only_unarmed_ships_survive() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3026)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [1, 9];
+    seed_target_world(&mut game_data, coords, "biggy");
+    let fleet = &mut game_data.fleets[0];
+    fleet.owner.0 = 1;
+    fleet.fleet_number.0 = 10;
+    fleet.sector = Coords::from_array(coords);
+    fleet.ships = Default::default();
+    fleet.ships.loaded_transports = 24;
+
+    let mut events = MaintenanceEvents::default();
+    events.mission_events.push(MissionEvent {
+        fleet_idx: 0,
+        owner_empire: 1,
+        kind: Mission::BombardWorld,
+        outcome: MissionOutcome::Succeeded,
+        abort_reason: None,
+        planet_idx: Some(0),
+        location_coords: Some(coords),
+        target_coords: Some(coords),
+        stardate_week: Some(3),
+    });
+
+    let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+        .join(" ")
+        .replace('\n', " ");
+    assert!(
+        text.contains("Return fire destroyed all our warships."),
+        "{text}"
+    );
+    assert!(!text.contains("maintaining bombardment position"), "{text}");
+}
+
 #[test]
 fn bombardment_defender_report_uses_no_defenses_for_zero_counts() {
     let mut game_data = GameStateBuilder::new()
