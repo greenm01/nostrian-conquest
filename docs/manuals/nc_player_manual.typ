@@ -855,7 +855,7 @@ your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 === Persistent Standing Missions
 
-*Mission 0: Hold Position.* The default idle state. The fleet stays where it is and acts on its ROE if hostile fleets come near.
+*Mission 0: Hold Position.* The default idle state. The fleet stays where it is and acts on its ROE if hostile fleets come near. You enter no coordinates; the order takes effect at once.
 
 *Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom (see @appendix-combat) allow, as far as your ROE permits. The mission stays in force until you assign a new one. A patrol needs warships. If it loses its last one, it gives up the patrol and holds position.
 

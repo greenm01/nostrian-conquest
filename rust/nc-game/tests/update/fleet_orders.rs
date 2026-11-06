@@ -3748,7 +3748,7 @@ fn fleet_order_patrol_defaults_x_and_y_to_current_sector() {
 }
 
 #[test]
-fn fleet_order_hold_defaults_to_current_sector_and_persists_target() {
+fn fleet_order_hold_applies_at_once_where_the_fleet_is() {
     let fixture_dir = temp_game_copy();
     let state = latest_runtime_state(&fixture_dir);
     let hold_fleet = state
@@ -3787,31 +3787,11 @@ fn fleet_order_hold_defaults_to_current_sector_and_persists_target() {
         AppOutcome::Continue
     );
 
+    // Hold never moves a fleet, so it asks for no coordinates.
+    assert_ne!(app.current_screen(), ScreenId::FleetOrder);
     let mut terminal = CaptureTerminal::new();
-    app.render(&mut terminal)
-        .expect("hold target x prompt should render");
-    assert!(
-        line_containing(&terminal, "Target XX [")
-            .contains(&format!("Target XX [{:02}] <Q> ->", hold_coords[0]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder)),
-        AppOutcome::Continue
-    );
-    let mut terminal = CaptureTerminal::new();
-    app.render(&mut terminal)
-        .expect("hold target y prompt should render");
-    assert!(
-        line_containing(&terminal, "Target YY [")
-            .contains(&format!("Target YY [{:02}] <Q> ->", hold_coords[1]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder)),
-        AppOutcome::Continue
-    );
-    confirm_fleet_order(&mut app, true);
+    app.render(&mut terminal).expect("render fleet menu");
+    assert!(line_containing(&terminal, "Notice: ").contains("Applied hold to Fleet #"));
 
     let state = latest_runtime_state(&fixture_dir);
     let ordered_fleet = state
@@ -4545,7 +4525,7 @@ fn fleet_group_patrol_defaults_x_and_y_to_selected_sector() {
 }
 
 #[test]
-fn fleet_group_hold_defaults_to_selected_sector_and_persists_target() {
+fn fleet_group_hold_applies_at_once_where_each_fleet_is() {
     let fixture_dir = temp_game_copy();
     let state = latest_runtime_state(&fixture_dir);
     let hold_fleet = state
@@ -4597,31 +4577,11 @@ fn fleet_group_hold_defaults_to_selected_sector_and_persists_target() {
         AppOutcome::Continue
     );
 
+    // Hold never moves a fleet, so it asks for no coordinates.
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
-        .expect("group hold target x prompt should render");
-    assert!(
-        line_containing(&terminal, "Target XX [")
-            .contains(&format!("Target XX [{:02}] <Q> ->", hold_coords[0]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitGroupOrder)),
-        AppOutcome::Continue
-    );
-    let mut terminal = CaptureTerminal::new();
-    app.render(&mut terminal)
-        .expect("group hold target y prompt should render");
-    assert!(
-        line_containing(&terminal, "Target YY [")
-            .contains(&format!("Target YY [{:02}] <Q> ->", hold_coords[1]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitGroupOrder)),
-        AppOutcome::Continue
-    );
-    confirm_fleet_group_order(&mut app, true);
+        .expect("group order should render");
+    assert!(!terminal.lines.iter().any(|line| line.contains("Target XX")));
 
     let state = latest_runtime_state(&fixture_dir);
     assert_eq!(

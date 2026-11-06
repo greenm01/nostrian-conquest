@@ -1871,7 +1871,7 @@ impl App {
                     match &seek_home_targets {
                         Some(targets) => targets[index],
                         None if fleet_group_order_requires_target(mission_code) => target,
-                        None => [0, 0],
+                        None => row.coords,
                     },
                     aux0,
                     aux1,
@@ -2030,8 +2030,10 @@ impl App {
     }
 }
 
-fn fleet_group_order_requires_target(_order_code: u8) -> bool {
-    true
+/// Hold never moves the fleet, so it takes no target: the fleet holds where it
+/// is.
+fn fleet_group_order_requires_target(order_code: u8) -> bool {
+    order_code != nc_data::Order::HoldPosition.code()
 }
 
 fn fleet_group_order_label(order_code: u8) -> &'static str {
