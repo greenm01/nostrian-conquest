@@ -233,8 +233,9 @@ fn commissioning_into_a_number_gap_sorts_the_chain_like_detach() {
 }
 
 #[test]
-fn a_maintenance_merge_leaves_the_host_roe() {
-    // ECMAINT's merge (2895:4a6b) adds the ships and never writes 0x25.
+fn a_maintenance_merge_gives_an_unarmed_host_the_warships_roe() {
+    // ECMAINT's merge (2895:4a6b) never writes 0x25; NC lets warships joining
+    // a fleet with none keep their ROE.
     let mut game_data = probe_setup();
     for (record, cruisers, roe) in [(0, 0, 0), (1, 1, 6)] {
         let fleet = &mut game_data.fleets[record];
@@ -249,5 +250,5 @@ fn a_maintenance_merge_leaves_the_host_roe() {
         .expect("fleet #1 survives");
     assert_eq!(host.ships.cruisers, 1);
     assert_eq!(host.ships.etacs, 2);
-    assert_eq!(host.rules_of_engagement, 0);
+    assert_eq!(host.rules_of_engagement, 6);
 }
