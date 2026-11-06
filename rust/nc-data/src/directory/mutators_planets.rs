@@ -217,14 +217,18 @@ impl CoreGameData {
 
     /// The world's spending limits left after the orders already queued. A
     /// world with no starbase in orbit or in its stardock may pay for one
-    /// base from its treasury outside its build capacity.
+    /// base from its treasury outside its build capacity. A world in
+    /// defensive mode leaves nothing for new ship or starbase orders.
     pub fn planet_spend_left(
         &self,
         record_index_1_based: usize,
     ) -> Result<PlanetSpendLimits, GameStateMutationError> {
-        Ok(self
+        let planet = &self.planets[record_index_1_based - 1];
+        let mut left = self
             .planet_spend_limits(record_index_1_based)?
-            .after_queue(&self.planets[record_index_1_based - 1]))
+            .after_queue(planet);
+        left.defense_only = planet.defensive;
+        Ok(left)
     }
 
     /// What a world may spend this turn: its treasury's whole points, its
@@ -350,6 +354,7 @@ impl PlanetSpendLimits {
             treasury,
             capacity: u32::from(capacity),
             first_base,
+            defense_only: false,
         }
     }
 
@@ -363,6 +368,9 @@ impl PlanetSpendLimits {
 
     /// The most an order of `kind` may spend.
     pub fn points_for(&self, kind: ProductionItemKind) -> u32 {
+        if self.defense_only && !kind.is_ground_defense() {
+            return 0;
+        }
         let first_base = if kind == ProductionItemKind::Starbase {
             self.first_base
         } else {

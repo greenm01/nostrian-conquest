@@ -228,3 +228,44 @@ fn suppress_first_invades_only_after_bombarding() {
         "some bombarding force should go on to invade"
     );
 }
+
+#[test]
+fn the_executor_orders_only_ground_defences_at_a_defensive_world() {
+    let mut game = seated_game(PLAYERS, 0);
+    let start_year = game.play.built.game_data.conquest.game_year;
+    for planet in &mut game.play.built.game_data.planets {
+        planet.defensive = planet.owner.0 == 1;
+    }
+    for _ in 0..20 {
+        for empire in 1..=PLAYERS {
+            if let Some(commission) = commission_submission(&game.play.built.game_data, empire) {
+                game.submit_turn(&commission).expect("commissioning");
+            }
+            let game_data = &game.play.built.game_data;
+            let memory = &game.seats[usize::from(empire) - 1];
+            let action = plan_turn(
+                game_data,
+                memory,
+                &seat_masks(game_data, empire),
+                &Weights::TUNED,
+                start_year,
+            );
+            let decoded = decode_action(game_data, empire, &action);
+            game.submit_turn(&decoded.submission)
+                .expect("executor turn should submit");
+        }
+        for planet in game.play.built.game_data.planets.iter() {
+            if planet.defensive {
+                assert!(
+                    planet
+                        .build_queue
+                        .iter()
+                        .all(|slot| slot.points_owed == 0 || slot.kind.is_ground_defense()),
+                    "{:?}",
+                    planet.build_queue
+                );
+            }
+        }
+        game.run_maintenance().expect("maintenance should run");
+    }
+}

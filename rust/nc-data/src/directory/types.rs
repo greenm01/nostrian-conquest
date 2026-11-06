@@ -74,6 +74,9 @@ pub struct PlanetSpendLimits {
     pub treasury: u32,
     pub capacity: u32,
     pub first_base: u32,
+    /// New orders at a world in defensive mode may buy only ground
+    /// batteries and armies; see [`CoreGameData::planet_spend_left`].
+    pub defense_only: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
