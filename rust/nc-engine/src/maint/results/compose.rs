@@ -66,6 +66,39 @@ impl ReportSuppressionPlan {
         self.disposition_covered_fleet_keys
             .contains(&(empire, fleet_number))
     }
+
+    /// The battle gets its own briefing: no loss or escape report of its
+    /// reporting fleet tells it instead.
+    pub(super) fn battle_has_briefing(&self, event: &nc_data::FleetBattleEvent) -> bool {
+        !event.reporting_fleet_number.is_some_and(|fleet_number| {
+            self.destroyed_supersedes_battle(event.reporting_empire, fleet_number)
+                || self.disposition_supersedes_battle(event.reporting_empire, fleet_number)
+        })
+    }
+}
+
+/// A fleet's sighting of the enemy it then fought that same week. The battle
+/// briefing carries the sighting, so it sends no report of its own.
+pub(super) fn contact_folds_into_battle(
+    contact: &nc_data::ScoutContactEvent,
+    battle: &nc_data::FleetBattleEvent,
+) -> bool {
+    let Some(fleet_number) = contact.reporting_fleet_number else {
+        return false;
+    };
+    let in_battle = if battle.reporting_fleet_numbers.is_empty() {
+        battle.reporting_fleet_number == Some(fleet_number)
+    } else {
+        battle.reporting_fleet_numbers.contains(&fleet_number)
+    };
+    !matches!(
+        contact.source,
+        nc_data::ContactReportSource::Starbase { .. }
+    ) && in_battle
+        && contact.viewer_empire == battle.reporting_empire
+        && contact.coords == battle.coords
+        && contact.stardate_week == battle.stardate_week
+        && battle.enemy_empires.contains(&contact.target_empire)
 }
 
 pub(super) fn mission_event_has_assault_report(

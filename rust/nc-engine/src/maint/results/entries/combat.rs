@@ -2,7 +2,8 @@ use crate::maint::FleetBattlePerspective;
 use nc_data::{CoreGameData, MaintenanceEvents, Mission, MissionOutcome};
 
 use crate::maint::results::combat::*;
-use crate::maint::results::compose::ReportSuppressionPlan;
+use crate::maint::results::compose::{ReportSuppressionPlan, contact_folds_into_battle};
+use crate::maint::results::entries::intel::enemy_speed_value;
 use crate::maint::results::entries::{NarrativePhase, ReportEntry, ReportTarget};
 use crate::maint::results::format::*;
 use crate::maint::results::mod_constants::*;
@@ -106,14 +107,7 @@ pub fn push_combat_entries(
     // ----- Fleet battle events -----
     let suppression_plan = ReportSuppressionPlan::build(game_data, events);
     for event in &events.fleet_battle_events {
-        if event.reporting_fleet_number.is_some_and(|fleet_number| {
-            suppression_plan.destroyed_supersedes_battle(event.reporting_empire, fleet_number)
-        }) {
-            continue;
-        }
-        if event.reporting_fleet_number.is_some_and(|fleet_number| {
-            suppression_plan.disposition_supersedes_battle(event.reporting_empire, fleet_number)
-        }) {
+        if !suppression_plan.battle_has_briefing(event) {
             continue;
         }
         let reporting_fleet_survives = event.reporting_fleet_number.is_some_and(|fleet_number| {
@@ -194,7 +188,10 @@ pub fn push_combat_entries(
         let reporting_fleet = event
             .reporting_fleet_number
             .filter(|_| reporting_fleet_survives);
-        let source = if reporting_fleet.is_some() {
+        let several_fleets = event.reporting_fleet_numbers.len() > 1;
+        let source = if several_fleets {
+            format!("From your fleets, located in System({x},{y}):")
+        } else if reporting_fleet.is_some() {
             owned_fleet_source_clause(reporting_fleet, &format!("System({x},{y})"))
         } else if starbase_only_defender {
             "From your Fleet Command Center:".to_string()
@@ -203,11 +200,34 @@ pub fn push_combat_entries(
         };
         let header = report_header(&source, event.stardate_week, year);
         let outcome_text = battle_outcome_sentence(events, event);
-        let context_rows = vec![StructuredBodyItem::Label {
+        let mut context_rows = vec![StructuredBodyItem::Label {
             label: LABEL_ENEMY.to_string(),
             value: enemy.clone(),
         }];
-        let force_rows = vec![
+        if let Some(contact) = events
+            .scout_contact_events
+            .iter()
+            .find(|contact| contact_folds_into_battle(contact, event))
+        {
+            context_rows.push(StructuredBodyItem::Label {
+                label: LABEL_ENEMY_SPEED.to_string(),
+                value: enemy_speed_value(contact.target_speed),
+            });
+        }
+        let mut force_rows = Vec::new();
+        if several_fleets {
+            force_rows.push(StructuredBodyItem::Label {
+                label: LABEL_OUR_FLEETS.to_string(),
+                value: join_report_parts(
+                    &event
+                        .reporting_fleet_numbers
+                        .iter()
+                        .map(|fleet_number| ordinal_number(usize::from(*fleet_number)))
+                        .collect::<Vec<_>>(),
+                ),
+            });
+        }
+        force_rows.extend([
             StructuredBodyItem::Label {
                 label: if starbase_only_defender {
                     LABEL_OUR_DEFENSES.to_string()
@@ -220,7 +240,7 @@ pub fn push_combat_entries(
                 label: LABEL_ALIEN_FORCES.to_string(),
                 value: enemy_initial.clone(),
             },
-        ];
+        ]);
         let mut outcome_rows = Vec::new();
         if matches!(event.perspective, FleetBattlePerspective::Intercepted) {
             outcome_rows.push(StructuredBodyItem::Text(

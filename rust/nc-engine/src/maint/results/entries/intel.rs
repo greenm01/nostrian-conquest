@@ -4,6 +4,7 @@ use nc_data::{
 };
 
 use crate::maint::results::combat::*;
+use crate::maint::results::compose::{ReportSuppressionPlan, contact_folds_into_battle};
 use crate::maint::results::entries::{
     NarrativePhase, ReportEntry, ReportTarget, narrative_phase_for_report_text,
 };
@@ -114,6 +115,7 @@ pub fn push_intel_entries(
         }
         set
     };
+    let suppression_plan = ReportSuppressionPlan::build(game_data, events);
     for event in &events.scout_contact_events {
         // Suppress empty fleet contacts — no intelligence value.
         if event.small_vessels == 0 && event.medium_vessels == 0 && event.large_vessels == 0 {
@@ -131,6 +133,11 @@ pub fn push_intel_entries(
             if !seen_contacts.insert(contact_key) {
                 continue;
             }
+        }
+        if events.fleet_battle_events.iter().any(|battle| {
+            suppression_plan.battle_has_briefing(battle) && contact_folds_into_battle(event, battle)
+        }) {
+            continue;
         }
         let [x, y] = event.coords;
         let fleet_description = contact_fleet_description(event);
@@ -350,6 +357,15 @@ pub fn contact_speed_text(speed: u8) -> String {
         "sublight speed".to_string()
     } else {
         format!("a translight speed of {speed}")
+    }
+}
+
+/// The sighted speed in a battle briefing: "translight 6", or "sublight".
+pub fn enemy_speed_value(speed: u8) -> String {
+    if speed == 0 {
+        "sublight".to_string()
+    } else {
+        format!("translight {speed}")
     }
 }
 

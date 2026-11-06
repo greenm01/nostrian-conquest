@@ -211,6 +211,7 @@ fn results_reports_battle_before_bombard_aftermath() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(7),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords,
@@ -266,22 +267,20 @@ fn results_reports_battle_before_bombard_aftermath() {
 
     let rows = build_results_report_blocks(&mut game_data, &events);
     let texts = viewer_report_texts(1, &rows);
-    let contact_idx = texts
-        .iter()
-        .position(|text| text.contains("Sensor contact"))
-        .expect("merged contact report should exist");
+    // The sighting that led to the battle is told in the battle briefing.
+    assert!(
+        !texts.iter().any(|text| text.contains("Sensor contact")),
+        "{texts:?}"
+    );
     let battle_idx = texts
         .iter()
         .position(|text| text.contains("ALERT: Enemy fleet contact!"))
         .expect("battle report should exist");
+    assert!(texts[battle_idx].contains("Enemy speed:"), "{texts:?}");
     let bombard_idx = texts
         .iter()
         .position(|text| text.contains("ALERT: Orbital bombardment underway!"))
         .expect("bombard report should exist");
-    assert!(
-        contact_idx < battle_idx,
-        "contact should precede battle: {texts:?}"
-    );
     assert!(
         battle_idx < bombard_idx,
         "battle should precede bombard: {texts:?}"
@@ -300,6 +299,7 @@ fn destroyed_reporting_fleet_uses_telemetry_report_even_if_side_holds_field() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(15),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: nc_engine::maint::FleetBattlePerspective::Intercepted,
         coords: [9, 6],
@@ -1317,6 +1317,7 @@ fn results_reports_named_hostile_fleet_with_empire_local_slot() {
             fleet_battle_events: vec![FleetBattleEvent {
                 reporting_empire: 1,
                 reporting_fleet_number: Some(3),
+                reporting_fleet_numbers: Vec::new(),
                 reporting_mission: Some(Mission::PatrolSector),
                 perspective: FleetBattlePerspective::Attacked,
                 coords: [8, 8],
@@ -1504,6 +1505,7 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(12),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::InvadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [9, 13],
@@ -1582,6 +1584,7 @@ fn starbase_only_defender_report_uses_command_center_source() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 2,
         reporting_fleet_number: None,
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: None,
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
@@ -1629,6 +1632,7 @@ fn attacker_report_mentions_destroyed_lone_starbase() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(12),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::BombardWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [9, 6],
@@ -1675,6 +1679,7 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(8),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::PatrolSector),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [9, 6],
@@ -1747,6 +1752,7 @@ fn victorious_fleet_report_uses_total_destruction_phrase() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(6),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::BombardWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [11, 4],
@@ -1808,6 +1814,7 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 2,
         reporting_fleet_number: None,
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: None,
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
@@ -1874,6 +1881,7 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 2,
         reporting_fleet_number: None,
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: None,
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
@@ -1945,6 +1953,7 @@ fn attacker_battle_report_explicitly_mentions_enemy_starbase_destruction() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(12),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
@@ -2383,6 +2392,7 @@ fn battle_reports_say_when_the_attack_was_a_surprise() {
     let battle = |reporting_empire, perspective, surprise| FleetBattleEvent {
         reporting_empire,
         reporting_fleet_number: None,
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: None,
         perspective,
         coords: [9, 6],

@@ -1653,7 +1653,10 @@ layer.
 *Identification.* A fleet with ROE above 0 closes to identify what it spots,
 and so do patrols, scouts, and blockades on station. Any other fleet only
 reports a sensor contact. A fleet guarding a starbase stays with its base and
-does not close.
+does not close. When a fleet fights the fleet it spotted that same week, the
+battle report tells both: its "Enemy speed" line gives the speed it was
+spotted at, and no separate sighting report is sent. A battle report for
+more than one of your fleets lists them on its "Our fleets" line.
 
 *The decision.* A fleet that identifies an alien fleet attacks it when:
 

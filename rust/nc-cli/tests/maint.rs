@@ -2840,18 +2840,24 @@ fn maint_rust_enemy_roe_withdrawal_does_not_abort_invade_mission() {
     assert_ne!(attacker.order, Order::SeekHome);
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
-    let invasion_report = joined_report_containing(&results, "Invasion mission report");
+    // The invader's sighting is told in its battle briefing.
+    let battle_report = joined_report_containing(&results, "Enemy speed:");
     assert!(
-        invasion_report.contains("Sensor contact"),
-        "{invasion_report}"
+        battle_report.contains("ALERT: Enemy fleet contact!"),
+        "{battle_report}"
+    );
+    let all_reports = logical_result_reports(&results_records(&results))
+        .into_iter()
+        .map(|(_, lines)| lines.join(" "))
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        !all_reports.contains("In accordance with our ROE, we withdrew"),
+        "{all_reports}"
     );
     assert!(
-        !invasion_report.contains("In accordance with our ROE, we withdrew"),
-        "{invasion_report}"
-    );
-    assert!(
-        !invasion_report.contains("abort the invasion before the landing could begin."),
-        "{invasion_report}"
+        !all_reports.contains("abort the invasion before the landing could begin."),
+        "{all_reports}"
     );
 
     cleanup_dir(&target);

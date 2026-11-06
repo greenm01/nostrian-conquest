@@ -175,6 +175,9 @@ pub struct FleetBattleEvent {
     pub reporting_empire: u8,
     /// Reporting fleet number when one specific fleet can be named.
     pub reporting_fleet_number: Option<u8>,
+    /// Every numbered fleet of the reporting empire in the battle, lowest
+    /// first; a briefing for more than one lists them.
+    pub reporting_fleet_numbers: Vec<u8>,
     /// Reporting fleet mission context when one classic mission-family label applies.
     pub reporting_mission: Option<Mission>,
     /// Whether the report should read as "we were attacked" or "we intercepted".

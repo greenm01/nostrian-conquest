@@ -675,6 +675,7 @@ fn build_fleet_battle_preview(
     world.events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: ATTACKER_EMPIRE,
         reporting_fleet_number: Some(ATTACKER_FLEET_NUMBER),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: if held_field {
             FleetBattlePerspective::Intercepted
@@ -701,6 +702,7 @@ fn build_fleet_battle_preview(
     world.events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: DEFENDER_EMPIRE,
         reporting_fleet_number: Some(DEFENDER_FLEET_NUMBER),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: if held_field {
             FleetBattlePerspective::Attacked
@@ -783,6 +785,7 @@ fn build_fleet_destroyed_preview(
     world.events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: ATTACKER_EMPIRE,
         reporting_fleet_number: Some(ATTACKER_FLEET_NUMBER),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords,

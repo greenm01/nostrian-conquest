@@ -102,6 +102,7 @@ mod tests {
         events.fleet_battle_events.push(FleetBattleEvent {
             reporting_empire: 1,
             reporting_fleet_number: Some(1),
+            reporting_fleet_numbers: Vec::new(),
             reporting_mission: Some(Mission::GuardBlockadeWorld),
             perspective: crate::maint::FleetBattlePerspective::Intercepted,
             coords: [5, 5],

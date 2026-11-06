@@ -102,6 +102,7 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(3),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::PatrolSector),
         perspective: nc_data::maintenance_types::FleetBattlePerspective::Attacked,
         coords: [8, 8],

@@ -1047,6 +1047,13 @@ pub(super) fn fight_encounter_with_dice(
         let reporting_fleet_number = reporting_fleet_idx
             .map(|idx| game_data.fleets[idx].fleet_number.0 as u8)
             .filter(|fleet_number| *fleet_number != 0);
+        let mut reporting_fleet_numbers: Vec<u8> = fleet_indices
+            .iter()
+            .map(|idx| game_data.fleets[*idx].fleet_number.0 as u8)
+            .filter(|fleet_number| *fleet_number != 0)
+            .collect();
+        reporting_fleet_numbers.sort_unstable();
+        reporting_fleet_numbers.dedup();
         let reporting_mission = reporting_fleet_idx
             .and_then(|idx| mission_kind_for_order(pre_encounter_orders.get(&idx).copied()));
         let primary_enemy = || {
@@ -1060,6 +1067,7 @@ pub(super) fn fight_encounter_with_dice(
         events.fleet_battle_events.push(FleetBattleEvent {
             reporting_empire: empire,
             reporting_fleet_number,
+            reporting_fleet_numbers,
             reporting_mission,
             perspective: if empire == attacker.empire {
                 FleetBattlePerspective::Intercepted

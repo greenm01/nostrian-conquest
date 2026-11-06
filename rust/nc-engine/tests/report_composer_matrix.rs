@@ -59,6 +59,7 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(11),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [6, 6],
@@ -150,6 +151,7 @@ fn an_escape_supersedes_the_battle_even_when_the_fleet_joins_later() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(4),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [4, 10],
@@ -732,6 +734,7 @@ fn fleet_battle_reports_cover_both_viewers() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(11),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [6, 6],
@@ -766,6 +769,7 @@ fn fleet_battle_reports_cover_both_viewers() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 2,
         reporting_fleet_number: Some(7),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [6, 6],
@@ -835,6 +839,7 @@ fn fleet_destruction_events_still_cover_both_viewers() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 2,
         reporting_fleet_number: Some(7),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [6, 6],
@@ -1084,6 +1089,7 @@ fn starbase_only_defense_still_covers_both_viewers() {
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 1,
         reporting_fleet_number: Some(12),
+        reporting_fleet_numbers: Vec::new(),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
@@ -1209,4 +1215,160 @@ fn join_summary_is_dated_no_earlier_than_the_host_loss_it_reports() {
         .find(|text| text.contains("Join mission summary"))
         .expect("a join summary");
     assert!(summary.contains("Stardate: 33/"), "{summary}");
+}
+
+/// Fleet 10's battle with Empire 2's DD1 in week 28 at (3,9).
+fn guard_battle(reporting_fleet_numbers: Vec<u8>) -> FleetBattleEvent {
+    FleetBattleEvent {
+        reporting_empire: 1,
+        reporting_fleet_number: Some(10),
+        reporting_fleet_numbers,
+        reporting_mission: Some(Mission::GuardBlockadeWorld),
+        perspective: FleetBattlePerspective::Intercepted,
+        coords: [3, 9],
+        enemy_empires: vec![2],
+        primary_enemy_fleet_number: Some(4),
+        held_field: true,
+        friendly_initial: ShipLosses {
+            cruisers: 1,
+            ..ShipLosses::default()
+        },
+        friendly_initial_starbases: 0,
+        friendly_loaded_armies_initial: 0,
+        friendly_losses: ShipLosses::default(),
+        friendly_starbases_lost: 0,
+        enemy_initial: ShipLosses {
+            destroyers: 1,
+            ..ShipLosses::default()
+        },
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        stardate_week: Some(28),
+        surprise: false,
+    }
+}
+
+/// Fleet 10's sighting of Empire 2's fleet at (3,9).
+fn guard_sighting(week: u8) -> ScoutContactEvent {
+    ScoutContactEvent {
+        viewer_empire: 1,
+        source: ContactReportSource::FleetMission(Mission::GuardBlockadeWorld),
+        reporting_fleet_number: Some(10),
+        reporting_initial: ShipLosses {
+            cruisers: 1,
+            ..ShipLosses::default()
+        },
+        reporting_loaded_armies_initial: 0,
+        coords: [3, 9],
+        target_empire: 2,
+        target_fleet_number: Some(4),
+        small_vessels: 1,
+        medium_vessels: 0,
+        large_vessels: 0,
+        target_speed: 6,
+        in_system: true,
+        identified: true,
+        decision: Some(nc_data::ContactDecision::Engage),
+        stardate_week: Some(week),
+    }
+}
+
+#[test]
+fn a_sighting_folds_into_the_battle_it_led_to() {
+    let mut game_data = seeded_game_data();
+    configure_fleet(&mut game_data, 0, 1, 10, [3, 9]);
+    let mut events = MaintenanceEvents::default();
+    events.fleet_battle_events.push(guard_battle(vec![10]));
+    events.scout_contact_events.push(guard_sighting(28));
+
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events));
+    assert_eq!(texts.len(), 1, "the battle carries the sighting: {texts:?}");
+    assert!(
+        texts[0].contains("Enemy speed: translight 6"),
+        "{}",
+        texts[0]
+    );
+    assert!(!texts[0].contains("Our fleets:"), "{}", texts[0]);
+
+    // A sighting in another week is its own news.
+    events.scout_contact_events[0] = guard_sighting(20);
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events));
+    assert_eq!(texts.len(), 2, "{texts:?}");
+    assert!(
+        !texts.iter().any(|text| text.contains("Enemy speed:")),
+        "{texts:?}"
+    );
+}
+
+#[test]
+fn a_sighting_stays_when_the_battle_has_no_briefing() {
+    let game_data = seeded_game_data();
+    let mut battle = guard_battle(vec![10]);
+    battle.friendly_losses = battle.friendly_initial;
+    let mut events = MaintenanceEvents::default();
+    events.fleet_battle_events.push(battle);
+    events.scout_contact_events.push(guard_sighting(28));
+    events.fleet_destroyed_events.push(FleetDestroyedEvent {
+        reporting_empire: 1,
+        fleet_number: 10,
+        coords: [3, 9],
+        was_intercepting: true,
+        friendly_initial: ShipLosses {
+            cruisers: 1,
+            ..ShipLosses::default()
+        },
+        friendly_loaded_armies_initial: 0,
+        enemy_initial: ShipLosses {
+            destroyers: 1,
+            ..ShipLosses::default()
+        },
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_ground_batteries_initial: 0,
+        enemy_ground_armies_initial: 0,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        enemy_ground_battery_losses: 0,
+        enemy_ground_army_losses: 0,
+        primary_enemy_empire: Some(2),
+        primary_enemy_fleet_number: Some(4),
+        assault: None,
+        stardate_week: Some(28),
+    });
+
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events));
+    assert_eq!(texts.len(), 2, "{texts:?}");
+    assert!(
+        texts.iter().any(|text| text.contains("Sensor contact")),
+        "{texts:?}"
+    );
+    assert!(
+        texts.iter().any(|text| text.contains("lost all contact")),
+        "{texts:?}"
+    );
+}
+
+#[test]
+fn a_battle_of_several_fleets_lists_them() {
+    let mut game_data = seeded_game_data();
+    configure_fleet(&mut game_data, 0, 1, 10, [3, 9]);
+    let mut events = MaintenanceEvents::default();
+    events
+        .fleet_battle_events
+        .push(guard_battle(vec![3, 10, 26]));
+
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events));
+    assert_eq!(texts.len(), 1, "{texts:?}");
+    assert!(
+        texts[0].starts_with("From your fleets, located in System(3,9):"),
+        "{}",
+        texts[0]
+    );
+    assert!(
+        texts[0].contains("Our fleets: 3rd, 10th and 26th"),
+        "{}",
+        texts[0]
+    );
 }
