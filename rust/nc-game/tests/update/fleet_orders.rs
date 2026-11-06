@@ -1234,6 +1234,14 @@ fn fleet_order_allows_join_another_fleet_from_fleet_command() {
         AppOutcome::Continue
     );
 
+    // Join confirms with the ETA to the host's sector, as coordinate orders do.
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("join-fleet confirmation should render");
+    let eta = line_containing(&terminal, "Fleet 1 reaches (");
+    assert!(eta.contains("year(s), arriving in"), "{eta}");
+    confirm_fleet_order(&mut app, true);
+
     let state = latest_runtime_state(&fixture_dir);
     let source = state
         .game_data
@@ -4869,6 +4877,12 @@ fn fleet_group_order_accepts_join_fleet_mission_number() {
         apply_action(&mut app, Action::Fleet(FleetAction::SubmitGroupOrder)),
         AppOutcome::Continue
     );
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("fleet group join confirmation should render");
+    let eta = line_containing(&terminal, " reaches (");
+    assert!(eta.contains("year(s), arriving in"), "{eta}");
+    confirm_fleet_group_order(&mut app, true);
     assert_eq!(app.current_screen(), ScreenId::FleetGroupOrder);
 
     let mut terminal = CaptureTerminal::new();

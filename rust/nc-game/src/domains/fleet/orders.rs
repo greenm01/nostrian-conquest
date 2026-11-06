@@ -755,9 +755,12 @@ impl App {
                             );
                             return;
                         };
-                        if let Err(err) = self.apply_fleet_group_join_order(host) {
-                            self.fleet.group_status = Some(err.to_string());
-                        }
+                        // Confirm with the ETA to the host's sector, as coordinate orders do.
+                        self.fleet.group_target_x_input = format!("{:02}", host.coords[0]);
+                        self.fleet.group_target_y_input = format!("{:02}", host.coords[1]);
+                        self.fleet.group_confirm_input.clear();
+                        self.fleet.group_mode = FleetGroupOrderMode::ConfirmingTarget;
+                        self.fleet.group_status = None;
                         return;
                     }
                 };
@@ -855,6 +858,22 @@ impl App {
                     self.fleet.group_status = Some("Choose a group mission first.".to_string());
                     return;
                 };
+                if fleet_target_input_kind(Some(mission_code)) == FleetTargetInputKind::FleetId {
+                    match self.resolve_fleet_group_host_fleet_for_current_mission() {
+                        Some(host) => {
+                            if let Err(err) = self.apply_fleet_group_join_order(host) {
+                                self.fleet.group_status = Some(err.to_string());
+                            }
+                        }
+                        None => {
+                            self.fleet.group_mode = FleetGroupOrderMode::EnteringTarget;
+                            self.fleet.group_status = Some(
+                                "Enter another fleet number from your fleet list.".to_string(),
+                            );
+                        }
+                    }
+                    return;
+                }
                 let destination = match self.resolve_fleet_group_split_target() {
                     Ok(coords) => coords,
                     Err(err) => {
@@ -913,9 +932,12 @@ impl App {
                             );
                             return Ok(());
                         };
-                        if let Err(err) = self.apply_fleet_single_join_order(host) {
-                            self.fleet.order_status = Some(err.to_string());
-                        }
+                        // Confirm with the ETA to the host's sector, as coordinate orders do.
+                        self.fleet.order_target_x_input = format!("{:02}", host.coords[0]);
+                        self.fleet.order_target_y_input = format!("{:02}", host.coords[1]);
+                        self.fleet.order_confirm_input.clear();
+                        self.fleet.order_mode = FleetSingleOrderMode::ConfirmingTarget;
+                        self.fleet.order_status = None;
                         return Ok(());
                     }
                 };
@@ -996,6 +1018,22 @@ impl App {
                     self.fleet.order_mission_code = None;
                     self.clear_fleet_order_target_inputs();
                     self.open_fleet_menu();
+                    return Ok(());
+                }
+                if fleet_target_input_kind(Some(mission_code)) == FleetTargetInputKind::FleetId {
+                    match self.resolve_fleet_order_host_fleet_for_current_mission() {
+                        Some(host) => {
+                            if let Err(err) = self.apply_fleet_single_join_order(host) {
+                                self.fleet.order_status = Some(err.to_string());
+                            }
+                        }
+                        None => {
+                            self.fleet.order_mode = FleetSingleOrderMode::EnteringTarget;
+                            self.fleet.order_status = Some(
+                                "Enter another fleet number from your fleet list.".to_string(),
+                            );
+                        }
+                    }
                     return Ok(());
                 }
                 let destination = match self.resolve_fleet_order_split_target() {
