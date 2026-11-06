@@ -1,5 +1,5 @@
 use crate::CoreGameData;
-use nc_data::{recompute_max_speed, starship_count};
+use nc_data::{has_combat_ships, recompute_max_speed, starship_count};
 
 /// A fleet cannot grow past this many ships by merging (`2895:3057`).
 pub(super) const MAX_MERGED_SHIPS: u32 = 3000;
@@ -32,8 +32,16 @@ pub(super) fn merge_one_fleet_into_host(
     let sc = game_data.fleets[donor_idx].ships.scouts;
     let donor_escape = game_data.fleets[donor_idx].escape;
     let donor_crippled = game_data.fleets[donor_idx].crippled;
+    let donor_roe = game_data.fleets[donor_idx].rules_of_engagement;
+    let donor_armed = has_combat_ships(&game_data.fleets[donor_idx]);
 
     let host = &mut game_data.fleets[host_idx];
+    // 2895:4a6b leaves the host's ROE alone. A host without warships sits on
+    // ROE 0, so warships it takes in keep their own ROE instead (owner rule,
+    // 2026-11-06).
+    if donor_armed && !has_combat_ships(host) {
+        host.rules_of_engagement = donor_roe;
+    }
     host.ships.battleships = host.ships.battleships.saturating_add(bb);
     host.ships.cruisers = host.ships.cruisers.saturating_add(ca);
     host.ships.destroyers = host.ships.destroyers.saturating_add(dd);
@@ -44,7 +52,6 @@ pub(super) fn merge_one_fleet_into_host(
     // Merging adds the crippled counts, this pass's included, and never
     // resets or speeds up a recovery.
     host.crippled.add(&donor_crippled);
-    // 2895:4a6b leaves the host's ROE alone.
     recompute_max_speed(host);
     // A merge gives nobody a second pursuit: the host keeps every pursuer
     // either fleet's escape had recorded.
