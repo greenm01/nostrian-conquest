@@ -12,6 +12,8 @@ use super::binary::{
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum NarrativePhase {
+    /// The yearly planet pass, which runs before the first tick.
+    YearStart,
     MovementPrelude,
     IntelObservation,
     ContactIdentify,

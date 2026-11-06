@@ -3,7 +3,8 @@ use nc_data::{CoreGameData, MaintenanceEvents, Mission, MissionOutcome};
 use crate::maint::results::combat::*;
 use crate::maint::results::entries::intel::{contact_location, contact_speed_text};
 use crate::maint::results::entries::{
-    ReportEntry, ReportTarget, narrative_phase_for_report_text, occupied_result_viewers,
+    NarrativePhase, ReportEntry, ReportTarget, narrative_phase_for_report_text,
+    occupied_result_viewers,
 };
 use crate::maint::results::format::*;
 use crate::maint::results::join::build_join_summary_entries;
@@ -87,9 +88,22 @@ pub fn push_misc_entries(
         } else {
             String::new()
         };
+        let production = if event.production_after == event.production_before {
+            format!("Our production held at {}", event.production_after)
+        } else {
+            format!(
+                "Our production fell from {} to {}",
+                event.production_before, event.production_after
+            )
+        };
+        // A capture later in the year lifts the order.
+        let order = if planet.owner.0 == event.owner_empire {
+            " The order stays in force, and the decay repeats each year, until you rescind it with the Scorch command."
+        } else {
+            " We lost the world later in the year, and the order ended with it."
+        };
         let body = format!(
-            " Scorch-Earth is in force. Our production fell from {} to {}{stored}, and the world neither grew nor paid tax. The order stays in force, and the decay repeats each year, until you rescind it with the Scorch command.",
-            event.production_before, event.production_after,
+            " Scorch-Earth is in force. {production}{stored}, and the world neither grew nor paid tax.{order}"
         );
         entries.push(ReportEntry {
             text: format!("{header}{body}"),
@@ -100,7 +114,7 @@ pub fn push_misc_entries(
             },
             repeat_next_pointer: false,
             stardate_week: Some(1),
-            narrative_phase: narrative_phase_for_report_text(&body),
+            narrative_phase: NarrativePhase::YearStart,
         });
     }
 

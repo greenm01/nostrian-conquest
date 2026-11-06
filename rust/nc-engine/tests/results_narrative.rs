@@ -5,8 +5,8 @@ use nc_data::{
     EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError,
     GameStateBuilder, GameVictoryNoticeEvent, InheritedAssets, InvalidPlayerStateEvent,
     MaintenanceEvents, Mission, MissionEvent, MissionOutcome, Planet, PlanetIntelEvent,
-    PlanetIntelSource, PlanetOwnershipChangeEvent, Real48, ScoutContactEvent, ShipLosses,
-    StarbaseAlert, StarbaseSightingEvent, set_planet_name,
+    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, Real48, ScoutContactEvent,
+    ShipLosses, StarbaseAlert, StarbaseSightingEvent, set_planet_name,
 };
 use nc_engine::{
     apply_results_reviewable_flags, build_results_report_blocks, maint::FleetBattlePerspective,
@@ -2696,5 +2696,72 @@ fn a_patrol_found_without_warships_reports_as_classic() {
     assert!(
         text.contains("Patrol mission report: Since we have lost all of our warships in combat, we must abort our mission of patrolling Sector(11,11). We are holding position and awaiting orders."),
         "{text}"
+    );
+}
+
+#[test]
+fn scorch_report_comes_before_a_same_week_capture_and_ends_with_it() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3085)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    seed_target_world(&mut game_data, [8, 2], "Mars");
+    // Empire 1 took empire 2's scorched world in week 1.
+
+    let mut events = MaintenanceEvents::default();
+    events.assault_report_events.push(AssaultReportEvent {
+        kind: Mission::InvadeWorld,
+        attacker_fleet_number: Some(4),
+        planet_idx: 0,
+        attacker_empire: 1,
+        defender_empire: 2,
+        attacker_initial: ShipLosses {
+            transports: 3,
+            ..ShipLosses::default()
+        },
+        attacker_loaded_armies_initial: 6,
+        defender_batteries_initial: 0,
+        defender_armies_initial: 1,
+        attacker_ship_losses: ShipLosses::default(),
+        attacker_army_losses: 1,
+        transport_army_losses: 0,
+        defender_battery_losses: 0,
+        defender_army_losses_softening: 0,
+        defender_army_losses: 1,
+        inherited: None,
+        outcome: MissionOutcome::Succeeded,
+        stardate_week: Some(1),
+    });
+    events
+        .ownership_change_events
+        .push(PlanetOwnershipChangeEvent {
+            planet_idx: 0,
+            reporting_empire: 2,
+            previous_owner_empire: 2,
+            new_owner_empire: 1,
+            stardate_week: Some(1),
+        });
+    events.planet_scorch_events.push(PlanetScorchEvent {
+        planet_idx: 0,
+        owner_empire: 2,
+        production_before: 1,
+        production_after: 1,
+        goods_before: 0,
+        goods_after: 0,
+    });
+
+    let rows = build_results_report_blocks(&game_data, &events);
+    let texts = viewer_report_texts(2, &rows);
+
+    assert!(texts.len() >= 2, "{texts:?}");
+    let scorch = &texts[0].replace('\n', " ");
+    assert!(scorch.contains("Scorch-Earth is in force."), "{texts:?}");
+    assert!(scorch.contains("Our production held at 1"), "{scorch}");
+    assert!(scorch.contains("the order ended with it"), "{scorch}");
+    assert!(!scorch.contains("The order stays in force"), "{scorch}");
+    assert!(
+        texts[1].contains("ALERT: Planet lost to enemy invasion!"),
+        "{texts:?}"
     );
 }
