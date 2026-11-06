@@ -452,6 +452,10 @@ impl App {
                 self.fleet.order_confirm_input.clear();
                 if self.fleet_order_target_is_automatic() {
                     self.open_fleet_mission_picker();
+                } else if fleet_target_input_kind(self.fleet.order_mission_code)
+                    == FleetTargetInputKind::FleetId
+                {
+                    self.fleet.order_mode = FleetSingleOrderMode::EnteringTarget;
                 } else {
                     self.fleet.order_mode = FleetSingleOrderMode::EnteringTargetY;
                 }
@@ -480,6 +484,10 @@ impl App {
                 self.fleet.group_confirm_input.clear();
                 if self.fleet_group_target_is_automatic() {
                     self.open_fleet_mission_picker();
+                } else if fleet_target_input_kind(self.fleet.group_mission_code)
+                    == FleetTargetInputKind::FleetId
+                {
+                    self.fleet.group_mode = FleetGroupOrderMode::EnteringTarget;
                 } else {
                     self.fleet.group_mode = FleetGroupOrderMode::EnteringTargetY;
                 }
@@ -1017,7 +1025,11 @@ impl App {
                     self.fleet.order_mode = FleetSingleOrderMode::EnteringTarget;
                     self.fleet.order_mission_code = None;
                     self.clear_fleet_order_target_inputs();
-                    self.open_fleet_menu();
+                    if self.fleet.command_context == FleetCommandContext::List {
+                        self.current_screen = ScreenId::FleetList;
+                    } else {
+                        self.open_fleet_menu();
+                    }
                     return Ok(());
                 }
                 if fleet_target_input_kind(Some(mission_code)) == FleetTargetInputKind::FleetId {

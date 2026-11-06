@@ -4027,3 +4027,79 @@ fn apply_action_deletes_reviewables() {
     assert_eq!((runtime.game_data.players[0].messages_last as u8), 1);
     assert!(!app.messaging.delete_reviewables_prompt_active);
 }
+
+/// Opens the fleet list and picks `mission` for its highlighted fleet.
+fn order_from_fleet_list(app: &mut App, mission: &str) {
+    advance_to_main_menu(app);
+    apply_action(app, Action::Fleet(FleetAction::OpenMenu));
+    apply_action(app, Action::Fleet(FleetAction::OpenList));
+    apply_action(app, Action::Fleet(FleetAction::OpenOrder));
+    assert_eq!(app.current_screen(), ScreenId::FleetMissionPicker);
+    for ch in mission.chars() {
+        apply_action(app, Action::Fleet(FleetAction::AppendMissionPickerChar(ch)));
+    }
+    apply_action(app, Action::Fleet(FleetAction::SubmitMissionPicker));
+}
+
+fn load_app(fixture_dir: &std::path::Path) -> App {
+    App::load(AppConfig {
+        game_dir: fixture_dir.to_path_buf(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load")
+}
+
+#[test]
+fn fleet_list_hold_order_returns_to_list() {
+    let fixture_dir = temp_game_copy();
+    let mut app = load_app(&fixture_dir);
+    order_from_fleet_list(&mut app, "0");
+    assert_eq!(
+        app.current_screen(),
+        ScreenId::FleetList,
+        "{:?}",
+        app.fleet.mission_picker_status
+    );
+}
+
+#[test]
+fn fleet_list_order_declined_at_confirmation_returns_to_list() {
+    let fixture_dir = temp_game_copy();
+    let mut app = load_app(&fixture_dir);
+    order_from_fleet_list(&mut app, "1");
+    enter_fleet_order_target(&mut app, [14, 9]);
+    confirm_fleet_order(&mut app, false);
+    assert_eq!(app.current_screen(), ScreenId::FleetList);
+}
+
+#[test]
+fn fleet_list_join_order_returns_to_list() {
+    let fixture_dir = temp_game_copy();
+    let mut app = load_app(&fixture_dir);
+    order_from_fleet_list(&mut app, "13");
+    assert_eq!(app.current_screen(), ScreenId::FleetOrder);
+    apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder));
+    confirm_fleet_order(&mut app, true);
+    assert_eq!(
+        app.current_screen(),
+        ScreenId::FleetList,
+        "{:?}",
+        app.fleet.order_status
+    );
+}
+
+#[test]
+fn quitting_a_join_confirmation_goes_back_to_the_host_prompt() {
+    let fixture_dir = temp_game_copy();
+    let mut app = load_app(&fixture_dir);
+    order_from_fleet_list(&mut app, "13");
+    apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder));
+    apply_action(&mut app, Action::Fleet(FleetAction::CancelOrder));
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal).expect("host prompt renders");
+    assert!(line_containing(&terminal, "Fleet # [").contains("Fleet # ["));
+}
