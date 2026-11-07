@@ -42,6 +42,8 @@ doctrine {
     reinforce #true
     colony-starbases #true
     repair-at-bases #true
+    etac-share #true
+    salvage-etacs #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

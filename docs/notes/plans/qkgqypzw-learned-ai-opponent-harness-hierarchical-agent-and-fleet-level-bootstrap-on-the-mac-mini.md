@@ -1790,6 +1790,13 @@ the 4,096 maps put the gain near +0.01. Self-play cannot show more: every
 seat is an executor that wastes ETACs the same way, and none expands as
 fast as the owner did.
 
+**Adopted (2026-11-07, the owner's call).** Under the exit rule below
+neither switch would be adopted. The owner turned both on for every seat
+anyway: the AI should not build ETACs it cannot use or keep them once the
+map is full, and self-play shows no cost. Both are in `Doctrine::CURRENT`
+and every built-in personality profile (`etac-share`, `salvage-etacs`;
+profiles must now set both). The ONNX seat fixtures were re-recorded.
+
 **Exit:** each switch, and both together, paired against land-grab
 (`executor_matches --weights land-grab --with ... --opponent land-grab
 --paired`, 1,024 maps from 1500000) at 60 and 100 years. A switch is

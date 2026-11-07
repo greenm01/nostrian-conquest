@@ -1,6 +1,4 @@
 # One task per line, a blank line between tasks: keep it that way so the file reads as a list. A row is `(priority) date text +lane +project @context id:tNNN order:NNN [details](note)`; closed rows move to done-YYYY-MM.md.
-(B) 2026-11-07 Size the AI's ETACs to the free worlds it can win, and salvage them once none are left. +parallel +ai @development id:t260 order:485 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t260)
-
 (B) 2026-10-14 Learn from real games once AI seats play people. +parallel +ai @development id:t166 order:490 depends:t165,t121,t186 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t166)
 2026-10-16 Stretch goal: AI empires send in-character dispatches. +deferred +ai @development id:t187 order:500 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t187)
 2026-10-16 Stretch goal: AI empires that can be negotiated with. +deferred +ai @development id:t188 order:510 depends:t187 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t188)

@@ -206,12 +206,12 @@ pub struct Doctrine {
     pub repair_at_bases: bool,
     /// The home world keeps no more ETACs than its share of the free
     /// worlds: those nearer its own worlds than any rival world it knows, at
-    /// most an even split among the game's empires (trial; the owner's ask,
+    /// most an even split among the game's empires (t260; the owner's ask,
     /// 2026-11-07). Off, it keeps `etacs` while any world is free.
     pub etac_share: bool,
     /// Once the seat knows no free world, a fleet with ETACs aboard
     /// salvages at the nearest of its worlds when the scrap pays for the
-    /// other ships in it (trial; the owner's ask, 2026-11-07). Off, such
+    /// other ships in it (t260; the owner's ask, 2026-11-07). Off, such
     /// fleets wait.
     pub salvage_etacs: bool,
 }
@@ -275,8 +275,8 @@ impl Doctrine {
         growth_tax: false,
         guard_bases: false,
         repair_at_bases: true,
-        etac_share: false,
-        salvage_etacs: false,
+        etac_share: true,
+        salvage_etacs: true,
     };
 }
 

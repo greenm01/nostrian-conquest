@@ -38,6 +38,8 @@ doctrine {
     reinforce #false
     colony-starbases #false
     repair-at-bases #false
+    etac-share #true
+    salvage-etacs #true
 }
 // Tuning keeps the style: full garrisons and batteries, starbases, late war
 // and long odds.

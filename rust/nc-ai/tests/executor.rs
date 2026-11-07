@@ -331,12 +331,13 @@ fn idle_etacs(doctrine: nc_ai::Doctrine, map_seed: u64, years: usize) -> (u32, u
 
 #[test]
 fn etacs_are_sized_to_the_free_worlds_and_salvaged_once_none_are_left() {
-    let mut on = nc_ai::Doctrine::CURRENT;
-    on.etac_share = true;
-    on.salvage_etacs = true;
+    let on = nc_ai::Doctrine::CURRENT;
+    let mut off = on;
+    off.etac_share = false;
+    off.salvage_etacs = false;
     let (mut before, mut after, mut salvages) = (0, 0, 0);
     for map_seed in 0..4 {
-        before += idle_etacs(nc_ai::Doctrine::CURRENT, map_seed, 40).0;
+        before += idle_etacs(off, map_seed, 40).0;
         let (idle, salvaged) = idle_etacs(on, map_seed, 40);
         after += idle;
         salvages += salvaged;
