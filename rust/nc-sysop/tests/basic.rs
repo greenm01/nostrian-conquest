@@ -499,3 +499,16 @@ fn nc_sysop_rankings_export_writes_kdl_only_when_asked() {
     }
     let _ = fs::remove_dir_all(&target);
 }
+
+#[test]
+fn nc_sysop_new_game_and_maint_take_a_relative_dir_from_where_they_run() {
+    let cwd = unique_temp_dir("nc-sysop-relative");
+
+    let output = run_nc_sysop_output(&["new-game", "mygame", "--seed", "5"], Some(&cwd));
+    assert!(output.status.success(), "{output:?}");
+    assert!(cwd.join("mygame").join("ncgame.db").exists());
+    let output = run_nc_sysop_output(&["maint", "mygame", "1"], Some(&cwd));
+    assert!(output.status.success(), "{output:?}");
+    let output = run_nc_sysop_output(&["check", "--dir", "mygame"], Some(&cwd));
+    assert!(output.status.success(), "{output:?}");
+}

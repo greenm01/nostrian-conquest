@@ -174,7 +174,7 @@ fn run_new_game(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
                 if target_dir.is_some() {
                     return Err(format!("unexpected argument: {value}").into());
                 }
-                target_dir = Some(resolve_repo_path(value));
+                target_dir = Some(PathBuf::from(value));
                 idx += 1;
             }
             other => {
@@ -279,7 +279,7 @@ fn run_maint(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         usage::print_maint_usage();
         return Err("missing dir for maint".into());
     };
-    let dir = resolve_repo_path(dir_arg);
+    let dir = PathBuf::from(dir_arg);
     let turns = match args.get(1) {
         Some(value) => value.parse::<u16>()?,
         None => 1,
@@ -668,19 +668,6 @@ fn parse_optional_path_flag_anywhere(
         i += 1;
     }
     Ok(None)
-}
-
-fn resolve_repo_path(arg: &str) -> PathBuf {
-    let path = PathBuf::from(arg);
-    if path.is_absolute() {
-        path
-    } else if path.exists() {
-        path
-    } else {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../..")
-            .join(path)
-    }
 }
 
 fn init_logging(
