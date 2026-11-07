@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 11, day: 2),
+  date: datetime(year: 2026, month: 11, day: 7),
 )
 
 #set page(
@@ -74,9 +74,9 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: November 2, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: November 7, 2026]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.5 — Beta]
+  #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.6 — Beta]
 ]
 
 #pagebreak()
@@ -865,7 +865,7 @@ your fleet list afterward. The exact conditions are in @starbase-recovery.
 
 *Missions 10 and 11: Scout a Sector / Scout a Solar System.* Both need at least one Scout ship, and a fleet of a single Scout is the hardest to detect. Scout a Sector is a quiet watch over the sector. A scout on station looks five times as hard as an ordinary fleet and identifies what it spots, and with ROE 0 it never attacks. Scout a Solar System is an active spy run. The Scout enters the system and reports on ground batteries, armies, current production, stardock contents, and orbiting fleets. Entering the system means the owner's fleets there may attack it. A scout sent to a world of yours has nothing to learn: it gives up when it arrives and holds position. Both are persistent missions: the fleet stays on station and sends a new report each maintenance for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before you earn a full scout or view report.
 
-*Missions 13 and 14: Fleet Coordination.* Mission 13 (Join Another Fleet) sends the fleet to chase a chosen host fleet and merge with it when they meet. Before the order takes effect, the game shows how many years the fleet needs to reach the host's current sector and asks you to confirm. If the host is destroyed before they meet, the joining fleet drops the mission. Mission 14 (Rendezvous at Sector) sends several fleets to a sector, where the fleet with the lowest Fleet ID becomes the host of the combined force. The rendezvous point stays active so more fleets can keep merging there. A merged fleet keeps its host's ROE, unless the host had no warships. Then it takes the ROE of the warships that merged into it, so a battle fleet that joins a transport fleet keeps fighting by its own ROE.
+*Missions 13 and 14: Fleet Coordination.* Mission 13 (Join Another Fleet) sends the fleet to chase a chosen host fleet and merge with it when they meet. Before the order takes effect, the game shows how many years the fleet needs to reach the host's current sector and asks you to confirm. If the host is destroyed, or defects in civil disorder, before they meet, the joining fleet drops the mission and holds where it is. Mission 14 (Rendezvous at Sector) sends several fleets to a sector, where the fleet with the lowest Fleet ID becomes the host of the combined force. The rendezvous point stays active so more fleets can keep merging there. A merged fleet keeps its host's ROE, unless the host had no warships. Then it takes the ROE of the warships that merged into it, so a battle fleet that joins a transport fleet keeps fighting by its own ROE.
 
 === Hostile Missions
 
@@ -1033,7 +1033,7 @@ The *Planet List* shows your worlds one row each. Highlight a world and act on i
 
 == Fleet Command
 
-Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement, ID, or speed. A speed change takes 1 up to the fleet's maximum and touches nothing else. A fleet on Hold, or already at its target, keeps speed 0. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves single ships between fleets.
+Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. Its prompt offers your highest-numbered fleet on Hold, so pressing *O* again after each order walks down your idle fleets. ROE (*C*) changes a fleet's rules of engagement, ID, or speed. A speed change takes 1 up to the fleet's maximum and touches nothing else. A fleet on Hold, or already at its target, keeps speed 0. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves single ships between fleets.
 
 The *Fleet List* lets you work on many fleets at once through its *Sel* column. Press *Space* on a fleet row to check or uncheck it. When one or more
 fleets are checked, *O* assigns one mission to the checked set, *C* changes

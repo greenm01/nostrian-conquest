@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Quick Start Guide",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 25),
+  date: datetime(year: 2026, month: 11, day: 7),
 )
 
 #set page(
@@ -66,7 +66,7 @@
   #text(font: "IBM Plex Sans", size: 13pt, style: "italic", fill: luma(60))[Quick Start Player's Guide] \
   #v(0.2em)
   #text(font: "IBM Plex Sans", size: 9pt, fill: luma(100))[
-    Version 1.0.0-beta.5 • Revision date: October 25, 2026
+    Version 1.0.0-beta.6 • Revision date: November 7, 2026
   ]
   #v(0.8em)
   #line(length: 100%, stroke: 0.5pt + luma(180))
