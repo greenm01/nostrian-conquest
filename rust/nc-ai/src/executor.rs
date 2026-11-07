@@ -204,6 +204,15 @@ pub struct Doctrine {
     /// alone (t207, trial; the owner's use). Off, cripples mend where they
     /// stand.
     pub repair_at_bases: bool,
+    /// The home world keeps no more ETACs than the free worlds nearer the
+    /// seat's own worlds than any rival world it knows (trial; the owner's
+    /// ask, 2026-11-07). Off, it keeps `etacs` while any world is free.
+    pub etac_share: bool,
+    /// Once the seat knows no free world, a fleet with ETACs aboard
+    /// salvages at the nearest of its worlds when the scrap pays for the
+    /// other ships in it (trial; the owner's ask, 2026-11-07). Off, such
+    /// fleets wait.
+    pub salvage_etacs: bool,
 }
 
 impl Doctrine {
@@ -233,6 +242,8 @@ impl Doctrine {
             "growth_tax" => &mut self.growth_tax,
             "guard_bases" => &mut self.guard_bases,
             "repair_at_bases" => &mut self.repair_at_bases,
+            "etac_share" => &mut self.etac_share,
+            "salvage_etacs" => &mut self.salvage_etacs,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -263,6 +274,8 @@ impl Doctrine {
         growth_tax: false,
         guard_bases: false,
         repair_at_bases: true,
+        etac_share: false,
+        salvage_etacs: false,
     };
 }
 
@@ -351,6 +364,8 @@ impl Weights {
             growth_tax: false,
             guard_bases: false,
             repair_at_bases: false,
+            etac_share: false,
+            salvage_etacs: false,
         },
     };
 
@@ -810,9 +825,14 @@ fn choose_builds(
     let mut needs = Vec::new();
     if is_home {
         if land_grab(memory) {
+            let want = if weights.doctrine.etac_share {
+                weights.etacs.min(etac_share(game_data, memory) as f32)
+            } else {
+                weights.etacs
+            };
             needs.push(Need::Units(
                 ProductionItemKind::Etac,
-                short(stock.etacs, weights.etacs),
+                short(stock.etacs, want),
             ));
             needs.push(Need::Escorts);
         }
@@ -1314,6 +1334,38 @@ enum Need {
 }
 
 /// Worlds remain that the seat may colonize.
+/// The free worlds the seat can expect to win the race for: those no
+/// nearer any rival world it knows than its own nearest world. Before it has
+/// seen a rival, every free world.
+fn etac_share(game_data: &CoreGameData, memory: &SeatMemory) -> usize {
+    let sector = |record: usize| game_data.planets[record - 1].sector.to_array();
+    let held = |rival: bool| -> Vec<[u8; 2]> {
+        memory
+            .planet_intel
+            .iter()
+            .filter(|(_, intel)| match intel.known_owner_empire_id {
+                Some(owner) if owner == memory.empire => !rival,
+                Some(owner) => rival && owner != 0,
+                None => false,
+            })
+            .map(|(&record, _)| sector(record))
+            .collect()
+    };
+    let (ours, rivals) = (held(false), held(true));
+    let nearest = |worlds: &[[u8; 2]], here: [u8; 2]| {
+        worlds
+            .iter()
+            .map(|&world| distance(world, here))
+            .fold(f32::INFINITY, f32::min)
+    };
+    memory
+        .planet_intel
+        .iter()
+        .filter(|(_, intel)| colonizable(intel, memory.empire))
+        .filter(|&(&record, _)| nearest(&ours, sector(record)) <= nearest(&rivals, sector(record)))
+        .count()
+}
+
 fn land_grab(memory: &SeatMemory) -> bool {
     memory
         .planet_intel
@@ -1348,6 +1400,40 @@ fn home_starbases(game_data: &CoreGameData, planet: &nc_data::Planet) -> u32 {
         .iter()
         .filter(|base| base.owner == planet.owner && base.sector == planet.sector)
         .count() as u32
+}
+
+/// An ETAC with no world to settle is worth only its scrap, so a fleet
+/// carrying ETACs is worth scrapping when its salvage would rebuild every
+/// other ship in it.
+fn scrap_pays(fleet: &Fleet) -> bool {
+    let ships = &fleet.ships;
+    let others = [
+        (ships.battleships, ProductionItemKind::Battleship),
+        (ships.cruisers, ProductionItemKind::Cruiser),
+        (ships.destroyers, ProductionItemKind::Destroyer),
+        (ships.scouts, ProductionItemKind::Scout),
+        (
+            ships.empty_transports + ships.loaded_transports,
+            ProductionItemKind::Transport,
+        ),
+    ]
+    .iter()
+    .map(|&(count, kind)| u32::from(count) * kind.build_cost().unwrap_or(0))
+    .sum::<u32>();
+    nc_engine::fleet_salvage_value(fleet) >= others
+}
+
+/// The 0-based index of `empire`'s world nearest `here`.
+fn nearest_own_world(game_data: &CoreGameData, empire: u8, here: [u8; 2]) -> Option<usize> {
+    game_data
+        .planets
+        .iter()
+        .enumerate()
+        .filter(|(_, planet)| planet.owner.0 == empire)
+        .min_by(|a, b| {
+            distance(a.1.sector.to_array(), here).total_cmp(&distance(b.1.sector.to_array(), here))
+        })
+        .map(|(idx, _)| idx)
 }
 
 fn distance(a: [u8; 2], b: [u8; 2]) -> f32 {
@@ -1512,6 +1598,16 @@ fn plan_fleets(
                 && let Some(idx) = world_at(game_data, fleet.sector.to_array())
                 && game_data.planets[idx].owner.0 == empire
                 && in_trouble(game_data, memory, weights, idx, Some(idx + 1) == capital)
+                && let Some(choice) = order(Order::Salvage, idx)
+            {
+                return choice;
+            }
+
+            if weights.doctrine.salvage_etacs
+                && fleet.ships.etacs > 0
+                && !grabbing
+                && scrap_pays(fleet)
+                && let Some(idx) = nearest_own_world(game_data, empire, fleet.sector.to_array())
                 && let Some(choice) = order(Order::Salvage, idx)
             {
                 return choice;

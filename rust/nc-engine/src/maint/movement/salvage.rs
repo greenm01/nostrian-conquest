@@ -76,7 +76,7 @@ fn resolve_salvage_arrival(
 
 /// What an arriving Salvage fleet yields (`0b5d:4d65`): each ship's half
 /// cost, rounded up. A transport is worth the same empty or loaded.
-fn fleet_salvage_value(fleet: &nc_data::Fleet) -> u32 {
+pub fn fleet_salvage_value(fleet: &nc_data::Fleet) -> u32 {
     let ships = &fleet.ships;
     let transports = u32::from(ships.empty_transports) + u32::from(ships.loaded_transports);
     u32::from(ships.battleships) * 23

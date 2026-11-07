@@ -113,6 +113,8 @@ fn the_classic_doctrine_replays_t154_exactly() {
         growth_tax: false,
         guard_bases: false,
         repair_at_bases: false,
+        etac_share: false,
+        salvage_etacs: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
@@ -268,4 +270,81 @@ fn the_executor_orders_only_ground_defences_at_a_defensive_world() {
         }
         game.run_maintenance().expect("maintenance should run");
     }
+}
+
+/// ETACs the seats hold, in fleets and stardocks, after `years` of four
+/// executor seats with `doctrine`, summed over the years no world was free.
+fn idle_etacs(doctrine: nc_ai::Doctrine, map_seed: u64, years: usize) -> (u32, u32) {
+    let weights = Weights {
+        doctrine,
+        ..Weights::TUNED
+    };
+    let mut game = seated_game(PLAYERS, map_seed);
+    let start_year = game.play.built.game_data.conquest.game_year;
+    let (mut idle, mut salvages) = (0, 0);
+    for _ in 0..years {
+        for empire in 1..=PLAYERS {
+            if let Some(commission) = commission_submission(&game.play.built.game_data, empire) {
+                game.submit_turn(&commission).expect("commissioning");
+            }
+            let game_data = &game.play.built.game_data;
+            let memory = &game.seats[usize::from(empire) - 1];
+            let action = plan_turn(
+                game_data,
+                memory,
+                &seat_masks(game_data, empire),
+                &weights,
+                start_year,
+            );
+            let decoded = decode_action(game_data, empire, &action);
+            salvages += decoded
+                .submission
+                .fleets
+                .iter()
+                .flat_map(|block| &block.actions)
+                .filter(|action| {
+                    matches!(action, nc_data::FleetTurnAction::Order { order_code, .. }
+                        if *order_code == nc_data::Order::Salvage.code())
+                })
+                .count() as u32;
+            game.submit_turn(&decoded.submission)
+                .expect("executor turn should submit");
+        }
+        game.run_maintenance().expect("maintenance should run");
+        let game_data = &game.play.built.game_data;
+        if game_data.planets.iter().all(|planet| planet.owner.0 != 0) {
+            idle += game_data
+                .fleets
+                .iter()
+                .filter(|fleet| fleet.owner.0 != 0)
+                .map(|fleet| u32::from(fleet.ships.etacs))
+                .sum::<u32>()
+                + game_data
+                    .planets
+                    .iter()
+                    .map(|planet| planet.stardock.etacs)
+                    .sum::<u32>();
+        }
+    }
+    (idle, salvages)
+}
+
+#[test]
+fn etacs_are_sized_to_the_free_worlds_and_salvaged_once_none_are_left() {
+    let mut on = nc_ai::Doctrine::CURRENT;
+    on.etac_share = true;
+    on.salvage_etacs = true;
+    let (mut before, mut after, mut salvages) = (0, 0, 0);
+    for map_seed in 0..4 {
+        before += idle_etacs(nc_ai::Doctrine::CURRENT, map_seed, 40).0;
+        let (idle, salvaged) = idle_etacs(on, map_seed, 40);
+        after += idle;
+        salvages += salvaged;
+    }
+    eprintln!("idle ETAC-years: {before} before, {after} after; {salvages} salvage orders");
+    assert!(salvages > 0);
+    assert!(
+        after * 4 < before,
+        "{after} idle ETAC-years against {before}"
+    );
 }

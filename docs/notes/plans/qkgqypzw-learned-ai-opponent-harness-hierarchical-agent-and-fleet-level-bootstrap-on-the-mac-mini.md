@@ -1734,6 +1734,45 @@ at the end.
 
   fleet-final stays. One game's positions are too few to move the agent.
 
+### t260
+
+Size the AI's ETACs to the free worlds it can win, and salvage them once
+none are left (the owner's ask, 2026-11-07).
+
+t166's review of the x13 ai2 game found the executor's ETACs idle for
+decades. The map's 20 worlds were all taken by 3008, but Empires 2 and 4
+each kept 6 ETACs, with their destroyer escorts, until they fell (Empire 4
+still had 6 in 3045). The home world keeps `etacs` (6.3 for land-grab) in
+stock while any world is free, however few remain, and never scraps them.
+Self-play never punished it, since every executor seat does the same.
+
+Two trial switches in `Doctrine`:
+
+- `etac_share`: the home world keeps no more ETACs than the free worlds
+  no nearer a rival world it knows than its own nearest world. Before it
+  has seen a rival, that is every free world, so the opening is unchanged.
+- `salvage_etacs`: once the seat knows no free world, a fleet with ETACs
+  aboard salvages at its nearest world when the scrap (half of every
+  ship's cost, `nc_engine::fleet_salvage_value`) pays for the fleet's
+  other ships. A starting fleet of one cruiser and one ETAC scraps for 18
+  against the cruiser's 15; a battle fleet carrying an ETAC does not.
+
+The starting fleets often lose the race for their first worlds and carry
+their ETAC from then on, so most idle ETACs are in mixed fleets: a rule
+that scrapped only fleets of ETACs, destroyers and scouts cut idle
+ETAC-years by 57% in the test below, this one by 82%. The rest are the year
+or two before the seat's scouts confirm the last world taken.
+
+Test: `etacs_are_sized_to_the_free_worlds_and_salvaged_once_none_are_left`
+(four TUNED executor seats, maps 0-3, 40 years): 2,844 idle ETAC-years
+before, 521 after, 214 salvage orders.
+
+**Exit:** each switch, and both together, paired against land-grab
+(`executor_matches --weights land-grab --with ... --opponent land-grab
+--paired`, 1,024 maps from 1500000) at 60 and 100 years. A switch is
+adopted only if it gains at both horizons; adopting means adding it to the
+personality profiles' doctrine.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.

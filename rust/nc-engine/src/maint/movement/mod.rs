@@ -7,6 +7,8 @@ mod starbase;
 mod stepper;
 mod target_world;
 
+pub use salvage::fleet_salvage_value;
+
 use super::{FleetRemovalRemapInfo, MovementEvents};
 use crate::{CoreGameData, Mission, Order, VisibleHazardIntel};
 use arrivals::{handle_fleet_arrival, handle_hostile_target_entry};
