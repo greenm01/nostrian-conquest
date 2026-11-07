@@ -204,9 +204,10 @@ pub struct Doctrine {
     /// alone (t207, trial; the owner's use). Off, cripples mend where they
     /// stand.
     pub repair_at_bases: bool,
-    /// The home world keeps no more ETACs than the free worlds nearer the
-    /// seat's own worlds than any rival world it knows (trial; the owner's
-    /// ask, 2026-11-07). Off, it keeps `etacs` while any world is free.
+    /// The home world keeps no more ETACs than its share of the free
+    /// worlds: those nearer its own worlds than any rival world it knows, at
+    /// most an even split among the game's empires (trial; the owner's ask,
+    /// 2026-11-07). Off, it keeps `etacs` while any world is free.
     pub etac_share: bool,
     /// Once the seat knows no free world, a fleet with ETACs aboard
     /// salvages at the nearest of its worlds when the scrap pays for the
@@ -1335,8 +1336,9 @@ enum Need {
 
 /// Worlds remain that the seat may colonize.
 /// The free worlds the seat can expect to win the race for: those no
-/// nearer any rival world it knows than its own nearest world. Before it has
-/// seen a rival, every free world.
+/// nearer any rival world it knows than its own nearest world, and no more
+/// than an even split of the free worlds among the game's empires, since
+/// rivals it has not seen race for them too.
 fn etac_share(game_data: &CoreGameData, memory: &SeatMemory) -> usize {
     let sector = |record: usize| game_data.planets[record - 1].sector.to_array();
     let held = |rival: bool| -> Vec<[u8; 2]> {
@@ -1358,12 +1360,18 @@ fn etac_share(game_data: &CoreGameData, memory: &SeatMemory) -> usize {
             .map(|&world| distance(world, here))
             .fold(f32::INFINITY, f32::min)
     };
-    memory
+    let free: Vec<usize> = memory
         .planet_intel
         .iter()
         .filter(|(_, intel)| colonizable(intel, memory.empire))
-        .filter(|&(&record, _)| nearest(&ours, sector(record)) <= nearest(&rivals, sector(record)))
-        .count()
+        .map(|(&record, _)| record)
+        .collect();
+    let nearer = free
+        .iter()
+        .filter(|&&record| nearest(&ours, sector(record)) <= nearest(&rivals, sector(record)))
+        .count();
+    let empires = usize::from(game_data.conquest.player_count.max(1));
+    nearer.min(free.len().div_ceil(empires))
 }
 
 fn land_grab(memory: &SeatMemory) -> bool {

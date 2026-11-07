@@ -1748,9 +1748,10 @@ Self-play never punished it, since every executor seat does the same.
 
 Two trial switches in `Doctrine`:
 
-- `etac_share`: the home world keeps no more ETACs than the free worlds
-  no nearer a rival world it knows than its own nearest world. Before it
-  has seen a rival, that is every free world, so the opening is unchanged.
+- `etac_share`: the home world keeps no more ETACs than its share of the
+  free worlds: those no nearer a rival world it knows than its own nearest
+  world, and at most an even split of the free worlds among the game's
+  empires.
 - `salvage_etacs`: once the seat knows no free world, a fleet with ETACs
   aboard salvages at its nearest world when the scrap (half of every
   ship's cost, `nc_engine::fleet_salvage_value`) pays for the fleet's
@@ -1766,6 +1767,15 @@ or two before the seat's scouts confirm the last world taken.
 Test: `etacs_are_sized_to_the_free_worlds_and_salvaged_once_none_are_left`
 (four TUNED executor seats, maps 0-3, 40 years): 2,844 idle ETAC-years
 before, 521 after, 214 salvage orders.
+
+**First trial (2026-11-07, at `b91713e5`).** Without the even split,
+`etac_share` changed nothing: +0.000 ± 0.000 at both horizons. The home
+world fills its stock in 3000–3001, before it has seen a rival, when every
+free world counts as its own; by the time the share falls the stock is
+full, and most of it is lost in races to rivals it never saw coming.
+`salvage_etacs` gained +0.001 ± 0.017 at 60 years and +0.009 ± 0.017 at
+100, as did both together. The even split was added after this; with it,
+the test above gives 436 idle ETAC-years against 2,844.
 
 **Exit:** each switch, and both together, paired against land-grab
 (`executor_matches --weights land-grab --with ... --opponent land-grab
