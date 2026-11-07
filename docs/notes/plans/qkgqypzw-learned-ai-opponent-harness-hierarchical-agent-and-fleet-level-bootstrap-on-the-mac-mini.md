@@ -1777,6 +1777,19 @@ full, and most of it is lost in races to rivals it never saw coming.
 100, as did both together. The even split was added after this; with it,
 the test above gives 436 idle ETAC-years against 2,844.
 
+**Second trial (2026-11-07, at `08ac91f7`), with the even split.**
+
+| Switches | Maps | 60 years | 100 years |
+| --- | --- | ---: | ---: |
+| `etac_share` | 1,024 from 1500000 | -0.002 ± 0.017 | +0.017 ± 0.018 |
+| both | 1,024 from 1500000 | +0.019 ± 0.017 | +0.024 ± 0.018 |
+| both | 4,096 from 1501024 | +0.009 ± 0.008 | +0.006 ± 0.009 |
+
+Both together gain in every cell, but by 1.5 standard errors at most;
+the 4,096 maps put the gain near +0.01. Self-play cannot show more: every
+seat is an executor that wastes ETACs the same way, and none expands as
+fast as the owner did.
+
 **Exit:** each switch, and both together, paired against land-grab
 (`executor_matches --weights land-grab --with ... --opponent land-grab
 --paired`, 1,024 maps from 1500000) at 60 and 100 years. A switch is
