@@ -1710,6 +1710,29 @@ at the end.
   fortified world ordered ships there and its turn was refused, so
   `planet_spend_left` now leaves a defensive world nothing for new ship and
   starbase orders.
+- **Training from the game (2026-11-06, at `728f7d21`).** t256's recipe
+  from fleet-final, with a quarter of games played on from the game's 141
+  stored starts (`stored_starts.py --before 40`: each AI seat's 40 years
+  before its fall, the human seat every 5th year), in the mini's
+  `ai/t166-x13-ai2/`. The run took 3.5 hours. It was judged by t249's
+  exit rule:
+
+  | Snapshot | Win share, 60 years | Win share, 100 years | Start check |
+  | --- | ---: | ---: | ---: |
+  | 50 | -0.001 ± 0.019 | +0.005 ± 0.019 | -0.019 ± 0.024 |
+  | 75 | +0.023 ± 0.019 | +0.033 ± 0.019 | -0.028 ± 0.025 |
+  | 100 | +0.034 ± 0.019 | +0.002 ± 0.019 | -0.024 ± 0.026 |
+
+  1. **Not promoted.** No snapshot clears two standard errors at either
+     horizon, and all three lose a little on the start check. t256, without
+     the stored starts, did as well or better.
+  2. **The critic learned the turtle.** Reviewing the game again, snapshot
+     75 rates Empire 4's 4-world stall at 0.07–0.11, falling, against
+     fleet-final's flat 0.20–0.23. Its shares still pass 1 (1.06 in 3065).
+  3. **Joins fall.** Snapshot 100 joins 28 times a 60-year game against
+     fleet-final's 77, and 296 against 480 at 100 years.
+
+  fleet-final stays. One game's positions are too few to move the agent.
 
 ### t189
 
