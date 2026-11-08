@@ -1,6 +1,7 @@
-// The armada (t189): slow capital ships first. The home world builds
-// battleships whenever its budget buys one (colonies build cruisers), and the
-// fleet gathers before it strikes. Everything else is the default style.
+// The armada (t189): slow capital ships first. Its fleet is built toward its
+// hull weights, about 80% battleships by cost (mixed hulls, t264: a network
+// seat cannot use a one-hull fleet), and gathers before it strikes.
+// Everything else is the default style.
 personality "armada"
 weights {
     tax 64.7396
@@ -28,7 +29,7 @@ doctrine {
     allocate #false
     supply #true
     defend #true
-    mixed-hulls #false
+    mixed-hulls #true
     keep-scouts #true
     watch #true
     forward-muster #true

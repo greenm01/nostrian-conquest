@@ -1,5 +1,5 @@
 # One task per line, a blank line between tasks: keep it that way so the file reads as a list. A row is `(priority) date text +lane +project @context id:tNNN order:NNN [details](note)`; closed rows move to done-YYYY-MM.md.
-(B) 2026-11-08 Make hosted AI seats strong in the armada, raider and turtle styles, which fleet-final plays at about 0.05 win share. +ai @development id:t264 order:480 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t264)
+(B) 2026-11-08 Make hosted AI seats strong in the turtle style, which fleet-final plays at 0.16 win share at 60 years (armada and raider fixed by mixed hulls). +ai @development id:t264 order:480 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t264)
 
 (B) 2026-10-14 Learn from real games once AI seats play people. +parallel +ai @development id:t166 order:490 depends:t165,t121,t186 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t166)
 2026-10-16 Stretch goal: AI empires send in-character dispatches. +deferred +ai @development id:t187 order:500 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t187)

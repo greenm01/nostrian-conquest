@@ -1,5 +1,6 @@
 // The raider (t189): cheap, fast destroyers first, striking at short odds.
-// Colonies and the home world build destroyers; the fleet moves at speed 6.
+// Its fleet is built toward its hull weights, destroyers ahead of cruisers
+// (mixed hulls, t264: a network seat cannot use a one-hull fleet).
 // Retuned under t255's per-hull fire (t256): a later war and more cruisers.
 personality "raider"
 weights {
@@ -28,7 +29,7 @@ doctrine {
     allocate #false
     supply #true
     defend #true
-    mixed-hulls #false
+    mixed-hulls #true
     keep-scouts #true
     watch #true
     forward-muster #true

@@ -1976,6 +1976,67 @@ Steps:
 3. Report before changing anything: hosted seats of a style may play the
    stronger of the two, or the network may need training in that style.
 
+**Step 1 (2026-11-08, bean-void, at `a90009c6`).** One seat against three
+tuned executors, 1,024 maps from 1700000, seat `map % 4` in both tools.
+Executor: `executor_matches --weights STYLE --opponent tuned`. Network:
+`fleet-final+builds@STYLE` from t263's runs, at the current `sortie`
+setting. Win share (an even seat is 0.25; standard error about 0.013):
+
+| Style | Executor, 60 years | Executor, 100 years | Network, 60 years | Network, 100 years |
+| --- | ---: | ---: | ---: | ---: |
+| land-grab | 0.265 | 0.271 | 0.582 | 0.760 |
+| rusher | 0.236 | 0.250 | 0.674 | 0.802 |
+| armada | 0.188 | 0.151 | 0.055 | 0.056 |
+| raider | 0.276 | 0.300 | 0.116 | 0.146 |
+| turtle | 0.228 | 0.213 | 0.156 | 0.273 |
+
+The armada and raider styles are sound as executors; the network loses
+two thirds or more of their strength. The turtle loses some at 60 years
+and gains at 100.
+
+**Step 2.** The network has no style input, and a style reaches it
+through its weights, doctrine and goal bounds. Rusher plays well under the
+network with ferry, blitz, reinforce, colony-starbases and repair-at-bases
+off, like the weak three; only the weak three have `mixed-hulls` off, so
+each builds its top-weighted hull alone. Hybrid profiles (in the mini's
+`~/.local/state/nostrian-conquest/ai/t264/`) took one block from
+land-grab, paired by `behaviour_report` against the style itself on the
+same maps. Win share difference:
+
+| Style | Change | 60 years | 100 years |
+| --- | --- | ---: | ---: |
+| armada | `mixed-hulls #true` | +0.164 ± 0.014 | +0.328 ± 0.016 |
+| armada | land-grab doctrine | +0.060 ± 0.011 | +0.094 ± 0.013 |
+| armada | land-grab weights | -0.039 ± 0.008 | -0.016 ± 0.009 |
+| raider | `mixed-hulls #true` | +0.273 ± 0.017 | +0.363 ± 0.019 |
+| raider | land-grab doctrine | +0.260 ± 0.017 | +0.310 ± 0.018 |
+| raider | land-grab weights | -0.021 ± 0.013 | -0.040 ± 0.014 |
+| turtle | `mixed-hulls #true` | -0.071 ± 0.013 | -0.143 ± 0.016 |
+| turtle | land-grab doctrine | -0.084 ± 0.013 | -0.188 ± 0.016 |
+| turtle | land-grab weights | -0.056 ± 0.014 | -0.165 ± 0.015 |
+| turtle | no allocation bound | -0.016 ± 0.014 | +0.001 ± 0.017 |
+
+With mixed hulls the network seat wins 0.219 and 0.384 as armada, and
+0.390 and 0.510 as raider: more than either style's executor. It holds
+more worlds at the end (+2.1 to +3.9). A one-hull fleet is what the
+network cannot use. The turtle's weights put cruisers and battleships
+near even (0.94 and 0.72), and a mix there builds battleships, which
+t256 found lose; no single block helps it. The turtle network seat is
+below an even seat at 60 years (0.156) and just above it at 100 (0.273).
+The hull shares each mixed profile builds were not measured.
+
+**Adopted (owner, 2026-11-08): `mixed-hulls #true` in `armada.kdl` and
+`raider.kdl`.** `preferred_hull` then builds toward each hull's weight
+share by cost: armada about 81% battleships, 12% cruisers and 7%
+destroyers; raider about 56% destroyers, 35% cruisers and 9% battleships.
+The change also reaches executor seats of those styles, paired with and
+without mixed hulls against three tuned executors on the same 1,024 maps:
+armada -0.008 ± 0.015 and -0.015 ± 0.014, raider -0.055 ± 0.017 and
+-0.108 ± 0.019 at 60 and 100 years. Hosted seats always play the network
+(`CampaignAi`), so an executor raider plays only as a league opponent
+(`fleet_ppo.py --league-styles`). The turtle is unchanged and stays open
+here.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.
