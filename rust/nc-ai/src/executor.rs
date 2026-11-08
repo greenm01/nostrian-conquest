@@ -214,6 +214,14 @@ pub struct Doctrine {
     /// other ships in it (t260; the owner's ask, 2026-11-07). Off, such
     /// fleets wait.
     pub salvage_etacs: bool,
+    /// A fleet with two or more ETACs detaches half of them, with half its
+    /// warships, so each colonizes on its own (t262; the x13 ai2 game).
+    /// Off, ETACs that commissioned together colonize as one.
+    pub split_etacs: bool,
+    /// A colony fleet drops its order once the seat learns its target is
+    /// owned, and picks another world (t262; the x13 ai2 game). Off, it
+    /// flies on and finds out on arrival.
+    pub retarget_etacs: bool,
 }
 
 impl Doctrine {
@@ -245,6 +253,8 @@ impl Doctrine {
             "repair_at_bases" => &mut self.repair_at_bases,
             "etac_share" => &mut self.etac_share,
             "salvage_etacs" => &mut self.salvage_etacs,
+            "split_etacs" => &mut self.split_etacs,
+            "retarget_etacs" => &mut self.retarget_etacs,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -277,6 +287,8 @@ impl Doctrine {
         repair_at_bases: true,
         etac_share: true,
         salvage_etacs: true,
+        split_etacs: true,
+        retarget_etacs: true,
     };
 }
 
@@ -367,6 +379,8 @@ impl Weights {
             repair_at_bases: false,
             etac_share: false,
             salvage_etacs: false,
+            split_etacs: false,
+            retarget_etacs: false,
         },
     };
 
@@ -1631,7 +1645,21 @@ fn plan_fleets(
                         choice
                     }
                 };
-                if fleet.order == Order::ColonizeWorld {
+                // ETACs that commissioned together part to colonize one world each.
+                let calm = |choice: FleetChoice| {
+                    let half = detach_choice(Detach::HalfWarships);
+                    let split =
+                        weights.doctrine.split_etacs && fleet.ships.etacs >= 2 && mask.detach[half];
+                    calm(FleetChoice {
+                        detach: if split { half } else { choice.detach },
+                        ..choice
+                    })
+                };
+                let taken = weights.doctrine.retarget_etacs
+                    && world_at(game_data, fleet.target.to_array())
+                        .and_then(|idx| memory.planet_intel.get(&(idx + 1)))
+                        .is_some_and(|intel| !colonizable(intel, empire));
+                if fleet.order == Order::ColonizeWorld && !taken {
                     return calm(keep);
                 }
                 let first = std::mem::replace(&mut first_colonizer, false);

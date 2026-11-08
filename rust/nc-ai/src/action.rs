@@ -80,8 +80,9 @@ pub const DETACH_CHOICES: usize = 1 + DETACHES.len();
 /// What part of a fleet a seat may detach.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Detach {
-    /// Half of each kind of warship, rounded down; in a fleet without
-    /// warships, half its scouts, since scouts search best alone.
+    /// Half of each kind of warship and half the ETACs, rounded down; in
+    /// a fleet without warships, half its scouts, since scouts search best
+    /// alone.
     HalfWarships,
     /// One warship of the lightest kind aboard.
     OneWarship,
@@ -453,6 +454,7 @@ fn detach_selection(fleet: &Fleet, choice: usize) -> Option<FleetDetachSelection
             if !has_combat_ships(fleet) {
                 selection.scouts = ships.scouts / 2;
             }
+            selection.etacs = ships.etacs / 2;
         }
         Detach::OneWarship => {
             if ships.destroyers > 0 {

@@ -44,6 +44,8 @@ doctrine {
     repair-at-bases #true
     etac-share #true
     salvage-etacs #true
+    split-etacs #true
+    retarget-etacs #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

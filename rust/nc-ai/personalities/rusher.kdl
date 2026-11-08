@@ -41,6 +41,8 @@ doctrine {
     repair-at-bases #false
     etac-share #true
     salvage-etacs #true
+    split-etacs #true
+    retarget-etacs #true
 }
 // Tuning keeps the style: early war, low odds to attack, little expansion.
 bounds {

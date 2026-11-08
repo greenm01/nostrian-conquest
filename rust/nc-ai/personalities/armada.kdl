@@ -40,6 +40,8 @@ doctrine {
     repair-at-bases #false
     etac-share #true
     salvage-etacs #true
+    split-etacs #true
+    retarget-etacs #true
 }
 // Tuning keeps the style: battleships preferred, expansion unchanged.
 bounds {

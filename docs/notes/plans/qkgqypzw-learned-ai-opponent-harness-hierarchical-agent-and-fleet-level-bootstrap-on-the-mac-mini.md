@@ -1803,6 +1803,64 @@ profiles must now set both). The ONNX seat fixtures were re-recorded.
 adopted only if it gains at both horizons; adopting means adding it to the
 personality profiles' doctrine.
 
+### t262
+
+Fix the AI's early colonization, as found in the owner's x13 ai2 game
+(`game-history/x13-ai2-2026-11-06.db`: land-grab, rusher and turtle seats,
+hard). The human had 7 worlds by 3005 and the AIs had 3 or 4. The map
+has 20 worlds, 16 of them free, and all were taken by 3008. Some of the
+lead was geography: six free worlds lie near the human's corner. The
+executor moves AI colony fleets (`AGENT_FAMILIES` has `colonize: false`;
+the network picks only the first colony fleet's target), so these
+faults are the executor's:
+
+1. **ETACs fly in pairs.** The home world buys two ETACs a year, and
+   `auto_commission` puts them in one fleet that colonizes one world per
+   trip. E2 and E4 each held 6 ETACs in 4 fleets; the human sent every
+   ETAC alone.
+2. **A colony fleet keeps its order after it learns the target is
+   taken.** The turtle's intel showed (10,4) owned by E2 from 3005; its
+   fleet flew on until 3008, then picked the human's homeworld.
+3. **The AIs colonize blind.** In 3006 E2 thought 10 worlds free and 9
+   were not; the turtle thought 7 free and 6 were not; the human was
+   wrong about 1. The turtle's fleets chased far-off taken worlds while
+   (17,17), 3 sectors from its home, stayed free until 3008.
+
+The turtle's 60 years at 4 worlds is its personality (attack ratio 3.8,
+war year 27): once the map was full it never had the odds. Left alone.
+
+**Change.** Doctrine switches `split-etacs` (Half Warships also detaches
+half the ETACs, and a fleet with two or more detaches them) and
+`retarget-etacs` (a `ColonizeWorld` order is kept only while the target
+is still colonizable by the seat's intel).
+
+**Local measure** (`colony_race`, seat 1 alone with the switches against
+three seats without, 64 maps, 8 years): paired colony fleet-years 448 to
+0, and seat 1's world-years 2,210 to 2,281 (+3.2%): split +3.1%,
+retarget +0.9%. Fleet-years flown at taken worlds rise (652 to 949), as
+more fleets fly blind. Scoring targets for blindness (distance squared,
+worlds nearer a known rival, unknown production at 20, distance from the
+seat's nearest world) did not raise world-years, so fault 3 has no fix
+here.
+
+**Trial (2026-11-08, bean-void, the change applied to `23b3a7ff`).**
+`executor_matches --weights land-grab-off.kdl --with
+split_etacs,retarget_etacs --opponent land-grab-off.kdl --paired`, where
+`land-grab-off.kdl` is land-grab with both switches off; 4,096 maps from
+1600000 (scripts and results in the mini's `ai/t262/`):
+
+| Years | With | Without | Difference |
+| ---: | ---: | ---: | ---: |
+| 60 | 0.275 | 0.249 | +0.026 ± 0.009 |
+| 100 | 0.272 | 0.250 | +0.021 ± 0.009 |
+
+Both horizons clear two standard errors (2.9 and 2.3), the bar t260 did
+not reach.
+
+**Adopted (owner, 2026-11-08).** Both switches are on in `Doctrine::CURRENT`
+and every personality; the ONNX seat fixtures were re-recorded. Closed on
+2026-11-08.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.
