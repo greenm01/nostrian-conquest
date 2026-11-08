@@ -1861,6 +1861,34 @@ not reach.
 and every personality; the ONNX seat fixtures were re-recorded. Closed on
 2026-11-08.
 
+**Afterwards (2026-11-08): the human did not scout; the race was close.**
+The owner sent ETACs to the Colonize prompt's default (the nearest world
+not known to be owned, from the fleet, skipping worlds another of the
+player's ETAC fleets targets) and never scouted on purpose. Free worlds
+by nearest home were 4, 5, 4 and 3, so geography was even. The human's
+lead was the two richest worlds:
+
+- (3,9), 142 points, nearer E3, which had viewed it in 3001. E3's colony
+  fleet entered the system in week 20 of 3003. The human's destroyer
+  guarding the world attacked it and died, and the human's ETAC colonized
+  in week 22: a race won by about two weeks.
+- (10,2), 108 points, nearer E2. E2 had never viewed it. Its early ETACs
+  went to (10,4), (11,8) and (10,10), worth 34. (10,10) and (10,2) were
+  both unknown and the same distance from E2's home.
+
+Two more scoring rules, each tried for seat 1 alone against three seats
+without it, did not help:
+
+- Nearest-first targets, as the prompt picks them: +0.6% world-years
+  over 64 maps of 8 years.
+- Guessing 1, 60, 83 (the map average) or 120 for an unknown world's
+  production in place of 40: seat 1's world-years and potential-years
+  stayed within 0.3% over 128 maps of 10 years.
+
+With t262 the executor's colony play matches the prompt's, and this
+game shows no other fix. More human games are needed to tell whether
+AIs keep losing contested worlds.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.
