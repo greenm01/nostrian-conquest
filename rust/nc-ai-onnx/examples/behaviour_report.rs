@@ -59,6 +59,8 @@ struct Game {
     defence_points: u64,
     build_points: u64,
     starbase_points: u64,
+    /// Build points for battleships, cruisers and destroyers (t264).
+    hull_points: [u64; 3],
     /// World-years the network built for itself rather than as the
     /// executor would, and world-years it chose at all (`+builds`).
     own_builds: u32,
@@ -203,6 +205,13 @@ fn main() {
             let build: u64 = g.iter().map(|g| g.build_points).sum();
             let starbase: u64 = g.iter().map(|g| g.starbase_points).sum();
             format!("{:.0}%", 100.0 * starbase as f64 / build.max(1) as f64)
+        }),
+        ("warship builds BB/CA/DD", |g| {
+            let hulls: [u64; 3] =
+                std::array::from_fn(|idx| g.iter().map(|g| g.hull_points[idx]).sum());
+            let all = hulls.iter().sum::<u64>().max(1) as f64;
+            let [bb, ca, dd] = hulls.map(|points| 100.0 * points as f64 / all);
+            format!("{bb:.0}/{ca:.0}/{dd:.0}%")
         }),
         ("worlds built its own way", |g| {
             let own: u32 = g.iter().map(|g| g.own_builds).sum();
@@ -463,6 +472,12 @@ fn play(
     .map(production_item_kind_code);
     let transport = production_item_kind_code(ProductionItemKind::Transport);
     let starbase = production_item_kind_code(ProductionItemKind::Starbase);
+    let hulls = [
+        ProductionItemKind::Battleship,
+        ProductionItemKind::Cruiser,
+        ProductionItemKind::Destroyer,
+    ]
+    .map(production_item_kind_code);
     for _ in 0..years {
         // Network seats commission at the start of the year and the
         // executors at their own turns, as the batch environment has them.
@@ -531,6 +546,9 @@ fn play(
                     }
                     if *kind == starbase {
                         out.starbase_points += u64::from(*points_remaining);
+                    }
+                    if let Some(hull) = hulls.iter().position(|hull| hull == kind) {
+                        out.hull_points[hull] += u64::from(*points_remaining);
                     }
                     if *kind == transport {
                         out.transports_built += u64::from(*points_remaining)

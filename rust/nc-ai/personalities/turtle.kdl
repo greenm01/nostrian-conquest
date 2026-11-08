@@ -1,6 +1,7 @@
 // The turtle (t167): strong garrisons, batteries and starbases, war late,
 // and strikes only at long odds. It holds back fleet for defence by threat
-// (t175's allocation rule).
+// (t175's allocation rule). Its fleet is cruisers with some destroyers and no
+// battleships (mixed hulls, t264: a network seat cannot use a one-hull fleet).
 personality "turtle"
 weights {
     tax 63.33496
@@ -11,9 +12,9 @@ weights {
     scouts 0.0
     starbases 2.7356834
     transports 16.0
-    battleship 0.7157012
+    battleship 0.0
     cruiser 0.9378893
-    destroyer 0.0
+    destroyer 0.3
     attack-ratio 3.8172789
     roe 6.0378585
     war-year 27.38407
@@ -28,7 +29,7 @@ doctrine {
     allocate #true
     supply #true
     defend #true
-    mixed-hulls #false
+    mixed-hulls #true
     keep-scouts #true
     watch #true
     forward-muster #true
@@ -52,6 +53,7 @@ bounds {
     starbases 2.0 3.0
     attack-ratio 3.0 4.0
     war-year 24.0 30.0
+    battleship 0.0 0.0
 }
 // A learned turtle always guards threatened worlds (t175's allocation 1 or
 // 2), whatever its network would choose.

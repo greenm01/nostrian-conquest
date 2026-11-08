@@ -2037,6 +2037,30 @@ armada -0.008 ± 0.015 and -0.015 ± 0.014, raider -0.055 ± 0.017 and
 (`fleet_ppo.py --league-styles`). The turtle is unchanged and stays open
 here.
 
+**Hull shares.** `behaviour_report` now prints a "warship builds BB/CA/DD"
+row, by build points. Over 64 games at 60 years at `6a7d9f86`: land-grab
+0/42/58%, armada 70/17/13%, raider 8/35/57%, turtle 0/100/0%.
+
+**The turtle without battleships.** Two turtle profiles with mixed hulls
+and battleship weight 0, paired against the turtle on the same 1,024 maps
+from 1700000: A moves its battleship weight to destroyers (0.72), B gives
+destroyers 0.3. Win share difference:
+
+| Variant | 60 years | 100 years | Win share, 60 / 100 years |
+| --- | ---: | ---: | --- |
+| A, destroyer 0.72 | +0.401 ± 0.018 | +0.438 ± 0.018 | 0.558 / 0.711 |
+| B, destroyer 0.3 | +0.376 ± 0.018 | +0.445 ± 0.018 | 0.532 / 0.718 |
+
+Both double the turtle's invasions and end with 3.5 more worlds at 60
+years and 5.9 at 100, losing 2 and 3.7 more. Its garrisons, batteries,
+starbases, late war and long odds are unchanged.
+
+**Adopted (owner, 2026-11-08): variant B in `turtle.kdl`**, about 76%
+cruisers by cost, the nearest to the old cruiser fleet; its bounds pin
+battleships at 0, as land-grab's do. An executor turtle plays it at
+-0.051 ± 0.016 and -0.045 ± 0.016 against the old profile (60 and 100
+years), like the raider a cost only to the league. Closed on 2026-11-08.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.
