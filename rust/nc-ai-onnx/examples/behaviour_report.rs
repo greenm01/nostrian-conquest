@@ -5,7 +5,7 @@
 //! ```text
 //! cargo run --release -p nc-ai-onnx --example behaviour_report -- A.onnx [B.onnx ...] \
 //!     [--games 256] [--years 100] [--first-map 100000] [--threads 4] [--style land-grab|FILE.kdl] \
-//!     [--opponents TARGET.onnx]
+//!     [--opponents TARGET.onnx] [--opponent-style raider|FILE.kdl]
 //! ```
 //!
 //! A model given as `A.onnx+convoy` also orders its convoys (transports
@@ -21,6 +21,8 @@
 //! maps, the seat rotated game by game, greedy. One column per model.
 //! `--opponents` fills the other three seats with that model instead (the
 //! land-grab style), so an exploiter can be read against its target (t192).
+//! `--opponent-style` gives the three executors that style in place of the
+//! tuned land-grab executor, so a seat can be read against raiders (t263).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -137,6 +139,12 @@ fn main() {
     );
     let style = arg("--style").unwrap_or_else(|| "land-grab".to_string());
     let opponents = arg("--opponents").map(PathBuf::from);
+    let opponent_style = arg("--opponent-style");
+    let opponent_weights = opponent_style.as_deref().map_or(Weights::TUNED, |name| {
+        personality_or_file(name)
+            .unwrap_or_else(|err| panic!("{err}"))
+            .weights
+    });
 
     let rows: Vec<Row> = vec![
         ("win share", |g| {
@@ -277,6 +285,7 @@ fn main() {
                 *families,
                 *temperature,
                 opponents.as_ref(),
+                &opponent_weights,
                 own.as_ref().unwrap_or(&style),
                 games,
                 years,
@@ -285,9 +294,10 @@ fn main() {
             )
         })
         .collect();
-    let against = opponents
-        .as_ref()
-        .map_or_else(|| "executors".to_string(), |path| short(path));
+    let against = opponents.as_ref().map_or_else(
+        || format!("{} executors", opponent_style.as_deref().unwrap_or("tuned")),
+        |path| short(path),
+    );
     println!("{games} games, {years} years, one network seat ({style}) against three {against}\n");
     print!("{:<36}", "");
     for (model, families, own, temperature) in &models {
@@ -383,6 +393,7 @@ fn run(
     families: Families,
     temperature: f32,
     opponents: Option<&PathBuf>,
+    opponent_weights: &Weights,
     style: &str,
     games: u64,
     years: u16,
@@ -410,7 +421,16 @@ fn run(
                     (first..first + games)
                         .skip(worker as usize)
                         .step_by(threads as usize)
-                        .map(|map| play(&seat, temperature, opponent.as_ref(), map, years))
+                        .map(|map| {
+                            play(
+                                &seat,
+                                temperature,
+                                opponent.as_ref(),
+                                opponent_weights,
+                                map,
+                                years,
+                            )
+                        })
                         .collect::<Vec<_>>()
                 })
             })
@@ -426,6 +446,7 @@ fn play(
     network: &NetworkSeat,
     temperature: f32,
     opponent: Option<&NetworkSeat>,
+    opponent_weights: &Weights,
     map: u64,
     years: u16,
 ) -> Game {
@@ -469,7 +490,7 @@ fn play(
                         game.submit_turn(&turn)
                             .expect("the opponent's turn submits");
                     }
-                    None => executor_turn(&mut game, empire, &Weights::TUNED, start),
+                    None => executor_turn(&mut game, empire, opponent_weights, start),
                 }
                 continue;
             }

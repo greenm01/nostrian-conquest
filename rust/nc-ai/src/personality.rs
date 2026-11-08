@@ -42,7 +42,7 @@ pub const WEIGHT_NAMES: [&str; Weights::COUNT] = [
     "young-tax",
 ];
 
-const DOCTRINE_NAMES: [&str; 22] = [
+const DOCTRINE_NAMES: [&str; 23] = [
     "land-grab",
     "strike-weakest",
     "suppress-first",
@@ -65,6 +65,7 @@ const DOCTRINE_NAMES: [&str; 22] = [
     "salvage-etacs",
     "split-etacs",
     "retarget-etacs",
+    "sortie",
 ];
 
 /// The built-in personalities, the default first.
@@ -143,6 +144,7 @@ pub fn personality_kdl(name: &str, weights: &Weights) -> String {
         d.salvage_etacs,
         d.split_etacs,
         d.retarget_etacs,
+        d.sortie,
     ];
     let mut text = format!("personality \"{name}\"\nweights {{\n");
     for (weight, value) in WEIGHT_NAMES.iter().zip(weights.to_array()) {
@@ -220,6 +222,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
         salvage_etacs,
         split_etacs,
         retarget_etacs,
+        sortie,
     ] = settings(node("doctrine")?, &DOCTRINE_NAMES, |args| match args {
         [value] => value.as_bool(),
         _ => None,
@@ -302,6 +305,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 salvage_etacs,
                 split_etacs,
                 retarget_etacs,
+                sortie,
             },
             ..Weights::from_array(weights)
         },

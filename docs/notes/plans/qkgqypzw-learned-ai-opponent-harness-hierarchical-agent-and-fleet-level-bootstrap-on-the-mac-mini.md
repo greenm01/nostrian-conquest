@@ -1889,6 +1889,93 @@ With t262 the executor's colony play matches the prompt's, and this
 game shows no other fix. More human games are needed to tell whether
 AIs keep losing contested worlds.
 
+### t263
+
+The owner's report on the x13 ai2 game: each AI massed one superfleet.
+Taking or bombarding its worlds left it no armies to load, and batteries
+and armies on the worlds it would go for wore it down. The owner's fleets
+then retook the worlds it had taken once it left.
+
+The record agrees. E2's (land-grab) largest fleet grew to 193 warships
+and from 3036 carried 0 to 2 loaded transports while its worlds fell from
+7 to 1. E4's (turtle) one fleet grew from 10 warships in 3012 to 685
+cruisers and 54 loaded transports in 3071. It sat on Rendezvous at its
+muster (12,11) from 3040 to 3071, while the human took (15,10) in 3067,
+(17,11) in 3069 and its home (14,14) in 3071, each 3 to 4 sectors away.
+
+**Whose order.** A probe (in the session scratchpad) replayed E4's turns
+from the stored years with `fleet-final`. The full seat reproduced the
+stored Rendezvous every year, 3065 to 3070. The executor given the
+network's goals would have bombarded (17,17), or (14,6) in 3069 and
+3070, and the executor alone (11,8). So the network's own strike-family
+order parks the fleet and replaces the executor's attack in
+`hand_to_network`. It learned against executors and copies of itself, and
+neither raids the worlds a massed fleet leaves behind.
+
+**Change.** Doctrine switch `sortie`: in `hand_to_network`, a strike
+fleet whose network choice parks it (Hold or Rendezvous, given or kept,
+and no join) keeps the executor's order when that order is a bombardment,
+invasion or blitz. The training environment hands fleets over through the
+same function, so a later retrain with the switch on trains under it.
+Replayed with the switch, E4's biggest fleet (299 cruisers in 3040)
+bombards (17,17) from 3040, not 3071.
+
+**Trial (2026-11-08, bean-void, at `f5562d4a` with the change).**
+`behaviour_report` paired `fleet-final+builds` with the style's profile
+with `sortie` off against the same profile with it on, one network seat
+against three executors, 1,024 maps from 1700000. A new
+`--opponent-style` option plays raider executors in place of the tuned
+land-grab executor. Win share difference (sortie on minus off):
+
+| Style | Opponents | 60 years | 100 years |
+| --- | --- | ---: | ---: |
+| land-grab | tuned executors | -0.064 ± 0.019 | -0.110 ± 0.019 |
+| land-grab | raider executors | -0.057 ± 0.018 | -0.114 ± 0.019 |
+| turtle | tuned executors | +0.146 ± 0.012 | +0.221 ± 0.015 |
+| turtle | raider executors | +0.141 ± 0.012 | +0.182 ± 0.017 |
+
+The network was trained in the land-grab style, and there its holds are
+good play: overriding them costs 6 to 11 points. In the turtle style the
+network seat almost never wins without the switch (0.011 to 0.118) and
+reaches 0.156 to 0.299 with it, and it loses more worlds (it fights).
+Raider executors do not exploit the land-grab seat's stack either: its
+worlds lost do not change. So `sortie` is a per-style switch, off in
+`Doctrine::CURRENT`.
+
+The other styles, against tuned executors (`trial2.sh`):
+
+| Style | 60 years | 100 years | Win share off / on, 60 years |
+| --- | ---: | ---: | --- |
+| rusher | -0.112 ± 0.019 | -0.045 ± 0.018 | 0.674 / 0.562 |
+| armada | +0.007 ± 0.009 | +0.007 ± 0.010 | 0.055 / 0.062 |
+| raider | +0.068 ± 0.012 | +0.085 ± 0.013 | 0.048 / 0.116 |
+
+`sortie` is on in the turtle and raider profiles and off in land-grab,
+rusher and armada. These runs also show that `fleet-final` plays three
+of the five styles badly: one network seat wins about 0.05 as armada,
+raider or turtle against three tuned executors, against 0.58 to 0.67 as
+land-grab or rusher.
+
+**Adopted (owner, 2026-11-08)** for the turtle and raider styles. The
+three weak styles go to t264. Closed on 2026-11-08.
+
+### t264
+
+Find out why `fleet-final` plays the armada, raider and turtle styles
+badly, and make hosted seats of those styles strong. A network seat wins
+about 0.05 in those styles against three tuned executors (t263), against
+0.58 to 0.67 as land-grab or rusher.
+
+Steps:
+
+1. Score each weak style as a pure executor seat and as the network seat,
+   with t263's `sortie` setting, on the same maps
+   (`executor_matches` and `behaviour_report`).
+2. Find what the style's executor weights and goal bounds change that the
+   network, trained in the land-grab style, cannot use.
+3. Report before changing anything: hosted seats of a style may play the
+   stronger of the two, or the network may need training in that style.
+
 ### t189
 
 Use the full order set and a mixed fleet in the executor.

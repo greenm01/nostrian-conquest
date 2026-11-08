@@ -42,6 +42,7 @@ doctrine {
     salvage-etacs #true
     split-etacs #true
     retarget-etacs #true
+    sortie #true
 }
 // Tuning keeps the style: destroyers preferred, short odds, early-ish war.
 bounds {

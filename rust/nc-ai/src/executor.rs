@@ -222,6 +222,13 @@ pub struct Doctrine {
     /// owned, and picks another world (t262; the x13 ai2 game). Off, it
     /// flies on and finds out on arrival.
     pub retarget_etacs: bool,
+    /// A strike fleet the network leaves parked, on Hold or Rendezvous,
+    /// takes the executor's attack when the executor would send it to one
+    /// (t263; the owner's x13 ai2 game, where a 685-ship fleet sat at its
+    /// muster while its worlds fell). Off, the network's order stands. A
+    /// style switch: it lifts the turtle and costs land-grab, the style the
+    /// network trained in, so `CURRENT` leaves it off.
+    pub sortie: bool,
 }
 
 impl Doctrine {
@@ -255,6 +262,7 @@ impl Doctrine {
             "salvage_etacs" => &mut self.salvage_etacs,
             "split_etacs" => &mut self.split_etacs,
             "retarget_etacs" => &mut self.retarget_etacs,
+            "sortie" => &mut self.sortie,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -289,6 +297,7 @@ impl Doctrine {
         salvage_etacs: true,
         split_etacs: true,
         retarget_etacs: true,
+        sortie: false,
     };
 }
 
@@ -381,6 +390,7 @@ impl Weights {
             salvage_etacs: false,
             split_etacs: false,
             retarget_etacs: false,
+            sortie: false,
         },
     };
 
@@ -2167,8 +2177,22 @@ pub fn hand_to_network(
             }
         }
     }
+    let mission = |choice: &FleetChoice| (choice.mission > 0).then(|| MISSIONS[choice.mission - 1]);
     for (choice, mine) in action.fleets.iter_mut().zip(network) {
-        if !families.contains(fleet_family(&game_data.fleets[choice.record - 1])) {
+        let fleet = &game_data.fleets[choice.record - 1];
+        if !families.contains(fleet_family(fleet)) {
+            continue;
+        }
+        let parked = mine.join == 0
+            && matches!(
+                mission(mine).unwrap_or(fleet.order),
+                Order::HoldPosition | Order::RendezvousSector
+            );
+        let attack = matches!(
+            mission(choice),
+            Some(Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld)
+        );
+        if weights.doctrine.sortie && parked && attack {
             continue;
         }
         *choice = *mine;

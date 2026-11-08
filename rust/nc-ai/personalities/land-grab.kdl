@@ -46,6 +46,7 @@ doctrine {
     salvage-etacs #true
     split-etacs #true
     retarget-etacs #true
+    sortie #false
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

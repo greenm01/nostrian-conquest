@@ -117,6 +117,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
         salvage_etacs: false,
         split_etacs: false,
         retarget_etacs: false,
+        sortie: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
